@@ -3,35 +3,11 @@
 
 @custom-variant dark (&:is(.dark *));
 
-@font-face {
-  font-family: "SF-Pro-Regular";
-  src: url("../assets/fonts/SF-Pro-Display-Regular.otf") format("openType");
-  font-weight: 400;
-  font-style: normal;
-}
-
-@font-face {
-  font-family: "SF-Pro-Bold";
-  src: url("../assets/fonts/SF-Pro-Display-Bold.otf") format("openType");
-  font-weight: 700;
-  font-style: normal;
-}
-
-@font-face {
-  font-family: "SF-Pro-Medium";
-  src: url("../assets/fonts/SF-Pro-Display-Medium.otf") format("openType");
-  font-weight: 550;
-  font-style: normal;
-}
-
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  --font-sf-pro-medium: "SF-Pro-Medium";
-  --font-sf-pro-bold: "SF-Pro-Bold";
-  --font-sf-pro-regular: "SF-Pro-Regular";
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -166,4 +142,11 @@ body {
 
 @utility flex-center {
   @apply flex justify-center items-center;
+}
+
+@utility hero-gradient {
+  /* background: linear-gradient(135deg, #f0fdfa, #ccfbf1, #99f6e4); */
+  /* background: linear-gradient(135deg, #f0f2f5, #d9e2ec, #bcccdc); */
+  background: linear-gradient(135deg, #faf5ff, #ede9fe, #ddd6fe);
+  /* background: linear-gradient(135deg, #f7fbff, #e3f2fd, #bbdefb); */
 }

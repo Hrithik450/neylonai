@@ -1,3 +1,5 @@
+import { sfProRegular } from "@/assets/fonts";
+import { cn } from "@/lib/utils";
 import { Layers, Mic, SlidersHorizontal } from "lucide-react";
 
 const features = [
@@ -23,7 +25,9 @@ const features = [
 
 export default function FeatureCardList() {
   return (
-    <div className="flex items-center justify-center font-sf-pro-regular">
+    <div
+      className={cn("flex items-center justify-center", sfProRegular.className)}
+    >
       <div className="relative flex">
         <div className="bg-blue-500/70 absolute top-10 right-5 w-85 h-full rounded-lg" />
 

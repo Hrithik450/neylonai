@@ -1,12 +1,12 @@
-"use client";
-
 import React from "react";
 import Link from "next/link";
 import { Youtube, Linkedin, Instagram, Twitter, Mail } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { AvatarGroup } from "@/components/avatar-group";
 import demoVideo from "../../../videos/demo.mp4";
+import { sfProMedium, sfProRegular } from "@/assets/fonts";
 import NextVideo from "next-video";
+import { cn } from "@/lib/utils";
 
 const socialLinks = [
   { label: "Youtube", url: "", icon: Youtube },
@@ -18,9 +18,19 @@ const socialLinks = [
 
 export function Hero() {
   return (
-    <section className="font-sf-pro-regular relative px-5 sm:px-20 pt-44 min-h-dvh h-full w-full bg-[url(/images/hero_background.jpg)] bg-no-repeat bg-cover bg-center">
+    <section
+      className={cn(
+        "relative px-5 sm:px-20 pt-44 min-h-dvh h-full w-full hero-gradient",
+        sfProRegular.className
+      )}
+    >
       <div className="relative grid grid-cols-12">
-        <p className="col-start-1 col-span-7 row-start-1 text-4xl md:text-5xl lg:text-7xl xl:text-[6.25rem] leading-26 font-sf-pro-medium">
+        <p
+          className={cn(
+            "col-start-1 col-span-7 row-start-1 text-4xl md:text-5xl lg:text-7xl xl:text-[6.25rem] leading-26",
+            sfProMedium.className
+          )}
+        >
           Transform with
         </p>
 
@@ -31,7 +41,12 @@ export function Hero() {
           Quick and fast
         </Badge>
 
-        <p className="col-span-6 col-start-1 row-start-2 text-4xl md:text-5xl lg:text-7xl xl:text-[6.25rem] leading-26 font-sf-pro-medium">
+        <p
+          className={cn(
+            "col-span-6 col-start-1 row-start-2 text-4xl md:text-5xl lg:text-7xl xl:text-[6.25rem] leading-26",
+            sfProMedium.className
+          )}
+        >
           AI-Solutionz
         </p>
 
@@ -42,7 +57,12 @@ export function Hero() {
           Smart Assistants
         </Badge>
 
-        <p className="col-start-1 text-4xl md:text-5xl lg:text-7xl xl:text-[6.25rem] leading-26 font-sf-pro-medium">
+        <p
+          className={cn(
+            "col-start-1 text-4xl md:text-5xl lg:text-7xl xl:text-[6.25rem] leading-26",
+            sfProMedium.className
+          )}
+        >
           Assistants
         </p>
 

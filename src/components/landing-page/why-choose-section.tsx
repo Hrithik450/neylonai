@@ -12,6 +12,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { CirclePlay } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { sfProBold, sfProMedium } from "@/assets/fonts";
 
 export function WhyChooseUs() {
   const models = React.useMemo(() => {
@@ -26,7 +28,7 @@ export function WhyChooseUs() {
   }, []);
 
   return (
-    <section className="py-8 font-sf-pro-medium px-5 sm:px-20">
+    <section className={cn("py-8 px-5 sm:px-20", sfProMedium.className)}>
       {/* Partner Section */}
       <div>
         <h2 className="text-center text-gray-600 text-xl font-medium my-6">
@@ -65,7 +67,7 @@ export function WhyChooseUs() {
         <div className="p-6 col-span-2 w-full rounded-2xl overflow-hidden shadow-lg bg-[#F4FAE4]">
           <div className="flex justify-between items-center">
             <div>
-              <h2 className="text-lg font-sf-pro-bold">
+              <h2 className={cn("text-lg", sfProBold.className)}>
                 1250+ Hours Reclaimed Every Month
               </h2>
               <p className="text-md">
@@ -88,7 +90,7 @@ export function WhyChooseUs() {
         <div className="p-6 col-span-2 w-full rounded-2xl overflow-hidden shadow-lg bg-[#F4ECFF]">
           <div className="flex justify-between items-center">
             <div>
-              <h2 className="text-lg font-sf-pro-bold">
+              <h2 className={cn("text-lg", sfProBold.className)}>
                 500+ Human Workdays Saved Every Month
               </h2>
               <p className="text-md">

@@ -1,18 +1,24 @@
+import { sfProRegular } from "@/assets/fonts";
 import { Button } from "@/components/ui/button";
-import { navLists } from "@/lib/utils";
+import { cn, navLists } from "@/lib/utils";
+import Image from "next/image";
 
 export function Navbar() {
   return (
     <header
       id="header"
-      className="font-sf-pro-regular max-w-[120rem] mx-auto absolute z-99 w-full py-6 sm:py-8 px-5 sm:px-20 bg-transparent flex justify-between items-center"
+      className={cn(
+        "max-w-[120rem] mx-auto absolute z-99 w-full py-6 sm:py-8 px-5 sm:px-20 bg-transparent flex justify-between items-center",
+        sfProRegular.className
+      )}
     >
       <nav className="container mx-auto flex items-center w-full bg-white/25 backdrop-blur-xs border border-gray-400/60 rounded-full p-4">
         <div className="px-6 max-w-[250px] w-full">
-          <img
-            className="w-full"
+          <Image
             src="/images/ai-solutionz.png"
             alt="ai-solutionz"
+            width={250}
+            height={10}
           />
         </div>
 

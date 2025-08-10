@@ -1,4 +1,6 @@
+import { sfProMedium } from "@/assets/fonts";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 const conversations = [
   {
@@ -19,8 +21,9 @@ export default function ChatHistory({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "w-full h-full rounded-xl p-5 shadow-sm text-sm bg-white font-sf-pro-medium",
-        className
+        "w-full h-full rounded-xl p-5 shadow-sm text-sm bg-white",
+        className,
+        sfProMedium.className
       )}
     >
       <div className="flex justify-between items-center mb-4">
@@ -40,10 +43,12 @@ export default function ChatHistory({ className }: { className?: string }) {
             {conversation.assistant ? (
               <div className="flex items-end gap-2">
                 <div className="w-7 h-7 rounded-full bg-[#E3F2FD] flex items-center justify-center font-semibold">
-                  <img
+                  <Image
                     src="/images/assistant-avatar.png"
                     alt="Assistant"
                     className="w-7 h-7 rounded-full object-cover"
+                    width={30}
+                    height={30}
                   />
                 </div>
 
@@ -57,10 +62,12 @@ export default function ChatHistory({ className }: { className?: string }) {
                   {conversation.user}
                 </p>
                 <div className="w-7 h-7 rounded-full flex items-center justify-center bg-[#F1F8E9] font-semibold">
-                  <img
+                  <Image
                     src="/images/user-avatar.png"
                     alt="User"
                     className="w-7 h-7 rounded-full object-cover"
+                    width={30}
+                    height={30}
                   />
                 </div>
               </div>
