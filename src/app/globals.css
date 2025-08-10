@@ -163,3 +163,7 @@ body {
   position: relative;
   max-width: 1200px;
 }
+
+@utility flex-center {
+  @apply flex justify-center items-center;
+}

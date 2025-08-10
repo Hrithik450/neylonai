@@ -1,8 +1,12 @@
+"use client";
+
 import React from "react";
+import Link from "next/link";
 import { Youtube, Linkedin, Instagram, Twitter, Mail } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { AvatarGroup } from "@/components/avatar-group";
-import Link from "next/link";
+import demoVideo from "../../../videos/demo.mp4";
+import NextVideo from "next-video";
 
 const socialLinks = [
   { label: "Youtube", url: "", icon: Youtube },
@@ -88,15 +92,16 @@ export function Hero() {
             </div>
 
             <div className="absolute w-full h-full z-10">
-              <video
-                className="pointer-events-none w-[95%] mx-auto object-cover rounded-t-[1.75rem] md:rounded-t-[2.25rem] lg:rounded-t-[3rem] xl:rounded-t-[3.70rem] 2xl:rounded-t-[4.5rem]"
-                playsInline
-                preload="none"
-                muted
-                autoPlay
-              >
-                <source src="/videos/demo.mp4" type="video/mp4" />
-              </video>
+              <div className="pointer-events-none w-[95%] aspect-[380/848] mx-auto object-cover rounded-t-[1.75rem] md:rounded-t-[2.25rem] lg:rounded-t-[3rem] xl:rounded-t-[3.70rem] 2xl:rounded-t-[4.5rem] overflow-hidden">
+                <NextVideo
+                  className="h-full w-full object-cover"
+                  preload="none"
+                  src={demoVideo}
+                  playsInline
+                  autoPlay
+                  muted
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -111,16 +116,17 @@ export function Hero() {
               />
             </div>
 
-            <div className="absolute w-full h-full z-10">
-              <video
-                className="pointer-events-none w-[95%] mx-auto object-cover rounded-t-[1.75rem] md:rounded-t-[2.25rem] lg:rounded-t-[3rem] xl:rounded-t-[3.70rem] 2xl:rounded-t-[4.5rem]"
-                playsInline
-                preload="none"
-                muted
-                autoPlay
-              >
-                <source src="/videos/demo.mp4" type="video/mp4" />
-              </video>
+            <div className="absolute h-full w-full z-10">
+              <div className="pointer-events-none w-[95%] aspect-[380/848] mx-auto object-cover rounded-t-[1.75rem] md:rounded-t-[2.25rem] lg:rounded-t-[3rem] xl:rounded-t-[3.70rem] 2xl:rounded-t-[4.5rem] overflow-hidden">
+                <NextVideo
+                  className="h-full w-full object-cover"
+                  preload="none"
+                  src={demoVideo}
+                  playsInline
+                  autoPlay
+                  muted
+                />
+              </div>
             </div>
           </div>
         </div>
