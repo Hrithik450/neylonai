@@ -42,7 +42,7 @@ export default function ChatHistory({ className }: { className?: string }) {
           >
             {conversation.assistant ? (
               <div className="flex items-end gap-2">
-                <div className="w-7 h-7 rounded-full bg-[#E3F2FD] flex items-center justify-center font-semibold">
+                <div className="w-7 h-7 rounded-full bg-[#E3F2FD] flex items-center justify-center font-semibold shadow-sm">
                   <Image
                     src="/images/assistant-avatar.png"
                     alt="Assistant"
@@ -61,7 +61,7 @@ export default function ChatHistory({ className }: { className?: string }) {
                 <p className="text-sm rounded-t-lg rounded-bl-lg p-3 px-4 text-black/80 bg-[#F1F8E9] shadow-sm">
                   {conversation.user}
                 </p>
-                <div className="w-7 h-7 rounded-full flex items-center justify-center bg-[#F1F8E9] font-semibold">
+                <div className="w-7 h-7 rounded-full flex items-center justify-center bg-[#F1F8E9] font-semibold shadow-sm">
                   <Image
                     src="/images/user-avatar.png"
                     alt="User"
