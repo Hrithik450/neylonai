@@ -144,11 +144,24 @@ body {
   @apply flex justify-center items-center;
 }
 
-@utility hero-gradient {
-  /* background: linear-gradient(135deg, #f0fdfa, #ccfbf1, #99f6e4); */
-  /* background: linear-gradient(135deg, #f0f2f5, #d9e2ec, #bcccdc); */
-  /* background: linear-gradient(135deg, #faf5ff, #ede9fe, #ddd6fe); */
-  /* background: linear-gradient(135deg, #f7fbff, #e3f2fd, #bbdefb); */
+/* background: linear-gradient(135deg, #f0fdfa, #ccfbf1, #99f6e4); */
+/* background: linear-gradient(135deg, #f0f2f5, #d9e2ec, #bcccdc); */
+/* background: linear-gradient(135deg, #faf5ff, #ede9fe, #ddd6fe); */
+/* background: linear-gradient(135deg, #f7fbff, #e3f2fd, #bbdefb); */
+/* background: linear-gradient(135deg, #fff5f0, #ffe4e0, #ffc9b9); */
+
+@utility card-1 {
   background: linear-gradient(135deg, #fff7f0, #ffe8d9, #ffd7ba);
-  /* background: linear-gradient(135deg, #fff5f0, #ffe4e0, #ffc9b9); */
+}
+
+@utility card-2 {
+  background: linear-gradient(135deg, #f7fbff, #e3f2fd, #bbdefb);
+}
+
+@utility card-3 {
+  background: linear-gradient(135deg, #faf5ff, #ede9fe, #ddd6fe);
+}
+
+@utility card-4 {
+  background: linear-gradient(135deg, #f0f2f5, #d9e2ec, #bcccdc);
 }

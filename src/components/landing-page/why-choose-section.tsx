@@ -1,16 +1,9 @@
 import { ChartAreaDefault } from "@/components/ui/charts/area-chart";
 import { ChartBarMultiple } from "@/components/ui/charts/bar-chart";
-import { ChartRadialText } from "@/components/ui/charts/radial-chart";
 import ChatHistory from "@/components/chat-history";
 import FeatureCardList from "@/components/feature-card";
 import Image from "next/image";
 import React from "react";
-import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { CirclePlay } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { sfProBold, sfProMedium } from "@/assets/fonts";

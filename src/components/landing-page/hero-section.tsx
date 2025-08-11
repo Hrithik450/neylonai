@@ -21,10 +21,20 @@ export function Hero() {
   return (
     <section
       className={cn(
-        "relative px-5 sm:px-20 pt-44 min-h-dvh h-full w-full hero-gradient",
+        "relative px-5 sm:px-20 pt-44 min-h-dvh h-full w-full",
         sfProRegular.className
       )}
     >
+      <div className="absolute inset-0">
+        <Image
+          className="w-full h-full"
+          src="/images/hero_background.jpg"
+          alt="background-image"
+          width={1000}
+          height={1000}
+        />
+      </div>
+
       <div className="relative grid grid-cols-12">
         <p
           className={cn(
@@ -105,12 +115,10 @@ export function Hero() {
         <div className="col-span-3 col-start-6 absolute bottom-0 mx-2 overflow-hidden">
           <div className="relative h-full flex-center">
             <div className="relative w-full h-full z-20">
-              <Image
-                className="bg-transparent w-full object-cover"
+              <img
+                className="bg-transparent w-full h-full object-cover"
                 src="/images/Iphone-frame.png"
                 alt="frame"
-                width={264}
-                height={419}
               />
             </div>
 
@@ -132,12 +140,10 @@ export function Hero() {
         <div className="col-span-4 col-start-9 absolute bottom-0 mx-3 xl:mx-6 overflow-hidden">
           <div className="relative w-full h-full flex-center">
             <div className="relative w-full h-full z-20">
-              <Image
-                className="bg-transparent w-full object-cover"
+              <img
+                className="bg-transparent w-full h-full object-cover"
                 src="/images/Iphone-frame.png"
                 alt="frame"
-                width={325}
-                height={516}
               />
             </div>
 

@@ -29,9 +29,9 @@ export default function FeatureCardList() {
       className={cn("flex items-center justify-center", sfProRegular.className)}
     >
       <div className="relative flex">
-        <div className="bg-blue-500/70 absolute top-10 right-5 w-85 h-full rounded-lg" />
+        <div className="bg-blue-500/70 absolute top-15 right-5 w-85 h-full rounded-lg" />
 
-        <div className="relative left-5 z-10 bg-white rounded-2xl shadow-xl p-4 w-85">
+        <div className="relative top-5 left-5 z-10 bg-white rounded-2xl shadow-xl p-4 w-85">
           {features.map((feature, idx) => (
             <div key={idx} className="flex gap-4 py-4 border-b last:border-b-0">
               <div className="flex-shrink-0">{feature.icon}</div>
