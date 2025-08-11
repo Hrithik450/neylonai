@@ -7,6 +7,7 @@ import demoVideo from "../../../videos/demo.mp4";
 import { sfProMedium, sfProRegular } from "@/assets/fonts";
 import NextVideo from "next-video";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 const socialLinks = [
   { label: "Youtube", url: "", icon: Youtube },
@@ -104,10 +105,12 @@ export function Hero() {
         <div className="col-span-3 col-start-6 absolute bottom-0 mx-2 overflow-hidden">
           <div className="relative h-full flex-center">
             <div className="relative w-full h-full z-20">
-              <img
+              <Image
                 className="bg-transparent w-full object-cover"
                 src="/images/Iphone-frame.png"
                 alt="frame"
+                width={264}
+                height={419}
               />
             </div>
 
@@ -129,10 +132,12 @@ export function Hero() {
         <div className="col-span-4 col-start-9 absolute bottom-0 mx-3 xl:mx-6 overflow-hidden">
           <div className="relative w-full h-full flex-center">
             <div className="relative w-full h-full z-20">
-              <img
+              <Image
                 className="bg-transparent w-full object-cover"
                 src="/images/Iphone-frame.png"
                 alt="frame"
+                width={325}
+                height={516}
               />
             </div>
 

@@ -23,8 +23,8 @@ export function AvatarGroup({ avatars }: AvatarGroupProps) {
             src={avatar}
             alt={`Avatar ${index + 1}`}
             className="w-12 h-12 object-cover"
-            width={50}
-            height={50}
+            width={48}
+            height={48}
           />
         </div>
       ))}

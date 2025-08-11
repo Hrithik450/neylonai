@@ -18,7 +18,7 @@ export function Navbar() {
             src="/images/ai-solutionz.png"
             alt="ai-solutionz"
             width={250}
-            height={10}
+            height={24}
           />
         </div>
 

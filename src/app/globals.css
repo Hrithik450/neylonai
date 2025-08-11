@@ -147,6 +147,8 @@ body {
 @utility hero-gradient {
   /* background: linear-gradient(135deg, #f0fdfa, #ccfbf1, #99f6e4); */
   /* background: linear-gradient(135deg, #f0f2f5, #d9e2ec, #bcccdc); */
-  background: linear-gradient(135deg, #faf5ff, #ede9fe, #ddd6fe);
+  /* background: linear-gradient(135deg, #faf5ff, #ede9fe, #ddd6fe); */
   /* background: linear-gradient(135deg, #f7fbff, #e3f2fd, #bbdefb); */
+  background: linear-gradient(135deg, #fff7f0, #ffe8d9, #ffd7ba);
+  /* background: linear-gradient(135deg, #fff5f0, #ffe4e0, #ffc9b9); */
 }
