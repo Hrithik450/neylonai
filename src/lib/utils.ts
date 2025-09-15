@@ -13,7 +13,7 @@ export function loadVideoElement(
     video.src = src;
     video.preload = "metadata";
 
-    video.onloadedmetadata = (e: Event) => {
+    video.onloadedmetadata = () => {
       resolve({
         width: video.videoWidth,
         height: video.videoHeight,

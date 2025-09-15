@@ -5,10 +5,7 @@ import { Faq } from "@/components/landing-page/faq-section";
 import { FeatureSection } from "@/components/landing-page/features";
 import { Footer } from "@/components/landing-page/footer-section";
 import { Hero2 } from "@/components/landing-page/hero-2-section";
-import { Hero } from "@/components/landing-page/hero-section";
 import { Testimonials } from "@/components/landing-page/testimonial";
-import { WhyChooseUs } from "@/components/landing-page/why-choose-section";
-import { Navbar } from "@/components/navbar";
 
 export default function App() {
   return (

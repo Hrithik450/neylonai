@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { cn } from "@/lib/utils";
-import { guminertBold, guminertMedium, guminertRegular } from "@/assets/fonts";
+import { guminertMedium, guminertRegular } from "@/assets/fonts";
 import HeroImage from "/public/images/hero_background_3.jpg";
 import { ArrowDownRight, BadgeCheck, Play } from "lucide-react";
 

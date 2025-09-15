@@ -113,7 +113,7 @@ export function Hero() {
         <div className="col-span-3 col-start-6 absolute bottom-0 mx-2 overflow-hidden">
           <div className="relative h-full flex-center">
             <div className="relative w-full h-full z-20">
-              <img
+              <Image
                 className="bg-transparent w-full h-full object-cover"
                 src="/images/Iphone-frame.png"
                 alt="frame"
@@ -138,7 +138,7 @@ export function Hero() {
         <div className="col-span-4 col-start-9 absolute bottom-0 mx-3 xl:mx-6 overflow-hidden">
           <div className="relative w-full h-full flex-center">
             <div className="relative w-full h-full z-20">
-              <img
+              <Image
                 className="bg-transparent w-full h-full object-cover"
                 src="/images/Iphone-frame.png"
                 alt="frame"

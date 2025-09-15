@@ -1,6 +1,4 @@
-import { NavItems, policies } from "@/lib/constants";
 import { guminertBold, guminertRegular } from "@/assets/fonts";
-import { Mail, Phone } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 
@@ -25,10 +23,10 @@ export function Footer() {
             </div>
 
             <p className="text-white text-xs md:text-md lg:text-lg leading-relaxed">
-              Shape your project's vision with expert guidance. MACH Consultants
-              helps reveal hidden resources and grow your enterprise's
-              potential. Leave your contact info, and we'll connect within 24
-              hours.
+              Shape your project&apos;s vision with expert guidance. MACH
+              Consultants helps reveal hidden resources and grow your
+              enterprise&apos;s potential. Leave your contact info, and
+              we&apos;ll connect within 24 hours.
             </p>
           </div>
 

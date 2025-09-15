@@ -1,6 +1,6 @@
 import TestimonialGrid from "/public/images/testimonial_grid.jpg";
 import { ArrowRightIcon, BadgeCheck, Star } from "lucide-react";
-import { guminertMedium, guminertRegular, sfProRegular } from "@/assets/fonts";
+import { guminertMedium, guminertRegular } from "@/assets/fonts";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 
@@ -22,9 +22,9 @@ export function TestimonialCard() {
       </div>
 
       <p className="text-gray-700 text-sm sm:text-lg 2xl:text-xl mb-6">
-        "Personalized service, highly professional and trustworthy team, makes
-        banking a pleasure. Professional and trustworthy team, makes banking a
-        pleasure."
+        &quot;Personalized service, highly professional and trustworthy team,
+        makes banking a pleasure. Professional and trustworthy team, makes
+        banking a pleasure.&quot;
       </p>
 
       <div className="flex items-center gap-4">
@@ -79,7 +79,7 @@ export function Testimonials() {
               guminertMedium.className
             )}
           >
-            What Our Client Say's About Us
+            What Our Client Say&apos;s About Us
           </h1>
 
           <p className="relative text-left text-gray-600 text-md sm:text-xl my-4 sm:my-6">
