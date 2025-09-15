@@ -37,18 +37,6 @@ const chartData = [
     AI: 35,
     note: "Equivalent to 20.62 human workdays (8 hrs/day)", // Saved 130 hrs
   },
-  {
-    category: "Meeting Transcription Assistant",
-    manual: 190,
-    AI: 50, // Saved 140 hrs
-    note: "Equivalent to 23.7 human workdays (8 hrs/day)",
-  },
-  {
-    category: "Code Review Assistant",
-    manual: 180,
-    AI: 20, // Saved 460 hrs
-    note: "Equivalent to 22.5 human workdays (8 hrs/day)",
-  },
 ];
 
 const chartConfig = {
@@ -92,11 +80,11 @@ export function ChartBarMultiple({ className }: { className: string }) {
         </ChartContainer>
       </CardContent>
       <CardFooter className="flex-col items-start gap-2 text-md">
-        <div className="flex gap-2 leading-none font-medium">
+        <div className="flex gap-2 leading-snug font-medium">
           1250+ Hours Saved → Equal to 156 full workdays (8 hrs/day) of manual
           effort every month.
         </div>
-        <div className="text-muted-foreground leading-none text-md">
+        <div className="text-muted-foreground leading-snug text-md">
           $65,000 Monthly Savings → Equal to ~4 full-time salaries saved.
         </div>
       </CardFooter>

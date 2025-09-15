@@ -1,10 +1,11 @@
 import React from "react";
 import Link from "next/link";
 import { Youtube, Linkedin, Instagram, Twitter, Mail } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import HeroBackgrpund from "/public/images/hero_background.jpg";
 import { AvatarGroup } from "@/components/avatar-group";
 import demoVideo from "../../../videos/demo.mp4";
-import { sfProMedium, sfProRegular } from "@/assets/fonts";
+import { Badge } from "@/components/ui/badge";
+import { sfProRegular } from "@/assets/fonts";
 import NextVideo from "next-video";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
@@ -28,10 +29,8 @@ export function Hero() {
       <div className="absolute inset-0">
         <Image
           className="w-full h-full"
-          src="/images/hero_background.jpg"
           alt="background-image"
-          width={1000}
-          height={1000}
+          src={HeroBackgrpund}
         />
       </div>
 
@@ -39,7 +38,7 @@ export function Hero() {
         <p
           className={cn(
             "col-start-1 col-span-7 row-start-1 text-4xl md:text-5xl lg:text-7xl xl:text-[6.25rem] leading-26",
-            sfProMedium.className
+            sfProRegular.className
           )}
         >
           Transform with
@@ -55,7 +54,7 @@ export function Hero() {
         <p
           className={cn(
             "col-span-6 col-start-1 row-start-2 text-4xl md:text-5xl lg:text-7xl xl:text-[6.25rem] leading-26",
-            sfProMedium.className
+            sfProRegular.className
           )}
         >
           AI-Solutionz
@@ -71,7 +70,7 @@ export function Hero() {
         <p
           className={cn(
             "col-start-1 text-4xl md:text-5xl lg:text-7xl xl:text-[6.25rem] leading-26",
-            sfProMedium.className
+            sfProRegular.className
           )}
         >
           Assistants
@@ -84,7 +83,6 @@ export function Hero() {
               "https://randomuser.me/api/portraits/men/45.jpg",
               "https://randomuser.me/api/portraits/men/32.jpg",
               "https://randomuser.me/api/portraits/men/32.jpg",
-              "https://randomuser.me/api/portraits/men/45.jpg",
             ]}
           />
           <p className="text-gray-500 text-xl pt-3.5">

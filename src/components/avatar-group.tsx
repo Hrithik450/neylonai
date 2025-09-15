@@ -1,36 +1,42 @@
 import { sfProRegular } from "@/assets/fonts";
-import { cn } from "@/lib/utils";
 import { Plus } from "lucide-react";
+import { cn } from "@/lib/utils";
 import Image from "next/image";
 import React from "react";
 
 type AvatarGroupProps = {
-  avatars: string[]; // URLs of avatar images
+  avatars: string[];
   count?: string;
 };
 
 export function AvatarGroup({ avatars }: AvatarGroupProps) {
   return (
-    <div className={cn("flex items-center space-x-2", sfProRegular.className)}>
+    <div
+      className={cn(
+        "relative flex items-center space-x-2",
+        sfProRegular.className
+      )}
+    >
       {avatars.map((avatar, index) => (
         <div
           key={index}
-          className={`w-12 h-12 rounded-full overflow-hidden border-2 border-white ${
-            index > 0 ? "-ml-4" : ""
+          className={`w-15 h-15 rounded-full overflow-hidden border-4 border-white hover:-translate-y-1 transition-all duration-300 ease-in-out ${
+            index > 0 ? "-ml-6" : ""
           }`}
+          style={{ zIndex: avatars.length - index }}
         >
           <Image
             src={avatar}
             alt={`Avatar ${index + 1}`}
-            className="w-12 h-12 object-cover"
+            className="w-15 h-15 object-cover"
             width={48}
             height={48}
           />
         </div>
       ))}
 
-      <div className="cursor-pointer w-12 h-12 rounded-full bg-black text-white flex items-center justify-center text-lg font-bold -ml-3">
-        <Plus />
+      <div className="-ml-6 cursor-pointer w-15 h-15 rounded-full bg-[#0d3129] text-white flex items-center justify-center text-lg font-bold hover:-translate-y-1 transition-all duration-300 ease-in-out border-4 border-white">
+        <Plus className="w-4 h-4" />8
       </div>
     </div>
   );

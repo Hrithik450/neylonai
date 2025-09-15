@@ -165,3 +165,37 @@ body {
 @utility card-4 {
   background: linear-gradient(135deg, #f0f2f5, #d9e2ec, #bcccdc);
 }
+
+@keyframes scrollY {
+  0% {
+    transform: translateY(0%);
+  }
+  100% {
+    transform: translateY(-50%);
+  }
+}
+
+.animate-y-scroll {
+  animation: scrollY 15s linear infinite;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.fade-in {
+  display: inline-block;
+  opacity: 0;
+  animation: fade 0.3s forwards;
+}
+
+@keyframes fade {
+  to {
+    opacity: 1;
+  }
+}
