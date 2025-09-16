@@ -37,7 +37,7 @@ export function Hero2() {
         <h1
           className={cn(
             guminertMedium.className,
-            "relative text-3xl md:text-5xl lg:text-6xl xl:text-7xl max-w-5xl 2xl:max-w-[90rem] text-left md:text-center mx-auto my-4 leading-tight md:leading-16 lg:leading-18 xl:leading-20"
+            "relative text-4xl md:text-5xl lg:text-6xl xl:text-7xl max-w-5xl 2xl:max-w-[90rem] text-left md:text-center mx-auto my-4 leading-tight md:leading-16 lg:leading-18 xl:leading-20"
           )}
         >
           AI Solutionz, Engineered for Unmatched{" "}
@@ -69,7 +69,7 @@ export function Hero2() {
           </button>
         </div>
 
-        <div className="relative max-w-[90rem] mx-auto mt-10 max-md:my-45">
+        <div className="relative max-w-[90rem] mx-auto mt-10 max-md:mt-45 max-md:mb-35">
           <div className="relative max-w-xs md:max-w-md mx-auto h-full flex-center">
             <div className="relative w-full h-full z-20">
               <Image
@@ -115,7 +115,7 @@ export function Hero2() {
             </div>
           </div>
 
-          <div className="absolute -top-40 md:top-10 lg:top-15 -right-3.5 lg:-right-0 2xl:right-30 z-50">
+          <div className="absolute -top-40 md:top-10 lg:top-15 -right-2.5 lg:-right-0 2xl:right-30 z-50">
             <div className="relative border border-gray-400 rounded-3xl overflow-hidden h-60 md:h-65 max-w-sm md:max-w-lg w-[15rem] md:w-[20rem] xl:w-md shadow-md hover:rotate-2 transition-all duration-150 ease-in-out">
               <Card className="absolute inset-0 w-full h-full gap-0 md:space-y-1 bg-[linear-gradient(to_bottom,rgb(250,244,215)_0%,rgb(255,255,255)_100%)]">
                 <CardHeader className="items-center px-3">
