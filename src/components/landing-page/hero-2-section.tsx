@@ -5,6 +5,7 @@ import { guminertMedium, guminertRegular } from "@/assets/fonts";
 import HeroImage from "/public/images/hero_background_3.jpg";
 import { ArrowDownRight, BadgeCheck, Cpu, Play } from "lucide-react";
 import { ChartRadarLegend } from "@/components/ui/charts/radar-chart";
+import WorkflowImage from "/public/images/workflow.webp";
 
 export function Hero2() {
   return (
@@ -53,15 +54,15 @@ export function Hero2() {
           </button>
         </div>
 
-        <div className="my-8 relative grid grid-cols-1 md:grid-cols-3 items-end gap-4 xl:gap-8">
-          <div className="relative flex flex-col md:flex-row items-start md:items-center p-4 md:p-3 border border-gray-400 rounded-3xl h-auto md:h-65 w-full shadow-md hover:rotate-2 transition-all duration-150 ease-in-out bg-[linear-gradient(to_bottom,rgb(230,250,217)_0%,rgb(255,255,255)_100%)]">
+        <div className="my-8 relative grid grid-cols-1 md:grid-cols-4 xl:grid-cols-3 items-end gap-4 xl:gap-8">
+          <div className="md:col-span-2 xl:col-span-1 relative flex flex-col md:flex-row items-start md:items-center p-4 md:p-3 border border-gray-400 rounded-3xl h-auto md:h-75 xl:h-65 w-full shadow-md hover:rotate-2 transition-all duration-150 ease-in-out bg-[linear-gradient(to_bottom,rgb(230,250,217)_0%,rgb(255,255,255)_100%)]">
             <div className="md:px-2 py-4 bg-transparent rounded-xl flex-1 flex flex-col h-full gap-2 justify-center items-start md:items-center group">
               <Cpu className="w-15 h-15 group-hover:scale-110 group-hover:rotate-5 transition-all duration-150 ease-in-out" />
               <h1 className="text-4xl font-semibold">99.9%</h1>
-              <p className="text-md">Accuracy & Reliability</p>
+              <p className="text-md text-center">Accuracy & Reliability</p>
             </div>
 
-            <div className="max-md:flex md:hidden xl:flex flex-1 flex-col gap-2 justify-around items-start">
+            <div className="flex-1 flex flex-col gap-2 justify-around items-start">
               <h3 className="text-xl max-w-[270px] font-semibold">
                 Delivering Unmatched AI Solutions for Businesses.
               </h3>
@@ -73,7 +74,7 @@ export function Hero2() {
             </div>
           </div>
 
-          <div className="relative border border-gray-400 md:col-span-2 lg:col-span-1 rounded-3xl overflow-hidden h-75 w-full shadow-md hover:rotate-2 transition-all duration-150 ease-in-out">
+          <div className="md:col-span-2 xl:col-span-1 relative border border-gray-400 rounded-3xl overflow-hidden h-75 w-full shadow-md hover:rotate-2 transition-all duration-150 ease-in-out">
             <Card className="absolute inset-0 w-full h-full gap-0 space-y-1 bg-[linear-gradient(to_bottom,rgb(250,244,215)_0%,rgb(255,255,255)_100%)]">
               <CardHeader className="items-center px-3">
                 <CardTitle className="absolute top-3 left-1/2 -translate-x-1/2 w-full text-center z-10 text-lg xl:text-xl mb-2 text-black/80 font-bold">
@@ -85,14 +86,14 @@ export function Hero2() {
             </Card>
           </div>
 
-          <div className="relative md:col-span-2 lg:col-span-1 overflow-hidden border border-gray-400 rounded-3xl h-auto md:h-65 w-full shadow-md hover:rotate-2 transition-all duration-150 ease-in-out">
+          <div className="relative md:col-span-4 xl:col-span-1 overflow-hidden border border-gray-400 rounded-3xl h-auto md:h-75 xl:h-65 w-full shadow-md hover:rotate-2 transition-all duration-150 ease-in-out">
             <div className="absolute top-2 md:top-4 left-4 z-10 text-lg md:text-xl text-black/80 font-bold">
               Agent Workflow
             </div>
 
-            <img
+            <Image
               className="w-full h-full object-fit"
-              src="/images/workflow.webp"
+              src={WorkflowImage}
               alt="workflow-img"
             />
           </div>
