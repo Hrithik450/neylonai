@@ -107,7 +107,7 @@ export function SupportWidget() {
     <div
       className={cn(
         guminertRegular.className,
-        "fixed max-md:inset-0",
+        "fixed max-md:inset-0 max-md:bottom-0 overflow-y-auto",
         "md:bottom-20 md:right-5",
         "2xl:right-[max(1.2rem,calc((100vw-120rem)/2+2rem))]",
         "w-full md:min-w-sm max-w-sm",
