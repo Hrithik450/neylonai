@@ -18,6 +18,11 @@ export const policies: Policy[] = [
 
 export const faqs = [
   {
+    question: "How quickly can I get started?",
+    answer:
+      "So depending on your requirements, you can start seeing results within days. To begin right away, just tell our assistant — 'Book my appointment' — and it will schedule everything for you instantly.",
+  },
+  {
     question: "What services does AI Solutionz provide?",
     answer:
       "We specialize in building scalable AI solutions, from chatbots and multi-agent systems to workflow automation and data-driven insights.",
@@ -41,10 +46,5 @@ export const faqs = [
     question: "Is my data safe with AI Solutionz?",
     answer:
       "Absolutely. We follow enterprise-grade security practices, encryption, and compliance standards to ensure your data remains secure and private.",
-  },
-  {
-    question: "How quickly can I get started?",
-    answer:
-      "So depending on your requirements, you can start seeing results within days. To begin right away, just tell our assistant — 'Book my appointment' — and it will schedule everything for you instantly.",
   },
 ];

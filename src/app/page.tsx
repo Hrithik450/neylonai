@@ -9,11 +9,10 @@ import { Testimonials } from "@/components/landing-page/testimonial";
 
 export default function App() {
   return (
-    <main className="max-w-[120rem] mx-auto">
-      {/* <Navbar />
-      <Hero />
-      <WhyChooseUs /> */}
-      <AIChat />
+    <main className="relative max-w-[120rem] mx-auto">
+      {/* <Navbar /> */}
+      {/* <Hero /> */}
+      {/* <WhyChooseUs /> */}
       <Hero2 />
       <FeatureSection />
       <Faq />
@@ -23,6 +22,9 @@ export default function App() {
       <Footer />
       {/* <Customize /> */}
       {/* <Products /> */}
+
+      {/* Support widget */}
+      <AIChat />
     </main>
   );
 }
