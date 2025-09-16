@@ -36,7 +36,7 @@ export function Home({}) {
   );
 
   React.useEffect(() => {
-    if (isOpen) startAnimation();
+    startAnimation();
   }, [isOpen, startAnimation]);
 
   return (
@@ -65,7 +65,7 @@ export function Home({}) {
 
         {/* Introduction texts */}
         <div className={cn("mt-8 px-1 text-[#0E3228]", guminertBold.className)}>
-          <h2 className="text-2xl font-bold mb-0.5">
+          <h2 className="text-2xl font-bold mb-1">
             <span className="fade-in">{introText}</span>
           </h2>
           <p className="text-lg font-normal fade-in h-6 text-black/70">

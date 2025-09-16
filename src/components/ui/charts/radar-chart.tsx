@@ -73,7 +73,7 @@ const chartConfig = {
 
 export function ChartRadarLegend() {
   return (
-    <CardContent className="w-full h-full pb-2">
+    <CardContent className="w-full h-full pb-0 md:pb-2">
       <ChartContainer
         config={chartConfig}
         className="mx-auto aspect-square w-full h-full"
