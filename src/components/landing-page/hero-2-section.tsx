@@ -71,6 +71,7 @@ export function Hero2() {
 
         <div className="relative max-w-[90rem] mx-auto mt-10 max-md:mt-45 max-md:mb-35">
           <div className="relative max-w-xs md:max-w-md mx-auto h-full flex-center">
+            {/* Iphone Frame */}
             <div className="relative w-full h-full z-20">
               <Image
                 className="bg-transparent w-full h-full object-cover"
@@ -79,8 +80,9 @@ export function Hero2() {
               />
             </div>
 
+            {/* Frame Content */}
             <div className="absolute w-full h-full z-10">
-              <div className="px-3 md:px-6 pt-12 md:pt-16 bg-[linear-gradient(to_bottom,rgb(230,250,217)_0%,rgb(255,255,255)_100%)] pointer-events-none w-[95%] aspect-[789/1650] mx-auto object-cover rounded-[2.25rem] lg:rounded-[3rem] xl:rounded-[3.70rem] 2xl:rounded-[4.5rem] overflow-hidden">
+              <div className="px-3 md:px-6 pt-12 md:pt-16 bg-[linear-gradient(to_bottom,rgb(230,250,217)_0%,rgb(255,255,255)_100%)] pointer-events-none w-[95%] aspect-[789/1650] mx-auto object-cover rounded-[2.75rem] lg:rounded-[3rem] xl:rounded-[3.70rem] 2xl:rounded-[4.5rem] overflow-hidden">
                 {/* <NextVideo
                   className="h-full w-full object-cover"
                   preload="none"
@@ -94,6 +96,7 @@ export function Hero2() {
             </div>
           </div>
 
+          {/* Supporting Card-1 */}
           <div className="absolute -bottom-30 md:bottom-100 lg:bottom-90 -left-2.5 lg:-left-4 2xl:left-15 z-50">
             <div className="relative flex flex-col lg:flex-row items-start lg:items-center gap-0 lg:gap-4 p-4 lg:p-3 border border-gray-400 rounded-3xl h-auto md:h-65 max-w-[15rem] md:max-w-lg w-full shadow-md hover:rotate-2 transition-all duration-150 ease-in-out bg-[linear-gradient(to_bottom,rgb(240,237,255)_0%,rgb(255,255,255)_100%)]">
               <div className="md:px-2 py-4 bg-transparent rounded-xl flex flex-col h-full gap-2 justify-center items-start lg:items-center group">
@@ -115,6 +118,7 @@ export function Hero2() {
             </div>
           </div>
 
+          {/* Supporting Card-2 */}
           <div className="absolute -top-40 md:top-10 lg:top-15 -right-2.5 lg:-right-0 2xl:right-30 z-50">
             <div className="relative border border-gray-400 rounded-3xl overflow-hidden h-60 md:h-65 max-w-sm md:max-w-lg w-[15rem] md:w-[20rem] xl:w-md shadow-md hover:rotate-2 transition-all duration-150 ease-in-out">
               <Card className="absolute inset-0 w-full h-full gap-0 md:space-y-1 bg-[linear-gradient(to_bottom,rgb(250,244,215)_0%,rgb(255,255,255)_100%)]">

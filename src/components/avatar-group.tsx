@@ -1,5 +1,4 @@
 import { sfProRegular } from "@/assets/fonts";
-import { Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import React from "react";
@@ -20,7 +19,7 @@ export function AvatarGroup({ avatars }: AvatarGroupProps) {
       {avatars.map((avatar, index) => (
         <div
           key={index}
-          className={`w-15 h-15 rounded-full overflow-hidden border-4 border-white hover:-translate-y-1 transition-all duration-300 ease-in-out ${
+          className={`w-15 h-15 rounded-full overflow-hidden bg-white border border-black/60 hover:-translate-y-1 transition-all duration-300 ease-in-out ${
             index > 0 ? "-ml-6" : ""
           }`}
           style={{ zIndex: avatars.length - index }}
@@ -35,9 +34,9 @@ export function AvatarGroup({ avatars }: AvatarGroupProps) {
         </div>
       ))}
 
-      <div className="-ml-6 cursor-pointer w-15 h-15 rounded-full bg-[#0d3129] text-white flex items-center justify-center text-lg font-bold hover:-translate-y-1 transition-all duration-300 ease-in-out border-4 border-white">
+      {/* <div className="-ml-6 cursor-pointer w-16 h-16 rounded-full bg-[#0d3129] text-white flex items-center justify-center text-lg font-bold hover:-translate-y-1 transition-all duration-300 ease-in-out border-4 border-white">
         <Plus className="w-4 h-4" />8
-      </div>
+      </div> */}
     </div>
   );
 }
