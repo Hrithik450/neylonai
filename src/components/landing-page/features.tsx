@@ -1,5 +1,12 @@
-import { ArrowRightIcon, ArrowUpFromDot, ShieldCheck } from "lucide-react";
 import { guminertMedium, guminertRegular, sfProRegular } from "@/assets/fonts";
+import {
+  ArrowRightIcon,
+  ArrowUpFromDot,
+  Clock,
+  Server,
+  ShieldCheck,
+  Zap,
+} from "lucide-react";
 import FeatureGrid from "/public/images/feature_grid.jpg";
 import { AvatarGroup } from "../avatar-group";
 import { cn } from "@/lib/utils";
@@ -60,7 +67,6 @@ export function FeatureSection() {
             faster insights v/s manual workflows.
           </span>
         </div>
-
         <div className="row-span-1 col-span-1 sm:col-span-3 lg:col-span-2 relative flex flex-col h-full rounded-xl overflow-hidden shadow-md px-4 py-6 hover:rotate-2 transition-all duration-150 ease-in-out">
           <div className="absolute inset-0">
             <Image
@@ -89,8 +95,7 @@ export function FeatureSection() {
             <div className="h-50 flex-1 rounded-t-md lg:rounded-t-2xl bg-[linear-gradient(to_bottom,rgba(41,82,52,0.9)_0%,white_100%)]" />
           </div>
         </div>
-
-        <div className="col-span-1 relative bg-[#0d3129] flex flex-col h-full gap-4 sm:gap-6 p-2 rounded-xl overflow-hidden shadow-md px-4 2xl:px-6 py-6 hover:rotate-2 transition-all duration-150 ease-in-out">
+        {/* <div className="col-span-1 relative bg-[#0d3129] flex flex-col h-full gap-4 sm:gap-6 p-2 rounded-xl overflow-hidden shadow-md px-4 2xl:px-6 py-6 hover:rotate-2 transition-all duration-150 ease-in-out">
           <h1 className="text-4xl xl:text-5xl font-semibold text-white">
             24x7
           </h1>
@@ -98,31 +103,95 @@ export function FeatureSection() {
             AI agents running nonstop for your ops
           </span>
 
-          <h3 className="mt-auto text-2xl 2xl:text-3xl text-white max-w-xs leading-tight">
+          <h3 className="mt-auto text-xl lg:text-2xl max-w-[250px] text-white leading-tight font-semibold">
             Always-On Reliability
           </h3>
+        </div> */}
+
+        <div className="col-span-1 relative bg-gradient-to-b from-[#0d3129] to-[#134239] flex flex-col h-full gap-4 sm:gap-6 p-2 rounded-xl overflow-hidden shadow-lg px-4 2xl:px-6 py-6 hover:rotate-2 transition-all duration-300 ease-in-out">
+          {/* Main Stats */}
+          <h1 className="text-4xl xl:text-5xl font-semibold text-white">
+            24x7
+          </h1>
+          <span className="text-md lg:text-lg max-w-[200px] text-gray-300">
+            AI agents running nonstop for your ops
+          </span>
+
+          {/* Bottom Badge Indicators */}
+          <div className="flex gap-2 mt-auto">
+            <span className="flex items-center gap-1 bg-white/10 px-3 py-1 rounded-full text-sm text-green-300 hover:bg-white/20 transition-colors duration-200">
+              <Clock className="w-3 h-3 pr-1 animate-ping text-green-400" />
+              24/7
+            </span>
+            <span className="flex items-center gap-1 bg-white/10 px-3 py-1 rounded-full text-sm text-yellow-300 hover:bg-white/20 transition-colors duration-200">
+              <Zap className="w-3 h-3 pr-1 animate-bounce text-yellow-400" />
+              Fast
+            </span>
+            <span className="flex items-center gap-1 bg-white/10 px-3 py-1 rounded-full text-sm text-blue-300 hover:bg-white/20 transition-colors duration-200">
+              <Server className="w-3 h-3 pr-1 animate-pulse text-blue-400" />
+              Reliable
+            </span>
+          </div>
         </div>
 
-        <div className="col-span-1 sm:col-start-1 lg:col-start-2 flex flex-col h-full bg-[#0d3129] text-white rounded-xl overflow-hidden shadow-md px-4 py-6 hover:rotate-2 transition-all duration-150 ease-in-out">
-          <div className="flex items-center gap-4 mb-5 lg:mb-0">
-            <div className="flex flex-col justify-center items-start gap-1 bg-white h-15 w-16 rounded-xl text-black overflow-hidden p-0.5">
-              <Image
-                src="/images/ai-solutionz-logo.jpg"
-                alt="ai-solutionz"
-                className="w-full h-full object-cover rounded-full"
-                width={48}
-                height={48}
-              />
-            </div>
+        <div className="col-span-1 sm:col-start-1 lg:col-start-2 flex flex-col h-full bg-gradient-to-b from-[#0d3129] to-[#134239] text-white rounded-xl overflow-hidden shadow-lg px-4 py-6 hover:rotate-2 transition-all duration-300 ease-in-out">
+          {/* Logo */}
+          <div className="flex flex-col justify-center items-start gap-1 bg-white h-16 w-16 rounded-xl text-black overflow-hidden p-0.5 shadow-inner">
+            <Image
+              src="/images/ai-solutionz-logo.jpg"
+              alt="ai-solutionz"
+              className="w-full h-full object-cover rounded-full"
+              width={48}
+              height={48}
+            />
           </div>
 
-          <p className="mt-auto text-xl lg:text-2xl max-w-[250px]">
+          {/* Content */}
+          <p className="mt-2 text-xl lg:text-2xl max-w-[250px] font-semibold">
             Instant Lead Intelligence
           </p>
+
+          {/* Description */}
           <span className="text-sm 2xl:text-md text-gray-300 max-w-[270px] mt-2 lg:mt-1">
             AI agents surface the hottest prospects from emails, chats, and
             CRMs—no manual search.
           </span>
+
+          {/* Bottom animated info or badges */}
+          <div className="flex gap-3 mt-4">
+            <span className="flex items-center gap-1 bg-white/10 px-2 py-1 rounded-full text-xs text-green-300 hover:bg-white/20 transition-colors duration-200">
+              <svg
+                className="w-3 h-3 animate-ping text-green-400"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <circle cx="10" cy="10" r="5" />
+              </svg>
+              Real-time
+            </span>
+
+            <span className="flex items-center gap-1 bg-white/10 px-2 py-1 rounded-full text-xs text-yellow-300 hover:bg-white/20 transition-colors duration-200">
+              <svg
+                className="w-3 h-3 animate-bounce text-yellow-400"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <circle cx="10" cy="10" r="5" />
+              </svg>
+              Automated
+            </span>
+
+            <span className="flex items-center gap-1 bg-white/10 px-2 py-1 rounded-full text-xs text-blue-300 hover:bg-white/20 transition-colors duration-200">
+              <svg
+                className="w-3 h-3 animate-pulse text-blue-400"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <circle cx="10" cy="10" r="5" />
+              </svg>
+              Accurate
+            </span>
+          </div>
         </div>
 
         <div className="relative bg-[#f2f2f2] col-span-1 sm:col-span-3 lg:col-span-2 sm:col-start-2 lg:col-start-3 flex flex-col md:flex-row items-start md:items-center gap-6 p-3 rounded-xl overflow-hidden shadow-md px-4 py-6 hover:rotate-2 transition-all duration-150 ease-in-out">
