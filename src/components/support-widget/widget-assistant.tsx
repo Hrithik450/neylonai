@@ -4,9 +4,12 @@ import React from "react";
 import { WidgetHeader } from "@/components/support-widget/widget-header";
 import { ChevronRight, HelpCircle } from "lucide-react";
 import Image from "next/image";
-import { cn } from "@/lib/utils";
+import { cn, shortTimeAgo } from "@/lib/utils";
 import { guminertRegular } from "@/assets/fonts";
 import { useThreadStore } from "@/store/store";
+import Link from "next/link";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ThreadsResponse } from "@/actions/threads/threads.types";
 
 /**
  * Props for the AskQuestionButton component.
@@ -22,7 +25,7 @@ interface MessagePreviewProps {
   sender_name: string;
   thread_title: string;
   timestamp: string;
-  action?: () => void;
+  action: string;
 }
 
 /**
@@ -51,8 +54,8 @@ export const MessagePreview: React.FC<MessagePreviewProps> = ({
   action,
 }): React.JSX.Element => {
   return (
-    <div
-      onClick={action}
+    <Link
+      href={`/c/${action}`}
       className="group flex items-center p-3 max-w-sm mx-autoshadow-sm space-x-3 cursor-pointer hover:bg-violet-100/30 transition-colors border-b-2 border-black/10"
     >
       {/* Avatar */}
@@ -84,7 +87,7 @@ export const MessagePreview: React.FC<MessagePreviewProps> = ({
 
       {/* Arrow Icon */}
       <ChevronRight className="w-5 h-5 group-hover:-rotate-90 transition-transform duration-300 ease-in-out mr-2" />
-    </div>
+    </Link>
   );
 };
 
@@ -132,28 +135,80 @@ export const AskQuestionButton: React.FC<AskQuestionButtonProps> = ({
  * @returns {JSX.Element} The WidgetAssistant component.
  */
 export function WidgetAssistant(): React.JSX.Element {
+  const [loading, setLoading] = React.useState<boolean>(false);
   const { threads, setThreads } = useThreadStore();
+  const userId = "";
+
+  React.useEffect(() => {
+    const fetchThreads = async () => {
+      try {
+        setLoading(true);
+        const res = await fetch(`/threads?userId=${userId}`);
+        const data: ThreadsResponse = await res.json();
+
+        if (!data.success) {
+          setLoading(false);
+          console.error("Error fetching threads:", data.error);
+          return;
+        }
+
+        if (data.data) setThreads(data.data);
+      } catch (error) {
+        setLoading(false);
+        console.error("Fetch error:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (userId) fetchThreads();
+  }, [userId, setThreads]);
 
   return (
-    <section className="relative max-h-[100%] overflow-y-auto scrollbar-hide">
+    <section className="relative h-full">
       {/* Sticky header at the top */}
       <WidgetHeader className="sticky top-0" header="Messages" />
 
       {/* Scrollable message previews */}
-      <div className="flex flex-col">
-        {[...Array(12)].map((_, idx) => (
-          <MessagePreview
-            key={idx}
-            sender_name="Larry"
-            thread_title="Hello! I'm Larry from Fat Llama. How can I ..."
-            timestamp="4w ago"
-            action={() => {}}
-          />
-        ))}
+      <div className="flex flex-col max-h-[calc(100%-72px)] h-full overflow-y-auto scrollbar-hide">
+        {loading && (
+          <div className="flex flex-col space-y-2">
+            {[...Array(12)].map((_, i) => (
+              <Skeleton
+                key={i}
+                className="group flex items-center p-3 max-w-sm mx-auto shadow-sm space-x-3 cursor-pointer hover:bg-violet-100/30 transition-colors border-b-2 border-black/10"
+              >
+                <div className="flex-shrink-0 h-12 w-12 rounded-full bg-gray-200 animate-pulse" />
+                <div className="flex-1 min-w-0 space-y-2">
+                  <div className="h-4 bg-gray-200 rounded w-3/4 animate-pulse" />
+                  <div className="h-3 bg-gray-200 rounded w-1/2 animate-pulse" />
+                </div>
+              </Skeleton>
+            ))}
+          </div>
+        )}
+
+        {!loading && threads && threads.length > 0 ? (
+          threads.map((thread) => (
+            <MessagePreview
+              key={thread.id}
+              action={thread.id}
+              sender_name="Assistant"
+              thread_title={thread.title}
+              timestamp={shortTimeAgo(thread.createdAt)}
+            />
+          ))
+        ) : (
+          <div className="flex justify-center items-start h-full px-6 py-3">
+            <p className="text-gray-500 text-md">
+              No threads available. Please create one by asking a question.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Sticky bottom ask question button */}
-      <div className="sticky bottom-4 flex justify-center z-20">
+      <div className="absolute bottom-2 w-full flex justify-center z-20">
         <AskQuestionButton className="w-[max-content]" />
       </div>
     </section>

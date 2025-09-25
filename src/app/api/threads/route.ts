@@ -30,10 +30,7 @@ export async function GET(request: Request) {
 
     if (userId) {
       const response = await ThreadsService.listThreadsByUserId(userId);
-      if (!response.success) {
-        return NextResponse.json({ error: response.error }, { status: 404 });
-      }
-      return NextResponse.json(response.data);
+      return NextResponse.json(response);
     }
   } catch (error) {
     return NextResponse.json(
