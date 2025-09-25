@@ -14,9 +14,9 @@ import { faqs } from "@/lib/constants";
 import { guminertBold } from "@/assets/fonts";
 import CTAImage from "/public/images/ai-solutionz-logo.jpg";
 import { useSupportWidgetToggleStore } from "@/store/store";
-import { useTypingAnimation } from "@/components/support-widget";
+import { useTypingAnimation } from "@/components/support-widget/support-widget";
 
-export function Home({}) {
+export function WidgetHome({}) {
   const texts = React.useMemo(
     () => [
       "How can I assist you today?",
@@ -40,7 +40,7 @@ export function Home({}) {
   }, [isOpen, startAnimation]);
 
   return (
-    <>
+    <section className="px-2 lg:px-3">
       <div className="py-2 pb-4 px-2 text-white rounded-b-2xl">
         {/* Header */}
         <div className="flex justify-between items-center">
@@ -167,6 +167,6 @@ export function Home({}) {
             ))}
         </div>
       </div>
-    </>
+    </section>
   );
 }

@@ -8,8 +8,9 @@ import {
 import React from "react";
 import { cn } from "@/lib/utils";
 import { guminertRegular } from "@/assets/fonts";
-import { Home } from "@/components/support-widget/widget-home";
 import { useSupportWidgetToggleStore } from "@/store/store";
+import { WidgetHome } from "@/components/support-widget/widget-home";
+import { WidgetAssistant } from "@/components/support-widget/widget-assistant";
 
 /* -------------------------------------------------------------------------- */
 /*                                Tab Config                                  */
@@ -21,16 +22,16 @@ interface TabConfig {
 }
 
 const TAB_CONFIG: TabConfig[] = [
-  { icon: <House className="w-6 h-6" />, label: "Home", component: Home },
+  { icon: <House className="w-6 h-6" />, label: "Home", component: WidgetHome },
   {
     icon: <MessageSquareText className="w-6 h-6" />,
     label: "Messages",
-    component: () => <div>Hello, World</div>,
+    component: WidgetAssistant,
   },
   {
     icon: <MessageCircleQuestionMark className="w-6 h-6" />,
     label: "Help",
-    component: Home,
+    component: WidgetHome,
   },
 ];
 
@@ -113,7 +114,7 @@ export function SupportWidget() {
         "w-full md:min-w-sm max-w-sm",
         "md:h-[65vh] lg:h-[82vh] max-h-[750px] z-50",
         "bg-[linear-gradient(to_bottom,rgb(144,238,144)_0%,white_100%)]",
-        "border border-gray-400/40 shadow-2xl sm:rounded-2xl p-2 sm:p-3 flex flex-col",
+        "border border-gray-400/40 shadow-2xl sm:rounded-2xl py-2 sm:py-3 flex flex-col",
         "origin-bottom-right transition-all duration-300 transform",
         isOpen
           ? "opacity-100 scale-100"

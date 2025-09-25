@@ -4,7 +4,7 @@ import { ArrowDownRight, BadgeCheck, Cpu, Play } from "lucide-react";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import IphoneFrameImage from "/public/images/Iphone-frame.png";
 import HeroImage from "/public/images/hero_background_3.jpg";
-import { Home } from "../support-widget/widget-home";
+import { WidgetHome } from "@/components/support-widget/widget-home";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 
@@ -83,15 +83,7 @@ export function Hero2() {
             {/* Frame Content */}
             <div className="absolute w-full h-full z-10">
               <div className="px-3 md:px-6 pt-12 md:pt-16 bg-[linear-gradient(to_bottom,rgb(230,250,217)_0%,rgb(255,255,255)_100%)] pointer-events-none w-[95%] aspect-[789/1650] mx-auto object-cover rounded-[2.75rem] lg:rounded-[3rem] xl:rounded-[3.70rem] 2xl:rounded-[4.5rem] overflow-hidden">
-                {/* <NextVideo
-                  className="h-full w-full object-cover"
-                  preload="none"
-                  src={demoVideo}
-                  playsInline
-                  autoPlay
-                  muted
-                /> */}
-                <Home />
+                <WidgetHome />
               </div>
             </div>
           </div>

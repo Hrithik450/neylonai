@@ -1,4 +1,4 @@
-import { AIChat } from "@/components/ai-chat";
+import { AIChat } from "@/components/support-widget/widget-toggle";
 import { LatestBlogs } from "@/components/landing-page/blog-section";
 import { CTASection } from "@/components/landing-page/cta-section";
 import { Faq } from "@/components/landing-page/faq-section";
