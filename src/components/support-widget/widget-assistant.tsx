@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import { WidgetHeader } from "@/components/support-widget/widget-header";
 import { ChevronRight, HelpCircle } from "lucide-react";
@@ -135,7 +137,7 @@ export function WidgetAssistant(): React.JSX.Element {
       <WidgetHeader className="sticky top-0" header="Messages" />
 
       {/* Scrollable message previews */}
-      <div className="flex flex-col gap-2 mt-2">
+      <div className="flex flex-col">
         {[...Array(12)].map((_, idx) => (
           <MessagePreview
             key={idx}
@@ -148,7 +150,7 @@ export function WidgetAssistant(): React.JSX.Element {
       </div>
 
       {/* Sticky bottom ask question button */}
-      <div className="sticky bottom-4 flex justify-center z-20 mt-4">
+      <div className="sticky bottom-4 flex justify-center z-20">
         <AskQuestionButton className="w-[max-content]" />
       </div>
     </section>
