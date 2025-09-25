@@ -1,12 +1,12 @@
 import { db } from "@/lib/db";
-import { threads } from "@/lib/drizzle/schema";
 import { eq } from "drizzle-orm";
+import { threads } from "@/lib/drizzle/schema";
 import { Thread, NewThread } from "@/actions/threads/threads.types";
 
 export class ThreadsModel {
   static async createThread(data: NewThread): Promise<Thread> {
-    const [chat] = await db.insert(threads).values(data).returning();
-    return chat;
+    const [thread] = await db.insert(threads).values(data).returning();
+    return thread;
   }
 
   static async updateThread(
@@ -22,8 +22,8 @@ export class ThreadsModel {
   }
 
   static async getThreadById(id: string): Promise<Thread | null> {
-    const [chat] = await db.select().from(threads).where(eq(threads.id, id));
-    return chat || null;
+    const [thread] = await db.select().from(threads).where(eq(threads.id, id));
+    return thread || null;
   }
 
   static async listThreadsByUserId(userId: string): Promise<Thread[]> {

@@ -11,10 +11,10 @@ export class ThreadsService {
     try {
       const validatedData = threadSchema.parse(data);
 
-      const chat = await ThreadsModel.createThread(validatedData);
+      const thread = await ThreadsModel.createThread(validatedData);
       return {
         success: true,
-        data: chat,
+        data: thread,
       };
     } catch (error) {
       return {
@@ -33,12 +33,12 @@ export class ThreadsService {
       const validatedData = threadSchema.partial().parse(data);
 
       const thread = await ThreadsModel.updateThread(id, validatedData);
-      if (!thread) {
+      if (!thread)
         return {
           success: false,
           error: "Thread not found",
         };
-      }
+
       return {
         success: true,
         data: thread,
@@ -55,12 +55,12 @@ export class ThreadsService {
   static async getThreadById(id: string): Promise<ThreadResponse> {
     try {
       const thread = await ThreadsModel.getThreadById(id);
-      if (!thread) {
+      if (!thread)
         return {
           success: false,
           error: "Thread not found",
         };
-      }
+
       return {
         success: true,
         data: thread,
@@ -91,12 +91,12 @@ export class ThreadsService {
   static async deleteThread(id: string): Promise<ThreadResponse> {
     try {
       const success = await ThreadsModel.deleteThread(id);
-      if (!success) {
+      if (!success)
         return {
           success: false,
           error: "Thread not found",
         };
-      }
+
       return {
         success: true,
       };
