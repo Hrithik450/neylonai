@@ -58,18 +58,18 @@ export const sessions = pgTable("session", {
 });
 
 // Threads table
-export const threads = pgTable("threads", {
+export const thread = pgTable("thread", {
   id: uuid("id").primaryKey().defaultRandom(),
-  userId: text("user_id")
+  user_id: text("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   title: varchar("title", { length: 255 }).notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true })
+  created_at: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
+  //   updatedAt: timestamp("updated_at", { withTimezone: true })
+  //     .notNull()
+  //     .defaultNow(),
 });
 
 // Enum for message roles
@@ -82,12 +82,12 @@ export const messageRoleEnum = pgEnum("message_role", [
 //  threadMessages table
 export const threadMessages = pgTable("thread_messages", {
   id: uuid("id").primaryKey().defaultRandom(),
-  threadId: uuid("thread_id")
+  thread_id: uuid("thread_id")
     .notNull()
-    .references(() => threads.id, { onDelete: "cascade" }),
+    .references(() => thread.id, { onDelete: "cascade" }),
   role: messageRoleEnum("role").notNull(),
   content: text("content").notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true })
+  created_at: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
 });

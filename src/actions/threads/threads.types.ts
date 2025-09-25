@@ -1,11 +1,11 @@
-import { threads } from "@/lib/drizzle/schema";
+import { thread } from "@/lib/drizzle/schema";
 import { z } from "zod";
 
-export type Thread = typeof threads.$inferSelect;
-export type NewThread = typeof threads.$inferInsert;
+export type Thread = typeof thread.$inferSelect;
+export type NewThread = typeof thread.$inferInsert;
 
 export const threadSchema = z.object({
-  userId: z.string().uuid(),
+  user_id: z.string().uuid(),
   title: z.string(),
 });
 

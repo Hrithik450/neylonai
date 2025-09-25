@@ -137,13 +137,13 @@ export const AskQuestionButton: React.FC<AskQuestionButtonProps> = ({
 export function WidgetAssistant(): React.JSX.Element {
   const [loading, setLoading] = React.useState<boolean>(false);
   const { threads, setThreads } = useThreadStore();
-  const userId = "";
+  const userId = "63f05e7a-35ac-4deb-9f38-e2864cdf3a1d";
 
   React.useEffect(() => {
     const fetchThreads = async () => {
       try {
         setLoading(true);
-        const res = await fetch(`/threads?userId=${userId}`);
+        const res = await fetch(`/api/threads?userId=${userId}`);
         const data: ThreadsResponse = await res.json();
 
         if (!data.success) {
@@ -172,11 +172,11 @@ export function WidgetAssistant(): React.JSX.Element {
       {/* Scrollable message previews */}
       <div className="flex flex-col max-h-[calc(100%-72px)] h-full overflow-y-auto scrollbar-hide">
         {loading && (
-          <div className="flex flex-col space-y-2">
+          <div className="flex flex-col">
             {[...Array(12)].map((_, i) => (
               <Skeleton
                 key={i}
-                className="group flex items-center p-3 max-w-sm mx-auto shadow-sm space-x-3 cursor-pointer hover:bg-violet-100/30 transition-colors border-b-2 border-black/10"
+                className="group flex items-center p-3 w-full mx-auto space-x-3 cursor-pointer transition-colors border-b-2 border-black/10"
               >
                 <div className="flex-shrink-0 h-12 w-12 rounded-full bg-gray-200 animate-pulse" />
                 <div className="flex-1 min-w-0 space-y-2">
@@ -195,7 +195,7 @@ export function WidgetAssistant(): React.JSX.Element {
               action={thread.id}
               sender_name="Assistant"
               thread_title={thread.title}
-              timestamp={shortTimeAgo(thread.createdAt)}
+              timestamp={shortTimeAgo(thread.created_at)}
             />
           ))
         ) : (
