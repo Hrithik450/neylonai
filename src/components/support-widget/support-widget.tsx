@@ -8,21 +8,37 @@ import {
 import React from "react";
 import { cn } from "@/lib/utils";
 import { guminertRegular } from "@/assets/fonts";
-import { useSupportWidgetToggleStore } from "@/store/store";
+import {
+  useSupportWidgetToggleStore,
+  useNavigationStore,
+  type Screen,
+} from "@/store/store";
 import { WidgetHome } from "@/components/support-widget/widget-home";
 import { WidgetAssistant } from "@/components/support-widget/widget-assistant";
 
 /* -------------------------------------------------------------------------- */
 /*                                Tab Config                                  */
 /* -------------------------------------------------------------------------- */
-interface TabConfig {
+/**
+ * Configuration for a single tab in a tab navigator.
+ *
+ * @interface TabConfig
+ * @property {string} label - The display label for the tab.
+ * @property {React.ReactNode} icon - Icon to show in the tab bar.
+ * @property {React.FC} component - The main component to render when the tab is active.
+ */
+export interface TabConfig {
   label: string;
   icon: React.ReactNode;
-  component: React.FC;
+  component: React.FC<any>;
 }
 
 const TAB_CONFIG: TabConfig[] = [
-  { icon: <House className="w-6 h-6" />, label: "Home", component: WidgetHome },
+  {
+    icon: <House className="w-6 h-6" />,
+    label: "Home",
+    component: WidgetHome,
+  },
   {
     icon: <MessageSquareText className="w-6 h-6" />,
     label: "Messages",
@@ -33,7 +49,7 @@ const TAB_CONFIG: TabConfig[] = [
     label: "Help",
     component: WidgetHome,
   },
-];
+] as const;
 
 /* -------------------------------------------------------------------------- */
 /*                           Typing Animation Hook                            */
@@ -96,8 +112,20 @@ export function useTypingAnimation(texts: string[], introTextFull: string) {
 /* -------------------------------------------------------------------------- */
 export function SupportWidget() {
   const { isOpen } = useSupportWidgetToggleStore();
+  const { tabStacks, setTabStacks, pushScreen, popScreen } =
+    useNavigationStore();
+
   const [activeIndex, setActiveIndex] = React.useState(0);
   const [visited, setVisited] = React.useState<Set<number>>(new Set([0]));
+
+  // Initialize default screens
+  React.useEffect(() => {
+    setTabStacks(
+      TAB_CONFIG.map((tab) => ({
+        stack: [{ component: tab.component }],
+      }))
+    );
+  }, [setTabStacks]);
 
   function handleTabChange(i: number) {
     setActiveIndex(i);
@@ -124,15 +152,27 @@ export function SupportWidget() {
       {/* Active Screen */}
       <div className="relative flex-1 w-full h-full overflow-x-hidden overflow-y-auto scrollbar-hide">
         {TAB_CONFIG.map((tab, i) => {
-          const Screen = tab.component;
-          const offset = (i - activeIndex) * 100; // how far each screen should slide
+          const offset = (i - activeIndex) * 100;
+          const stack = tabStacks[i]?.stack ?? [
+            { component: TAB_CONFIG[i].component },
+          ];
+          const ActiveScreen =
+            stack[stack.length - 1]?.component ?? (() => null);
+          const screenProps = {
+            pushScreen: (screen: Screen) => pushScreen(activeIndex, screen),
+            popScreen: () => popScreen(activeIndex),
+            ...stack[stack.length - 1]?.props,
+          };
+
           return (
             <div
               key={tab.label}
               className="absolute inset-0 w-full h-full transition-transform duration-300"
               style={{ transform: `translateX(${offset}%)` }}
             >
-              {visited.has(i) && i === activeIndex && <Screen />}
+              {visited.has(i) && i === activeIndex && (
+                <ActiveScreen {...screenProps} />
+              )}
             </div>
           );
         })}

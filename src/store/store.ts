@@ -1,5 +1,28 @@
 import { Thread } from "@/actions/threads/threads.types";
+import { devtools } from "zustand/middleware";
 import { create } from "zustand";
+
+/**
+ * Represents a screen inside a tab stack.
+ *
+ * @interface Screen<any>
+ * @property {React.FC<any>} component - The React component to render for this screen.
+ * @property {any} [props] - Optional props to pass to the component.
+ */
+export interface Screen {
+  component: React.FC<any>;
+  props?: any;
+}
+
+/**
+ * Represents the navigation stack for a single tab.
+ *
+ * @interface TabState
+ * @property {Screen<any>[]} stack - Array of screens representing the current stack for the tab.
+ */
+export interface TabState {
+  stack: Array<Screen>;
+}
 
 /**
  * Store for toggling the Support Widget open/closed.
@@ -27,6 +50,13 @@ interface ThreadStore {
   setThreads: (threads: Thread[] | Thread) => void;
   currentThreadId: string | null;
   setCurrentThreadId: (id: string | null) => void;
+}
+
+interface NavigationStore {
+  tabStacks: Array<TabState>;
+  pushScreen: (tabIndex: number, screen: Screen) => void;
+  popScreen: (tabIndex: number) => void;
+  setTabStacks: (stacks: Array<TabState>) => void;
 }
 
 /**
@@ -100,3 +130,24 @@ export const useThreadStore = create<ThreadStore>((set, get) => ({
   currentThreadId: null,
   setCurrentThreadId: (id) => set({ currentThreadId: id }),
 }));
+
+export const useNavigationStore = create<NavigationStore>()(
+  devtools((set) => ({
+    tabStacks: [],
+    setTabStacks: (stacks) => set({ tabStacks: stacks }),
+    pushScreen: (tabIndex, screen) =>
+      set((state) => {
+        const newStacks = [...state.tabStacks];
+        newStacks[tabIndex].stack.push(screen);
+        return { tabStacks: newStacks };
+      }),
+    popScreen: (tabIndex) =>
+      set((state) => {
+        const newStacks = [...state.tabStacks];
+        if (newStacks[tabIndex].stack.length > 1) {
+          newStacks[tabIndex].stack.pop();
+        }
+        return { tabStacks: newStacks };
+      }),
+  }))
+);

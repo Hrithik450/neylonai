@@ -6,7 +6,7 @@ import { ChevronRight, HelpCircle } from "lucide-react";
 import Image from "next/image";
 import { cn, shortTimeAgo } from "@/lib/utils";
 import { guminertRegular } from "@/assets/fonts";
-import { useThreadStore } from "@/store/store";
+import { type Screen, useThreadStore } from "@/store/store";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ThreadsResponse } from "@/actions/threads/threads.types";
@@ -127,6 +127,11 @@ export const AskQuestionButton: React.FC<AskQuestionButtonProps> = ({
   );
 };
 
+export interface WidgetAssistantProps {
+  pushScreen: (screen: Screen) => void;
+  popScreen: () => void;
+}
+
 /**
  * WidgetAssistant component – displays a messages widget with a sticky header,
  * scrollable messages, and a bottom ask-question button.
@@ -134,7 +139,7 @@ export const AskQuestionButton: React.FC<AskQuestionButtonProps> = ({
  * @component
  * @returns {JSX.Element} The WidgetAssistant component.
  */
-export function WidgetAssistant(): React.JSX.Element {
+export function WidgetAssistant({}: WidgetAssistantProps): React.JSX.Element {
   const [loading, setLoading] = React.useState<boolean>(false);
   const { threads, setThreads } = useThreadStore();
   const userId = "63f05e7a-35ac-4deb-9f38-e2864cdf3a1d";
