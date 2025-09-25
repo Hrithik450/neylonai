@@ -6,6 +6,7 @@ import { ChevronRight, HelpCircle } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { guminertRegular } from "@/assets/fonts";
+import { useThreadStore } from "@/store/store";
 
 /**
  * Props for the AskQuestionButton component.
@@ -131,6 +132,8 @@ export const AskQuestionButton: React.FC<AskQuestionButtonProps> = ({
  * @returns {JSX.Element} The WidgetAssistant component.
  */
 export function WidgetAssistant(): React.JSX.Element {
+  const { threads, setThreads } = useThreadStore();
+
   return (
     <section className="relative max-h-[100%] overflow-y-auto scrollbar-hide">
       {/* Sticky header at the top */}
