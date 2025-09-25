@@ -5,13 +5,27 @@ import { useSupportWidgetToggleStore } from "@/store/store";
 import { X } from "lucide-react";
 import React from "react";
 
-const WidgetHeader = ({
-  header,
-  className,
-}: {
+/**
+ * Props for the WidgetHeader component.
+ * @interface WidgetHeaderProps
+ * @property {string} [header] - Header text
+ * @property {string | null} [className] - Classname for additional css [optional]
+ */
+interface WidgetHeaderProps {
   header: string;
   className?: string;
-}) => {
+}
+
+/**
+ * WidgetHeader component – displays a sticky header for support widget.
+ *
+ * @component
+ * @returns {JSX.Element} The WidgetHeader component.
+ */
+export const WidgetHeader: React.FC<WidgetHeaderProps> = ({
+  header,
+  className,
+}): React.JSX.Element => {
   const { isOpen, setIsOpen } = useSupportWidgetToggleStore();
 
   return (
@@ -22,10 +36,10 @@ const WidgetHeader = ({
         className
       )}
     >
-      <h3 className="text-center flex-grow text-lg">{header}</h3>
+      <h3 className="text-center flex-1 text-lg">{header}</h3>
 
       <button
-        className="my-auto ml-auto text-xl font-bold cursor-pointer pr-3 h-full"
+        className="my-auto ml-auto mr-4 text-xl font-bold cursor-pointer h-full"
         onClick={() => setIsOpen(!isOpen)}
       >
         <X className="w-5 h-5 text-black" />
@@ -33,5 +47,3 @@ const WidgetHeader = ({
     </nav>
   );
 };
-
-export default WidgetHeader;
