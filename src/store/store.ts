@@ -1,6 +1,10 @@
 import { Thread } from "@/actions/threads/threads.types";
 import { devtools } from "zustand/middleware";
 import { create } from "zustand";
+import {
+  Message,
+  NewMessage,
+} from "@/actions/thread_messages/thread_messages.types";
 
 /**
  * Represents a screen inside a tab stack.
@@ -50,6 +54,12 @@ interface ThreadStore {
   setThreads: (threads: Thread[] | Thread) => void;
   currentThreadId: string | null;
   setCurrentThreadId: (id: string | null) => void;
+}
+
+interface ThreadMessageStore {
+  messages: NewMessage[] | null;
+  setMessages: (messages: Message[]) => void;
+  updateMessage: (updater: (prev: NewMessage[] | null) => NewMessage[]) => void;
 }
 
 interface UserStore {
@@ -156,6 +166,20 @@ export const useThreadStore = create<ThreadStore>((set, get) => ({
   currentThreadId: null,
   setCurrentThreadId: (id) => set({ currentThreadId: id }),
 }));
+
+export const useThreadMessageStore = create<ThreadMessageStore>()(
+  devtools((set, get) => ({
+    messages: null,
+    setMessages: (messages) => {
+      set({ messages: messages });
+    },
+    updateMessage: (updater) => {
+      const prev = get().messages ?? [];
+      const updated = updater(prev);
+      set({ messages: updated });
+    },
+  }))
+);
 
 export const useNavigationStore = create<NavigationStore>()(
   devtools((set) => ({

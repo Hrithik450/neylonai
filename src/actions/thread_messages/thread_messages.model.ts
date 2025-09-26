@@ -27,8 +27,7 @@ export class MessagesModel {
         return await db
           .select()
           .from(threadMessages)
-          .where(eq(threadMessages.thread_id, threadId))
-          .orderBy(desc(threadMessages.created_at));
+          .where(eq(threadMessages.thread_id, threadId));
       },
       [threadId],
       {

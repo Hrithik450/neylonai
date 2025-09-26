@@ -7,12 +7,15 @@ import { ConversationUI } from "@/components/support-widget/conversation-ui";
 import {
   useAssistantStore,
   useInputStore,
+  useThreadMessageStore,
   useThreadStore,
   useUserStore,
 } from "@/store/store";
 import { useRouter } from "next/navigation";
 import { Thread } from "@/actions/threads/threads.types";
 import { WidgetHeader } from "@/components/support-widget/widget-header";
+import { MessagesResponse } from "@/actions/thread_messages/thread_messages.types";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface WidgetChatUIProps {
   id: string;
@@ -21,27 +24,46 @@ interface WidgetChatUIProps {
   popScreen: () => void;
 }
 
-interface ConversationsProps {
-  role: string;
-  content: string;
-}
-
 export function WidgetChatThreadUI({
   id,
   title,
-  pushScreen,
   popScreen,
 }: WidgetChatUIProps) {
   const [loading, setLoading] = React.useState<boolean>(false);
-  const [conversations, setConversations] = React.useState<
-    ConversationsProps[] | null
-  >(null);
 
   const { currentUserId } = useUserStore();
   const { currentThreadId, setCurrentThreadId, setThreads } = useThreadStore();
-  const { setIsAssistantTyping } = useAssistantStore();
+  const { messages, updateMessage, setMessages } = useThreadMessageStore();
   const { input, setInput, setDisableInput } = useInputStore();
+  const { setIsAssistantTyping } = useAssistantStore();
   const router = useRouter();
+
+  React.useEffect(() => {
+    const fetchThreadMessages = async () => {
+      try {
+        setLoading(true);
+        const res = await fetch(`/api/thread_messages?threadId=${id}`);
+        const data: MessagesResponse = await res.json();
+
+        if (!data.success) {
+          setLoading(false);
+          console.error("Error fetching thread_messages:", data.error);
+          return;
+        }
+
+        if (data.data) {
+          setMessages(data.data);
+        }
+      } catch (error) {
+        setLoading(false);
+        console.error("Fetch error:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id && (!messages || currentThreadId !== id)) fetchThreadMessages();
+  }, [id, currentThreadId, setMessages]);
 
   // const autoSpeak = async (text: string) => {
   //   try {
@@ -75,8 +97,11 @@ export function WidgetChatThreadUI({
       return;
     }
 
-    const newMessage = { role: "user", content: input };
-    setConversations((prev) => [...(prev || []), newMessage]);
+    updateMessage((prev) => {
+      if (!prev || prev.length === 0)
+        return [{ role: "user", content: input, thread_id: id }];
+      return [...prev, { role: "user", content: input, thread_id: id }];
+    });
 
     setInput("");
     setDisableInput(true);
@@ -149,18 +174,23 @@ export function WidgetChatThreadUI({
             setIsAssistantTyping(false);
             const chunk = event.replace(/^data:\s?/, "");
 
-            setConversations((prev) => {
-              if (!prev) return [{ role: "assistant", content: chunk }];
-              const last = prev[prev.length - 1];
+            if (!messages)
+              updateMessage((prev) => {
+                if (!prev || prev.length === 0)
+                  return [{ role: "assistant", content: chunk, thread_id: id }];
+                const last = prev[prev.length - 1];
 
-              if (last?.role === "assistant") {
+                if (last.role === "assistant") {
+                  return [
+                    ...prev.slice(0, -1),
+                    { ...last, content: last.content + chunk },
+                  ];
+                }
                 return [
-                  ...prev.slice(0, -1),
-                  { role: "assistant", content: last.content + chunk },
+                  ...prev,
+                  { role: "assistant", content: chunk, thread_id: id },
                 ];
-              }
-              return [...prev, { role: "assistant", content: chunk }];
-            });
+              });
           }
         }
 
@@ -181,7 +211,37 @@ export function WidgetChatThreadUI({
         action={() => popScreen()}
       />
 
-      {!conversations && (
+      {/* Skeleton  */}
+      {loading && (
+        <div className="flex-1 h-full w-full max-w-3xl mx-auto p-2 md:p-4 space-y-4">
+          {/* Assistant Message */}
+          <div className="bg-gray-200/80 ml-auto rounded-xl p-4 max-w-[80%] w-fit">
+            <Skeleton className="h-4 w-56 mb-2" />
+            <Skeleton className="h-4 w-40" />
+          </div>
+
+          {/* User Message */}
+          <div className="bg-gray-200/80 mr-auto rounded-xl p-4 max-w-[80%] w-fit">
+            <Skeleton className="h-4 w-48 mb-2" />
+            <Skeleton className="h-4 w-28" />
+          </div>
+
+          {/* Assistant Message */}
+          <div className="bg-gray-200/80 ml-auto rounded-xl p-4 max-w-[80%] w-fit">
+            <Skeleton className="h-4 w-60 mb-2" />
+            <Skeleton className="h-4 w-36" />
+          </div>
+
+          {/* User Message */}
+          <div className="bg-gray-200/80 mr-auto rounded-xl p-4 max-w-[80%] w-fit">
+            <Skeleton className="h-4 w-64 mb-2" />
+            <Skeleton className="h-4 w-48" />
+          </div>
+        </div>
+      )}
+
+      {/* Starter Template */}
+      {!loading && messages && messages.length === 0 && (
         <div className="w-full h-full flex flex-col items-center justify-center text-center px-4">
           <h2 className="text-lg font-semibold mb-1">No conversations yet</h2>
           <p className="text-sm text-gray-500">
@@ -190,8 +250,9 @@ export function WidgetChatThreadUI({
         </div>
       )}
 
-      {conversations && conversations?.length > 0 && (
-        <ConversationUI conversations={conversations} />
+      {/* Main Conversation Messages */}
+      {!loading && messages && messages.length > 0 && (
+        <ConversationUI conversations={messages} />
       )}
 
       <InputForm handleSendMessage={handleSendMessage} />

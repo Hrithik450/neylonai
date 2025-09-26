@@ -7,11 +7,12 @@ import ReactMarkdown from "react-markdown";
 import { Copy, Volume2 } from "lucide-react";
 import { useAssistantStore } from "@/store/store";
 import { ClassicLoader } from "@/components/classic-loader";
+import { NewMessage } from "@/actions/thread_messages/thread_messages.types";
 
 export function ConversationUI({
   conversations,
 }: {
-  conversations?: { role: string; content: string }[];
+  conversations?: NewMessage[];
 }) {
   const [loadingIndex, setLoadingIndex] = React.useState<number | null>(null);
   const { isAssistantTyping } = useAssistantStore();
@@ -51,8 +52,10 @@ export function ConversationUI({
         conversations.map((conversation, index) => (
           <div
             key={index}
-            className={`mb-3 md:mb-4 p-3 md:p-4 text-sm md:text-base rounded-xl max-w-[90%] md:max-w-[100%] w-[max-content] ${
-              conversation.role === "user" ? "bg-zinc-200 ml-auto" : ""
+            className={`mb-3 md:mb-4 p-3 md:p-4 text-sm md:text-base rounded-xl ${
+              conversation.role === "user"
+                ? "bg-zinc-200/90 ml-auto max-w-[80%]"
+                : "max-w-[90%] md:max-w-[100%] "
             }`}
           >
             {conversation.role === "assistant" ? (

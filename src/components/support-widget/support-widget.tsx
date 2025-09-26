@@ -117,6 +117,7 @@ export function SupportWidget() {
 
   const [activeIndex, setActiveIndex] = React.useState(0);
   const [visited, setVisited] = React.useState<Set<number>>(new Set([0]));
+  const isRootLevel = tabStacks[activeIndex]?.stack.length <= 1;
 
   // Initialize default screens
   React.useEffect(() => {
@@ -179,21 +180,23 @@ export function SupportWidget() {
       </div>
 
       {/* Navigation */}
-      <nav className="border-t flex justify-around pt-3">
-        {TAB_CONFIG.map((tab, i) => (
-          <button
-            key={tab.label}
-            onClick={() => handleTabChange(i)}
-            className={cn(
-              "flex flex-col items-center cursor-pointer",
-              i === activeIndex ? "text-purple-600" : "text-gray-500"
-            )}
-          >
-            {tab.icon}
-            <span className="text-xs sm:text-sm">{tab.label}</span>
-          </button>
-        ))}
-      </nav>
+      {isRootLevel && (
+        <nav className="border-t flex justify-around pt-3">
+          {TAB_CONFIG.map((tab, i) => (
+            <button
+              key={tab.label}
+              onClick={() => handleTabChange(i)}
+              className={cn(
+                "flex flex-col items-center cursor-pointer",
+                i === activeIndex ? "text-purple-600" : "text-gray-500"
+              )}
+            >
+              {tab.icon}
+              <span className="text-xs sm:text-sm">{tab.label}</span>
+            </button>
+          ))}
+        </nav>
+      )}
     </div>
   );
 }

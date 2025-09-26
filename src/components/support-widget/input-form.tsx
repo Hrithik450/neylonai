@@ -56,7 +56,7 @@ export function InputForm({
       <PromptInput
         value={input}
         onValueChange={(value) => setInput(value)}
-        className="flex justofy-center items-center rounded-2xl"
+        className="flex justify-center items-center rounded-2xl border border-black/60"
       >
         {isRecording ? (
           <AudioVisualizer stream={streamRef.current} className="h-10" />
