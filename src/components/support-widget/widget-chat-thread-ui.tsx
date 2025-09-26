@@ -11,7 +11,6 @@ import {
   useUserStore,
 } from "@/store/store";
 import { useRouter } from "next/navigation";
-import { ClassicLoader } from "@/components/classic-loader";
 import { Thread } from "@/actions/threads/threads.types";
 import { WidgetHeader } from "@/components/support-widget/widget-header";
 
@@ -22,15 +21,22 @@ interface WidgetChatUIProps {
   popScreen: () => void;
 }
 
+interface ConversationsProps {
+  role: string;
+  content: string;
+}
+
 export function WidgetChatThreadUI({
   id,
   title,
   pushScreen,
   popScreen,
 }: WidgetChatUIProps) {
+  const [loading, setLoading] = React.useState<boolean>(false);
   const [conversations, setConversations] = React.useState<
-    { role: string; content: string }[] | null
+    ConversationsProps[] | null
   >(null);
+
   const { currentUserId } = useUserStore();
   const { currentThreadId, setCurrentThreadId, setThreads } = useThreadStore();
   const { setIsAssistantTyping } = useAssistantStore();
@@ -181,17 +187,6 @@ export function WidgetChatThreadUI({
           <p className="text-sm text-gray-500">
             Start a conversation to see it appear here.
           </p>
-        </div>
-      )}
-
-      {conversations?.length === 0 && (
-        <div className="flex items-center justify-center p-4">
-          <div className="text-center text-gray-500">
-            <p className="text-lg md:text-xl mb-2">Start a new conversation</p>
-            <p className="text-sm md:text-base">
-              Type or speak an English sentence to get corrections
-            </p>
-          </div>
         </div>
       )}
 
