@@ -52,6 +52,32 @@ interface ThreadStore {
   setCurrentThreadId: (id: string | null) => void;
 }
 
+interface UserStore {
+  tokens: number;
+  setTokens: (tokens: number) => void;
+  currentUserId: string | null;
+  setCurrentUserId: (id: string) => void;
+}
+
+interface InputStore {
+  input: string;
+  setInput: (value: string) => void;
+  disableInput: boolean;
+  setDisableInput: (value: boolean) => void;
+}
+
+interface AssistantStore {
+  isAssistantTyping: boolean;
+  setIsAssistantTyping: (value: boolean) => void;
+}
+
+interface ErrorStore {
+  status: "error" | "saving" | "saved" | null;
+  setStatus: (status: "error" | "saving" | "saved" | null) => void;
+  message: string | null;
+  setMessage: (message: string | null) => void;
+}
+
 interface NavigationStore {
   tabStacks: Array<TabState>;
   pushScreen: (tabIndex: number, screen: Screen) => void;
@@ -151,3 +177,29 @@ export const useNavigationStore = create<NavigationStore>()(
       }),
   }))
 );
+
+export const useErrorStore = create<ErrorStore>((set) => ({
+  status: null,
+  setStatus: (status) => set({ status }),
+  message: null,
+  setMessage: (message) => set({ message }),
+}));
+
+export const useInputStore = create<InputStore>((set) => ({
+  input: "",
+  setInput: (value) => set({ input: value }),
+  disableInput: false,
+  setDisableInput: (value) => set({ disableInput: value }),
+}));
+
+export const useUserStore = create<UserStore>((set) => ({
+  tokens: 0,
+  setTokens: (tokens) => set({ tokens: tokens }),
+  currentUserId: null,
+  setCurrentUserId: (id) => set({ currentUserId: id }),
+}));
+
+export const useAssistantStore = create<AssistantStore>((set) => ({
+  isAssistantTyping: false,
+  setIsAssistantTyping: (value) => set({ isAssistantTyping: value }),
+}));

@@ -7,9 +7,9 @@ import Image from "next/image";
 import { cn, shortTimeAgo } from "@/lib/utils";
 import { guminertRegular } from "@/assets/fonts";
 import { type Screen, useThreadStore } from "@/store/store";
-import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ThreadsResponse } from "@/actions/threads/threads.types";
+import { WidgetChatThreadUI } from "@/components/support-widget/widget-chat-thread-ui";
 
 /**
  * Props for the AskQuestionButton component.
@@ -25,7 +25,7 @@ interface MessagePreviewProps {
   sender_name: string;
   thread_title: string;
   timestamp: string;
-  action: string;
+  action: () => void;
 }
 
 /**
@@ -54,8 +54,8 @@ export const MessagePreview: React.FC<MessagePreviewProps> = ({
   action,
 }): React.JSX.Element => {
   return (
-    <Link
-      href={`/c/${action}`}
+    <div
+      onClick={action}
       className="group flex items-center p-3 max-w-sm mx-autoshadow-sm space-x-3 cursor-pointer hover:bg-violet-100/30 transition-colors border-b-2 border-black/10"
     >
       {/* Avatar */}
@@ -87,7 +87,7 @@ export const MessagePreview: React.FC<MessagePreviewProps> = ({
 
       {/* Arrow Icon */}
       <ChevronRight className="w-5 h-5 group-hover:-rotate-90 transition-transform duration-300 ease-in-out mr-2" />
-    </Link>
+    </div>
   );
 };
 
@@ -139,7 +139,9 @@ export interface WidgetAssistantProps {
  * @component
  * @returns {JSX.Element} The WidgetAssistant component.
  */
-export function WidgetAssistant({}: WidgetAssistantProps): React.JSX.Element {
+export function WidgetAssistant({
+  pushScreen,
+}: WidgetAssistantProps): React.JSX.Element {
   const [loading, setLoading] = React.useState<boolean>(false);
   const { threads, setThreads } = useThreadStore();
   const userId = "63f05e7a-35ac-4deb-9f38-e2864cdf3a1d";
@@ -166,8 +168,8 @@ export function WidgetAssistant({}: WidgetAssistantProps): React.JSX.Element {
       }
     };
 
-    if (userId) fetchThreads();
-  }, [userId, setThreads]);
+    if (userId && (!threads || threads.length === 0)) fetchThreads();
+  }, [userId, threads, setThreads]);
 
   return (
     <section className="relative h-full">
@@ -197,7 +199,12 @@ export function WidgetAssistant({}: WidgetAssistantProps): React.JSX.Element {
           threads.map((thread) => (
             <MessagePreview
               key={thread.id}
-              action={thread.id}
+              action={() =>
+                pushScreen({
+                  component: WidgetChatThreadUI,
+                  props: { id: thread.id },
+                })
+              }
               sender_name="Assistant"
               thread_title={thread.title}
               timestamp={shortTimeAgo(thread.created_at)}
