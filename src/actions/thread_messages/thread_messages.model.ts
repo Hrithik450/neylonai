@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { threadMessages } from "@/lib/drizzle/schema";
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import {
   Message,
   NewMessage,
@@ -22,25 +22,23 @@ export class MessagesModel {
   }
 
   static async getMessageByThreadId(threadId: string) {
-    const cachedMessages = unstable_cache(
+    const cachedFn = unstable_cache(
       async () => {
-        try {
-          return await db
-            .select()
-            .from(threadMessages)
-            .where(eq(threadMessages.thread_id, threadId));
-        } catch (error) {
-          return [];
-        }
+        return await db
+          .select()
+          .from(threadMessages)
+          .where(eq(threadMessages.thread_id, threadId))
+          .orderBy(desc(threadMessages.created_at));
       },
       [threadId],
       {
-        revalidate: 10,
+        revalidate: 3600,
         tags: [`thread-${threadId}`],
       }
     );
 
-    return await cachedMessages();
+    const cachedMessages = await cachedFn();
+    return cachedMessages;
   }
 
   static async deleteMessagesByThreadId(threadId: string): Promise<boolean> {
