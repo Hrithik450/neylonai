@@ -168,7 +168,7 @@ export function WidgetAssistant({
       }
     };
 
-    if (userId && (!threads || threads.length === 0)) fetchThreads();
+    if (userId && !threads) fetchThreads();
   }, [userId, threads, setThreads]);
 
   return (
