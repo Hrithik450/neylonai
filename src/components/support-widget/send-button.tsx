@@ -22,14 +22,14 @@ export function SendButton({ isDisabled, handleSubmit }: SendButtonProps) {
       <Button
         variant="default"
         size="icon"
-        className="h-10 w-10 rounded-full cursor-pointer"
+        className="h-8 w-8 rounded-full cursor-pointer"
         onClick={handleSubmit}
         disabled={isDisabled}
       >
         {isAssistantTyping ? (
-          <Square className="size-5 cursor-pointer" />
+          <Square className="size-4 cursor-pointer" />
         ) : (
-          <ArrowUp className="size-5 cursor-pointer" />
+          <ArrowUp className="size-4 cursor-pointer" />
         )}
       </Button>
     </PromptInputAction>

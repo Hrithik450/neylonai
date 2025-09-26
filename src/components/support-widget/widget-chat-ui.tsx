@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { WidgetHeader } from "@/components/support-widget/widget-header";
 
 interface WidgetChatUIProps {
   id: string;
@@ -8,6 +9,14 @@ interface WidgetChatUIProps {
   popScreen: () => void;
 }
 
-export const WidgetChatUI = ({}: WidgetChatUIProps) => {
-  return <section></section>;
+export const WidgetChatUI = ({
+  id,
+  pushScreen,
+  popScreen,
+}: WidgetChatUIProps) => {
+  return (
+    <section>
+      <WidgetHeader header={id} />
+    </section>
+  );
 };

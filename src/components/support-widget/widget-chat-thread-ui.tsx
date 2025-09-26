@@ -13,14 +13,21 @@ import {
 import { useRouter } from "next/navigation";
 import { ClassicLoader } from "@/components/classic-loader";
 import { Thread } from "@/actions/threads/threads.types";
+import { WidgetHeader } from "@/components/support-widget/widget-header";
 
 interface WidgetChatUIProps {
   id: string;
+  title: string;
   pushScreen: (screen: Screen) => void;
   popScreen: () => void;
 }
 
-export function WidgetChatThreadUI({}: WidgetChatUIProps) {
+export function WidgetChatThreadUI({
+  id,
+  title,
+  pushScreen,
+  popScreen,
+}: WidgetChatUIProps) {
   const [conversations, setConversations] = React.useState<
     { role: string; content: string }[] | null
   >(null);
@@ -161,10 +168,19 @@ export function WidgetChatThreadUI({}: WidgetChatUIProps) {
   };
 
   return (
-    <div className={cn("flex flex-col justify-center", "h-dvh")}>
-      {conversations === null && (
-        <div className="w-full h-full flex items-center justify-center">
-          <ClassicLoader />
+    <div className={cn("flex flex-col justify-center h-full")}>
+      <WidgetHeader
+        className="sticky top-0"
+        header={title}
+        action={() => popScreen()}
+      />
+
+      {!conversations && (
+        <div className="w-full h-full flex flex-col items-center justify-center text-center px-4">
+          <h2 className="text-lg font-semibold mb-1">No conversations yet</h2>
+          <p className="text-sm text-gray-500">
+            Start a conversation to see it appear here.
+          </p>
         </div>
       )}
 

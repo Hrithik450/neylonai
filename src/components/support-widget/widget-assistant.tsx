@@ -202,7 +202,7 @@ export function WidgetAssistant({
               action={() =>
                 pushScreen({
                   component: WidgetChatThreadUI,
-                  props: { id: thread.id },
+                  props: { id: thread.id, title: thread.title },
                 })
               }
               sender_name="Assistant"

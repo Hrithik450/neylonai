@@ -26,7 +26,7 @@ export function MicButton({
       <Button
         variant="default"
         size="icon"
-        className={`h-10 w-10 rounded-full cursor-pointer bg-white text-gray-600 hover:bg-gray-200 ${
+        className={`h-8 w-8 rounded-full cursor-pointer bg-white text-gray-600 hover:bg-gray-200 ${
           isRecording ? "text-red-400 animate-pulse" : "text-gray-500"
         }`}
         onClick={() => {

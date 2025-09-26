@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { useSupportWidgetToggleStore } from "@/store/store";
-import { X } from "lucide-react";
+import { ArrowLeftIcon, X } from "lucide-react";
 import React from "react";
 
 /**
@@ -14,6 +14,7 @@ import React from "react";
 interface WidgetHeaderProps {
   header: string;
   className?: string;
+  action?: () => void;
 }
 
 /**
@@ -23,6 +24,7 @@ interface WidgetHeaderProps {
  * @returns {JSX.Element} The WidgetHeader component.
  */
 export const WidgetHeader: React.FC<WidgetHeaderProps> = ({
+  action,
   header,
   className,
 }): React.JSX.Element => {
@@ -31,19 +33,32 @@ export const WidgetHeader: React.FC<WidgetHeaderProps> = ({
   return (
     <nav
       className={cn(
-        "pb-2 flex items-base border-b-2 border-black/10",
+        "pb-2 flex items-center border-b-2 border-black/10",
         "bg-[rgb(144,238,144)]",
         className
       )}
     >
+      <div className="h-full my-auto mr-auto ml-4">
+        {action && (
+          <button
+            className="text-xl font-bold cursor-pointer h-full"
+            onClick={action}
+          >
+            <ArrowLeftIcon className="w-5 h-5 text-black" />
+          </button>
+        )}
+      </div>
+
       <h3 className="text-center flex-1 text-lg">{header}</h3>
 
-      <button
-        className="my-auto ml-auto mr-4 text-xl font-bold cursor-pointer h-full"
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        <X className="w-5 h-5 text-black" />
-      </button>
+      <div className="h-full my-auto ml-auto mr-4">
+        <button
+          className="text-xl font-bold cursor-pointer h-full"
+          onClick={() => setIsOpen(!isOpen)}
+        >
+          <X className="w-5 h-5 text-black" />
+        </button>
+      </div>
     </nav>
   );
 };
