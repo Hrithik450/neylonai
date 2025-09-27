@@ -38,6 +38,7 @@ ALLOWED_HOSTS = ['ai-solutionz.onrender.com']
 # Application definition
 
 INSTALLED_APPS = [
+    'corsheaders',
     'ai_solutionz',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -48,6 +49,8 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -57,6 +60,10 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+CORS_ALLOW_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+CORS_ALLOWED_ORIGINS = ["http://localhost:3000", "https://ai-solutionz.vercel.app"]
+CORS_ALLOW_HEADERS = ["content-type", "authorization", "x-csrftoken", "accept", "origin", "user-agent", "dnt", "cache-control", "x-requested-with"]
 
 ROOT_URLCONF = 'core.urls'
 
