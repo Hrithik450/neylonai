@@ -35,7 +35,7 @@ export function WidgetChatThreadUI({
   const { currentThreadId, setCurrentThreadId, setThreads } = useThreadStore();
   const { messages, updateMessage, setMessages } = useThreadMessageStore();
   const { input, setInput, setDisableInput } = useInputStore();
-  const { isAssistantTyping, setIsAssistantTyping } = useAssistantStore();
+  const { setIsAssistantTyping } = useAssistantStore();
   const router = useRouter();
 
   React.useEffect(() => {
