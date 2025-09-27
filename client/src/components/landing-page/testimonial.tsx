@@ -1,4 +1,4 @@
-import TestimonialGrid from "/public/images/testimonial_grid.jpg";
+import TestimonialGrid from "@/assets/images/testimonial_grid.jpg";
 import { ArrowRightIcon, BadgeCheck, Star } from "lucide-react";
 import { guminertMedium, guminertRegular } from "@/assets/fonts";
 import { cn } from "@/lib/utils";

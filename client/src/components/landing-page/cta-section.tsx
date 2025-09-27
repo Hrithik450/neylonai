@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { guminertMedium, guminertRegular } from "@/assets/fonts";
-import CTAImage from "/public/images/ai-solutionz-logo.jpg";
+import CTAImage from "@/assets/images/ai-solutionz-logo.jpg";
 
 export function CTASection() {
   return (

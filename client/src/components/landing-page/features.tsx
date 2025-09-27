@@ -7,7 +7,7 @@ import {
   ShieldCheck,
   Zap,
 } from "lucide-react";
-import FeatureGrid from "../../../public/images/feature_grid.jpg";
+import FeatureGrid from "@/assets/images/feature_grid.jpg";
 import { AvatarGroup } from "../avatar-group";
 import { cn } from "@/lib/utils";
 import Image from "next/image";

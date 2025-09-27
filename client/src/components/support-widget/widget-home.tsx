@@ -12,7 +12,7 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { faqs } from "@/lib/constants";
 import { guminertBold } from "@/assets/fonts";
-import CTAImage from "/public/images/ai-solutionz-logo.jpg";
+import CTAImage from "@/assets/images/ai-solutionz-logo.jpg";
 import { type Screen, useSupportWidgetToggleStore } from "@/store/store";
 import { useTypingAnimation } from "@/components/support-widget/support-widget";
 

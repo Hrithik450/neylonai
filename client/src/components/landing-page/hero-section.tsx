@@ -1,7 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { Youtube, Linkedin, Instagram, Twitter, Mail } from "lucide-react";
-import HeroBackgrpund from "/public/images/hero_background.jpg";
+import HeroBackgrpund from "@/assets/images/hero_background_3.jpg";
 import { AvatarGroup } from "@/components/avatar-group";
 import demoVideo from "../../../videos/demo.mp4";
 import { Badge } from "@/components/ui/badge";
