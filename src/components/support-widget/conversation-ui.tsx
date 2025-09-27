@@ -4,7 +4,7 @@ import React from "react";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
 import ReactMarkdown from "react-markdown";
-import { Copy, Volume2 } from "lucide-react";
+import { ChevronsDown, Copy, Volume2 } from "lucide-react";
 import { useAssistantStore } from "@/store/store";
 import { ClassicLoader } from "@/components/classic-loader";
 import { NewMessage } from "@/actions/thread_messages/thread_messages.types";
@@ -16,6 +16,28 @@ export function ConversationUI({
 }) {
   const [loadingIndex, setLoadingIndex] = React.useState<number | null>(null);
   const { isAssistantTyping } = useAssistantStore();
+
+  // Auto Scroll to bottom on new message
+  const scrollRef = React.useRef<HTMLDivElement>(null);
+  const bottomRef = React.useRef<HTMLDivElement>(null);
+  const [showScrollButton, setShowScrollButton] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!showScrollButton)
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [conversations, isAssistantTyping]);
+
+  const handleScroll = () => {
+    if (!scrollRef.current) return;
+
+    const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+    const isAtBottom = scrollHeight - scrollTop <= clientHeight + 50;
+    setShowScrollButton(!isAtBottom);
+  };
+
+  const scrollToBottom = () => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -46,7 +68,11 @@ export function ConversationUI({
   };
 
   return (
-    <div className="flex-1 w-full max-w-3xl mx-auto overflow-y-auto scrollbar-hide p-2 md:p-4 md:pb-14">
+    <div
+      ref={scrollRef}
+      onScroll={handleScroll}
+      className="relative flex-1 w-full mx-auto overflow-y-auto scrollbar-hide pt-2 px-2 md:pt-4"
+    >
       {conversations &&
         conversations.length > 0 &&
         conversations.map((conversation, index) => (
@@ -54,7 +80,7 @@ export function ConversationUI({
             key={index}
             className={`mb-3 md:mb-4 p-3 md:p-4 text-sm md:text-base rounded-xl ${
               conversation.role === "user"
-                ? "bg-zinc-200/90 ml-auto max-w-[80%]"
+                ? "bg-zinc-200/90 ml-auto max-w-[80%] border border-blue-500/80"
                 : "max-w-[90%] md:max-w-[100%] "
             }`}
           >
@@ -175,6 +201,19 @@ export function ConversationUI({
           </div>
         </div>
       )}
+
+      {showScrollButton && (
+        <div className="sticky bottom-1 w-full flex justify-end items-center px-2">
+          <button
+            onClick={scrollToBottom}
+            className="p-1 w-fit cursor-pointer rounded-full border border-black/50 bg-gray-200 shadow-md hover:bg-gray-300 transition"
+          >
+            <ChevronsDown size={20} />
+          </button>
+        </div>
+      )}
+
+      <div ref={bottomRef} />
     </div>
   );
 }

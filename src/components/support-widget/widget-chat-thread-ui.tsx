@@ -35,7 +35,7 @@ export function WidgetChatThreadUI({
   const { currentThreadId, setCurrentThreadId, setThreads } = useThreadStore();
   const { messages, updateMessage, setMessages } = useThreadMessageStore();
   const { input, setInput, setDisableInput } = useInputStore();
-  const { setIsAssistantTyping } = useAssistantStore();
+  const { isAssistantTyping, setIsAssistantTyping } = useAssistantStore();
   const router = useRouter();
 
   React.useEffect(() => {
@@ -229,6 +229,7 @@ export function WidgetChatThreadUI({
           {/* Assistant Message */}
           <div className="bg-gray-200/80 ml-auto rounded-xl p-4 max-w-[80%] w-fit">
             <Skeleton className="h-4 w-60 mb-2" />
+            <Skeleton className="h-4 w-48 mb-2" />
             <Skeleton className="h-4 w-36" />
           </div>
 
