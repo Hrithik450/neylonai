@@ -29,3 +29,6 @@ Thumbs.db
 # Django collectstatic output (don’t commit)
 staticfiles/
 media/
+
+# Data files
+text_generation/lib/data/
