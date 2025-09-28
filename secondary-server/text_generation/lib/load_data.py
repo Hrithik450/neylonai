@@ -1,56 +1,50 @@
 import os
 import sys
 import json
+import requests
 import polars as pl
 from dotenv import load_dotenv
 from functools import lru_cache
 from chromadb import CloudClient
-from .download_jsonl import ensure_jsonl_file
-from .utils import EMAIL_JSON_PATH, CHROMA_COLLECTION_NAME
+from .utils import CHROMA_COLLECTION_NAME
 
 load_dotenv()
 
-def get_data_path():
-    if EMAIL_JSON_PATH.exists():
-        print(f"Using local data file at {EMAIL_JSON_PATH}")
-        return EMAIL_JSON_PATH
-    else:
-        path = ensure_jsonl_file()
-        print(f"Downloaded data file to {EMAIL_JSON_PATH}")
-        return path
+GCS_URL = os.getenv("GCS_URL")
+if not GCS_URL:
+    raise ValueError("GCS_URL environment variable not set.")
 
-def stream_batches(file_path, max_size=50):
+def stream_remote_jsonl(url, max_size_mb=50):
     """
-    Stream JSONL file in Polars DataFrames with each batch < max_batch_size_mb.
+    Stream JSONL file from a remote URL in Polars DataFrames batches of max_size_mb.
     """
     batch = []
     current_batch_size = 0
-    max_bytes = max_size * 1024 * 1024
+    max_bytes = max_size_mb * 1024 * 1024
 
-    with open(file_path, "r") as f:
-        for line in f:
-            row = json.loads(line)
-            row_bytes = sys.getsizeof(json.dumps(row))
-            if current_batch_size + row_bytes > max_bytes and batch:
-                # yield current batch
-                yield pl.DataFrame(batch)
-                batch = []
-                current_batch_size = 0
-            batch.append(row)
-            current_batch_size = row_bytes
-
-        # yield any remaining rows
+    with requests.get(url, stream=True) as r:
+        r.raise_for_status()
+        buffer = ""
+        for chunk in r.iter_content(chunk_size=8192, decode_unicode=True):
+            buffer += chunk
+            while "\n" in buffer:
+                line, buffer = buffer.split("\n", 1)
+                if not line.strip():
+                    continue
+                row = json.loads(line)
+                row_bytes = sys.getsizeof(json.dumps(row))
+                if current_batch_size + row_bytes > max_bytes and batch:
+                    yield pl.DataFrame(batch)
+                    batch = []
+                    current_batch_size = 0
+                batch.append(row)
+                current_batch_size += row_bytes
+            
         if batch:
             yield pl.DataFrame(batch)
 
 def _load_resources_base():
     """Return a generator of Polars DataFrames in batches"""
-    data_path = get_data_path()
-    if not os.path.exists(data_path):
-        raise FileNotFoundError(f"Local data file not found at '{data_path}'.")
-
-    print(f"Loading email metadata in batches from: {data_path}")
-
     # ChromaDB connection (same as before)
     try:
         client = CloudClient(
@@ -65,7 +59,7 @@ def _load_resources_base():
         collection = None
 
     # Return generator
-    return stream_batches(data_path), collection
+    return stream_remote_jsonl(url=GCS_URL), collection
 
 @lru_cache(maxsize=None)
 def load_resources():
