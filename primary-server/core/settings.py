@@ -34,12 +34,10 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['ai-solutionz.onrender.com', '127.0.0.1']
 
-
-# Application definition
+# Application definition    
 
 INSTALLED_APPS = [
     'corsheaders',
-    'ai_solutionz',
     'rest_framework',
     'text_generation',
     'django.contrib.admin',

@@ -4,6 +4,7 @@ from typing import List,Optional
 from psycopg2.pool import SimpleConnectionPool
 from pydantic import BaseModel, ValidationError
 from .model_message_service import ChatMessage
+from text_generation.models import Thread
 
 # --- Schema (like zod schema) ---
 class ChatThread(BaseModel):

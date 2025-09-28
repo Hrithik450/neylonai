@@ -1,14 +1,13 @@
 #--- CHANGED: Import chroma_collection and df instead of index and df ---
-from lib.load_data import chroma_collection
-from langchain.tools import tool
-from langchain_openai import OpenAIEmbeddings # <-- 1. IMPORT THE CORRECT EMBEDDING CLIENT
-from lib.utils import AGENT_MODEL, EMBEDDING_MODEL_NAME
+from ..lib.load_data import chroma_collection
+from langchain_openai import OpenAIEmbeddings, ChatOpenAI # <-- 1. IMPORT THE CORRECT EMBEDDING CLIENT
+from ..lib.utils import AGENT_MODEL, EMBEDDING_MODEL_NAME
 from langchain.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
-from langchain_openai import ChatOpenAI
-from sentence_transformers import CrossEncoder
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
 from rank_bm25 import BM25Okapi
 import numpy as np
+import torch
 import os
 
 # --- Heavy initializations ---
@@ -34,7 +33,11 @@ else:
     bm25 = None
 
 # 3. Cross-encoder (to compare the lists & re-rank based on the semantic meaning)
-cross_encoder = CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2')
+# cross_encoder = CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2')
+model_name = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModelForSequenceClassification.from_pretrained(model_name)
+model.eval()
 
 # 4. Query expansion pipeline
 template = """You are an AI language model assistant. Your task is to generate 3 
@@ -51,7 +54,6 @@ generate_queries = (
     | (lambda x: x.split("\n"))
 )
 
-@tool("semantic_search_tool", parse_docstring=True)
 def semantic_search_tool(query: str) -> str:
     """
     This tool performs a semantic search over the documents to retrieve 
@@ -129,7 +131,8 @@ def semantic_search_tool(query: str) -> str:
 
     # Re-ranking with Cross-Encoder
     pairs = [[query, doc] for doc, _ in top_chunks]
-    rerank_scores = cross_encoder.predict(pairs)
+    # rerank_scores = cross_encoder.predict(pairs)
+    rerank_scores = []
     ranked = sorted(zip(rerank_scores, top_chunks), key=lambda x: x[0], reverse=True)
 
     # Deduplicate metadata docs separately
