@@ -1,18 +1,25 @@
 #--- CHANGED: Import chroma_collection and df instead of index and df ---
 from ..lib.load_data import chroma_collection
-from langchain_openai import OpenAIEmbeddings, ChatOpenAI # <-- 1. IMPORT THE CORRECT EMBEDDING CLIENT
 from ..lib.utils import AGENT_MODEL, EMBEDDING_MODEL_NAME
 from langchain.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 from rank_bm25 import BM25Okapi
+from openai import OpenAI
 import numpy as np
 import torch
 import os
 
 # --- Heavy initializations ---
 # 1. Embedding function with batching ---
-embedding_model = OpenAIEmbeddings(model=EMBEDDING_MODEL_NAME, api_key=os.getenv("OPENAI_API_KEY"))
+openai_client =  OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+def get_embeddings(texts: list[str]):
+    response = openai_client.embeddings.create(
+        model="text-embedding-3-small",
+        input=texts
+    )
+    return [e.embedding for e in response.data]
 
 # 2. BM25 (An superfast algo which focus more on imp key words to retrieve relavant docs) - will need documents loaded once
 if chroma_collection is not None:
@@ -45,14 +52,19 @@ different versions of the given user question to retrieve relevant documents fro
 database. By generating multiple perspectives on the user question, your goal is to help
 the user overcome some of the limitations of the distance-based similarity search. 
 Provide these alternative questions separated by newlines. Original question: {question}"""
-prompt_perspectives = ChatPromptTemplate.from_template(template)
+def build_prompt(question: str) -> str:
+    return template.format(question=question)
 
-generate_queries = (
-    prompt_perspectives 
-    | ChatOpenAI(model=AGENT_MODEL, temperature=0) 
-    | StrOutputParser() 
-    | (lambda x: x.split("\n"))
-)
+def generate_queries(prompt: str) -> list[str]:
+    response = openai_client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0,
+    )
+    # 2. Parse + clean output
+    text = response.choices[0].message.content.strip()
+    # 3. Split into list
+    return [line.strip() for line in text.split("\n") if line.strip()]
 
 def semantic_search_tool(query: str) -> str:
     """
@@ -73,7 +85,8 @@ def semantic_search_tool(query: str) -> str:
         return "Error: ChromaDB connection is not available."
 
     # 2. Expand into multiple queries
-    expanded_queries = generate_queries.invoke({"question": query})
+    prompt = build_prompt(query)
+    expanded_queries = generate_queries(prompt)
     all_results = []
     metadata_results = []
 
@@ -89,7 +102,7 @@ def semantic_search_tool(query: str) -> str:
                 top_bm25_docs.append((index_to_doc[idx], bm25_scores[idx]))
 
         # Create embeddings for query and filter candidate docs
-        query_embedding = embedding_model.embed_query(q)
+        query_embedding = get_embeddings([q])[0]
         search_results = chroma_collection.query(query_embeddings=[query_embedding])
 
         # Chroma returns lists inside lists (one per query)
