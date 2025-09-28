@@ -12,7 +12,7 @@ GCS_URL = os.getenv("GCS_URL")
 if not GCS_URL:
     raise ValueError("GCS_URL environment variable not set.")
 
-def stream_remote_jsonl(max_size_mb=50):
+def ensure_jsonl_file():
     """Ensure the JSONL file exists locally; download from GCS if not."""
     if FILE_PATH.exists():
         return str(FILE_PATH)
