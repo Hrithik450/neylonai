@@ -1,0 +1,34 @@
+# Environment
+.env
+*.pem
+config/secrets.json
+
+# Python
+__pycache__/
+*.py[cod]
+*.so
+
+# Virtual environments
+venv/
+.venv/
+
+# Databases (local only)
+*.sqlite3
+
+# Editor / IDE
+.vscode/
+.idea/
+
+# macOS / Windows
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Django collectstatic output (don’t commit)
+staticfiles/
+media/
+
+# Data files
+text_generation/lib/data/

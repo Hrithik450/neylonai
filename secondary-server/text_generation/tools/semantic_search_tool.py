@@ -3,6 +3,7 @@ from ..lib.load_data import chroma_collection
 from rank_bm25 import BM25Okapi
 from openai import OpenAI
 import numpy as np
+import requests
 import os
 
 # --- Heavy initializations ---
@@ -138,9 +139,23 @@ def semantic_search_tool(query: str) -> str:
     top_chunks = sorted(unique_results.items(), key=lambda x:x[1]["score"], reverse=True) # top 25
 
     # Re-ranking with Cross-Encoder
-    pairs = [[query, doc] for doc, _ in top_chunks]
-    # rerank_scores = cross_encoder.predict(pairs)
-    rerank_scores = []
+    queries, texts = [], []
+    for doc, _ in top_chunks:
+        queries.append(query)
+        texts.append(doc)
+
+    API_URL = "http://127.0.0.1:8000/api/cross-encoder/encode/"  # note trailing slash
+    payload = {"queries": queries, "texts": texts}
+    response = requests.post(API_URL, json=payload)
+
+    if response.status_code != 200:
+        raise RuntimeError(f"Cross-encoder API failed: {response.text}")
+
+    result = response.json()
+    if not result.get("success"):
+        raise RuntimeError(f"Cross-encoder error: {result.get('error')}")
+
+    rerank_scores = result["data"]["list"]
     ranked = sorted(zip(rerank_scores, top_chunks), key=lambda x: x[0], reverse=True)
 
     # Deduplicate metadata docs separately
