@@ -1,13 +1,8 @@
 #--- CHANGED: Import chroma_collection and df instead of index and df ---
 from ..lib.load_data import chroma_collection
-from ..lib.utils import AGENT_MODEL, EMBEDDING_MODEL_NAME
-from langchain.prompts import ChatPromptTemplate
-from langchain_core.output_parsers import StrOutputParser
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
 from rank_bm25 import BM25Okapi
 from openai import OpenAI
 import numpy as np
-import torch
 import os
 
 # --- Heavy initializations ---
@@ -41,10 +36,10 @@ else:
 
 # 3. Cross-encoder (to compare the lists & re-rank based on the semantic meaning)
 # cross_encoder = CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2')
-model_name = "cross-encoder/ms-marco-MiniLM-L-6-v2"
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-model = AutoModelForSequenceClassification.from_pretrained(model_name)
-model.eval()
+# model_name = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+# tokenizer = AutoTokenizer.from_pretrained(model_name)
+# model = AutoModelForSequenceClassification.from_pretrained(model_name)
+# model.eval()
 
 # 4. Query expansion pipeline
 template = """You are an AI language model assistant. Your task is to generate 3 
