@@ -80,8 +80,8 @@ export function ConversationUI({
             key={index}
             className={`mb-3 md:mb-4 p-3 md:p-4 text-sm md:text-base rounded-xl ${
               conversation.role === "user"
-                ? "bg-zinc-200/90 ml-auto max-w-[80%] border border-blue-500/80"
-                : "max-w-[90%] md:max-w-[100%] "
+                ? "bg-zinc-200/90 ml-auto max-w-[80%] border border-black/40"
+                : "max-w-[90%] md:max-w-[100%]"
             }`}
           >
             {conversation.role === "assistant" ? (
