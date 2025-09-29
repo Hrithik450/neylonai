@@ -1,12 +1,12 @@
 from pydantic import BaseModel, validator
+import onnxruntime as ort
 from .utils import report 
 from typing import List
-import torch
+import numpy as np
 import gc
 
 report("before transformers import", ) 
-from transformers import AutoTokenizer, AutoModelForSequenceClassification, BitsAndBytesConfig
-import torch
+from transformers import AutoTokenizer
 report("after transformers import")
 
 class EncoderRequest(BaseModel):
@@ -21,60 +21,48 @@ class EncoderRequest(BaseModel):
 
 class EncoderService:
     model_name = "cross-encoder/ms-marco-MiniLM-L-6-v2"
-    model = None
+    model_path = "onnx_cross_encoder_int8/model_quantized.onnx"
     tokenizer = None
+    session = None
 
     @classmethod
     def load_model(cls):
-        if cls.model is None or cls.tokenizer is None:
-            # 4-bit quantization settings
-            try:
-                bnb_config = BitsAndBytesConfig(
-                    load_in_4bit=True,
-                    bnb_4bit_quant_type="nf4",   
-                    bnb_4bit_use_double_quant=True,
-                    bnb_4bit_compute_dtype="bfloat16" 
-                )
-
-                cls.model = AutoModelForSequenceClassification.from_pretrained(cls.model_name, quantization_config=bnb_config, dtype=torch.float16)
-                cls.model.eval() 
-
-                cls.tokenizer = AutoTokenizer.from_pretrained(cls.model_name)
-                report("after loading model")
-            except Exception as e:
-                print(f"error: {str(e)}")
-        return cls.model, cls.tokenizer
+        if cls.tokenizer is None:
+            cls.tokenizer = AutoTokenizer.from_pretrained(cls.model_name)
+        
+        if cls.session is None:
+            cls.session = ort.InferenceSession(cls.model_path, providers=["CPUExecutionProvider"])
+        return cls.session, cls.tokenizer
 
     @classmethod
     def encode(cls, data: EncoderRequest):
-        try:
+        try:    
             req = EncoderRequest(**data)
-            model, tokenizer = cls.load_model()
+            session, tokenizer = cls.load_model()
 
             # Tokenize query-text pairs
-            features = tokenizer(
+            tokens = tokenizer(
                 req.queries,
                 req.texts,
                 padding=True,
                 truncation=True,
-                return_tensors="pt"
             )
+            onnx_inputs = {k: np.array(v, dtype=np.int64) for k, v in tokens.items()}
+
+            # Inputs
+            logits = session.run(None, onnx_inputs)[0]
             report("after implementing features")
 
-            # Forward pass
-            with torch.no_grad():
-                output = model(**features)
-            report("after model forward pass")
-
             # Convert logits to list
-            logits_list = output.logits.tolist()
+            logits_np = np.array(logits, dtype=np.float32)
 
             report("after logits_list")
-            del features, output
+            del logits, onnx_inputs, tokens
             gc.collect()
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
 
-            return {"success": True, "data": {"list": logits_list}}
+            yield {"success": True, "data": {"list": logits_np}}
+
+            del logits_np
+            gc.collect()
         except Exception as e:
             return {"success": False, "error": str(e)}

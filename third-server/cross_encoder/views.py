@@ -1,7 +1,11 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from django.http import StreamingHttpResponse
 from rest_framework import status
 from .lib.utils import report
+import numpy as np
+import json
+import gc
 
 report("before importing enocder service")
 from .lib.encoder_service import EncoderService, EncoderRequest
@@ -20,26 +24,29 @@ class EncoderAPIView(APIView):
             queries, texts = validated.queries, validated.texts
             report("After validation")
 
-            all_results = []
+            def batch_generator():
+                # Batch processing
+                _, tokenizer = EncoderService.load_model()
+                batches = batchify(queries, texts, tokenizer, max_tokens=5000)
+                report(f"After batching ({len(batches)} batches)")
 
-            # Batch processing
-            _, tokenizer = EncoderService.load_model()
-            batches = batchify(queries, texts, tokenizer, max_tokens=4000)
-            report(f"After batching ({len(batches)} batches)")
+                for i, (q_batch, t_batch) in enumerate(batches, start=1):
+                    batch_data = {"queries": q_batch, "texts": t_batch}
+                    report(f"Before encoding batch {i}")
 
-            for i, (q_batch, t_batch) in enumerate(batches, start=1):
-                batch_data = {"queries": q_batch, "texts": t_batch}
-                report(f"Before encoding batch {i}")
+                    for result in EncoderService.encode(batch_data):
+                        if not result.get("success"):
+                            yield json.dumps({"success": False, "error": "Encoding failed"}) + "\n"
+                            return
+                
+                        batch_np = np.array(result["data"]["list"], dtype=np.float32)
+                        yield json.dumps({"success": True, "batch": batch_np.tolist()}) + "\n"
 
-                result = EncoderService.encode(batch_data)
-                if not result.get("success"):
-                    return Response(result, status=status.HTTP_400_BAD_REQUEST)
-                all_results.extend(result["data"]["list"])
-                report(f"After encoding batch {i}")
-
-            report("After all batches")
-            return Response({"success": True, "data": {"list": all_results}})
-
+                        del batch_np
+                        del result
+                        gc.collect()
+                        report(f"After encoding batch {i}")
+            return StreamingHttpResponse(batch_generator(), content_type="application/json")
         except Exception as e:
             report("Exception occurred")
             return Response({"success": False, "error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
