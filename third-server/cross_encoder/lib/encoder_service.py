@@ -17,7 +17,7 @@ class EncoderRequest(BaseModel):
         return v
 
 class EncoderService:
-    model_name = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    tokenizer_path = "onnx_cross_encoder_int8"
     model_path = "onnx_cross_encoder_int8/model_quantized.onnx"
     tokenizer = None
     session = None
@@ -25,7 +25,7 @@ class EncoderService:
     @classmethod
     def load_model(cls):
         if cls.tokenizer is None:
-            cls.tokenizer = AutoTokenizer.from_pretrained(cls.model_name)
+            cls.tokenizer = AutoTokenizer.from_pretrained(cls.tokenizer_path)
         
         if cls.session is None:
             cls.session = ort.InferenceSession(cls.model_path, providers=["CPUExecutionProvider"])
