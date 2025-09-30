@@ -27,7 +27,7 @@ class EncoderAPIView(APIView):
             def batch_generator():
                 # Batch processing
                 _, tokenizer = EncoderService.load_model()
-                batches = batchify(queries, texts, tokenizer, max_tokens=5000)
+                batches = batchify(queries, texts, tokenizer, max_tokens=20000)
                 report(f"After batching ({len(batches)} batches)")
 
                 for i, (q_batch, t_batch) in enumerate(batches, start=1):
