@@ -1,16 +1,13 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
+from .lib.encoder_service import EncoderService, EncoderRequest
 from django.http import StreamingHttpResponse
+from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework import status
+from .lib.utils import batchify
 from .lib.utils import report
 import numpy as np
 import json
 import gc
-
-report("before importing enocder service")
-from .lib.encoder_service import EncoderService, EncoderRequest
-from .lib.utils import batchify
-report("after importing everything")
 
 class EncoderAPIView(APIView):
     def post(self, request):

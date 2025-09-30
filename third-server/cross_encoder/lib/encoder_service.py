@@ -1,13 +1,10 @@
 from pydantic import BaseModel, validator
+from transformers import AutoTokenizer
 import onnxruntime as ort
 from .utils import report 
 from typing import List
 import numpy as np
 import gc
-
-report("before transformers import", ) 
-from transformers import AutoTokenizer
-report("after transformers import")
 
 class EncoderRequest(BaseModel):
     queries: List[str]
