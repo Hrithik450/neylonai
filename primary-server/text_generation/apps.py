@@ -18,6 +18,7 @@ from langgraph.graph.state import CompiledStateGraph
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.graph import StateGraph, MessagesState, START, END
 
+from .lib.load_data import df, chroma_collection
 # ---- Project utils ----
 load_dotenv()
 
