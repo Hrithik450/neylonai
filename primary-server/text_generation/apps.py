@@ -20,7 +20,6 @@ from langgraph.graph import StateGraph, MessagesState, START, END
 
 # ---- Project utils ----
 load_dotenv()
-from .lib.utils import AGENT_MODEL, SYSTEM_PROMPT, MEMORY_LAYER_PROMPT, parse_json, convert_to_standard_messages
 
 # --- Schemas ---
 class StreamChatSchema(BaseModel):
@@ -58,6 +57,7 @@ class TextGenerationConfig(AppConfig):
             console.log("[green]Connected to Redis[/green]")
         except Exception as e:
             console.log(f"[red]Redis connection failed: {e}[/red]")
+
 
     # Initialize Instances Of Services
     # chat_thread_service = ChatThreadService(conn=conn, redis_client=redis_client)

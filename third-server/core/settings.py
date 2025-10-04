@@ -29,7 +29,7 @@ DEBUG = True
 
 USE_X_FORWARDED_HOST = True
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-ALLOWED_HOSTS = ['ai-solutionz.onrender.com', 'ai-solutionz-sec.onrender.com', 'ai-solutionz-ter.onrender.com', 'ai-solutionz-1086665435272.europe-west1.run.app', '127.0.0.1', '.run.app']
+ALLOWED_HOSTS = ['.onrender.com', '.run.app', '127.0.0.1']
 
 # Application definition
 

@@ -1,10 +1,8 @@
-from typing import List, Dict, Optional, Literal, TypedDict, get_args, get_origin, Annotated, Tuple, Set
-from langchain_core.messages import HumanMessage, AnyMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langgraph.graph import MessagesState
+from typing import List, Dict, Optional, Tuple, Set
+from langchain_core.messages import HumanMessage
 from datetime import datetime, timezone
 from rapidfuzz import fuzz, process
-from pydantic import Tag
 from pathlib import Path
 import polars as pl
 import json
@@ -418,9 +416,6 @@ def clean_date_in_jsonl():
         for record in cleaned_data:
             f.write(json.dumps(record) + "\n")
 
-# Date formatting tools
-from datetime import datetime, timezone, timedelta
-
 def parse_datetime_utc_flexible(date_str: str) -> datetime:
     """Parse various date/time formats into a UTC-aware datetime."""
     try:
@@ -524,51 +519,3 @@ def parse_json(raw_response):
     if match:
         return json.loads(match.group(0))
     return None
-
-# --- Schemas ---
-class ChatMessage(TypedDict):
-    role: Literal["system", "user", "assistant"]
-    content: str
-
-class MessageState(TypedDict):
-    messages: List[ChatMessage]
-
-def build_role_to_class_mapping():
-    mapping = {}
-
-    # unwrap outer Annotated
-    outer_origin = get_origin(AnyMessage)
-    if outer_origin is Annotated:
-        # get the first argument: the inner Union
-        inner_union, _ = get_args(AnyMessage)
-    else:
-        inner_union = AnyMessage
-
-    # inner_union is now the Union of all message types
-    union_types = get_args(inner_union)
-
-    for t in union_types:
-        if get_origin(t) is Annotated:
-            base_type, *annotations = get_args(t)
-            for ann in annotations:
-                if isinstance(ann, Tag):
-                    mapping[ann.tag] = base_type
-    return mapping
-
-ROLE_TO_CLASS = build_role_to_class_mapping()
-def convert_to_standard_messages(raw_messages: MessageState) -> MessagesState:
-    converted: List[AnyMessage] = []
-    for msg in raw_messages["messages"]:
-        role: str = msg.get("role")
-        if not role:
-            raise ValueError(f"Message missing role: {msg}")
-        
-        if role == "user":
-            role = "human"
-
-        if role not in ROLE_TO_CLASS:
-            raise ValueError(f"Unknown message role: {role}")
-
-        cls = ROLE_TO_CLASS.get(role)
-        converted.append(cls(**msg))
-    return {"messages": converted}
