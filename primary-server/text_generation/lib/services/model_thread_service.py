@@ -36,14 +36,19 @@ class ChatThreadService:
         """Insert a single chat thread."""
         try:
             # Validate input (equivalent to zod.parse)
-            validated = NewChatThread(**data)
+            validated_data = data.model_dump(exclude_unset=True)
+            print(validated_data, "validated dta")
+
+            if not validated_data:
+                return ChatThreadResponse(success=False, error="No fields are there create thread")
+            
             thread = Thread.objects.create(
-                title=validated.title,
-                user_id=validated.user_id
+                title=validated_data['title'],
+                user_id=validated_data['user_id']
             )
 
             # Clear Redis cache for user’s last thread
-            cache_key = f"user:{validated.user_id}:user_threads"
+            cache_key = f"user:{validated_data['user_id']}:user_threads"
             cache.delete(cache_key)
 
             response_thread = ChatThread(
@@ -61,33 +66,32 @@ class ChatThreadService:
             return ChatThreadResponse(success=False, error=str(e))
     
     @staticmethod
-    def update_chat_thread(thread_id: int, data: NewChatThread) -> ChatThreadResponse:
+    def update_chat_thread(thread_id: str, data: NewChatThread) -> ChatThreadResponse:
         try:
             # Validate partial data (like zod.partial())
-            validated_data = NewChatThread(**data)
+            validated_data = data.model_dump(exclude_unset=True)
+
+            if not validated_data:
+                return ChatThreadResponse(success=False, error="No fields to update")
 
             # Get the thread instance
             try:
                 thread = Thread.objects.get(id=thread_id)
             except Thread.DoesNotExist:
                 return ChatThreadResponse(success=False, data=None, error="ChatThread not found")
-
-            # Apply partial updates dynamically
-            update_fields = []
-            for field, value in validated_data.model_dump(exclude_unset=True).items():
-                setattr(thread, field, value)
-                update_fields.append(field)
-
-            if not update_fields:
-                return ChatThreadResponse(success=False, error="No fields to update")
             
+            # Apply partial updates dynamically
+            for field, value in validated_data.items():
+                setattr(thread, field, value)
+
             # Save only the updated fields
-            thread.save(update_fields=update_fields)
+            thread.save(update_fields=list(validated_data.keys()))
 
-            if cache and validated_data.user_id:
-                cache_key = f"thread:{thread_id}:user_thread"
-                cache.delete(cache_key)
+            # Clear cache if needed
+            cache_key = f"thread:{thread_id}:user_thread"
+            cache.delete(cache_key)
 
+            # Return updated thread as Pydantic model
             response_thread = ChatThread(
                 id=str(thread.id),
                 user_id=str(thread.user_id),
@@ -102,12 +106,12 @@ class ChatThreadService:
             return ChatThreadResponse(success=False, error=str(e))
         
     @staticmethod
-    def get_chat_thread_by_id(thread_id: int) -> ChatThreadResponse:
+    def get_chat_thread_by_id(thread_id: str) -> ChatThreadResponse:
         """
         Retrieve a single ChatThread by ID with cache support.
         """
         try:
-            # Check Redis cache first
+            # Check Redis cache first                     
             cache_key = f"thread:{thread_id}:user_thread"
             cached_value = cache.get(cache_key)
             if cached_value:
@@ -152,9 +156,9 @@ class ChatThreadService:
                 # Convert each dict to ChatThread
                 cached_threads = [ChatThread(**thread) for thread in cached_data]
                 return ChatThreadsResponse(success=True, data=cached_threads, error=None)
-
+            
             # Retrieve threads from DB
-            thread_objs = Thread.objects.filter(user_id=user_id).order_by("created_at")
+            thread_objs = Thread.objects.filter(user_id=user_id).order_by('created_at')
 
             response_threads = [
                 ChatThread(
@@ -167,7 +171,7 @@ class ChatThreadService:
             ]
 
             # Cache the list of thread dicts for 1 hour
-            cache.set(cache_key, json.dumps([thread.model_dump() for thread in response_threads]), timeout=3600)
+            cache.set(cache_key, json.dumps([t.model_dump() for t in response_threads]), timeout=3600)
             return ChatThreadsResponse(success=True, data=response_threads, error=None)
 
         except Exception as e:
