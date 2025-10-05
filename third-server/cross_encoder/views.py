@@ -1,7 +1,8 @@
-from .lib.encoder_service import EncoderService, EncoderRequest
+from .services.encoder_service import EncoderService, EncoderRequest
 from django.http import StreamingHttpResponse
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from pydantic import ValidationError
 from rest_framework import status
 from .lib.utils import batchify
 from .lib.utils import report
@@ -44,6 +45,10 @@ class EncoderAPIView(APIView):
                         gc.collect()
                         report(f"After encoding batch {i}")
             return StreamingHttpResponse(batch_generator(), content_type="application/json")
+        
+        except ValidationError as ve:
+            report("Validation error occurred")
+            return Response({"success": False, "Validation error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             report("Exception occurred")
             return Response({"success": False, "error": str(e)}, status=status.HTTP_400_BAD_REQUEST)

@@ -1,7 +1,7 @@
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, validator, ValidationError
 from transformers import AutoTokenizer
 import onnxruntime as ort
-from .utils import report 
+from ..lib.utils import report 
 from typing import List
 import numpy as np
 import gc
@@ -61,5 +61,8 @@ class EncoderService:
 
             del logits_np
             gc.collect()
+
+        except ValidationError as ve:
+            return {"success": False, "Validation error": str(ve)}
         except Exception as e:
             return {"success": False, "error": str(e)}

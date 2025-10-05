@@ -10,7 +10,7 @@ class ChatMessage(BaseModel):
     thread_id: str
     role: Literal["user", "assistant", "system"]
     content: str
-    created_at: str 
+    created_at: str
 
 class NewChatMessage(BaseModel):
     thread_id: str
