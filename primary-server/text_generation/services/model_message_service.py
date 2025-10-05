@@ -35,25 +35,25 @@ class ChatMessageService:
     def create_chat_message(data: NewChatMessage) -> ChatMessageResponse:
         """Insert a single chat message."""
         try:
-            validated = NewChatMessage(**data)
+            validated = data.model_dump(exclude_unset=True)
             thread_message = ThreadMessages.objects.create(
-                thread_id=validated.thread_id,
-                role=validated.role,
-                content=validated.content
+                thread_id=validated['thread_id'],
+                role=validated['role'],
+                content=validated['content']
             )
             
-            cache_key = f"thread:{validated.thread_id}:thread_messages"
+            cache_key = f"thread:{validated['thread_id']}:thread_messages"
             cache.delete(cache_key)
 
-            response = ChatMessage(
-                id=thread_message.id,
-                thread_id=thread_message.thread_id,
-                role=thread_message.role,
-                content=thread_message.content,
-                created_at=thread_message.created_at.isoformat()
+            thread_messages_response = ChatMessage(
+                id=str(thread_message.id),
+                thread_id=str(thread_message.thread_id),
+                role=str(thread_message.role),
+                content=str(thread_message.content),
+                created_at=str(thread_message.created_at.isoformat())
             )
 
-            return ChatMessageResponse(success=True, data=response, error=None)
+            return ChatMessageResponse(success=True, data=thread_messages_response, error=None)
 
         except ValidationError as ve:
             return ChatMessageResponse(success=False, error=f"Validation error: {ve}")
@@ -61,7 +61,7 @@ class ChatMessageService:
             return ChatMessageResponse(success=False, error=str(e))
 
     @staticmethod
-    def get_thread_messages(thread_id: int, limit: int | None = None) -> ChatMessagesResponse:
+    def list_thread_messages(thread_id: str, limit: int | None = None) -> ChatMessagesResponse:
         """Retrieve last N messages for a thread (with Redis cache)."""
         try:
             cache_key = f"thread:{thread_id}:thread_messages"
@@ -79,11 +79,11 @@ class ChatMessageService:
 
             response_messages = [
                 ChatMessage(
-                    id=tm.id,
-                    thread_id=tm.thread_id,
-                    role=tm.role,
-                    content=tm.content,
-                    created_at=tm.created_at.isoformat(),
+                    id=str(tm.id),
+                    thread_id=str(tm.thread_id),
+                    role=str(tm.role),
+                    content=str(tm.content),
+                    created_at=str(tm.created_at.isoformat()),
                 )
                 for tm in thread_messages
             ]

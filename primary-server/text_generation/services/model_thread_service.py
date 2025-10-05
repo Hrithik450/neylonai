@@ -37,7 +37,6 @@ class ChatThreadService:
         try:
             # Validate input (equivalent to zod.parse)
             validated_data = data.model_dump(exclude_unset=True)
-            print(validated_data, "validated dta")
 
             if not validated_data:
                 return ChatThreadResponse(success=False, error="No fields are there create thread")

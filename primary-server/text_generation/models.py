@@ -16,7 +16,7 @@ class ThreadMessages(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     thread = models.ForeignKey(Thread, models.DO_NOTHING, db_column='thread_id')
     role = models.CharField(max_length=10)
-    created_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
     content = models.TextField()
 
     class Meta:
@@ -27,7 +27,7 @@ class ThreadMessages(models.Model):
 class User(models.Model):
     id = models.UUIDField(primary_key=True)
     user_name = models.CharField(max_length=255)
-    created_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         managed = False
