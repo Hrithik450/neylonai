@@ -3,9 +3,9 @@ from typing import List, Dict, Optional, Tuple, Set
 from langchain_core.messages import HumanMessage
 from datetime import datetime, timezone
 from rapidfuzz import fuzz, process
-from django.conf import settings
 from pathlib import Path
 import polars as pl
+import psutil
 import json
 import time
 import os
@@ -143,6 +143,14 @@ Expected Output: {{ "title": "About English Articles" }}
 """
 
 # Helper functions
+process = psutil.Process(os.getpid())
+
+def report(step, base):
+    rss = process.memory_info().rss / 1024**2  # MB
+    delta = rss - base
+    print(f"{step:<35} Total: {rss:7.2f} MB | +{delta:6.2f} MB")
+    return rss
+
 def format_date(d):
     if isinstance(d, datetime):
         return d.strftime('%Y-%m-%d %H:%M:%S')

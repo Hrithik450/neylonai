@@ -1,8 +1,8 @@
 import polars as pl
-from lib.load_data import df
+from ..lib.load_data import df
 from datetime import datetime
 from langchain.tools import tool
-from lib.utils import normalize_list, match_value_in_columns, smart_subject_match, build_date_range
+from ..lib.utils import normalize_list, match_value_in_columns, smart_subject_match, build_date_range
 
 def human_readable_date(timestamp) -> str:
     """

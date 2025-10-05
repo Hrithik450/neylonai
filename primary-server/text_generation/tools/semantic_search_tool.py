@@ -1,12 +1,11 @@
 from langchain.tools import tool
-from lib.load_data import chroma_collection # <-- 1. IMPORT THE CORRECT EMBEDDING CLIENT
-from lib.utils import AGENT_MODEL, EMBEDDING_MODEL_NAME
+from ..lib.load_data import chroma_collection # <-- 1. IMPORT THE CORRECT EMBEDDING CLIENT
+from ..lib.utils import AGENT_MODEL, EMBEDDING_MODEL_NAME, report
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_core.output_parsers import StrOutputParser
 from langchain.prompts import ChatPromptTemplate
 from rank_bm25 import BM25Okapi
-from lib.utils import report
 import numpy as np
 import requests
 import json
