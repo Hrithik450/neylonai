@@ -67,9 +67,6 @@ export const thread = pgTable("thread", {
   created_at: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
-  //   updatedAt: timestamp("updated_at", { withTimezone: true })
-  //     .notNull()
-  //     .defaultNow(),
 });
 
 // Enum for message roles
