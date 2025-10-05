@@ -1,11 +1,12 @@
 from .utils import CHROMA_COLLECTION_NAME, EMAIL_JSON_PATH
 from .download_jsonl import ensure_jsonl_file
 
+from chromadb import CloudClient
 from functools import lru_cache
 from dotenv import load_dotenv
 from pathlib import Path
 import polars as pl
-import chromadb
+
 import os
 
 load_dotenv()
@@ -45,13 +46,13 @@ def _load_resources_base():
     # --- 3. Connect to ChromaDB ---
     print("🔗 Connecting to ChromaDB Vector Store...")
     try:
-        client = chromadb.CloudClient(
+        client = CloudClient(
             api_key=os.getenv("CHROMA_API_KEY"),
             tenant=os.getenv("CHROMA_TENANT"),
             database=os.getenv("CHROMA_DATABASE")
         )
         collection = client.get_collection(name=CHROMA_COLLECTION_NAME)
-        print("Connected to ChromaDB collection: {CHROMA_COLLECTION_NAME}.")
+        print(f"Connected to ChromaDB collection: {CHROMA_COLLECTION_NAME}.")
     except Exception as e:
         print(f"FATAL ERROR: Could not connect to ChromaDB. {e}")
         collection = None

@@ -1,6 +1,8 @@
 import json
+from django.core.cache import cache
+from ...models import ThreadMessages
+from typing import List, Optional, Literal
 from pydantic import BaseModel, ValidationError
-from typing import List, Dict, Optional, Union, Literal
 
 # --- Schemas ---
 class ChatMessage(BaseModel):
@@ -28,91 +30,67 @@ class ChatMessagesResponse(BaseModel):
 
 # --- Service class ---
 class ChatMessageService:
-    def __init__(self, conn, redis_client):
-        self.conn = conn
-        self.redis = redis_client
-
-    def create_chat_message(self, data: NewChatMessage) -> ChatMessageResponse:
+    
+    @staticmethod
+    def create_chat_message(data: NewChatMessage) -> ChatMessageResponse:
         """Insert a single chat message."""
         try:
             validated = NewChatMessage(**data)
-            cursor = self.conn.cursor()
-            cursor.execute(
-                """
-                INSERT INTO thread_messages (thread_id, role, content)
-                VALUES (%s, %s, %s)
-                RETURNING id, thread_id, role, content, created_at
-                """,
-                (validated.thread_id, validated.role, validated.content),
+            thread_message = ThreadMessages.objects.create(
+                thread_id=validated.thread_id,
+                role=validated.role,
+                content=validated.content
             )
-            row = cursor.fetchone()
-            self.conn.commit()
-
-            # Invalidate Redis cache
+            
             cache_key = f"thread:{validated.thread_id}:thread_messages"
-            self.redis.delete(cache_key)
+            cache.delete(cache_key)
 
-            message = ChatMessage(id=str(row['id']), thread_id=str(row['thread_id']), role=str(row['role']), content=str(row['content']), created_at=str(row['created_at']))
-            return ChatMessageResponse(success=True, data=message)
+            response = ChatMessage(
+                id=thread_message.id,
+                thread_id=thread_message.thread_id,
+                role=thread_message.role,
+                content=thread_message.content,
+                created_at=thread_message.created_at.isoformat()
+            )
+
+            return ChatMessageResponse(success=True, data=response, error=None)
 
         except ValidationError as ve:
             return ChatMessageResponse(success=False, error=f"Validation error: {ve}")
         except Exception as e:
             return ChatMessageResponse(success=False, error=str(e))
 
-    def get_thread_messages(self, thread_id: int, limit: int | None = None) -> ChatMessagesResponse:
+    @staticmethod
+    def get_thread_messages(thread_id: int, limit: int | None = None) -> ChatMessagesResponse:
         """Retrieve last N messages for a thread (with Redis cache)."""
         try:
             cache_key = f"thread:{thread_id}:thread_messages"
-            cached = self.redis.get(cache_key)
-            if cached:
-                return ChatMessagesResponse(success=True, data=json.loads(cached)["messages"])
+            cached_value = cache.get(cache_key)
+            if cached_value:
+                # Deserialize cached data
+                cached_data = json.loads(cached_value)
+                # Convert each dict to ChatThreadMessage
+                cached_thread_messages = [ChatMessage(**message) for message in cached_data]
+                return ChatMessagesResponse(success=True, data=cached_thread_messages, error=None)
 
-            cursor = self.conn.cursor()
+            thread_messages = ThreadMessages.objects.filter(thread_id=thread_id).order_by("created_at")
+            if limit:
+                thread_messages = thread_messages[:limit]
 
-            cursor.execute(
-                """
-                SELECT role, content, thread_id, id, created_at
-                FROM thread_messages
-                WHERE thread_id = %s
-                ORDER BY created_at ASC
-                """,
-                (thread_id,),
-            )
-            rows = cursor.fetchall()
-            messages = [{"id": str(r["id"]), "thread_id": str(r["thread_id"]), "role": str(r["role"]), "content": str(r["content"]), "created_at": str(r["created_at"])} for r in rows]
+            response_messages = [
+                ChatMessage(
+                    id=tm.id,
+                    thread_id=tm.thread_id,
+                    role=tm.role,
+                    content=tm.content,
+                    created_at=tm.created_at.isoformat(),
+                )
+                for tm in thread_messages
+            ]
+
             # Cache in Redis for 60 minutes
-            self.redis.setex(cache_key, 3600, json.dumps({"messages": messages}))
-
-            return ChatMessagesResponse(success=True, data=messages, error=None)
+            cache.set(cache_key, json.dumps([tm.model_dump() for tm in response_messages]), timeout=3600)
+            return ChatMessagesResponse(success=True, data=response_messages, error=None)
 
         except Exception as e:
             return ChatMessagesResponse(success=False, data=None, error=str(e))
-
-    def put_thread_messages(self, thread_id: int, new_messages: Union[Dict, List[Dict]]):
-        """Insert one or many messages and invalidate cache."""
-        try:
-            if isinstance(new_messages, dict):
-                messages_to_insert = [new_messages]
-            else:
-                messages_to_insert = list(new_messages)
-
-            cursor = self.conn.cursor()
-            for msg in messages_to_insert:
-                cursor.execute(
-                    """
-                    INSERT INTO thread_messages (thread_id, role, content)
-                    VALUES (%s, %s, %s)
-                    """,
-                    (thread_id, msg["role"], msg["content"]),
-                )
-            self.conn.commit()
-
-            # Clear Redis cache
-            cache_key = f"thread:{thread_id}:thread_messages"
-            self.redis.delete(cache_key)
-
-            return ChatMessagesResponse(success=True, data={"inserted": len(messages_to_insert)})
-
-        except Exception as e:
-            return ChatMessagesResponse(success=False, error=str(e))

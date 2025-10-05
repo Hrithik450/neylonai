@@ -3,6 +3,7 @@ from typing import List, Dict, Optional, Tuple, Set
 from langchain_core.messages import HumanMessage
 from datetime import datetime, timezone
 from rapidfuzz import fuzz, process
+from django.conf import settings
 from pathlib import Path
 import polars as pl
 import json
