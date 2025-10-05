@@ -1,7 +1,7 @@
 import json
 from typing import Dict, Union
 from langchain_openai import ChatOpenAI
-from ..utils import TITLE_SYSTEM_PROMPT
+from ..lib.utils import TITLE_SYSTEM_PROMPT
 from pydantic import BaseModel, ValidationError
 from langchain_core.prompts import ChatPromptTemplate
 

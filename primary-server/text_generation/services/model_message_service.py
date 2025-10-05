@@ -1,6 +1,6 @@
 import json
 from django.core.cache import cache
-from ...models import ThreadMessages
+from ..models import ThreadMessages
 from typing import List, Optional, Literal
 from pydantic import BaseModel, ValidationError
 

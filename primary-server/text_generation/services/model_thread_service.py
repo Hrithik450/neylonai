@@ -1,5 +1,5 @@
 import json
-from ...models import Thread
+from ..models import Thread
 from typing import List, Optional
 from django.core.cache import cache
 from .model_message_service import ChatMessage

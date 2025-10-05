@@ -1,4 +1,4 @@
-from ..lib.services.model_thread_service import ChatThreadService, ChatThreadsResponse, NewChatThread, ChatThreadResponse
+from ..services.model_thread_service import ChatThreadService, ChatThreadsResponse, NewChatThread, ChatThreadResponse
 from rest_framework.response import Response
 from rest_framework import status
 from pydantic import ValidationError
