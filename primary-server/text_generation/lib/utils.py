@@ -465,8 +465,6 @@ def build_date_range(start_date: str, end_date: str):
     if range_end:
         range_end = expand_end(range_end, end_date, start_date)
 
-    print(range_start, range_end)
-
     return range_start, range_end
 
 def count_tokens(encoding_model, text: str) -> int:
