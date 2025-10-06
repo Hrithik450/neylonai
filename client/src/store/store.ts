@@ -90,9 +90,9 @@ interface ErrorStore {
 
 interface NavigationStore {
   tabStacks: Array<TabState>;
+  setTabStacks: (stacks: Array<TabState>) => void;
   pushScreen: (tabIndex: number, screen: Screen) => void;
   popScreen: (tabIndex: number) => void;
-  setTabStacks: (stacks: Array<TabState>) => void;
 }
 
 /**
@@ -219,7 +219,7 @@ export const useInputStore = create<InputStore>((set) => ({
 export const useUserStore = create<UserStore>((set) => ({
   tokens: 0,
   setTokens: (tokens) => set({ tokens: tokens }),
-  currentUserId: null,
+  currentUserId: "63f05e7a-35ac-4deb-9f38-e2864cdf3a1d",
   setCurrentUserId: (id) => set({ currentUserId: id }),
 }));
 

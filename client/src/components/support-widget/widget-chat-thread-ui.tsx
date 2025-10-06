@@ -11,7 +11,6 @@ import {
   useThreadStore,
   useUserStore,
 } from "@/store/store";
-import { useRouter } from "next/navigation";
 import { Thread } from "@/actions/threads/threads.types";
 import { WidgetHeader } from "@/components/support-widget/widget-header";
 import { MessagesResponse } from "@/actions/thread_messages/thread_messages.types";
@@ -36,7 +35,6 @@ export function WidgetChatThreadUI({
   const { messages, updateMessage, setMessages } = useThreadMessageStore();
   const { input, setInput, setDisableInput } = useInputStore();
   const { setIsAssistantTyping } = useAssistantStore();
-  const router = useRouter();
 
   React.useEffect(() => {
     const fetchThreadMessages = async () => {
@@ -107,16 +105,21 @@ export function WidgetChatThreadUI({
     setDisableInput(true);
     setIsAssistantTyping(true);
 
+    if (!process.env.NEXT_PUBLIC_BACKEND_URL) return;
+
     try {
-      const response = await fetch(`api/model/text-generation`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userMessage: input,
-          threadId: currentThreadId,
-          senderId: currentUserId,
-        }),
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/text-generation/`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userMessage: input,
+            threadId: currentThreadId,
+            senderId: currentUserId,
+          }),
+        }
+      );
 
       if (!response.ok || !response.body) {
         throw new Error("No response stream");
@@ -153,11 +156,8 @@ export function WidgetChatThreadUI({
                 break;
 
               case "assistantResponseCompleted":
-                const { threadId } = JSON.parse(data);
-                if (threadId) {
-                  router.push(`/c/${threadId}`);
-                }
-
+                // const { threadId } = JSON.parse(data);
+                // if (threadId) router.push(`/c/${threadId}`);
                 // await autoSpeak(assistantResponse);
                 break;
 
@@ -174,23 +174,22 @@ export function WidgetChatThreadUI({
             setIsAssistantTyping(false);
             const chunk = event.replace(/^data:\s?/, "");
 
-            if (!messages)
-              updateMessage((prev) => {
-                if (!prev || prev.length === 0)
-                  return [{ role: "assistant", content: chunk, thread_id: id }];
-                const last = prev[prev.length - 1];
+            updateMessage((prev) => {
+              if (!prev || prev.length === 0)
+                return [{ role: "assistant", content: chunk, thread_id: id }];
+              const last = prev[prev.length - 1];
 
-                if (last.role === "assistant") {
-                  return [
-                    ...prev.slice(0, -1),
-                    { ...last, content: last.content + chunk },
-                  ];
-                }
+              if (last.role === "assistant")
                 return [
-                  ...prev,
-                  { role: "assistant", content: chunk, thread_id: id },
+                  ...prev.slice(0, -1),
+                  { ...last, content: last.content + chunk },
                 ];
-              });
+
+              return [
+                ...prev,
+                { role: "assistant", content: chunk, thread_id: id },
+              ];
+            });
           }
         }
 
