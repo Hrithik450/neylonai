@@ -36,15 +36,17 @@ class ChatThreadService:
         """Insert a single chat thread."""
         try:
             # Validate input (equivalent to zod.parse)
-            validated_data = data.model_dump(exclude_unset=True)
+            validated_data = NewChatThread(**data).model_dump(exclude_unset=True)
 
             if not validated_data:
-                return ChatThreadResponse(success=False, error="No fields are there create thread")
+                return ChatThreadResponse(success=False, error="No fields are there create thread.")
             
             thread = Thread.objects.create(
                 title=validated_data['title'],
                 user_id=validated_data['user_id']
             )
+            if not thread:
+                return ChatThreadResponse(success=False, error=f"Error occured, thread could not be created.")
 
             # Clear Redis cache for user’s last thread
             cache_key = f"user:{validated_data['user_id']}:user_threads"
@@ -60,7 +62,7 @@ class ChatThreadService:
             return ChatThreadResponse(success=True, data=response_thread, error=None)
         
         except ValidationError as ve:
-            return ChatThreadResponse(success=False, error=f"Validation error: {ve}")
+            return ChatThreadResponse(success=False, error=f"Validation error: {ve.errors()}")
         except Exception as e:
             return ChatThreadResponse(success=False, error=str(e))
     
@@ -68,10 +70,9 @@ class ChatThreadService:
     def update_chat_thread(thread_id: str, data: NewChatThread) -> ChatThreadResponse:
         try:
             # Validate partial data (like zod.partial())
-            validated_data = data.model_dump(exclude_unset=True)
-
+            validated_data = NewChatThread(**data).model_dump(exclude_unset=True)
             if not validated_data:
-                return ChatThreadResponse(success=False, error="No fields to update")
+                return ChatThreadResponse(success=False, data=None, error="No fields to update")
 
             # Get the thread instance
             try:
@@ -100,7 +101,7 @@ class ChatThreadService:
             return ChatThreadResponse(success=True, data=response_thread, error=None)
             
         except ValidationError as ve:
-            return ChatThreadResponse(success=False, error=f"Validation error: {ve}")
+            return ChatThreadResponse(success=False, error=f"Validation error: {ve.errors()}")
         except Exception as e:
             return ChatThreadResponse(success=False, error=str(e))
         

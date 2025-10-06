@@ -1,7 +1,7 @@
+#--- CHANGED: Import chroma_collection and df instead of index and df ---
 from langchain.tools import tool
 from ..lib.load_data import chroma_collection # <-- 1. IMPORT THE CORRECT EMBEDDING CLIENT
 from ..lib.utils import AGENT_MODEL, EMBEDDING_MODEL_NAME, report
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_core.output_parsers import StrOutputParser
 from langchain.prompts import ChatPromptTemplate
@@ -36,7 +36,7 @@ else:
     tokenized_docs = []
     bm25 = None
 
-# 4. Query expansion pipeline
+# 3. Query expansion pipeline
 template = """You are an AI language model assistant. Your task is to generate 3 
 different versions of the given user question to retrieve relevant documents from a vector 
 database. By generating multiple perspectives on the user question, your goal is to help
@@ -51,47 +51,6 @@ generate_queries = (
     | (lambda x: x.split("\n"))
 )
 
-# --- Utility ---
-def normalize_scores(scores):
-    arr = np.array(scores)
-    return arr / (np.max(arr) + 1e-6)
-
-# --- Worker function for each expanded query ---
-def process_query(q, bm25, doc_to_index, index_to_doc, doc_to_meta):
-    results = []
-
-    # BM25
-    bm25_scores = bm25.get_scores(q.lower().split())
-    bm25_scores = normalize_scores(bm25_scores)
-    top_bm25_indices = np.argsort(bm25_scores)[::-1]
-
-    # Dense embedding
-    query_embedding = embedding_model.embed_query(q)
-    search_results = chroma_collection.query(query_embeddings=[query_embedding])
-    sem_docs = search_results["documents"][0]
-    sem_scores = search_results["distances"][0]
-    sem_metadata = search_results["metadatas"][0]
-
-    # Combine results
-    for i, doc in enumerate(sem_docs):
-        bm25_index = doc_to_index.get(doc, None)
-        bm25_score = bm25_scores[bm25_index] if bm25_index is not None else 0
-        dense_score = sem_scores[i]
-        combined_score = 0.5 * bm25_score + 0.5 * dense_score
-        meta_item = sem_metadata[i] if i < len(sem_metadata) else {}
-        email_id = meta_item.get("email_id") if isinstance(meta_item, dict) else None
-        results.append((doc, email_id, combined_score))
-
-    # Add BM25-only docs
-    for i in top_bm25_indices[:100]:  # limit top 100 for speed
-        doc = index_to_doc[i]
-        if doc not in sem_docs:
-            email_id = doc_to_meta[doc].get("email_id") if doc in doc_to_meta else None
-            results.append((doc, email_id, bm25_scores[i]))
-
-    return results
-
-# --- Main Semantic Search Tool ---
 @tool("semantic_search_tool", parse_docstring=True)
 def semantic_search_tool(query: str) -> str:
     """
@@ -114,17 +73,59 @@ def semantic_search_tool(query: str) -> str:
 
     # 2. Expand into multiple queries
     expanded_queries = generate_queries.invoke({"question": query})
-    print(f"Expanded into {len(expanded_queries)} queries: {expanded_queries}")
+    all_results = []
+    metadata_results = []
     mem = report("After query expansion", mem)
 
     # 2. For each expanded query, embed and fetch document
-    all_results = []
-    with ThreadPoolExecutor(max_workers=min(4, len(expanded_queries))) as executor:
-        futures = [executor.submit(process_query, q, bm25, doc_to_index, index_to_doc, doc_to_meta)
-                   for q in expanded_queries]
-        for future in as_completed(futures):
-            results, _ = future.result()
-            all_results.extend(results)
+    for q in expanded_queries:
+        bm25_scores = bm25.get_scores(q.lower().split())
+        bm25_scores = np.array(bm25_scores) / (np.max(bm25_scores)+1e-6)
+        mem = report("After BM25 scoring (consider batching queries if many tokens)", mem)
+
+        top_bm25_indices = np.argsort(bm25_scores)[::-1]
+        top_bm25_docs = []
+        for i in top_bm25_indices:
+            idx = int(i)
+            if bm25_scores[idx] > 0 and idx in index_to_doc:
+                top_bm25_docs.append((index_to_doc[idx], bm25_scores[idx]))
+        mem = report("After selecting top BM25 docs", mem)
+
+        # Create embeddings for query and filter candidate docs
+        query_embedding = embedding_model.embed_query(q)
+        mem = report("After embedding query (batching queries can save memory)", mem)
+
+        search_results = chroma_collection.query(query_embeddings=[query_embedding])
+        # Chroma returns lists inside lists (one per query)
+        sem_docs = search_results["documents"][0]
+        sem_scores = search_results["distances"][0]
+        sem_metadata = search_results["metadatas"][0]
+
+        for i, doc in enumerate(sem_docs):
+            bm25_index = doc_to_index.get(doc, None)
+            bm25_score = bm25_scores[bm25_index] if bm25_index is not None else 0
+            dense_score = sem_scores[i]
+            combined_score = 0.5 * bm25_score + 0.5 * dense_score
+
+            # check if email_id is present inside metadata
+            meta_item = sem_metadata[i] if i < len(sem_metadata) else {}
+            email_id = (meta_item.get("email_id") if isinstance(meta_item, dict) else None)
+
+            if doc.startswith("Metadata:"):
+                metadata_results.append((doc, email_id, combined_score))
+            else:
+                all_results.append((doc, email_id, combined_score))
+        mem = report("After combining dense & BM25 results", mem)
+
+        for doc, bm25_score in top_bm25_docs:
+            if doc.startswith("Metadata:"):
+                metadata_results.append((doc, doc_to_meta.get(doc, {}).get("email_id") if doc in doc_to_meta else None, bm25_score))
+                continue
+
+            if doc not in sem_docs:
+                email_id = doc_to_meta[doc].get("email_id") if doc in doc_to_meta else None
+                all_results.append((doc, email_id, bm25_score))
+        mem = report("After adding BM25-only docs", mem)
 
     # Deduplicate (get_unique_union effect)
     unique_results = {}
@@ -132,37 +133,52 @@ def semantic_search_tool(query: str) -> str:
         if doc not in unique_results or score > unique_results[doc]["score"]:
             unique_results[doc] = {"email_id": email_id, "score": score}
     
-    top_chunks = sorted(unique_results.items(), key=lambda x: x[1]["score"], reverse=True)[:100]
+    top_chunks = sorted(unique_results.items(), key=lambda x:x[1]["score"], reverse=True) # top 25
     mem = report("After deduplicating top chunks", mem)
 
+    # Re-ranking with Cross-Encoder
     # Re-ranking with Cross-Encoder
     queries, texts = [], []
     for doc, _ in top_chunks:
         queries.append(query)
         texts.append(doc)
 
-    ENCODER_API_URL = os.getenv('ENCODER_API_URL')
+    ENCODER_API_URL = os.getenv("ENCODER_API_URL")
     if not ENCODER_API_URL:
-        raise ValueError("Please set ENCODER_API_URL in environment variables")
-
+        raise("Please add ENCODER_API_URL in env variables")    
+    
     payload = {"queries": queries, "texts": texts}
-    with requests.post(ENCODER_API_URL, json=payload, stream=True) as response:
-        if response.status_code != 200:
-            raise RuntimeError(f"Cross-encoder API failed: {response.text}")
+    try:
+        with requests.post(ENCODER_API_URL, json=payload, stream=True) as response:
+            if response.status_code != 200:
+                raise RuntimeError(f"Cross-encoder API failed: {response.text}")
 
-        rerank_scores = []
+            rerank_scores = []
 
-        # Read the response line by line
-        for line in response.iter_lines():
-            if not line:
-                continue
-            batch_result = json.loads(line.decode('utf-8'))
-            if not batch_result.get("success"):
-                raise RuntimeError(f"Cross-encoder error: {batch_result.get('error')}")
-            
-            print(len(rerank_scores))
-            rerank_scores.extend(batch_result["batch"])
+            # Read the response line by line
+            for line in response.iter_lines():
+                if not line:
+                    continue
+                batch_result = json.loads(line.decode('utf-8'))
+                if not batch_result.get("success"):
+                    raise RuntimeError(f"Cross-encoder error: {batch_result.get('error')}")
+                
+                print(len(rerank_scores))
+                rerank_scores.extend(batch_result["batch"])
+    except Exception as e:
+        print(f"Error occured {str(e)}")
+        pass
+    
     ranked = sorted(zip(rerank_scores, top_chunks), key=lambda x: x[0], reverse=True)
+
+    # Deduplicate metadata docs separately
+    unique_metadata = {}
+    for doc, email_id, score in metadata_results:
+        if doc not in unique_metadata or score > unique_metadata[doc]["score"]:
+            unique_metadata[doc] = {"email_id": email_id, "score": score}
+
+    top_metadata = sorted(unique_metadata.items(), key=lambda x: x[1]["score"], reverse=True)
+    mem = report("After deduplicating metadata", mem)
 
     # Combine final results: top 10 main docs, then all metadata as low-priority
     results_for_llm = []
@@ -173,5 +189,16 @@ def semantic_search_tool(query: str) -> str:
         else:
             results_for_llm.append(doc)
 
+    threshold = 50
+    for doc, meta in top_metadata[:25]:
+        if meta["score"] < threshold:
+            continue
+        email_id = meta.get("email_id") if isinstance(meta, dict) else None
+        if email_id:
+            results_for_llm.append(f"[id: {email_id}]\n{doc}")
+        else:
+            results_for_llm.append(doc)
+
     mem = report("Before return final results", mem)
+    # Return results
     return "\n\n---\n\n".join(results_for_llm) if results_for_llm else "No relevant documents found."

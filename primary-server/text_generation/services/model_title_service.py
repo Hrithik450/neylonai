@@ -17,6 +17,7 @@ class ChatTitleResponse(BaseModel):
 
 # --- Service class ---
 class ChatTitleService:
+
     @staticmethod
     async def create_title_for_threads(data: ChatTitleSchema) -> ChatTitleResponse:
         try:
@@ -57,6 +58,6 @@ class ChatTitleService:
             return ChatTitleResponse(success=True, data=parsed)
 
         except ValidationError as ve:
-            return ChatTitleResponse(success=False, error=f"Validation error: {ve}")
+            return ChatTitleResponse(success=False, error=f"Validation error: {ve.errors()}")
         except Exception as e:
             return ChatTitleResponse(success=False, error=str(e))

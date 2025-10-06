@@ -1,4 +1,5 @@
 import json
+from uuid import UUID
 from django.core.cache import cache
 from ..models import ThreadMessages
 from typing import List, Optional, Literal
@@ -35,14 +36,17 @@ class ChatMessageService:
     def create_chat_message(data: NewChatMessage) -> ChatMessageResponse:
         """Insert a single chat message."""
         try:
-            validated = data.model_dump(exclude_unset=True)
+            validated_data = NewChatMessage(**data)
             thread_message = ThreadMessages.objects.create(
-                thread_id=validated['thread_id'],
-                role=validated['role'],
-                content=validated['content']
+                thread_id=UUID(validated_data.thread_id),
+                role=str(validated_data.role),
+                content=str(validated_data.content)
             )
             
-            cache_key = f"thread:{validated['thread_id']}:thread_messages"
+            if not thread_message:
+                return ChatMessageResponse(success=False, data=None, error=f"Fatal: thread message not saved in DB")
+            
+            cache_key = f"thread:{validated_data.thread_id}:thread_messages"
             cache.delete(cache_key)
 
             thread_messages_response = ChatMessage(
@@ -56,7 +60,7 @@ class ChatMessageService:
             return ChatMessageResponse(success=True, data=thread_messages_response, error=None)
 
         except ValidationError as ve:
-            return ChatMessageResponse(success=False, error=f"Validation error: {ve}")
+            return ChatMessageResponse(success=False, error=f"Validation error: {ve.errors()}")
         except Exception as e:
             return ChatMessageResponse(success=False, error=str(e))
 
