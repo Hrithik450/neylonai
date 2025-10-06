@@ -24,6 +24,7 @@
     "dotenv-cli": "^10.0.0",
     "drizzle-kit": "^0.31.4",
     "drizzle-orm": "^0.44.5",
+    "ioredis": "^5.8.1",
     "lucide-react": "^0.539.0",
     "luxon": "^3.7.2",
     "next": "15.4.6",

@@ -158,6 +158,7 @@ class StreamChatView(APIView):
         try:
             data = request.data
             validatedData = StreamChatSchema(**data)
+            print(validatedData)
 
             # normalize commonly used values
             self.user_message: str = getattr(validatedData, "userMessage", "")
@@ -166,19 +167,26 @@ class StreamChatView(APIView):
 
             # fetch last messages for the thread if available (handle None)
             last_msgs: List[StateMessage] = []
+            
+            print(self.current_thread_id)
             if self.current_thread_id:
                 try:
-                    response: ChatMessagesResponse = self.agent_graph.chat_message_service.list_thread_messages(thread_id=str(self.current_thread_id))
-                    if isinstance(response, ChatMessagesResponse) and response.success and response.data:
-                        last_msgs = [msg.model_dump() for msg in response.data[-10:]]
-                    else:
-                        last_msgs = []
+                    thread_messages_response:ChatMessagesResponse = self.agent_graph.chat_message_service.list_thread_messages(thread_id=str(self.current_thread_id))
+                    print(thread_messages_response)
+                    if not thread_messages_response.success:
+                        return Response(
+                            {"success": False, "error": f"Error occured while retreieving the recent messages {thread_messages_response.error}"},
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
+                    
+                    last_msgs = [msg.model_dump() for msg in thread_messages_response.data]
                 except Exception as e:
                     return Response(
                         {"success": False, "error": f"Error occured while retreieving the recent messages {str(e)}"},
                         status=status.HTTP_400_BAD_REQUEST
                     )
-
+                
+            print(last_msgs, "last messages array")
             # reframe/optimize user query
             try:
                 reframed = async_to_sync(self.agent_graph.reframe_user_query)(user_input=self.user_message, last_messages=last_msgs)
@@ -210,7 +218,6 @@ class StreamChatView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         except Exception as e:
-            print(f"Error in POST handler: {e}")
             return Response(
                 {"success": False, "error": "Internal server error"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR

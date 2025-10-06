@@ -143,7 +143,7 @@ export function WidgetAssistant({
   pushScreen,
 }: WidgetAssistantProps): React.JSX.Element {
   const [loading, setLoading] = React.useState<boolean>(false);
-  const { threads, setThreads } = useThreadStore();
+  const { threads, setThreads, setCurrentThreadId } = useThreadStore();
   const userId = "63f05e7a-35ac-4deb-9f38-e2864cdf3a1d";
 
   React.useEffect(() => {
@@ -199,12 +199,13 @@ export function WidgetAssistant({
           threads.map((thread) => (
             <MessagePreview
               key={thread.id}
-              action={() =>
+              action={() => {
+                setCurrentThreadId(thread.id);
                 pushScreen({
                   component: WidgetChatThreadUI,
                   props: { id: thread.id, title: thread.title },
-                })
-              }
+                });
+              }}
               sender_name="Assistant"
               thread_title={thread.title}
               timestamp={shortTimeAgo(thread.created_at)}

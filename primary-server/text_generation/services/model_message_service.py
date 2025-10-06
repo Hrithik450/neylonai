@@ -37,6 +37,8 @@ class ChatMessageService:
         """Insert a single chat message."""
         try:
             validated_data = NewChatMessage(**data)
+            print(validated_data)
+            
             thread_message = ThreadMessages.objects.create(
                 thread_id=UUID(validated_data.thread_id),
                 role=str(validated_data.role),
@@ -45,9 +47,12 @@ class ChatMessageService:
             
             if not thread_message:
                 return ChatMessageResponse(success=False, data=None, error=f"Fatal: thread message not saved in DB")
-            
-            cache_key = f"thread:{validated_data.thread_id}:thread_messages"
-            cache.delete(cache_key)
+
+            # Clear Redis cache
+            cache_key_1 = f"thread:{validated_data.thread_id}:thread_messages"
+            cache_key_2 = f"thread:{validated_data.thread_id}:recent_thread_messages"
+            cache.delete(cache_key_1)
+            cache.delete(cache_key_2)
 
             thread_messages_response = ChatMessage(
                 id=str(thread_message.id),
@@ -65,10 +70,10 @@ class ChatMessageService:
             return ChatMessageResponse(success=False, error=str(e))
 
     @staticmethod
-    def list_thread_messages(thread_id: str, limit: int | None = None) -> ChatMessagesResponse:
+    def list_thread_messages(thread_id: str, limit: int = 10) -> ChatMessagesResponse:
         """Retrieve last N messages for a thread (with Redis cache)."""
         try:
-            cache_key = f"thread:{thread_id}:thread_messages"
+            cache_key = f"thread:{thread_id}:recent_thread_messages"
             cached_value = cache.get(cache_key)
             if cached_value:
                 # Deserialize cached data
@@ -77,9 +82,7 @@ class ChatMessageService:
                 cached_thread_messages = [ChatMessage(**message) for message in cached_data]
                 return ChatMessagesResponse(success=True, data=cached_thread_messages, error=None)
 
-            thread_messages = ThreadMessages.objects.filter(thread_id=thread_id).order_by("created_at")
-            if limit:
-                thread_messages = thread_messages[:limit]
+            thread_messages = (ThreadMessages.objects.filter(thread_id=thread_id).order_by("-created_at")[:limit])[::-1]
 
             response_messages = [
                 ChatMessage(

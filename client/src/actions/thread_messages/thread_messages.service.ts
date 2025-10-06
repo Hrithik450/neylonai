@@ -50,7 +50,7 @@ export class MessagesService {
     threadId: string
   ): Promise<MessagesResponse> {
     try {
-      const messages = await MessagesModel.getMessageByThreadId(threadId);
+      const messages = await MessagesModel.listMessagesByThreadId(threadId);
       return {
         success: true,
         data: messages,

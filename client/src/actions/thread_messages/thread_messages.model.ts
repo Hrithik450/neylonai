@@ -1,11 +1,11 @@
 import { db } from "@/lib/db";
 import { threadMessages } from "@/lib/drizzle/schema";
-import { desc, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import {
   Message,
   NewMessage,
 } from "@/actions/thread_messages/thread_messages.types";
-import { unstable_cache } from "next/cache";
+import { redis } from "@/lib/redis";
 
 export class MessagesModel {
   static async createMessage(data: NewMessage): Promise<Message> {
@@ -21,23 +21,30 @@ export class MessagesModel {
     return message || null;
   }
 
-  static async getMessageByThreadId(threadId: string) {
-    const cachedFn = unstable_cache(
-      async () => {
-        return await db
-          .select()
-          .from(threadMessages)
-          .where(eq(threadMessages.thread_id, threadId));
-      },
-      [threadId],
-      {
-        revalidate: 3600,
-        tags: [`thread-${threadId}`],
-      }
-    );
+  static async listMessagesByThreadId(
+    threadId: string
+  ): Promise<Message[] | []> {
+    // const cacheKey = `thread:${threadId}:thread_messages`;
 
-    const cachedMessages = await cachedFn();
-    return cachedMessages;
+    // const cachedValue = await redis.get(cacheKey);
+    // console.log(cachedValue);
+    // if (cachedValue) {
+    //   try {
+    //     const cachedData = JSON.parse(cachedValue);
+    //     return cachedData;
+    //   } catch (error) {
+    //     console.error("Error parsing in the cached thread_messages: ", error);
+    //   }
+    // }
+
+    // Fetch from DB if not cached
+    const thread_messages = await db
+      .select()
+      .from(threadMessages)
+      .where(eq(threadMessages.thread_id, threadId));
+
+    // await redis.set(cacheKey, JSON.stringify(thread_messages), "EX", 3600);
+    return thread_messages;
   }
 
   static async deleteMessagesByThreadId(threadId: string): Promise<boolean> {
