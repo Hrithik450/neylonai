@@ -7,6 +7,14 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+export const navLists = [
+  { label: "Home", id: "home" },
+  { label: "Features", id: "features" },
+  { label: "Products", id: "products" },
+  { label: "Customize", id: "customize" },
+  { label: "Testimonials", id: "testimonials" },
+];
+
 export function loadVideoElement(
   src: string
 ): Promise<{ width: number; height: number }> {
@@ -37,11 +45,3 @@ export function shortTimeAgo(createdAt: Date) {
   if (d.minutes) return `${d.minutes}m ago`;
   return "just now";
 }
-
-export const navLists = [
-  { label: "Home", id: "home" },
-  { label: "Features", id: "features" },
-  { label: "Products", id: "products" },
-  { label: "Customize", id: "customize" },
-  { label: "Testimonials", id: "testimonials" },
-];
