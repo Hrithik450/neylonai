@@ -129,14 +129,10 @@ class StreamChatView(APIView):
         """
         Convert an async generator to a sync generator for StreamingHttpResponse.
         """
-        async def consume_async_gen():
-            async for chunk in async_gen:
-                yield chunk
-
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 
-        agent = consume_async_gen()
+        agent = async_gen.__aiter__()
         try:
             while True:
                 try:
@@ -150,12 +146,13 @@ class StreamChatView(APIView):
                 loop.run_until_complete(agent.aclose())
             except Exception as e:
                 print(f"Error occured while closing the event loop {str(e)}")
-            finally:
-                pending = asyncio.all_tasks(loop)
-                if pending:
-                    loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
+                pass
 
-                loop.close()
+            pending = asyncio.all_tasks(loop)
+            if pending:
+                loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
+
+            loop.close()
 
     def post(self, request):
         try:
