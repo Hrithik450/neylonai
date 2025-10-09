@@ -60,6 +60,9 @@ class StreamChatView(APIView):
             # --- Stream assistant response by iterating agent events            
             async for event in events_iter:
                 if event["event"] == "on_chat_model_stream":
+                    print("--------------------------")
+                    print(event)
+
                     # Stream only chunks from the *last* root model run
                     if "data" in event and "chunk" in event["data"]:
                         chunk = event["data"]["chunk"]

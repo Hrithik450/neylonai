@@ -72,7 +72,7 @@ def semantic_search_tool(query: str) -> str:
         return "Error: ChromaDB connection is not available."
 
     # 2. Expand into multiple queries
-    expanded_queries = generate_queries.invoke({"question": query})
+    expanded_queries = generate_queries.invoke(input={"question": query})
     all_results = []
     metadata_results = []
     mem = report("After query expansion", mem)
