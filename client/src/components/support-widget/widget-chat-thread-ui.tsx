@@ -177,6 +177,7 @@ export function WidgetChatThreadUI({
             }
           } else if (event.startsWith("data: ")) {
             setIsAssistantTyping(false);
+            console.log(event);
             const chunk = event.replace(/^data:\s?/, "");
 
             updateMessage((prev) => {

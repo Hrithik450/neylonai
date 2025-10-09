@@ -21,23 +21,26 @@ export function ConversationUI({
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const bottomRef = React.useRef<HTMLDivElement>(null);
   const [showScrollButton, setShowScrollButton] = React.useState(false);
-
-  React.useEffect(() => {
-    if (!showScrollButton)
-      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [conversations, isAssistantTyping]);
+  const [userScrolledUp, setUserScrolledUp] = React.useState(false);
 
   const handleScroll = () => {
     if (!scrollRef.current) return;
 
     const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
     const isAtBottom = scrollHeight - scrollTop <= clientHeight + 50;
+
     setShowScrollButton(!isAtBottom);
+    setUserScrolledUp(!isAtBottom);
   };
 
-  const scrollToBottom = () => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  const scrollToBottom = (smooth: boolean = true) => {
+    bottomRef.current?.scrollIntoView({ behavior: smooth ? "smooth" : "auto" });
+    setUserScrolledUp(false);
   };
+
+  React.useEffect(() => {
+    if (!userScrolledUp) scrollToBottom(true);
+  }, [conversations, isAssistantTyping]);
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -205,7 +208,7 @@ export function ConversationUI({
       {showScrollButton && (
         <div className="sticky bottom-1 w-full flex justify-end items-center px-2">
           <button
-            onClick={scrollToBottom}
+            onClick={() => scrollToBottom(true)}
             className="p-1 w-fit cursor-pointer rounded-full border border-black/50 bg-gray-200 shadow-md hover:bg-gray-300 transition"
           >
             <ChevronsDown size={20} />
