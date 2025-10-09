@@ -5,7 +5,6 @@ import {
   Message,
   NewMessage,
 } from "@/actions/thread_messages/thread_messages.types";
-import { redis } from "@/lib/redis";
 
 export class MessagesModel {
   static async createMessage(data: NewMessage): Promise<Message> {

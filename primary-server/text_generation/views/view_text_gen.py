@@ -171,7 +171,7 @@ class StreamChatView(APIView):
             print(self.current_thread_id)
             if self.current_thread_id:
                 try:
-                    thread_messages_response:ChatMessagesResponse = self.agent_graph.chat_message_service.list_thread_messages(thread_id=str(self.current_thread_id))
+                    thread_messages_response:ChatMessagesResponse = self.agent_graph.chat_message_service.list_recent_thread_messages(thread_id=str(self.current_thread_id))
                     print(thread_messages_response)
                     if not thread_messages_response.success:
                         return Response(

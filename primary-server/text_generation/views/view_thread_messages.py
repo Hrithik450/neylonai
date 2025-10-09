@@ -36,12 +36,12 @@ class ThreadMessageServiceView(APIView):
                 {"success": False, "error": str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-        
+
     def get(self, request, thread_id: str):
         """Get all threads of a particular user"""
         try:
             # Get threads from service
-            thread_messages_response: ChatMessagesResponse = ChatMessageService.list_thread_messages(thread_id=str(thread_id))
+            thread_messages_response: ChatMessagesResponse = ChatMessageService.list_recent_thread_messages(thread_id=str(thread_id))
 
             # Check if the service returned success (assuming thread_response has success/data/error)
             if thread_messages_response.success:

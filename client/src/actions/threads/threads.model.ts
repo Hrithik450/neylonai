@@ -3,7 +3,6 @@ import { eq } from "drizzle-orm";
 import { thread as db_thread } from "@/lib/drizzle/schema";
 import { Thread, NewThread } from "@/actions/threads/threads.types";
 import { revalidateTag, unstable_cache } from "next/cache";
-import { redis } from "@/lib/redis";
 
 export class ThreadsModel {
   static async createThread(data: NewThread): Promise<Thread> {
@@ -45,15 +44,15 @@ export class ThreadsModel {
     const cacheKey = `user:${userId}:user_threads`;
 
     // Try cached value if present
-    const cachedValue = await redis.get(cacheKey);
-    if (cachedValue) {
-      try {
-        const cachedData = JSON.parse(cachedValue);
-        return cachedData;
-      } catch (error) {
-        console.error("Error parsing the cached threads: ", error);
-      }
-    }
+    // const cachedValue = await redis.get(cacheKey);/
+    // if (cachedValue) {
+    //   try {
+    //     const cachedData = JSON.parse(cachedValue);
+    //     return cachedData;
+    //   } catch (error) {
+    //     console.error("Error parsing the cached threads: ", error);
+    //   }
+    // }
 
     // Fetch from DB if not cached
     const threads = await db.query.thread.findMany({
@@ -62,7 +61,7 @@ export class ThreadsModel {
     });
 
     // Cache the result for 1 hour (3600 seconds)
-    await redis.set(cacheKey, JSON.stringify(threads), "EX", 3600);
+    // await redis.set(cacheKey, JSON.stringify(threads), "EX", 3600);
     return threads;
   }
 

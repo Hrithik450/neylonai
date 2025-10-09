@@ -143,14 +143,19 @@ export function WidgetAssistant({
   pushScreen,
 }: WidgetAssistantProps): React.JSX.Element {
   const [loading, setLoading] = React.useState<boolean>(false);
-  const { threads, setThreads, setCurrentThreadId } = useThreadStore();
+  const { threads, setThreads } = useThreadStore();
   const userId = "63f05e7a-35ac-4deb-9f38-e2864cdf3a1d";
 
   React.useEffect(() => {
+    if (!process.env.NEXT_PUBLIC_BACKEND_URL || !userId) return;
+    if (threads && threads.length > 0) return;
+
     const fetchThreads = async () => {
       try {
         setLoading(true);
-        const res = await fetch(`/api/threads?userId=${userId}`);
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/threads/user/${userId}`
+        );
         const data: ThreadsResponse = await res.json();
 
         if (!data.success) {
@@ -199,13 +204,12 @@ export function WidgetAssistant({
           threads.map((thread) => (
             <MessagePreview
               key={thread.id}
-              action={() => {
-                setCurrentThreadId(thread.id);
+              action={() =>
                 pushScreen({
                   component: WidgetChatThreadUI,
                   props: { id: thread.id, title: thread.title },
-                });
-              }}
+                })
+              }
               sender_name="Assistant"
               thread_title={thread.title}
               timestamp={shortTimeAgo(thread.created_at)}

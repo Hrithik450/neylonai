@@ -70,7 +70,7 @@ class ChatMessageService:
             return ChatMessageResponse(success=False, error=str(e))
 
     @staticmethod
-    def list_thread_messages(thread_id: str, limit: int = 10) -> ChatMessagesResponse:
+    def list_recent_thread_messages(thread_id: str, limit: int = 10) -> ChatMessagesResponse:
         """Retrieve last N messages for a thread (with Redis cache)."""
         try:
             cache_key = f"thread:{thread_id}:recent_thread_messages"
@@ -99,5 +99,37 @@ class ChatMessageService:
             cache.set(cache_key, json.dumps([tm.model_dump() for tm in response_messages]), timeout=3600)
             return ChatMessagesResponse(success=True, data=response_messages, error=None)
 
+        except Exception as e:
+            return ChatMessagesResponse(success=False, data=None, error=str(e))
+
+    @staticmethod
+    def list_thread_messages(thread_id: str) -> ChatMessagesResponse:
+        """Retrieve last messages for a thread (with Redis cache)."""
+        try:
+            cache_key = f"thread:{thread_id}:thread_messages"
+            cached_value = cache.get(cache_key)
+            if cached_value:
+                # Deserialize cached data
+                cached_data = json.loads(cached_value)
+                # Convert each dict to ChatThreadMessage
+                cached_thread_messages = [ChatMessage(**message) for message in cached_data]
+                return ChatMessagesResponse(success=True, data=cached_thread_messages, error=None)
+            
+            thread_messages = (ThreadMessages.objects.filter(thread_id=thread_id)).order_by("-created_at")[::-1]
+
+            response_messages = [
+                ChatMessage(
+                    id=str(tm.id),
+                    thread_id=str(tm.thread_id),
+                    role=str(tm.role),
+                    content=str(tm.content),
+                    created_at=str(tm.created_at.isoformat()),
+                )
+                for tm in thread_messages
+            ]
+            
+            cache.set(cache_key, json.dumps([tm for tm in response_messages]), timeout=3600)
+            return ChatMessagesResponse(success=True, data=thread_messages, error=None)
+        
         except Exception as e:
             return ChatMessagesResponse(success=False, data=None, error=str(e))

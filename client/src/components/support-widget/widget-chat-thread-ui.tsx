@@ -37,10 +37,14 @@ export function WidgetChatThreadUI({
   const { setIsAssistantTyping } = useAssistantStore();
 
   React.useEffect(() => {
+    if (!process.env.NEXT_PUBLIC_BACKEND_URL) return;
+
     const fetchThreadMessages = async () => {
       try {
         setLoading(true);
-        const res = await fetch(`/api/thread_messages?threadId=${id}`);
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/thread_messages/${id}`
+        );
         const data: MessagesResponse = await res.json();
 
         if (!data.success) {
@@ -51,6 +55,7 @@ export function WidgetChatThreadUI({
 
         if (data.data) {
           setMessages(data.data);
+          setCurrentThreadId(id);
         }
       } catch (error) {
         setLoading(false);

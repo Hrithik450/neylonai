@@ -158,7 +158,7 @@ class ChatThreadService:
                 return ChatThreadsResponse(success=True, data=cached_threads, error=None)
             
             # Retrieve threads from DB
-            thread_objs = Thread.objects.filter(user_id=user_id).order_by('created_at')
+            thread_objs = Thread.objects.filter(user_id=user_id).order_by('-created_at')
 
             response_threads = [
                 ChatThread(
