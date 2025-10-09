@@ -59,21 +59,19 @@ class StreamChatView(APIView):
             
             # --- Stream assistant response by iterating agent events            
             async for event in events_iter:
-                if event["event"] == "on_chat_model_stream":
-                    print("--------------------------")
-                    print(event)
-
+                if event["event"] == "on_chat_model_stream" and event["name"] == "ChatGoogleGenerativeAI" and event["metadata"]["langgraph_node"] == "call_model":
                     # Stream only chunks from the *last* root model run
                     if "data" in event and "chunk" in event["data"]:
                         chunk = event["data"]["chunk"]
                         text = getattr(chunk, "content", None)
                         if text:
+                            yield f"data: {text}\n\n"
                             # Split text into words, preserving punctuation
-                            words = re.findall(r'\S+\s*', text)  # each element includes trailing spaces
-                            chunk_size = 10
-                            for i in range(0, len(words), chunk_size):
-                                small_chunk = ''.join(words[i:i + chunk_size])
-                                yield f"data: {small_chunk}\n\n"
+                            # words = re.findall(r'\S+\s*', text)  # each element includes trailing spaces
+                            # chunk_size = 10
+                            # for i in range(0, len(words), chunk_size):
+                            #     small_chunk = ''.join(words[i:i + chunk_size])
+                            #     yield f"data: {small_chunk}\n\n"
 
                 elif event["event"] == "on_chain_end" and not event.get("parent_ids"):
                     messages = event["data"]["output"]["messages"]
