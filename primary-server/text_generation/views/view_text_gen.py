@@ -154,6 +154,7 @@ class StreamChatView(APIView):
 
             loop.close()
 
+
     def post(self, request):
         try:
             data = request.data
