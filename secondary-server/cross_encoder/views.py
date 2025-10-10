@@ -13,7 +13,7 @@ import json
 
 class EncoderAPIView(APIView):
     _, tokenizer = EncoderService.load_model()
-    thread_pool_excecutor = concurrent.futures.ThreadPoolExecutor(max_workers=8)
+    thread_pool_excecutor = concurrent.futures.ThreadPoolExecutor(max_workers=16)
 
     @staticmethod
     def process_batch(i, q_batch, t_batch):
@@ -40,13 +40,13 @@ class EncoderAPIView(APIView):
             report("After validation")
 
             # Batch processing
-            batches = batchify(queries, texts, cls.tokenizer, max_tokens=1000)
+            batches = batchify(queries, texts, cls.tokenizer, max_tokens=2000)
             report(f"After batching ({len(batches)} batches)")
 
             # Run batches in parrellel using 8 threads
             results = []
-            for future in concurrent.futures.as_completed({cls.thread_pool_excecutor.submit(cls.process_batch, i, q_batch, t_batch): i for i, (q_batch, t_batch) in enumerate(batches, start=0)}):
-                _, result = future.result()
+            for response in concurrent.futures.as_completed({cls.thread_pool_excecutor.submit(cls.process_batch, i, q_batch, t_batch): i for i, (q_batch, t_batch) in enumerate(batches, start=0)}):
+                _, result = response.result()
                 results.extend(result)
             return Response({"success": True, "data": json.dumps(results), "error": None}, status=status.HTTP_200_OK)
         

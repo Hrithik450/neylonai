@@ -145,29 +145,18 @@ def semantic_search_tool(query: str) -> str:
 
     ENCODER_API_URL = os.getenv("ENCODER_API_URL")
     if not ENCODER_API_URL:
-        raise("Please add ENCODER_API_URL in env variables")    
+        raise RuntimeError("Please add ENCODER_API_URL in env variables")    
     
     payload = {"queries": queries, "texts": texts}
     try:
-        with requests.post(ENCODER_API_URL, json=payload, stream=True) as response:
-            if response.status_code != 200:
-                raise RuntimeError(f"Cross-encoder API failed: {response.text}")
-
-            rerank_scores = []
-
-            # Read the response line by line
-            for line in response.iter_lines():
-                if not line:
-                    continue
-                batch_result = json.loads(line.decode('utf-8'))
-                if not batch_result.get("success"):
-                    raise RuntimeError(f"Cross-encoder error: {batch_result.get('error')}")
-                
-                print(len(rerank_scores))
-                rerank_scores.extend(batch_result["batch"])
+        response = requests.post(ENCODER_API_URL, json=payload, stream=True)
+        data = response.json()
+        if not data.get('success'):
+            raise RuntimeError("Error occured while re-ranking")
+        
+        rerank_scores = data['data']
     except Exception as e:
-        print(f"Error occured {str(e)}")
-        pass
+        raise RuntimeError(f"Error occured while re-ranking: {str(e)}")
     
     ranked = sorted(zip(rerank_scores, top_chunks), key=lambda x: x[0], reverse=True)
 

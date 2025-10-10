@@ -4,8 +4,8 @@ import React from "react";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
 import ReactMarkdown from "react-markdown";
-import { ChevronsDown, Copy, Volume2 } from "lucide-react";
 import { useAssistantStore } from "@/store/store";
+import { ChevronsDown, Copy, Volume2 } from "lucide-react";
 import { ClassicLoader } from "@/components/classic-loader";
 import { NewMessage } from "@/actions/thread_messages/thread_messages.types";
 
