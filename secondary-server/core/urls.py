@@ -19,5 +19,5 @@ from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/cross-encoder/', include('cross_encoder.urls')), 
+    path('api/v1/', include('cross_encoder.urls')), 
 ]

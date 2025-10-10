@@ -1,10 +1,9 @@
 from pydantic import BaseModel, validator, ValidationError
 from transformers import AutoTokenizer
-import onnxruntime as ort
+from typing import List, Optional
 from ..lib.utils import report 
-from typing import List
+import onnxruntime as ort
 import numpy as np
-import gc
 
 class EncoderRequest(BaseModel):
     queries: List[str]
@@ -15,6 +14,11 @@ class EncoderRequest(BaseModel):
         if "queries" in values and len(values["queries"]) != len(v):
             raise ValueError("queries and texts must be arrays of equal length")
         return v
+
+class EncoderResponse(BaseModel):
+    success: bool
+    data: Optional[List] = None
+    error: Optional[str] = None
 
 class EncoderService:
     tokenizer_path = "onnx_cross_encoder_int8"
@@ -32,7 +36,7 @@ class EncoderService:
         return cls.session, cls.tokenizer
 
     @classmethod
-    def encode(cls, data: EncoderRequest):
+    def encode(cls, data: EncoderRequest) -> EncoderResponse:
         try:    
             req = EncoderRequest(**data)
             session, tokenizer = cls.load_model()
@@ -48,21 +52,9 @@ class EncoderService:
 
             # Inputs
             logits = session.run(None, onnx_inputs)[0]
-            report("after implementing features")
-
-            # Convert logits to list
-            logits_np = np.array(logits, dtype=np.float32)
-
-            report("after logits_list")
-            del logits, onnx_inputs, tokens
-            gc.collect()
-
-            yield {"success": True, "data": {"list": logits_np}}
-
-            del logits_np
-            gc.collect()
+            return EncoderResponse(success=True, data=np.array(logits, dtype=np.float32), error=None)
 
         except ValidationError as ve:
-            return {"success": False, "Validation error": str(ve)}
+            return EncoderResponse(success=False, data=None, error=f"Validation error: {str(ve)}")
         except Exception as e:
-            return {"success": False, "error": str(e)}
+            return EncoderResponse(success=False, data=None, error=f"Error occured: {str(e)}")
