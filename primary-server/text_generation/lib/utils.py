@@ -526,3 +526,22 @@ def parse_json(raw_response):
     if match:
         return json.loads(match.group(0))
     return None
+
+def safe_serialize(obj):
+    """Recursively convert complex objects (like SystemMessage) into JSON-safe structures."""
+    if isinstance(obj, (str, int, float, bool)) or obj is None:
+        return obj
+
+    # Convert dataclasses or message-like objects
+    if hasattr(obj, "content"):
+        return obj.content
+    if hasattr(obj, "__dict__"):
+        return {k: safe_serialize(v) for k, v in obj.__dict__.items()}
+
+    if isinstance(obj, (list, tuple)):
+        return [safe_serialize(i) for i in obj]
+    if isinstance(obj, dict):
+        return {k: safe_serialize(v) for k, v in obj.items()}
+
+    # Fallback: convert to string
+    return str(obj)

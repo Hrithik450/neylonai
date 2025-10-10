@@ -31,8 +31,9 @@ class MessageState(TypedDict):
     messages: List[StateMessage]
 
 class LoadInitialAgentConfig():
+    _initialized = False 
     _instance = None
-
+    
     def __init__(self):
         if hasattr(self, "_initialized") and self._initialized:
             return
@@ -79,7 +80,7 @@ class LoadInitialAgentConfig():
             cls._instance = cls()
         return cls._instance
 
-    # ============================================================
+    # ================================================  ============
     # HELPER FUNCTIONS
     # ============================================================
     async def call_llm(self, system_prompt: str, user_prompt: str) -> str:
