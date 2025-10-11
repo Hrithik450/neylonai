@@ -161,9 +161,30 @@ export function WidgetChatThreadUI({
                 break;
 
               case "assistantResponseCompleted":
-                // const { threadId } = JSON.parse(data);
+                setIsAssistantTyping(false);
+                const { assistantResponse } = JSON.parse(data);
                 // if (threadId) router.push(`/c/${threadId}`);
                 // await autoSpeak(assistantResponse);
+
+                updateMessage((prev) => {
+                  if (!prev || prev.length === 0)
+                    return [
+                      {
+                        role: "assistant",
+                        content: assistantResponse,
+                        thread_id: id,
+                      },
+                    ];
+
+                  return [
+                    ...prev,
+                    {
+                      role: "assistant",
+                      content: assistantResponse,
+                      thread_id: id,
+                    },
+                  ];
+                });
                 break;
 
               case "done":
@@ -176,26 +197,8 @@ export function WidgetChatThreadUI({
                 break;
             }
           } else if (event.startsWith("data: ")) {
-            setIsAssistantTyping(false);
-            console.log(event);
-            const chunk = event.replace(/^data:\s?/, "");
-
-            updateMessage((prev) => {
-              if (!prev || prev.length === 0)
-                return [{ role: "assistant", content: chunk, thread_id: id }];
-              const last = prev[prev.length - 1];
-
-              if (last.role === "assistant")
-                return [
-                  ...prev.slice(0, -1),
-                  { ...last, content: last.content + chunk },
-                ];
-
-              return [
-                ...prev,
-                { role: "assistant", content: chunk, thread_id: id },
-              ];
-            });
+            // setIsAssistantTyping(false);
+            // const chunk = event.replace(/^data:\s?/, "");
           }
         }
 

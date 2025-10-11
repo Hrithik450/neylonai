@@ -5,7 +5,6 @@ from ..lib.load_data import df
 from ..lib.utils import normalize_list, match_value_in_columns, smart_subject_match, build_date_range, human_readable_date
 
 class EmailFilteringTool:
-    temp_df = df.clone()
 
     @classmethod
     def run_tool(
@@ -26,11 +25,12 @@ class EmailFilteringTool:
         limit: int = None,):
         try:
             print(f"email_filtering_tool is being called {uid}, {threadId}, {sender}, {recipient}, {subject}, {cc}, {labels}, {start_date}, {end_date}, {body}, {html}, {sort_by}, {sort_order}, {limit}")
+            temp_df = df.clone()
             mask = pl.lit(True)
 
-            cls.temp_df = cls.temp_df.with_columns([
-                cls.temp_df["body"].struct.field("text").alias("body_text"),
-                cls.temp_df["body"].struct.field("html").alias("body_html"),
+            temp_df = temp_df.with_columns([
+                temp_df["body"].struct.field("text").alias("body_text"),
+                temp_df["body"].struct.field("html").alias("body_html"),
             ])
 
             if uid:
@@ -43,7 +43,7 @@ class EmailFilteringTool:
             if sender:
                 sender = sender.lower()
                 # Add a normalized column
-                cls.temp_df = cls.temp_df.with_columns([
+                temp_df = temp_df.with_columns([
                     pl.col("from").map_elements(normalize_list, return_dtype=str).alias("from_normalized")
                 ])
                 # Filter rows where the normalized 'from' matches sender
@@ -54,7 +54,7 @@ class EmailFilteringTool:
             if recipient:
                 recipient = recipient.lower()
                 # Normalize 'to' and 'cc' columns which are lists
-                cls.temp_df = cls.temp_df.with_columns([
+                temp_df = temp_df.with_columns([
                     pl.col("to").map_elements(normalize_list, return_dtype=str).alias("to_normalized")
                 ])
                 # Filter rows where any normalized 'to' or 'cc' matches the recipient
@@ -63,7 +63,7 @@ class EmailFilteringTool:
                 )
                 if cc:
                     # Normalize 'to' and 'cc' columns which are lists
-                    cls.temp_df = cls.temp_df.with_columns([
+                    temp_df = temp_df.with_columns([
                         pl.col("cc").map_elements(normalize_list, return_dtype=str).alias("cc_normalized")
                     ])
                     # Filter rows where any normalized 'to' or 'cc' matches the recipient
@@ -77,7 +77,7 @@ class EmailFilteringTool:
             # --- Date filtering (normalize to datetime) ---
             dt1 = pl.col("date").str.to_datetime("%Y-%m-%dT%H:%M:%S", strict=False).dt.replace_time_zone("UTC")
             dt2 = pl.col("date").str.to_datetime("%Y-%m-%dT%H:%M:%S%z", strict=False).dt.convert_time_zone("UTC")
-            cls.temp_df = cls.temp_df.with_columns(
+            temp_df = temp_df.with_columns(
                 pl.coalesce([dt1, dt2]).alias("date_dt")
             )
 
@@ -88,7 +88,7 @@ class EmailFilteringTool:
             if labels: 
                 labels = [lbl.strip().lower() for lbl in labels]
 
-                cls.temp_df = cls.temp_df.with_columns([
+                temp_df = temp_df.with_columns([
                     pl.col("labels").map_elements(normalize_list, return_dtype=str).alias("labels_normalized")
                 ])
 
@@ -104,20 +104,20 @@ class EmailFilteringTool:
                 mask = mask & subject_mask
 
             # Apply the mask only once
-            cls.temp_df = cls.temp_df.filter(mask)
+            temp_df = temp_df.filter(mask)
 
             # --- Sorting ---
-            cls.temp_df = cls.temp_df.sort(
+            temp_df = temp_df.sort(
                 by=sort_by,
                 descending=(sort_order.lower() == "desc")
             )
 
             # --- Handle empty result ---
-            if cls.temp_df.is_empty():
+            if temp_df.is_empty():
                 return "No emails found matching the specified criteria."
 
             # --- Preview results ---
-            total_matches = cls.temp_df.height
+            total_matches = temp_df.height
             preview_cols = ["id", "threadId", "from", "to", "subject", "date_dt", "cc", "snippet", "labels", "attachments"]
             if body:
                 preview_cols.append("body_text")
@@ -125,9 +125,9 @@ class EmailFilteringTool:
                 preview_cols.append("body_html")
 
             if limit is None:
-                results_preview = cls.temp_df.select(preview_cols).to_dicts()
+                results_preview = temp_df.select(preview_cols).to_dicts()
             else:
-                results_preview = cls.temp_df.head(limit).select(preview_cols).to_dicts()
+                results_preview = temp_df.head(limit).select(preview_cols).to_dicts()
 
             def fmt(res):
                 parts = [

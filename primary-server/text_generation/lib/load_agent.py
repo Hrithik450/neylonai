@@ -7,6 +7,7 @@ from rich.console import Console
 from typing import List, Literal, TypedDict
 
 # --- LangChain / LangGraph imports ---
+from langchain.tools import tool
 from langgraph.prebuilt import ToolNode
 from langchain.chat_models import init_chat_model
 from langgraph.graph.state import CompiledStateGraph
@@ -21,7 +22,6 @@ from .utils import AGENT_MODEL, MEMORY_LAYER_PROMPT, parse_json
 from ..services.model_message_service import ChatMessageService
 from ..services.model_thread_service import ChatThreadService
 from ..services.model_title_service import ChatTitleService
-from langchain.tools import tool
 
 # --- Schemas ---
 class StateMessage(TypedDict):
