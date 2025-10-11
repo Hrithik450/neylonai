@@ -37,7 +37,6 @@ class ChatMessageService:
         """Insert a single chat message."""
         try:
             validated_data = NewChatMessage(**data)
-            print(validated_data)
             
             thread_message = ThreadMessages.objects.create(
                 thread_id=UUID(validated_data.thread_id),

@@ -23,7 +23,7 @@ class StreamChatSchema(BaseModel):
 
 class StreamChatView(APIView):
     # Langgraph agent
-    agent_graph = LoadInitialAgentConfig.get_instance()
+    agent_graph = LoadInitialAgentConfig()
 
     IST = pytz.timezone("Asia/Kolkata")
     today_date = datetime.now(IST).strftime("%B %d, %Y")

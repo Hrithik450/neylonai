@@ -15,12 +15,13 @@ from langgraph.graph import StateGraph, MessagesState, START, END
 
 # ---- Project Imports ----
 load_dotenv()
-from ..tools.semantic_search_tool import semantic_search_tool
+from ..tools.semantic_search_tool import SemanticSearchTool
 from ..tools.email_filtering_tool import email_filtering_tool
 from .utils import AGENT_MODEL, MEMORY_LAYER_PROMPT, parse_json
 from ..services.model_message_service import ChatMessageService
 from ..services.model_thread_service import ChatThreadService
 from ..services.model_title_service import ChatTitleService
+from langchain.tools import tool
 
 # --- Schemas ---
 class StateMessage(TypedDict):
@@ -30,16 +31,26 @@ class StateMessage(TypedDict):
 class MessageState(TypedDict):
     messages: List[StateMessage]
 
-class LoadInitialAgentConfig():
-    _initialized = False 
-    _instance = None
+class LoadInitialAgentConfig:
+    search_tool_instance = SemanticSearchTool()
+
+    @staticmethod
+    @tool("semantic_search_tool", parse_docstring=True)
+    def semantic_search_tool_func(query: str) -> str:
+        """
+        This tool performs a semantic search over the documents to retrieve 
+        the most relevant chunks based on user asked query.
+        
+        Args:
+            query (str): The natural language query.
+
+        Returns:
+            str: Top 10 most relavent documents with data.
+        """
+        return LoadInitialAgentConfig.search_tool_instance.run_tool(query)
     
     def __init__(self):
-        if hasattr(self, "_initialized") and self._initialized:
-            return
-        
-        print("Initializing LangGraph agent inside class...")
-
+        print("Initializing LangGraph agent...")
         # ============================================================
         # CONFIG & GLOBALS
         # ============================================================
@@ -57,7 +68,7 @@ class LoadInitialAgentConfig():
         self.chat_title_service = ChatTitleService()
 
         # LangGraph model + tools
-        self.tools = [email_filtering_tool, semantic_search_tool]
+        self.tools = [email_filtering_tool, LoadInitialAgentConfig.semantic_search_tool_func]
         self.tool_node = ToolNode(self.tools)
 
         self.base_model = ChatGoogleGenerativeAI(
@@ -72,15 +83,9 @@ class LoadInitialAgentConfig():
         self.llm_with_tools = self.llm.bind_tools(self.tools)  # for small helper tasks
 
         self.agent_graph = self.build_agent_graph()
-        self._initialized = True
+        print("Initialized LangGraph agent.")
 
-    @classmethod
-    def get_instance(cls):
-        if cls._instance is None:
-            cls._instance = cls()
-        return cls._instance
-
-    # ================================================  ============
+    # ============================================================
     # HELPER FUNCTIONS
     # ============================================================
     async def call_llm(self, system_prompt: str, user_prompt: str) -> str:
