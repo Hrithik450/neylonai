@@ -16,7 +16,7 @@ from langgraph.graph import StateGraph, MessagesState, START, END
 # ---- Project Imports ----
 load_dotenv()
 from ..tools.semantic_search_tool import SemanticSearchTool
-from ..tools.email_filtering_tool import email_filtering_tool
+from ..tools.email_filtering_tool import EmailFilteringTool
 from .utils import AGENT_MODEL, MEMORY_LAYER_PROMPT, parse_json
 from ..services.model_message_service import ChatMessageService
 from ..services.model_thread_service import ChatThreadService
@@ -33,21 +33,7 @@ class MessageState(TypedDict):
 
 class LoadInitialAgentConfig:
     search_tool_instance = SemanticSearchTool()
-
-    @staticmethod
-    @tool("semantic_search_tool", parse_docstring=True)
-    def semantic_search_tool_func(query: str) -> str:
-        """
-        This tool performs a semantic search over the documents to retrieve 
-        the most relevant chunks based on user asked query.
-        
-        Args:
-            query (str): The natural language query.
-
-        Returns:
-            str: Top 10 most relavent documents with data.
-        """
-        return LoadInitialAgentConfig.search_tool_instance.run_tool(query)
+    email_tool_instance = EmailFilteringTool()
     
     def __init__(self):
         print("Initializing LangGraph agent...")
@@ -68,7 +54,7 @@ class LoadInitialAgentConfig:
         self.chat_title_service = ChatTitleService()
 
         # LangGraph model + tools
-        self.tools = [email_filtering_tool, LoadInitialAgentConfig.semantic_search_tool_func]
+        self.tools = [LoadInitialAgentConfig.email_filtering_tool_func, LoadInitialAgentConfig.semantic_search_tool_func]
         self.tool_node = ToolNode(self.tools)
 
         self.base_model = ChatGoogleGenerativeAI(
@@ -84,6 +70,63 @@ class LoadInitialAgentConfig:
 
         self.agent_graph = self.build_agent_graph()
         print("Initialized LangGraph agent.")
+
+    # ============================================================
+    # Tools
+    # ============================================================
+    @staticmethod
+    @tool("semantic_search_tool", parse_docstring=True)
+    def semantic_search_tool_func(query: str) -> str:
+        """
+        This tool performs a semantic search over the documents to retrieve 
+        the most relevant chunks based on user asked query.
+        
+        Args:
+            query (str): The natural language query.
+
+        Returns:
+            str: Top 10 most relavent documents with data.
+        """
+        return LoadInitialAgentConfig.search_tool_instance.run_tool(query)
+    
+    @staticmethod
+    @tool("email_filtering_tool", parse_docstring=True)
+    def email_filtering_tool_func(
+        uid: str = None,
+        threadId: str = None,
+        sender: str = None,
+        recipient: str = None,
+        subject: str = None,
+        cc: bool = False,
+        labels: list[str] = None,
+        start_date: str = None,
+        end_date: str = None,
+        body: bool = False,
+        html: bool = False,
+        sort_by: str = "date",
+        sort_order: str = "desc",
+        limit: int = None,
+    ) -> str:
+        """
+        This tool filter emails based on metadata such as sender (human), recipient (human), date range, or thread ID.
+        
+        Args:
+            uid (str, optional): Filter emails by their unique UID. Exact match required.
+            threadId: Filter emails by their conversation (email chian) thread ID, Returns all messages belonging to that specific chain (thread).
+            sender (str or list of str, optional): Filter emails by sender(s). Can be full email address, partial email, or sender names (case-insensitive, only humans).
+            recipient (str or list of str, optional): Filter emails by recipient(s). Can be full email addresses, partial emails, or recipient names, but strictly not numbers. (case-insensitive, only humans).
+            subject (str, optional): Filter email by subject text. Can be full or partial subject string (case-insensitive).
+            cc (bool, optional): Filter cc recepients of the email only when explicitly requested. Default False.
+            labels (list of str, optional): Filter emails by one or more labels. Matches any email that contains at least one of the provided labels (case-insensitive).
+            start_date (str, optional): Filter emails sent on or after this date. Format: 'YYYY-MM-DD' or 'YYYY-MM-DD HH:MM:SS'.
+            end_date (str, optional): Filter emails sent on or before this date. Format: 'YYYY-MM-DD' or 'YYYY-MM-DD HH:MM:SS'.
+            body (bool, optional): Include the plain-text email body only when explicitly requested. Default False.
+            html (bool, optional): Include the full HTML body only when explicitly requested. Default False.
+            sort_by (str, optional): Column to sort the results by. Default is 'date_dt'.
+            sort_order (str, optional): Sort order: 'asc' for ascending, 'desc' for descending. Default is 'desc'.
+            limit (int, optional): Maximum number of results to return. set default value to 5.
+        """
+        return LoadInitialAgentConfig.email_tool_instance.run_tool(uid, threadId, sender, recipient, subject, cc, labels, start_date, end_date, body, html, sort_by, sort_order, limit)
 
     # ============================================================
     # HELPER FUNCTIONS

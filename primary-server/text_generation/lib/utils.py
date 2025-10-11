@@ -475,6 +475,24 @@ def build_date_range(start_date: str, end_date: str):
 
     return range_start, range_end
 
+def human_readable_date(timestamp) -> str:
+    """
+    Convert a timestamp to human-readable form.
+    Accepts: str, datetime.datetime, or None
+    """
+    if timestamp is None:
+        return "N/A"
+    
+    # If Polars datetime, convert to Python datetime
+    if not isinstance(timestamp, datetime):
+        try:
+            # Try parsing string
+            timestamp = datetime.fromisoformat(str(timestamp))
+        except Exception:
+            return "N/A"
+    
+    return timestamp.strftime("%a, %b %d, %Y %I:%M %p")
+
 def count_tokens(encoding_model, text: str) -> int:
     return len(encoding_model.encode(text))
 
