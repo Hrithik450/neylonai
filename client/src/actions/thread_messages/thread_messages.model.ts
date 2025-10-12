@@ -40,7 +40,7 @@ export class MessagesModel {
     const thread_messages = await db
       .select()
       .from(threadMessages)
-      .where(eq(threadMessages.thread_id, threadId));
+      .where(eq(threadMessages.threadId, threadId));
 
     // await redis.set(cacheKey, JSON.stringify(thread_messages), "EX", 3600);
     return thread_messages;
@@ -49,7 +49,7 @@ export class MessagesModel {
   static async deleteMessagesByThreadId(threadId: string): Promise<boolean> {
     const result = await db
       .delete(threadMessages)
-      .where(eq(threadMessages.thread_id, threadId));
+      .where(eq(threadMessages.threadId, threadId));
     return result.rowCount !== null && result.rowCount > 0;
   }
 }

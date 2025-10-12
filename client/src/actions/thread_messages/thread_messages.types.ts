@@ -5,7 +5,7 @@ export type Message = typeof threadMessages.$inferSelect;
 export type NewMessage = typeof threadMessages.$inferInsert;
 
 export const messageSchema = z.object({
-  thread_id: z.string().uuid(),
+  threadId: z.string().uuid(),
   role: z.enum(["user", "assistant", "system"]),
   content: z.string(),
 });

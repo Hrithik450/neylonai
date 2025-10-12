@@ -46,7 +46,7 @@ export const session = pgTable(
   {
     sessionToken: text("sessionToken").primaryKey(),
     userId: uuid("userId").notNull(),
-    expires: timestamp("expires", { mode: "string" }).notNull(),
+    expires: timestamp("expires", { mode: "date" }).notNull(),
   },
   (table) => [
     foreignKey({
@@ -64,7 +64,7 @@ export const threadMessages = pgTable(
     threadId: uuid("thread_id").notNull(),
     role: messageRole("role").notNull(),
     content: text("content").notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
+    createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
   },
@@ -83,7 +83,7 @@ export const thread = pgTable(
     id: uuid("id").defaultRandom().primaryKey().notNull(),
     userId: uuid("user_id").notNull(),
     title: varchar("title", { length: 255 }).notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
+    created_at: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
   },
@@ -104,7 +104,7 @@ export const user = pgTable(
     email: text("email"),
     emailVerified: timestamp("emailVerified", { mode: "date" }),
     image: text("image"),
-    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
+    createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
   },

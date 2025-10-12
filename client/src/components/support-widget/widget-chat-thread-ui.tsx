@@ -102,8 +102,8 @@ export function WidgetChatThreadUI({
 
     updateMessage((prev) => {
       if (!prev || prev.length === 0)
-        return [{ role: "user", content: input, thread_id: id }];
-      return [...prev, { role: "user", content: input, thread_id: id }];
+        return [{ role: "user", content: input, threadId: id }];
+      return [...prev, { role: "user", content: input, threadId: id }];
     });
 
     setInput("");
@@ -172,7 +172,7 @@ export function WidgetChatThreadUI({
                       {
                         role: "assistant",
                         content: assistantResponse,
-                        thread_id: id,
+                        threadId: id,
                       },
                     ];
 
@@ -181,7 +181,7 @@ export function WidgetChatThreadUI({
                     {
                       role: "assistant",
                       content: assistantResponse,
-                      thread_id: id,
+                      threadId: id,
                     },
                   ];
                 });
