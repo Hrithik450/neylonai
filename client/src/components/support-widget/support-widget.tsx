@@ -141,7 +141,7 @@ export function SupportWidget() {
         "md:bottom-20 md:right-5",
         "2xl:right-[max(1.2rem,calc((100vw-120rem)/2+2rem))]",
         "w-full md:min-w-sm max-w-sm",
-        "md:h-[65vh] lg:h-[82vh] max-h-[750px] z-50",
+        "md:h-[65vh] lg:h-[82vh] max-h-[750px] z-99",
         "bg-[linear-gradient(to_bottom,rgb(144,238,144)_0%,white_100%)]",
         "border border-gray-400/40 shadow-2xl sm:rounded-2xl py-2 sm:py-3 flex flex-col",
         "origin-bottom-right transition-all duration-300 transform",

@@ -14,7 +14,7 @@ export function Navbar() {
     <header
       id="header"
       className={cn(
-        "max-w-[120rem] mx-auto absolute z-99 w-full py-6 sm:py-8 px-4 md:px-8 lg:px-20 bg-transparent flex justify-between items-center",
+        "max-w-[120rem] mx-auto absolute z-98 w-full py-6 sm:py-8 px-4 md:px-8 lg:px-20 bg-transparent flex justify-between items-center",
         guminertRegular.className
       )}
     >

@@ -10,7 +10,7 @@ export function AIChat() {
   const { isOpen, setIsOpen } = useSupportWidgetToggleStore();
 
   return (
-    <div className="fixed bottom-3 right-3 sm:right-6 2xl:right-[max(1rem,calc((100vw-120rem)/2+2rem))] z-50 flex flex-col items-end">
+    <div className="fixed bottom-3 right-3 sm:right-6 2xl:right-[max(1rem,calc((100vw-120rem)/2+2rem))] z-99 flex flex-col items-end">
       <SupportWidget />
 
       <button
