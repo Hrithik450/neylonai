@@ -126,9 +126,7 @@ export function WidgetChatThreadUI({
         }
       );
 
-      if (!response.ok || !response.body) {
-        throw new Error("No response stream");
-      }
+      if (!response.ok || !response.body) throw new Error("No response stream");
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder("utf-8");
