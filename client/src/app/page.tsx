@@ -7,14 +7,19 @@ import { Footer } from "@/components/landing-page/footer-section";
 import { Hero2 } from "@/components/landing-page/hero-2-section";
 import { Testimonials } from "@/components/landing-page/testimonial";
 import { Navbar } from "@/components/navbar";
+import { auth } from "@/lib/auth/auth";
+import React from "react";
 
 export default function App() {
+  const session = React.use(auth());
+  console.log(session);
+
   return (
     <main className="relative max-w-[120rem] mx-auto">
       {/* <Navbar /> */}
       {/* <Hero /> */}
       {/* <WhyChooseUs /> */}
-      <Navbar />
+      <Navbar session={session} />
       <Hero2 />
       <FeatureSection />
       <Faq />
