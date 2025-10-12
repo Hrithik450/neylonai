@@ -16,7 +16,7 @@ export function Hero2() {
         "py-4 px-3 md:px-5 h-[max-content] md:h-[1240px] xl:h-[1160px] overflow-hidden"
       )}
     >
-      <div className="relative rounded-2xl overflow-hidden px-3 md:px-6 pt-32 md:pt-36">
+      <div className="relative rounded-2xl overflow-hidden px-3 md:px-6 pt-32 md:pt-34">
         <div className="absolute inset-0">
           <Image
             src={HeroImage}
