@@ -13,10 +13,10 @@ export function Hero2() {
     <section
       className={cn(
         guminertRegular.className,
-        "py-4 px-3 md:px-5 h-[max-content] md:h-[1080px] overflow-hidden"
+        "py-4 px-3 md:px-5 h-[max-content] md:h-[1240px] xl:h-[1160px] overflow-hidden"
       )}
     >
-      <div className="relative rounded-2xl overflow-hidden px-3 md:px-6 pt-20">
+      <div className="relative rounded-2xl overflow-hidden px-3 md:px-6 pt-32 md:pt-36">
         <div className="absolute inset-0">
           <Image
             src={HeroImage}
@@ -69,7 +69,7 @@ export function Hero2() {
           </button>
         </div>
 
-        <div className="relative max-w-[90rem] mx-auto mt-10 max-md:mt-45 max-md:mb-35">
+        <div className="relative max-w-[90rem] mx-auto mt-10 max-md:mt-48 max-md:mb-26">
           <div className="relative max-w-xs md:max-w-md mx-auto h-full flex-center">
             {/* Iphone Frame */}
             <div className="relative w-full h-full z-20">
@@ -89,20 +89,20 @@ export function Hero2() {
           </div>
 
           {/* Supporting Card-1 */}
-          <div className="absolute -bottom-30 md:bottom-100 lg:bottom-90 -left-2.5 lg:-left-4 2xl:left-15 z-50">
-            <div className="relative flex flex-col lg:flex-row items-start lg:items-center gap-0 lg:gap-4 p-4 lg:p-3 border border-gray-400 rounded-3xl h-auto md:h-65 max-w-[15rem] md:max-w-lg w-full shadow-md hover:rotate-2 transition-all duration-150 ease-in-out bg-[linear-gradient(to_bottom,rgb(240,237,255)_0%,rgb(255,255,255)_100%)]">
-              <div className="md:px-2 py-4 bg-transparent rounded-xl flex flex-col h-full gap-2 justify-center items-start lg:items-center group">
+          <div className="absolute -bottom-20 md:bottom-80 lg:bottom-90 -left-2.5 lg:-left-4 2xl:left-15 z-50">
+            <div className="relative flex flex-col xl:flex-row items-center gap-0 xl:gap-4 p-4 lg:p-3 border border-gray-400 rounded-3xl h-auto md:h-60 xl:h-65 max-w-[15rem] md:max-w-sm xl:max-w-lg w-full shadow-md hover:rotate-2 transition-all duration-150 ease-in-out bg-[linear-gradient(to_bottom,rgb(240,237,255)_0%,rgb(255,255,255)_100%)]">
+              <div className="md:px-2 py-4 md:py-2 bg-transparent rounded-xl flex flex-col h-full gap-2 justify-center items-center group">
                 <Cpu className="w-15 h-15 group-hover:scale-110 group-hover:rotate-5 transition-all duration-150 ease-in-out" />
                 <h1 className="text-4xl font-semibold">99.9%</h1>
                 <p className="text-md text-center">Accuracy & Reliability</p>
               </div>
 
               <div className="flex-1 flex flex-col gap-2 justify-around items-start">
-                <h3 className="text-md md:text-xl max-w-[270px] font-semibold">
+                <h3 className="text-md md:text-xl max-w-[270px] max-xl:text-center font-semibold">
                   Delivering Unmatched AI Solutions for Businesses.
                 </h3>
 
-                <p className="max-lg:hidden text-sm md:text-base text-gray-500">
+                <p className="max-xl:hidden text-sm md:text-base text-gray-500">
                   Our AI models are built for precision and reliability,
                   ensuring actionable insights that drive real business impact.
                 </p>

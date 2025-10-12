@@ -6,6 +6,7 @@ import { FeatureSection } from "@/components/landing-page/features";
 import { Footer } from "@/components/landing-page/footer-section";
 import { Hero2 } from "@/components/landing-page/hero-2-section";
 import { Testimonials } from "@/components/landing-page/testimonial";
+import { Navbar } from "@/components/navbar";
 
 export default function App() {
   return (
@@ -13,6 +14,7 @@ export default function App() {
       {/* <Navbar /> */}
       {/* <Hero /> */}
       {/* <WhyChooseUs /> */}
+      <Navbar />
       <Hero2 />
       <FeatureSection />
       <Faq />
