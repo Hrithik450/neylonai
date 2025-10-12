@@ -4,33 +4,23 @@ import {
   text,
   integer,
   timestamp,
-  primaryKey,
   pgEnum,
   uuid,
+  foreignKey,
+  unique,
 } from "drizzle-orm/pg-core";
 import type { AdapterAccountType } from "@auth/core/adapters";
 
-// Users table
-export const users = pgTable("user", {
-  id: text("id")
-    .primaryKey()
-    .$defaultFn(() => crypto.randomUUID()),
-  name: text("name"),
-  email: text("email").unique(),
-  emailVerified: timestamp("emailVerified", { mode: "date" }),
-  image: text("image"),
-  created_at: timestamp("created_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-});
+export const messageRole = pgEnum("message_role", [
+  "user",
+  "assistant",
+  "system",
+]);
 
-// Accounts table
-export const accounts = pgTable(
+export const account = pgTable(
   "account",
   {
-    userId: text("userId")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
+    userId: uuid("userId").notNull(),
     type: text("type").$type<AdapterAccountType>().notNull(),
     provider: text("provider").notNull(),
     providerAccountId: text("providerAccountId").notNull(),
@@ -42,52 +32,81 @@ export const accounts = pgTable(
     id_token: text("id_token"),
     session_state: text("session_state"),
   },
-  (account) => [
-    {
-      compoundKey: primaryKey({
-        columns: [account.provider, account.providerAccountId],
-      }),
-    },
+  (table) => [
+    foreignKey({
+      columns: [table.userId],
+      foreignColumns: [user.id],
+      name: "account_userId_user_id_fk",
+    }).onDelete("cascade"),
   ]
 );
 
-// Sessions table
-export const sessions = pgTable("session", {
-  sessionToken: text("sessionToken").primaryKey(),
-  userId: text("userId")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  expires: timestamp("expires", { mode: "date" }).notNull(),
-});
+export const session = pgTable(
+  "session",
+  {
+    sessionToken: text("sessionToken").primaryKey(),
+    userId: uuid("userId").notNull(),
+    expires: timestamp("expires", { mode: "string" }).notNull(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.userId],
+      foreignColumns: [user.id],
+      name: "session_userId_user_id_fk",
+    }).onDelete("cascade"),
+  ]
+);
 
-// Threads table
-export const thread = pgTable("thread", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  user_id: text("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  title: varchar("title", { length: 255 }).notNull(),
-  created_at: timestamp("created_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-});
+export const threadMessages = pgTable(
+  "thread_messages",
+  {
+    id: uuid("id").defaultRandom().primaryKey().notNull(),
+    threadId: uuid("thread_id").notNull(),
+    role: messageRole("role").notNull(),
+    content: text("content").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.threadId],
+      foreignColumns: [thread.id],
+      name: "thread_messages_thread_id_thread_id_fk",
+    }).onDelete("cascade"),
+  ]
+);
 
-// Enum for message roles
-export const messageRoleEnum = pgEnum("message_role", [
+export const thread = pgTable(
+  "thread",
+  {
+    id: uuid("id").defaultRandom().primaryKey().notNull(),
+    userId: uuid("user_id").notNull(),
+    title: varchar("title", { length: 255 }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.userId],
+      foreignColumns: [user.id],
+      name: "thread_user_id_user_id_fk",
+    }).onDelete("cascade"),
+  ]
+);
+
+export const user = pgTable(
   "user",
-  "assistant",
-  "system",
-]);
-
-//  threadMessages table
-export const threadMessages = pgTable("thread_messages", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  thread_id: uuid("thread_id")
-    .notNull()
-    .references(() => thread.id, { onDelete: "cascade" }),
-  role: messageRoleEnum("role").notNull(),
-  content: text("content").notNull(),
-  created_at: timestamp("created_at", { withTimezone: true })
-    .defaultNow()
-    .notNull(),
-});
+  {
+    id: uuid("id").defaultRandom().primaryKey().notNull(),
+    name: text("name"),
+    email: text("email"),
+    emailVerified: timestamp("emailVerified", { mode: "date" }),
+    image: text("image"),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [unique("user_email_unique").on(table.email)]
+);
