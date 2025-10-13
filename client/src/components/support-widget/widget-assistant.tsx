@@ -128,8 +128,8 @@ export const AskQuestionButton: React.FC<AskQuestionButtonProps> = ({
 };
 
 export interface WidgetAssistantProps {
-  pushScreen: (screen: Screen) => void;
   popScreen: () => void;
+  pushScreen: (screen: Screen) => void;
 }
 
 /**

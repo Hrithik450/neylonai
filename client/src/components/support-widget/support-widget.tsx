@@ -110,7 +110,15 @@ export function useTypingAnimation(texts: string[], introTextFull: string) {
 /* -------------------------------------------------------------------------- */
 /*                              Main Component                                */
 /* -------------------------------------------------------------------------- */
-export function SupportWidget() {
+export function SupportWidget({
+  setMessage,
+  setStatus,
+}: {
+  setMessage: React.Dispatch<React.SetStateAction<string | null>>;
+  setStatus: React.Dispatch<
+    React.SetStateAction<"error" | "saving" | "saved" | null>
+  >;
+}) {
   const { isOpen } = useSupportWidgetToggleStore();
   const { tabStacks, setTabStacks, pushScreen, popScreen } =
     useNavigationStore();
@@ -163,6 +171,8 @@ export function SupportWidget() {
             pushScreen: (screen: Screen) => pushScreen(activeIndex, screen),
             popScreen: () => popScreen(activeIndex),
             ...stack[stack.length - 1]?.props,
+            setMessage,
+            setStatus,
           };
 
           return (

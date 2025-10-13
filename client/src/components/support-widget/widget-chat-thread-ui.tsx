@@ -19,14 +19,20 @@ import { Skeleton } from "@/components/ui/skeleton";
 interface WidgetChatUIProps {
   id: string;
   title: string;
-  pushScreen: (screen: Screen) => void;
   popScreen: () => void;
+  pushScreen: (screen: Screen) => void;
+  setMessage: React.Dispatch<React.SetStateAction<string | null>>;
+  setStatus: React.Dispatch<
+    React.SetStateAction<"error" | "saving" | "saved" | null>
+  >;
 }
 
 export function WidgetChatThreadUI({
   id,
   title,
   popScreen,
+  setMessage,
+  setStatus,
 }: WidgetChatUIProps) {
   const [loading, setLoading] = React.useState<boolean>(false);
 
@@ -96,7 +102,10 @@ export function WidgetChatThreadUI({
 
   const handleSendMessage = async () => {
     if (!currentUserId) {
-      console.log("userid not available");
+      setStatus("error");
+      setMessage(
+        "Please sign in to continue the conversation with our assistant."
+      );
       return;
     }
 

@@ -10,6 +10,7 @@ import { LogIn, LogOut, Menu, X } from "lucide-react";
 import { Session } from "next-auth";
 import Image from "next/image";
 import React from "react";
+import { useUserStore } from "@/store/store";
 
 function PageNavigations({
   className,
@@ -87,6 +88,12 @@ function AuthNavigations({
 
 export function Navbar({ session }: { session: Session | null }) {
   const [menuOpen, setMenuOpen] = React.useState<boolean>(false);
+  const { setCurrentUserId } = useUserStore();
+
+  React.useEffect(() => {
+    if (session && session.user && session.user.id)
+      setCurrentUserId(session.user?.id);
+  }, [session]);
 
   return (
     <header

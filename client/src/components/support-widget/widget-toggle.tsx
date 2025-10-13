@@ -5,13 +5,19 @@ import { cn } from "@/lib/utils";
 import { ChevronRight, MessagesSquare } from "lucide-react";
 import { SupportWidget } from "@/components/support-widget/support-widget";
 import { useSupportWidgetToggleStore } from "@/store/store";
+import { SuccessAlert } from "@/components/success-alert";
+import { FailureAlert } from "@/components/failure-alert";
 
 export function AIChat() {
   const { isOpen, setIsOpen } = useSupportWidgetToggleStore();
+  const [message, setMessage] = React.useState<string | null>(null);
+  const [status, setStatus] = React.useState<
+    "error" | "saving" | "saved" | null
+  >(null);
 
   return (
     <div className="fixed bottom-3 right-3 sm:right-6 2xl:right-[max(1rem,calc((100vw-120rem)/2+2rem))] z-99 flex flex-col items-end">
-      <SupportWidget />
+      <SupportWidget setMessage={setMessage} setStatus={setStatus} />
 
       <button
         onClick={() => setIsOpen(!isOpen)}
@@ -30,6 +36,23 @@ export function AIChat() {
           )}
         </div>
       </button>
+
+      {status === "saved" && message && (
+        <SuccessAlert
+          message={message}
+          duration={2000}
+          setStatus={setStatus}
+          setMessage={setMessage}
+        />
+      )}
+      {status === "error" && message && (
+        <FailureAlert
+          message={message}
+          duration={2000}
+          setStatus={setStatus}
+          setMessage={setMessage}
+        />
+      )}
     </div>
   );
 }

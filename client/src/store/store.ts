@@ -219,7 +219,7 @@ export const useInputStore = create<InputStore>((set) => ({
 export const useUserStore = create<UserStore>((set) => ({
   tokens: 0,
   setTokens: (tokens) => set({ tokens: tokens }),
-  currentUserId: "63f05e7a-35ac-4deb-9f38-e2864cdf3a1d",
+  currentUserId: null,
   setCurrentUserId: (id) => set({ currentUserId: id }),
 }));
 
