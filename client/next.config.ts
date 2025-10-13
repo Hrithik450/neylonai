@@ -9,6 +9,11 @@ const nextConfig: NextConfig = {
         hostname: "randomuser.me",
         port: "",
       },
+      {
+        protocol: "https",
+        hostname: "lh3.googleusercontent.com",
+        port: "",
+      },
     ],
   },
   reactStrictMode: false,

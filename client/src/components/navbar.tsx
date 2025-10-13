@@ -6,7 +6,7 @@ import { signOutAccount } from "@/actions/auth/sign-out";
 import { guminertRegular } from "@/assets/fonts";
 import { Button } from "@/components/ui/button";
 import { cn, navLists } from "@/lib/utils";
-import { Menu, X } from "lucide-react";
+import { LogIn, LogOut, Menu, X } from "lucide-react";
 import { Session } from "next-auth";
 import Image from "next/image";
 import React from "react";
@@ -55,7 +55,7 @@ function AuthNavigations({
       </Button>
     </div>
   ) : (
-    <div className="ml-auto flex items-center gap-4">
+    <div className={cn("flex items-center gap-4", className)}>
       <div className="flex items-center gap-2">
         {session.user?.image && (
           <Image
@@ -68,12 +68,19 @@ function AuthNavigations({
         )}
         <span className="font-medium text-gray-700">{session.user?.name}</span>
       </div>
-      <button
-        onClick={() => signOutAccount()}
-        className="px-6 py-2 rounded-full border border-red-600 text-red-600 hover:bg-red-50"
-      >
-        Logout
-      </button>
+      <div className="relative group">
+        <button
+          onClick={() => signOutAccount()}
+          className="cursor-pointer px-6 sm:px-2 py-2 rounded-full border border-red-600 text-red-600 hover:bg-red-50 flex justify-center items-center gap-2"
+        >
+          <LogOut className="w-5 h-5" />
+          <p className="sm:hidden">Logout</p>
+        </button>
+
+        <div className="hidden sm:block absolute -bottom-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-sm rounded-md px-3 py-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ease-in-out pointer-events-none">
+          Logout
+        </div>
+      </div>
     </div>
   );
 }
@@ -109,7 +116,12 @@ export function Navbar({ session }: { session: Session | null }) {
         />
 
         {/* Desktop Buttons */}
-        <AuthNavigations className="max-lg:hidden" session={session} />
+        <div className="flex justify-end max-w-[180px] xl:max-w-[240px] w-full">
+          <AuthNavigations
+            className="ml-auto max-lg:hidden"
+            session={session}
+          />
+        </div>
 
         {/* Mobile Menu Toggle */}
         <div className="lg:hidden flex items-center px-4">

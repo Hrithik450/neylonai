@@ -12,7 +12,6 @@ import React from "react";
 
 export default function App() {
   const session = React.use(auth());
-  console.log(session);
 
   return (
     <main className="relative max-w-[120rem] mx-auto">
