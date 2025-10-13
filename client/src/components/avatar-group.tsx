@@ -1,10 +1,10 @@
 import { sfProRegular } from "@/assets/fonts";
 import { cn } from "@/lib/utils";
-import Image from "next/image";
+import Image, { StaticImageData } from "next/image";
 import React from "react";
 
 type AvatarGroupProps = {
-  avatars: string[];
+  avatars: (string | StaticImageData)[];
   count?: string;
 };
 

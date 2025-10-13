@@ -8,6 +8,11 @@ import {
   Zap,
 } from "lucide-react";
 import FeatureGrid from "@/assets/images/feature_grid.jpg";
+import gemini from "@/assets/images/google-gemini.webp";
+import perplexity from "@/assets/images/perplexity.png";
+import anthropic from "@/assets/images/anthropic-3.png";
+import deepseek from "@/assets/images/deep-seek.png";
+import gpt from "@/assets/images/gpt.png";
 import { AvatarGroup } from "../avatar-group";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
@@ -49,13 +54,7 @@ export function FeatureSection() {
 
           <div className="py-10 sm:py-12">
             <AvatarGroup
-              avatars={[
-                "/images/gpt.png",
-                "/images/google-gemini.webp",
-                "/images/perplexity.png",
-                "/images/anthropic-3.png",
-                "/images/deep-seek.png",
-              ]}
+              avatars={[gpt, gemini, perplexity, anthropic, deepseek]}
             />
             <p className="text-black text-2xl pt-2 font-semibold">
               Automate decisions with enterprise-grade precision.
