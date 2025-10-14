@@ -3,7 +3,7 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 import { ChevronRight, MessagesSquare } from "lucide-react";
-import { SupportWidget } from "@/components/support-widget/support-widget";
+import { SupportWidget } from "@/components/support-widget/widget";
 import { useSupportWidgetToggleStore } from "@/store/store";
 import { SuccessAlert } from "@/components/success-alert";
 import { FailureAlert } from "@/components/failure-alert";

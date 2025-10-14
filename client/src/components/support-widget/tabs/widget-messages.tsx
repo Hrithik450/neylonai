@@ -6,10 +6,10 @@ import { ChevronRight, HelpCircle } from "lucide-react";
 import Image from "next/image";
 import { cn, shortTimeAgo } from "@/lib/utils";
 import { guminertRegular } from "@/assets/fonts";
-import { type Screen, useThreadStore } from "@/store/store";
+import { type Screen, useThreadStore, useUserStore } from "@/store/store";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ThreadsResponse } from "@/actions/threads/threads.types";
-import { WidgetChatThreadUI } from "@/components/support-widget/widget-chat-thread-ui";
+import { WidgetChatThreadUI } from "@/components/support-widget/tabs/widget-messages/widget-chat-messages-ui";
 
 /**
  * Props for the AskQuestionButton component.
@@ -143,18 +143,18 @@ export function WidgetAssistant({
   pushScreen,
 }: WidgetAssistantProps): React.JSX.Element {
   const [loading, setLoading] = React.useState<boolean>(false);
-  const { threads, setThreads } = useThreadStore();
-  const userId = "63f05e7a-35ac-4deb-9f38-e2864cdf3a1d";
+  const { threads, setThreads, currentThreadId } = useThreadStore();
+  const { currentUserId } = useUserStore();
 
   React.useEffect(() => {
-    if (!process.env.NEXT_PUBLIC_BACKEND_URL || !userId) return;
+    if (!process.env.NEXT_PUBLIC_BACKEND_URL) return;
     if (threads && threads.length > 0) return;
 
     const fetchThreads = async () => {
       try {
         setLoading(true);
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/threads/user/${userId}`
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/threads/user/${currentUserId}`
         );
         const data: ThreadsResponse = await res.json();
 
@@ -173,8 +173,8 @@ export function WidgetAssistant({
       }
     };
 
-    if (userId && !threads) fetchThreads();
-  }, [userId, threads, setThreads]);
+    if (currentUserId && (!threads || !currentThreadId)) fetchThreads();
+  }, [currentUserId, threads, setThreads]);
 
   return (
     <section className="relative h-full">

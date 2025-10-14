@@ -14,7 +14,7 @@ import { faqs } from "@/lib/constants";
 import { guminertBold } from "@/assets/fonts";
 import CTAImage from "@/assets/images/ai-solutionz-logo.jpg";
 import { type Screen, useSupportWidgetToggleStore } from "@/store/store";
-import { useTypingAnimation } from "@/components/support-widget/support-widget";
+import { useTypingAnimation } from "@/components/support-widget/widget";
 
 export interface WidgetHomeProps {
   pushScreen?: (screen: Screen) => void;

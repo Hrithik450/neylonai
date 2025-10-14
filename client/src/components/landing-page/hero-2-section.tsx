@@ -4,7 +4,7 @@ import { ArrowDownRight, BadgeCheck, Cpu, Play } from "lucide-react";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import IphoneFrameImage from "@/assets/images/iphone-frame.png";
 import HeroImage from "@/assets/images/hero_background_3.jpg";
-import { WidgetHome } from "@/components/support-widget/widget-home";
+import { WidgetHome } from "@/components/support-widget/tabs/widget-home";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 

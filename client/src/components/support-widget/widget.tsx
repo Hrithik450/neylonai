@@ -13,8 +13,8 @@ import {
   useNavigationStore,
   type Screen,
 } from "@/store/store";
-import { WidgetHome } from "@/components/support-widget/widget-home";
-import { WidgetAssistant } from "@/components/support-widget/widget-assistant";
+import { WidgetHome } from "@/components/support-widget/tabs/widget-home";
+import { WidgetAssistant } from "@/components/support-widget/tabs/widget-messages";
 
 /* -------------------------------------------------------------------------- */
 /*                                Tab Config                                  */
