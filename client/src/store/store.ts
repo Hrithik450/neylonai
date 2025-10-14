@@ -6,49 +6,20 @@ import {
   NewMessage,
 } from "@/actions/thread_messages/thread_messages.types";
 
-/**
- * Represents a screen inside a tab stack.
- *
- * @interface Screen<any>
- * @property {React.FC<any>} component - The React component to render for this screen.
- * @property {any} [props] - Optional props to pass to the component.
- */
 export interface Screen {
   component: React.FC<any>;
   props?: any;
 }
 
-/**
- * Represents the navigation stack for a single tab.
- *
- * @interface TabState
- * @property {Screen<any>[]} stack - Array of screens representing the current stack for the tab.
- */
 export interface TabState {
   stack: Array<Screen>;
 }
 
-/**
- * Store for toggling the Support Widget open/closed.
- *
- * @interface SupportWidgetToggleStore
- * @property {boolean} isOpen - Whether the support widget is currently open.
- * @property {(flag: boolean) => void} setIsOpen - Function to set the open/close state.
- */
 interface SupportWidgetToggleStore {
   isOpen: boolean;
   setIsOpen: (flag: boolean) => void;
 }
 
-/**
- * Store for managing chat threads inside the Support Widget.
- *
- * @interface ThreadStore
- * @property {Thread[] | null} threads - All available chat threads, or `null` if none are loaded.
- * @property {(threads: Thread[] | Thread) => void} setThreads - Replace the thread list or add a single thread.
- * @property {string | null} currentThreadId - ID of the currently active thread, or `null` if none is selected.
- * @property {(id: string | null) => void} setCurrentThreadId - Set or clear the currently active thread by ID.
- */
 interface ThreadStore {
   threads: Thread[] | null;
   setThreads: (threads: Thread[] | Thread) => void;
@@ -95,20 +66,6 @@ interface NavigationStore {
   popScreen: (tabIndex: number) => void;
 }
 
-/**
- * Zustand store for toggling the Support Widget open or closed.
- *
- * @remarks
- * Use this hook in your components to read or update the widget’s state:
- * ```ts
- * const { isOpen, setIsOpen } = useSupportWidgetToggleStore();
- * ```
- *
- * @property {boolean} isOpen
- *   Whether the support widget is currently open.
- * @property {(flag: boolean) => void} setIsOpen
- *   Function to set the open/close state.
- */
 export const useSupportWidgetToggleStore = create<SupportWidgetToggleStore>(
   (set) => ({
     isOpen: false,
@@ -116,56 +73,33 @@ export const useSupportWidgetToggleStore = create<SupportWidgetToggleStore>(
   })
 );
 
-/**
- * Zustand store for managing chat threads and the currently active thread.
- *
- * @remarks
- * Usage example:
- * ```ts
- * const {
- *   threads,
- *   setThreads,
- *   currentThreadId,
- *   setCurrentThreadId
- * } = useThreadStore();
- * ```
- *
- * @property {Thread[] | null} threads
- *   The list of chat threads. `null` if no threads have been loaded yet.
- *
- * @property {(threads: Thread[] | Thread) => void} setThreads
- *   Add or update one or more threads. Existing threads are merged by `id`.
- *
- * @property {string | null} currentThreadId
- *   ID of the currently active thread, or `null` if none is selected.
- *
- * @property {(id: string | null) => void} setCurrentThreadId
- *   Set the active thread’s ID, or clear it by passing `null`.
- */
-export const useThreadStore = create<ThreadStore>((set, get) => ({
-  threads: null,
-  setThreads: (newThreads) => {
-    const currentThreads = get().threads;
+export const useThreadStore = create<ThreadStore>()(
+  devtools((set, get) => ({
+    threads: null,
+    setThreads: (newThreads) => {
+      const currentThreads = get().threads;
 
-    const newThreadsArray = Array.isArray(newThreads)
-      ? newThreads
-      : [newThreads];
+      const newThreadsArray = Array.isArray(newThreads)
+        ? newThreads
+        : [newThreads];
 
-    const threadMap = new Map<string, Thread>();
-    if (currentThreads)
-      currentThreads.forEach((thread) => {
+      const threadMap = new Map<string, Thread>();
+
+      newThreadsArray.forEach((thread) => {
         threadMap.set(thread.id, thread);
       });
 
-    newThreadsArray.forEach((thread) => {
-      threadMap.set(thread.id, thread);
-    });
+      if (currentThreads)
+        currentThreads.forEach((thread) => {
+          if (!threadMap.has(thread.id)) threadMap.set(thread.id, thread);
+        });
 
-    set({ threads: Array.from(threadMap.values()) });
-  },
-  currentThreadId: null,
-  setCurrentThreadId: (id) => set({ currentThreadId: id }),
-}));
+      set({ threads: Array.from(threadMap.values()) });
+    },
+    currentThreadId: null,
+    setCurrentThreadId: (id) => set({ currentThreadId: id }),
+  }))
+);
 
 export const useThreadMessageStore = create<ThreadMessageStore>()(
   devtools((set, get) => ({
