@@ -35,6 +35,7 @@ class User(models.Model):
     email = models.TextField(unique=True, blank=True, null=True)
     emailverified = models.DateTimeField(db_column='emailVerified', auto_now_add=True)  # Field name made lowercase.
     image = models.TextField(blank=True, null=True)
+    daily_limit = models.IntegerField(default=200)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

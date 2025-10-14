@@ -107,6 +107,7 @@ export const user = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
+    dailyLimit: integer("daily_limit").default(200).notNull(),
   },
   (table) => [unique("user_email_unique").on(table.email)]
 );
