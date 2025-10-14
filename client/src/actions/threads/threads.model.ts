@@ -7,7 +7,7 @@ import { revalidateTag, unstable_cache } from "next/cache";
 export class ThreadsModel {
   static async createThread(data: NewThread): Promise<Thread> {
     const [thread] = await db.insert(db_thread).values(data).returning();
-    revalidateTag(`threads:${thread.userId}`);
+    revalidateTag(`threads:${thread.user_id}`);
     return thread;
   }
 
@@ -20,7 +20,7 @@ export class ThreadsModel {
       .set({ ...data })
       .where(eq(db_thread.id, id))
       .returning();
-    revalidateTag(`thread:${thread.userId}`);
+    revalidateTag(`thread:${thread.user_id}`);
     return thread || null;
   }
 
@@ -56,7 +56,7 @@ export class ThreadsModel {
 
     // Fetch from DB if not cached
     const threads = await db.query.thread.findMany({
-      where: (db_thread, { eq }) => eq(db_thread.userId, userId),
+      where: (db_thread, { eq }) => eq(db_thread.user_id, userId),
       orderBy: (db_thread, { desc }) => desc(db_thread.created_at),
     });
 

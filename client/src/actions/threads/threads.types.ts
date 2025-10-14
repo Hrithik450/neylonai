@@ -5,7 +5,7 @@ export type Thread = typeof thread.$inferSelect;
 export type NewThread = typeof thread.$inferInsert;
 
 export const threadSchema = z.object({
-  userId: z.string().uuid(),
+  user_id: z.string().uuid(),
   title: z.string(),
 });
 

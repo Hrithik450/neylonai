@@ -81,7 +81,7 @@ export const thread = pgTable(
   "thread",
   {
     id: uuid("id").defaultRandom().primaryKey().notNull(),
-    userId: uuid("user_id").notNull(),
+    user_id: uuid("user_id").notNull(),
     title: varchar("title", { length: 255 }).notNull(),
     created_at: timestamp("created_at", { withTimezone: true })
       .defaultNow()
@@ -89,7 +89,7 @@ export const thread = pgTable(
   },
   (table) => [
     foreignKey({
-      columns: [table.userId],
+      columns: [table.user_id],
       foreignColumns: [user.id],
       name: "thread_user_id_user_id_fk",
     }).onDelete("cascade"),

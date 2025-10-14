@@ -143,11 +143,10 @@ export function WidgetAssistant({
   pushScreen,
 }: WidgetAssistantProps): React.JSX.Element {
   const [loading, setLoading] = React.useState<boolean>(false);
-  const { threads, setThreads, currentThreadId } = useThreadStore();
+  const { threads, setThreads, setCurrentThreadId } = useThreadStore();
   const { currentUserId } = useUserStore();
 
   React.useEffect(() => {
-    if (!process.env.NEXT_PUBLIC_BACKEND_URL) return;
     if (threads && threads.length > 0) return;
 
     const fetchThreads = async () => {
@@ -173,7 +172,7 @@ export function WidgetAssistant({
       }
     };
 
-    if (currentUserId && (!threads || !currentThreadId)) fetchThreads();
+    if (currentUserId && !threads) fetchThreads();
   }, [currentUserId, threads, setThreads]);
 
   return (
@@ -201,9 +200,9 @@ export function WidgetAssistant({
         )}
 
         {!loading && threads && threads.length > 0 ? (
-          threads.map((thread, idx) => (
+          threads.map((thread) => (
             <MessagePreview
-              key={thread.id || `thread-${idx}`}
+              key={thread.id}
               action={() =>
                 pushScreen({
                   component: WidgetChatThreadUI,
@@ -228,6 +227,7 @@ export function WidgetAssistant({
       <div className="absolute bottom-2 w-full flex justify-center z-20">
         <AskQuestionButton
           onClick={() => {
+            setCurrentThreadId(null);
             pushScreen({
               component: WidgetChatThreadUI,
               props: { id: null, title: null },

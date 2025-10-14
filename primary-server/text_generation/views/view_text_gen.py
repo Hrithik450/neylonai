@@ -58,10 +58,12 @@ class StreamChatView(APIView):
                     thread_id = getattr(thread_response.data, "id", None)
 
                 if thread_id:
-                    cls.current_thread_id = thread_id
                     thread_created = True
-                    new_thread = {"data": {"id": thread_id}, "title": title}
-                    yield f"event: threadCreated\ndata: {json.dumps(new_thread)}\n\n"
+                    cls.current_thread_id = thread_id
+
+                    if thread_response.data:
+                        payload = json.dumps(thread_response.data.model_dump())
+                        yield f"event: threadCreated\ndata: {payload}\n\n"
             
             # --- Stream assistant response by iterating agent events            
             async for event in events_iter:                

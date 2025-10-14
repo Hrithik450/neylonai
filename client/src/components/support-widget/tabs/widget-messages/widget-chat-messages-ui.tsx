@@ -34,6 +34,7 @@ export function WidgetChatThreadUI({
   setMessage,
   setStatus,
 }: WidgetChatUIProps) {
+  console.log(id);
   const [loading, setLoading] = React.useState<boolean>(false);
 
   const { currentUserId } = useUserStore();
@@ -159,7 +160,7 @@ export function WidgetChatThreadUI({
             switch (eventType) {
               case "threadCreated":
                 const thread: Thread = JSON.parse(data);
-                setThreads(thread);
+                if (thread) setThreads(thread);
                 if (thread.id) setCurrentThreadId(thread.id);
                 break;
 
