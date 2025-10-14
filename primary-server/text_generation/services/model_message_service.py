@@ -1,5 +1,4 @@
 import json
-from uuid import UUID
 from django.core.cache import cache
 from ..models import ThreadMessages
 from typing import List, Optional, Literal
@@ -39,7 +38,7 @@ class ChatMessageService:
             validated_data = NewChatMessage(**data)
             
             thread_message = ThreadMessages.objects.create(
-                thread_id=UUID(validated_data.thread_id),
+                thread_id=str(validated_data.thread_id),
                 role=str(validated_data.role),
                 content=str(validated_data.content)
             )
