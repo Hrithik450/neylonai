@@ -43,8 +43,6 @@ export function WidgetChatThreadUI({
   const { setIsAssistantTyping } = useAssistantStore();
 
   React.useEffect(() => {
-    if (!process.env.NEXT_PUBLIC_BACKEND_URL) return;
-
     const fetchThreadMessages = async () => {
       try {
         setLoading(true);
@@ -59,10 +57,7 @@ export function WidgetChatThreadUI({
           return;
         }
 
-        if (data.data) {
-          setMessages(data.data);
-          setCurrentThreadId(id);
-        }
+        if (data.data) setMessages(data.data);
       } catch (error) {
         setLoading(false);
         console.error("Fetch error:", error);
@@ -73,6 +68,11 @@ export function WidgetChatThreadUI({
 
     if (id && (!messages || currentThreadId !== id)) fetchThreadMessages();
   }, [id, currentThreadId, setMessages]);
+
+  React.useEffect(() => {
+    setCurrentThreadId(id);
+    if (!id || !currentThreadId) setMessages([]);
+  }, [id]);
 
   // const autoSpeak = async (text: string) => {
   //   try {
@@ -222,7 +222,7 @@ export function WidgetChatThreadUI({
     <div className={cn("flex flex-col justify-center h-full")}>
       <WidgetHeader
         className="sticky top-0"
-        header={title}
+        header={title || "New Chat"}
         action={() => popScreen()}
       />
 
@@ -257,7 +257,7 @@ export function WidgetChatThreadUI({
       )}
 
       {/* Starter Template */}
-      {!loading && messages && messages.length === 0 && (
+      {!loading && (!messages || messages.length === 0) && (
         <div className="w-full h-full flex flex-col items-center justify-center text-center px-4">
           <h2 className="text-lg font-semibold mb-1">No conversations yet</h2>
           <p className="text-sm text-gray-500">

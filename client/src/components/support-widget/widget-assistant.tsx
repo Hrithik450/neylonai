@@ -201,9 +201,9 @@ export function WidgetAssistant({
         )}
 
         {!loading && threads && threads.length > 0 ? (
-          threads.map((thread) => (
+          threads.map((thread, idx) => (
             <MessagePreview
-              key={thread.id}
+              key={thread.id || `thread-${idx}`}
               action={() =>
                 pushScreen({
                   component: WidgetChatThreadUI,
@@ -226,7 +226,15 @@ export function WidgetAssistant({
 
       {/* Sticky bottom ask question button */}
       <div className="absolute bottom-2 w-full flex justify-center z-20">
-        <AskQuestionButton className="w-[max-content]" />
+        <AskQuestionButton
+          onClick={() => {
+            pushScreen({
+              component: WidgetChatThreadUI,
+              props: { id: null, title: null },
+            });
+          }}
+          className="w-[max-content]"
+        />
       </div>
     </section>
   );
