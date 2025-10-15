@@ -197,17 +197,19 @@ npm run dev
 
 ## **Folder Structure**
 
+```bash
 AISolutionz
-├── client/ # Next.js Frontend
-│ ├── src/components/ # Reusable UI components
-│ ├── src/app # Main app pages/routes
-│ └── ... # Other frontend files
-├── primary-server/ # Django Backend
-│ ├── text_generation/ # Core AI agent logic
-│ ├── core/ # Server configurations
-│ └── requirements.txt # Python dependencies
-├── README.dev.md # Developer-focused documentation
-└── README.md # Customer-facing documentation
+├── client/                 # Next.js Frontend
+│   ├── src/components/     # Reusable UI components
+│   ├── src/app             # Main app pages/routes
+│   └── ...                 # Other frontend files
+├── primary-server/         # Django Backend
+│   ├── text_generation/    # Core AI agent logic
+│   ├── core/               # Server configurations
+│   └── requirements.txt    # Python dependencies
+├── README.dev.md           # Developer-focused documentation
+└── README.md               # Customer-facing documentation
+```
 
 ---
 
@@ -227,7 +229,3 @@ AISolutionz
 This project is licensed under the **MIT License**.
 
 ---
-
-```
-
-```
