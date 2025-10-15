@@ -1,4 +1,5 @@
 import json
+import traceback
 from django.core.cache import cache
 from ..models import ThreadMessages
 from typing import List, Optional, Literal
@@ -80,7 +81,7 @@ class ChatMessageService:
                 cached_thread_messages = [ChatMessage(**message) for message in cached_data]
                 return ChatMessagesResponse(success=True, data=cached_thread_messages, error=None)
 
-            thread_messages = (ThreadMessages.objects.filter(thread_id=thread_id).order_by("-created_at")[:limit])[::-1]
+            thread_messages = (ThreadMessages.objects.filter(thread_id=thread_id).order_by("-created_at")[:limit])
 
             response_messages = [
                 ChatMessage(
@@ -97,14 +98,17 @@ class ChatMessageService:
             cache.set(cache_key, json.dumps([tm.model_dump() for tm in response_messages]), timeout=3600)
             return ChatMessagesResponse(success=True, data=response_messages, error=None)
 
+        except ThreadMessages.DoesNotExist:
+            return ChatMessagesResponse(success=False, data=None, error=f"Thread messages with id:{thread_id} does not exist")
         except Exception as e:
-            return ChatMessagesResponse(success=False, data=None, error=str(e))
+            return ChatMessagesResponse(success=False, error=f"Error: {str(e)}, details: {traceback.format_exc()}")
 
     @staticmethod
     def list_thread_messages(thread_id: str) -> ChatMessagesResponse:
         """Retrieve last messages for a thread (with Redis cache)."""
         try:
             cache_key = f"thread:{thread_id}:thread_messages"
+            cache.delete(cache_key)
             cached_value = cache.get(cache_key)
             if cached_value:
                 # Deserialize cached data
@@ -113,7 +117,7 @@ class ChatMessageService:
                 cached_thread_messages = [ChatMessage(**message) for message in cached_data]
                 return ChatMessagesResponse(success=True, data=cached_thread_messages, error=None)
             
-            thread_messages = (ThreadMessages.objects.filter(thread_id=thread_id)).order_by("-created_at")[::-1]
+            thread_messages = (ThreadMessages.objects.filter(thread_id=thread_id).order_by("-created_at"))
 
             response_messages = [
                 ChatMessage(
@@ -126,8 +130,10 @@ class ChatMessageService:
                 for tm in thread_messages
             ]
             
-            cache.set(cache_key, json.dumps([tm for tm in response_messages]), timeout=3600)
-            return ChatMessagesResponse(success=True, data=thread_messages, error=None)
+            cache.set(cache_key, json.dumps([tm.model_dump() for tm in response_messages]), timeout=3600)
+            return ChatMessagesResponse(success=True, data=response_messages, error=None)
         
+        except ThreadMessages.DoesNotExist:
+            return ChatMessagesResponse(success=False, data=None, error=f"Thread messages with id:{thread_id} does not exist")
         except Exception as e:
-            return ChatMessagesResponse(success=False, data=None, error=str(e))
+            return ChatMessagesResponse(success=False, error=f"Error: {str(e)}, details: {traceback.format_exc()}")

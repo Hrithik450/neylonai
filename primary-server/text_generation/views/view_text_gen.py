@@ -5,6 +5,7 @@ from typing import Optional, List
 from ..services.model_message_service import ChatMessagesResponse
 from ..services.model_thread_service import ChatThreadResponse
 from ..services.model_title_service import ChatTitleResponse
+from ..services.model_user_service import UserService, UserResponse
 from rest_framework.response import Response
 from rest_framework import status
 from ..lib.load_agent import LoadInitialAgentConfig, MessageState, StateMessage
@@ -24,6 +25,7 @@ class StreamChatSchema(BaseModel):
 class StreamChatView(APIView):
     # Langgraph agent
     agent_graph = LoadInitialAgentConfig()
+    user_service = UserService()
 
     IST = pytz.timezone("Asia/Kolkata")
     today_date = datetime.now(IST).strftime("%B %d, %Y")
@@ -82,15 +84,21 @@ class StreamChatView(APIView):
                     # Persist messages into memory / DB
                     try:
                         if cls.current_thread_id:
+                            assistant_response = await sync_to_async(cls.agent_graph.chat_message_service.create_chat_message)(data={"thread_id": cls.current_thread_id,"role": "assistant","content": assistant_msg})
+                            if not assistant_response.success:
+                                err_payload = {"error": assistant_response.error, "role": "assistant"}
+                                yield f"event: error\ndata: {json.dumps(err_payload)}\n\n"
+                                return
+                            
                             user_response = await sync_to_async(cls.agent_graph.chat_message_service.create_chat_message)(data={"thread_id": cls.current_thread_id,"role": "user","content": cls.user_message})
                             if not user_response.success:
                                 err_payload = {"error": user_response.error, "role": "user"}
                                 yield f"event: error\ndata: {json.dumps(err_payload)}\n\n"
                                 return
-
-                            assistant_response = await sync_to_async(cls.agent_graph.chat_message_service.create_chat_message)(data={"thread_id": cls.current_thread_id,"role": "assistant","content": assistant_msg})
-                            if not assistant_response.success:
-                                err_payload = {"error": assistant_response.error, "role": "assistant"}
+                            
+                            deduct_tokens_response = await sync_to_async(cls.user_service.deduct_tokens)(deduction_tokens=20, user_id=cls.sender_id)
+                            if not deduct_tokens_response.success:
+                                err_payload = {"error": deduct_tokens_response.error}
                                 yield f"event: error\ndata: {json.dumps(err_payload)}\n\n"
                                 return
 
