@@ -81,7 +81,7 @@ class ChatMessageService:
                 cached_thread_messages = [ChatMessage(**message) for message in cached_data]
                 return ChatMessagesResponse(success=True, data=cached_thread_messages, error=None)
 
-            thread_messages = (ThreadMessages.objects.filter(thread_id=thread_id).order_by("-created_at")[:limit])
+            thread_messages = (ThreadMessages.objects.filter(thread_id=thread_id).order_by("created_at")[:limit])
 
             response_messages = [
                 ChatMessage(
@@ -117,7 +117,7 @@ class ChatMessageService:
                 cached_thread_messages = [ChatMessage(**message) for message in cached_data]
                 return ChatMessagesResponse(success=True, data=cached_thread_messages, error=None)
             
-            thread_messages = (ThreadMessages.objects.filter(thread_id=thread_id).order_by("-created_at"))
+            thread_messages = (ThreadMessages.objects.filter(thread_id=thread_id).order_by("created_at"))
 
             response_messages = [
                 ChatMessage(

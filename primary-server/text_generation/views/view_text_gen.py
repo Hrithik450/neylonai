@@ -84,15 +84,15 @@ class StreamChatView(APIView):
                     # Persist messages into memory / DB
                     try:
                         if cls.current_thread_id:
-                            assistant_response = await sync_to_async(cls.agent_graph.chat_message_service.create_chat_message)(data={"thread_id": cls.current_thread_id,"role": "assistant","content": assistant_msg})
-                            if not assistant_response.success:
-                                err_payload = {"error": assistant_response.error, "role": "assistant"}
-                                yield f"event: error\ndata: {json.dumps(err_payload)}\n\n"
-                                return
-                            
                             user_response = await sync_to_async(cls.agent_graph.chat_message_service.create_chat_message)(data={"thread_id": cls.current_thread_id,"role": "user","content": cls.user_message})
                             if not user_response.success:
                                 err_payload = {"error": user_response.error, "role": "user"}
+                                yield f"event: error\ndata: {json.dumps(err_payload)}\n\n"
+                                return
+                            
+                            assistant_response = await sync_to_async(cls.agent_graph.chat_message_service.create_chat_message)(data={"thread_id": cls.current_thread_id,"role": "assistant","content": assistant_msg})
+                            if not assistant_response.success:
+                                err_payload = {"error": assistant_response.error, "role": "assistant"}
                                 yield f"event: error\ndata: {json.dumps(err_payload)}\n\n"
                                 return
                             
