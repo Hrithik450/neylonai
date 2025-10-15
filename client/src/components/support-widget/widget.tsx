@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  House,
-  MessageSquareText,
-  MessageCircleQuestionMark,
-} from "lucide-react";
+import { House, MessageSquareText, Mail } from "lucide-react";
 import React from "react";
 import { cn } from "@/lib/utils";
 import { guminertRegular } from "@/assets/fonts";
@@ -15,6 +11,7 @@ import {
 } from "@/store/store";
 import { WidgetHome } from "@/components/support-widget/tabs/widget-home";
 import { WidgetAssistant } from "@/components/support-widget/tabs/widget-messages";
+import { WigetContact } from "@/components/support-widget/tabs/widget-contact";
 
 /* -------------------------------------------------------------------------- */
 /*                                Tab Config                                  */
@@ -45,9 +42,9 @@ const TAB_CONFIG: TabConfig[] = [
     component: WidgetAssistant,
   },
   {
-    icon: <MessageCircleQuestionMark className="w-6 h-6" />,
-    label: "Help",
-    component: WidgetHome,
+    icon: <Mail className="w-6 h-6" />,
+    label: "Contact Us",
+    component: WigetContact,
   },
 ] as const;
 
@@ -197,7 +194,7 @@ export function SupportWidget({
               key={tab.label}
               onClick={() => handleTabChange(i)}
               className={cn(
-                "flex flex-col items-center cursor-pointer",
+                "flex-1 flex flex-col items-center cursor-pointer",
                 i === activeIndex ? "text-purple-600" : "text-gray-500"
               )}
             >
