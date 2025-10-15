@@ -1,4 +1,4 @@
-### **AI-Solutionz**
+# **AI-Solutionz**
 
 AI-Solutionz is a full-service AI agency specializing in the development of custom **AI solutions**, **intelligent agents**, and **automation systems** tailored to enterprise needs.
 
@@ -71,40 +71,6 @@ You can integrate AI-Solutionz into your existing systems via:
 
 ---
 
-## **Pricing & Plans**
-
-| Plan             | Description                                                                                   | Suitable For                                        |
-| :--------------- | :-------------------------------------------------------------------------------------------- | :-------------------------------------------------- |
-| **Starter**      | Basic AI agent setup and deployment.                                                          | Small businesses or proof-of-concept projects.      |
-| **Professional** | Multi-agent orchestration and advanced integrations.                                          | Mid-sized companies and growing enterprises.        |
-| **Enterprise**   | Custom AI pipeline with a guaranteed **Service Level Agreement (SLA)** and dedicated support. | Large-scale organizations with critical operations. |
-
-**Contact us for a tailored quote based on your specific needs.**
-
----
-
-## **Contact Us**
-
-| Platform     | Details                                                                                                                                            |
-| :----------- | :------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Website**  | [AI Solutionz](https://ai-solutionz.vercel.app/)                                                                                                   |
-| **Email**    | [mhrithik450@gmail.com](mailto:mhrithik450@gmail.com)                                                                                              |
-| **LinkedIn** | [LinkedIn](https://www.linkedin.com/in/hruthik-m-3595a0329?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app_app) |
-| **Location** | Bangalore, India 🇮🇳 (IST)                                                                                                                          |
-
----
-
-## **Security & Compliance**
-
-We prioritize your data security with:
-
-- Encrypted data communication (**SSL/TLS**)
-- **OAuth2** & **JWT-based** authentication
-- Granular **Role-based authorization**
-- Regular, independent security audits
-
----
-
 ## **Client Onboarding**
 
 Our structured approach ensures a successful partnership:
@@ -128,21 +94,21 @@ All deployed AI agents include a dedicated analytics suite:
 
 ---
 
-## **Partnership & Collaboration**
-
-We are open to strategic partnerships, including:
-
-- **White-label solutions** for partners who want to integrate and re-sell our technology.
-- **Joint development programs** on cutting-edge AI research.
-- **Enterprise support** and dedicated maintenance teams.
-- Academic and industry **AI research collaborations**.
-
----
-
 ## **Why Choose Us?**
 
 Because we build AI that **actually works** — **fast, scalable, and secure.**
 
 From concept to production, AI-Solutionz brings **accuracy, reliability, and intelligence** to every project, ensuring tangible ROI for your business.
+
+---
+
+## **Contact Us**
+
+| Platform     | Details                                                                                                                                            |
+| :----------- | :------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Website**  | [AI Solutionz](https://ai-solutionz.vercel.app/)                                                                                                   |
+| **Email**    | [AI Solutionz](mailto:mhrithik450@gmail.com)                                                                                                       |
+| **LinkedIn** | [LinkedIn](https://www.linkedin.com/in/hruthik-m-3595a0329?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app_app) |
+| **Location** | Bangalore, India 🇮🇳 (IST)                                                                                                                          |
 
 ---
