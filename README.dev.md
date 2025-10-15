@@ -66,7 +66,8 @@ cd AI-Solutionz
 ```bash
 cd client
 npm install
-\# Start the Next.js development server
+
+# Start the Next.js development server
 npm run dev
 ```
 
@@ -74,16 +75,21 @@ npm run dev
 
 ```bash
 cd server
-\# Create and activate a Python virtual environment
+
+# Create and activate a Python virtual environment
 python \-m venv venv
 source venv/bin/activate
-\# Install dependencies
+
+# Install dependencies
 pip install \-r requirements.txt
-\# create database migrations
+
+# create database migrations
 python manage.py makemigrations
-\# Run database migrations
+
+# Run database migrations
 python manage.py migrate
-\# Start the Django development server
+
+# Start the Django development server
 python manage.py runserver
 ```
 
@@ -156,15 +162,15 @@ CRON_SECRET=""
 
 We use dedicated tools for testing both layers:
 
-Bash
-
-\# Run Backend Server (Django/Python)  
-cd primary-server  
+```bash
+# Run Backend Server (Django/Python)
+cd primary-server
 python manage.py runserver
 
-\# Run Frontend Server (Next.Js)  
-cd client  
+# Run Frontend Server (Next.Js)
+cd client
 npm run dev
+```
 
 ---
 
