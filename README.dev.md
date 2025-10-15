@@ -27,18 +27,18 @@
 
 The system follows a standard service-oriented architecture:
 
-# If you just want it as plain code block (no mermaid rendering):
-
+```bash
 Next.js Client
-|
-| REST / WebSocket API
-v
+     |
+     | REST API
+     v
 Django Backend - Core API
-|--> AI Agents Module
-|--> Task Scheduler / Cron Jobs
-|--> Redis Cache Layer
-|--> PostgreSQL Database
-|--> Cloud Deployment - Docker + CI/CD
+     |--> AI Agents Module
+     |--> Task Scheduler / Cron Jobs
+     |--> Redis Cache Layer
+     |--> PostgreSQL Database
+     |--> Cloud Deployment - Docker + CI/CD
+```
 
 ---
 
