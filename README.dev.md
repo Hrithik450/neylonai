@@ -116,7 +116,7 @@ NEXTAUTH_URL=''
 ### **Backend (server/.env)**
 
 ```bash
-ENCODER_API_URL=""
+ENCODER_API_URL="" # Secondary server cross encoder api
 DATABASE_URL=""
 REDIS_URL=""
 GCS_URL=""
@@ -130,31 +130,40 @@ CRON_SECRET=""
 
 ---
 
-## **Core Modules (Backend)**
+## **Core Modules Primary (Backend)**
 
-| Module                                     | Description                                           |
-| :----------------------------------------- | :---------------------------------------------------- |
-| `primary-server/core/settings.py`          | Main server configurations.                           |
-| `primary-server/text_generation`           | Core app where AI agents are configured and streamed. |
-| `primary-server/text_generation/lib`       | Utility functions required by the main app.           |
-| `primary-server/text_generation/services`  | Core microservices for the main app.                  |
-| `primary-server/text_generation/views`     | Route handler functions for the main app.             |
-| `primary-server/text_generation/urls.py`   | API routes for the server.                            |
-| `primary-server/text_generation/models.py` | Data models for the server.                           |
-| `primary-server/text_generation/tools`     | Tools and helpers required for AI assistants.         |
+| Module                                      | Description                                           |
+| :------------------------------------------ | :---------------------------------------------------- |
+| `primary-server/core/settings.py/`          | Main server configurations.                           |
+| `primary-server/text_generation/`           | Core app where AI agents are configured and streamed. |
+| `primary-server/text_generation/lib/`       | Utility functions required by the main app.           |
+| `primary-server/text_generation/services/`  | Core microservices for the main app.                  |
+| `primary-server/text_generation/views/`     | Route handler functions for the main app.             |
+| `primary-server/text_generation/urls.py/`   | API routes for the server.                            |
+| `primary-server/text_generation/models.py/` | Data models for the server.                           |
+| `primary-server/text_generation/tools/`     | Tools and helpers required for AI assistants.         |
+
+## **Core Modules Secondary (Backend)**
+
+| Module                                     | Description                                    |
+| ------------------------------------------ | ---------------------------------------------- |
+| `secondary-server/cross_encoder/services/` | Core services for AI assistant operations.     |
+| `secondary-server/cross_encoder/views/`    | Route handlers for AI assistant functionality. |
+| `secondary-server/cross_encoder/urls.py`   | API routes for the cross-encoder module.       |
+| `secondary-server/onnx_cross_encoder/`     | Local ONNX re-ranker model for scoring tasks.  |
 
 ---
 
 ## **Frontend Modules**
 
-| Folder          | Description                                          |
-| :-------------- | :--------------------------------------------------- |
-| src/components/ | Reusable UI components (buttons, headers, cards).    |
-| src/pages/      | Application routes and SSR/ISR pages.                |
-| src/store/      | Global state management (e.g., user session, theme). |
-| src/hooks/      | Reusable React logic (e.g., useApi, useAuth).        |
-| src/lib/        | utility functions, and third-party wrappers.         |
-| src/app/api/    | API handlers & actions.                              |
+| Folder            | Description                                          |
+| :---------------- | :--------------------------------------------------- |
+| `src/components/` | Reusable UI components (buttons, headers, cards).    |
+| `src/pages/`      | Application routes and SSR/ISR pages.                |
+| `src/store/`      | Global state management (e.g., user session, theme). |
+| `src/hooks/`      | Reusable React logic (e.g., useApi, useAuth).        |
+| `src/lib/`        | utility functions, and third-party wrappers.         |
+| `src/app/api`/    | API handlers & actions.                              |
 
 ---
 
@@ -162,7 +171,7 @@ CRON_SECRET=""
 
 We use dedicated tools for testing both layers:
 
-```bash
+````bash
 # Run Backend Server (Django/Python)
 cd primary-server
 python manage.py runserver
@@ -186,7 +195,7 @@ npm run dev
 
 ## **Folder Structure**
 
-AISolutionz  
+AISolutionz
 ├── client/ # Next.js Frontend
 │ ├── src/components/ # Reusable UI components
 │ ├── src/app # Main app pages/routes
@@ -216,3 +225,4 @@ AISolutionz
 This project is licensed under the **MIT License**.
 
 ---
+````
