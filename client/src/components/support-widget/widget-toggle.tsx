@@ -4,16 +4,47 @@ import React from "react";
 import { cn } from "@/lib/utils";
 import { ChevronRight, MessagesSquare } from "lucide-react";
 import { SupportWidget } from "@/components/support-widget/widget";
-import { useSupportWidgetToggleStore } from "@/store/store";
+import { useSupportWidgetToggleStore, useUserStore } from "@/store/store";
 import { SuccessAlert } from "@/components/success-alert";
 import { FailureAlert } from "@/components/failure-alert";
+import { Session } from "next-auth";
 
-export function AIChat() {
+export function AIChat({ session }: { session: Session | null }) {
+  const { setTokens } = useUserStore();
   const { isOpen, setIsOpen } = useSupportWidgetToggleStore();
+  const [loading, setLoading] = React.useState<boolean>(false);
+
   const [message, setMessage] = React.useState<string | null>(null);
   const [status, setStatus] = React.useState<
     "error" | "saving" | "saved" | null
   >(null);
+
+  React.useEffect(() => {
+    const fetchUser = async (id: string) => {
+      try {
+        setLoading(true);
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/user/${id}`
+        );
+        const data = await response.json();
+
+        if (!data.success) {
+          setLoading(false);
+          console.error("Error fetching user details:", data.error);
+          return;
+        }
+
+        if (data.data) setTokens(data.data.daily_limit);
+      } catch (error) {
+        console.error("Fetch error:", error);
+        setLoading(false);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (session && session.user && session.user.id) fetchUser(session.user.id);
+  }, [session]);
 
   return (
     <div className="fixed bottom-3 right-3 sm:right-6 2xl:right-[max(1rem,calc((100vw-120rem)/2+2rem))] z-99 flex flex-col items-end">

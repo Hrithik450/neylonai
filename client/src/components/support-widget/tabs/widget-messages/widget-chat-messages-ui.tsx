@@ -35,10 +35,9 @@ export function WidgetChatThreadUI({
   setMessage,
   setStatus,
 }: WidgetChatUIProps) {
-  console.log(id);
   const [loading, setLoading] = React.useState<boolean>(false);
 
-  const { currentUserId } = useUserStore();
+  const { currentUserId, tokens, setTokens } = useUserStore();
   const { currentThreadId, setCurrentThreadId, setThreads } = useThreadStore();
   const { messages, updateMessage, setMessages } = useThreadMessageStore();
   const { input, setInput, setDisableInput } = useInputStore();
@@ -78,9 +77,8 @@ export function WidgetChatThreadUI({
   }, [id]);
 
   React.useEffect(() => {
-    const timer = setTimeout(() => setLimitReached(true), 100);
-    return () => clearTimeout(timer);
-  }, []);
+    if (tokens <= 0) setLimitReached(true);
+  }, [tokens]);
 
   // const autoSpeak = async (text: string) => {
   //   try {
@@ -113,6 +111,14 @@ export function WidgetChatThreadUI({
       setStatus("error");
       setMessage(
         "Please sign in to continue the conversation with our assistant."
+      );
+      return;
+    }
+
+    if (tokens <= 0) {
+      setStatus("error");
+      setMessage(
+        "You've reached your daily usage limit. Access will reset at 00:00"
       );
       return;
     }
@@ -171,6 +177,11 @@ export function WidgetChatThreadUI({
                 if (thread.id) setCurrentThreadId(thread.id);
                 break;
 
+              case "tokensUpdated":
+                const user = JSON.parse(data);
+                if (user) setTokens(user.daily_limit);
+                break;
+
               case "assistantTyping":
                 setIsAssistantTyping(data === "true" ? true : false);
                 break;
@@ -226,21 +237,6 @@ export function WidgetChatThreadUI({
     }
   };
 
-  function LimitReached() {
-    return (
-      <div
-        className={cn(
-          "flex justify-between items-start absolute bottom-18 left-0 right-0 w-[87%] mx-auto rounded-t-xl border border-red-300 bg-gradient-to-r from-red-50 to-red-100 px-3 py-2 pb-3 text-sm text-center shadow-md backdrop-blur-md transition-all duration-500 ease-out",
-          limitReached ? "opacity-100 translate-y-0" : "opacity-0 translate-y-5"
-        )}
-      >
-        <p className="text-sm font-medium text-gray-700">
-          You've reached your daily usage limit. Access will reset at 00:00
-        </p>
-      </div>
-    );
-  }
-
   return (
     <div className={cn("flex flex-col justify-center h-full")}>
       <WidgetHeader
@@ -295,7 +291,18 @@ export function WidgetChatThreadUI({
       )}
 
       <div className="relative">
-        {LimitReached()}
+        <div
+          className={cn(
+            "flex justify-between items-start absolute bottom-18 left-0 right-0 w-[87%] mx-auto rounded-t-xl border border-red-300 bg-gradient-to-r from-red-50 to-red-100 px-3 py-2 pb-3 text-sm text-center shadow-md backdrop-blur-md transition-all duration-500 ease-out",
+            limitReached
+              ? "opacity-100 translate-y-0"
+              : "opacity-0 translate-y-5"
+          )}
+        >
+          <p className="text-sm font-medium text-gray-700">
+            You've reached your daily usage limit. Access will reset at 00:00
+          </p>
+        </div>
         <InputForm handleSendMessage={handleSendMessage} />
       </div>
     </div>

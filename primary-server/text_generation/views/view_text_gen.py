@@ -100,7 +100,8 @@ class StreamChatView(APIView):
                             if not deduct_tokens_response.success:
                                 err_payload = {"error": deduct_tokens_response.error}
                                 yield f"event: error\ndata: {json.dumps(err_payload)}\n\n"
-                                return
+                                return 
+                            yield f"event: tokensUpdated\ndata: {json.dumps(deduct_tokens_response.data.model_dump())}\n\n"
 
                     except Exception as e:
                         err_payload = {"error": str(e), "traceback": traceback.format_exc()}

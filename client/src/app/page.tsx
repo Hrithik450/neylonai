@@ -30,7 +30,7 @@ export default function App() {
       {/* <Products /> */}
 
       {/* Support widget */}
-      <AIChat />
+      <AIChat session={session} />
     </main>
   );
 }

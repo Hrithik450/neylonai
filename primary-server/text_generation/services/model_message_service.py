@@ -4,6 +4,7 @@ from django.core.cache import cache
 from ..models import ThreadMessages
 from typing import List, Optional, Literal
 from pydantic import BaseModel, ValidationError
+from django.utils import timezone
 
 # --- Schemas ---
 class ChatMessage(BaseModel):
@@ -31,7 +32,7 @@ class ChatMessagesResponse(BaseModel):
 
 # --- Service class ---
 class ChatMessageService:
-    
+
     @staticmethod
     def create_chat_message(data: NewChatMessage) -> ChatMessageResponse:
         """Insert a single chat message."""
@@ -41,7 +42,8 @@ class ChatMessageService:
             thread_message = ThreadMessages.objects.create(
                 thread_id=str(validated_data.thread_id),
                 role=str(validated_data.role),
-                content=str(validated_data.content)
+                content=str(validated_data.content),
+                created_at=timezone.now()
             )
             
             if not thread_message:
