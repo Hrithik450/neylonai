@@ -300,7 +300,8 @@ export function WidgetChatThreadUI({
           )}
         >
           <p className="text-sm font-medium text-gray-700">
-            You've reached your daily usage limit. Access will reset at 00:00
+            You&apos;ve reached your daily usage limit. Access will reset at
+            00:00
           </p>
         </div>
         <InputForm handleSendMessage={handleSendMessage} />
