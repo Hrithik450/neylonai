@@ -79,7 +79,7 @@ function PromptInput({
           onSubmit,
         }}
       >
-        <div className="bg-magenta relative flex items-center py-4 max-sm:py-3 rounded-r-4xl rounded-tl-4xl rounded-bl-xl max-w-3xl w-full mx-auto">
+        <div className="bg-magenta relative flex items-center max-sm:py-3 rounded-r-4xl rounded-tl-4xl rounded-bl-xl max-w-3xl w-full mx-auto">
           <div
             className={cn(
               "bg-background rounded-lg py-2 pr-2 w-full",

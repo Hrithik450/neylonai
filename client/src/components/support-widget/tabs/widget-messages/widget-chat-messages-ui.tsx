@@ -15,6 +15,7 @@ import { Thread } from "@/actions/threads/threads.types";
 import { WidgetHeader } from "@/components/support-widget/widget-header";
 import { MessagesResponse } from "@/actions/thread_messages/thread_messages.types";
 import { Skeleton } from "@/components/ui/skeleton";
+import { X } from "lucide-react";
 
 interface WidgetChatUIProps {
   id: string;
@@ -42,6 +43,7 @@ export function WidgetChatThreadUI({
   const { messages, updateMessage, setMessages } = useThreadMessageStore();
   const { input, setInput, setDisableInput } = useInputStore();
   const { setIsAssistantTyping } = useAssistantStore();
+  const [limitReached, setLimitReached] = React.useState(false);
 
   React.useEffect(() => {
     const fetchThreadMessages = async () => {
@@ -74,6 +76,11 @@ export function WidgetChatThreadUI({
     setCurrentThreadId(id);
     if (!id || !currentThreadId) setMessages([]);
   }, [id]);
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => setLimitReached(true), 100);
+    return () => clearTimeout(timer);
+  }, []);
 
   // const autoSpeak = async (text: string) => {
   //   try {
@@ -219,6 +226,21 @@ export function WidgetChatThreadUI({
     }
   };
 
+  function LimitReached() {
+    return (
+      <div
+        className={cn(
+          "flex justify-between items-start absolute bottom-18 left-0 right-0 w-[87%] mx-auto rounded-t-xl border border-red-300 bg-gradient-to-r from-red-50 to-red-100 px-3 py-2 pb-3 text-sm text-center shadow-md backdrop-blur-md transition-all duration-500 ease-out",
+          limitReached ? "opacity-100 translate-y-0" : "opacity-0 translate-y-5"
+        )}
+      >
+        <p className="text-sm font-medium text-gray-700">
+          You've reached your daily usage limit. Access will reset at 00:00
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className={cn("flex flex-col justify-center h-full")}>
       <WidgetHeader
@@ -272,7 +294,10 @@ export function WidgetChatThreadUI({
         <ConversationUI conversations={messages} />
       )}
 
-      <InputForm handleSendMessage={handleSendMessage} />
+      <div className="relative">
+        {LimitReached()}
+        <InputForm handleSendMessage={handleSendMessage} />
+      </div>
     </div>
   );
 }
