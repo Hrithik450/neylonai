@@ -3,56 +3,31 @@
 import React from "react";
 import { WidgetHeader } from "@/components/support-widget/widget-header";
 import { ChevronRight, HelpCircle } from "lucide-react";
-import Image from "next/image";
+import Image, { StaticImageData } from "next/image";
 import { cn, shortTimeAgo } from "@/lib/utils";
 import { guminertRegular } from "@/assets/fonts";
 import { type Screen, useThreadStore, useUserStore } from "@/store/store";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ThreadsResponse } from "@/actions/threads/threads.types";
 import { WidgetChatThreadUI } from "@/components/support-widget/tabs/widget-messages/widget-chat-messages-ui";
+import AssistantIcon from "@/assets/images/assistant-icon.jpg";
+import { robotIcons } from "@/lib/constants";
 
-/**
- * Props for the AskQuestionButton component.
- * @interface MessagePreviewProps
- * @property {string | null} [avatar_url] - Optional avatar URL
- * @property {string} sender_name - Name of the sender
- * @property {string} thread_title - Thread title
- * @property {string} timestamp - Message timestamp
- * @property {() => void} [action] - Optional click handler
- */
 interface MessagePreviewProps {
-  avatar_url?: string | null;
+  Icon: React.ElementType;
   sender_name: string;
   thread_title: string;
   timestamp: string;
   action: () => void;
 }
 
-/**
- * Props for the AskQuestionButton component.
- * @interface AskQuestionButtonProps
- * @property {() => void} [onClick] - Optional click handler for the button.
- * @property {string} [className]
- */
-interface AskQuestionButtonProps {
-  onClick?: () => void;
-  className?: string;
-}
-
-/**
- * A component to display a preview of a message thread.
- *
- * @component
- * @param {MessagePreviewProps} props - The MessagePreviewProps.
- * @returns {JSX.Element} The MessagePreview component.
- */
-export const MessagePreview: React.FC<MessagePreviewProps> = ({
-  avatar_url,
+function MessagePreview({
+  Icon,
   thread_title,
   sender_name,
   timestamp,
   action,
-}): React.JSX.Element => {
+}: MessagePreviewProps): React.JSX.Element {
   return (
     <div
       onClick={action}
@@ -60,19 +35,9 @@ export const MessagePreview: React.FC<MessagePreviewProps> = ({
     >
       {/* Avatar */}
       <div className="flex-shrink-0">
-        {avatar_url ? (
-          <Image
-            className="h-12 w-12 rounded-full"
-            src={avatar_url}
-            alt={`${sender_name}'s avatar`}
-            width={48}
-            height={48}
-          />
-        ) : (
-          <div className="h-12 w-12 rounded-full bg-white/60 border border-black/20 flex items-center justify-center text-center text-base font-semibold text-gray-700">
-            {sender_name?.charAt(0).toUpperCase()}
-          </div>
-        )}
+        <div className="p-2 bg-gray-100 rounded-full shadow-sm">
+          <Icon className="w-5 h-5 text-gray-700" />
+        </div>
       </div>
 
       {/* Message Content */}
@@ -89,19 +54,17 @@ export const MessagePreview: React.FC<MessagePreviewProps> = ({
       <ChevronRight className="w-5 h-5 group-hover:-rotate-90 transition-transform duration-300 ease-in-out mr-2" />
     </div>
   );
-};
+}
 
-/**
- * A stylized button component for asking a question, styled using Tailwind CSS.
- *
- * @component
- * @param {AskQuestionButtonProps} props - The AskQuestionButtonProps.
- * @returns {JSX.Element} The AskQuestionButton component.
- */
-export const AskQuestionButton: React.FC<AskQuestionButtonProps> = ({
+interface AskQuestionButtonProps {
+  onClick?: () => void;
+  className?: string;
+}
+
+function AskQuestionButton({
   onClick,
   className,
-}): React.JSX.Element => {
+}: AskQuestionButtonProps): React.JSX.Element {
   return (
     <button
       onClick={onClick}
@@ -125,20 +88,13 @@ export const AskQuestionButton: React.FC<AskQuestionButtonProps> = ({
       </div>
     </button>
   );
-};
+}
 
-export interface WidgetAssistantProps {
+interface WidgetAssistantProps {
   popScreen: () => void;
   pushScreen: (screen: Screen) => void;
 }
 
-/**
- * WidgetAssistant component – displays a messages widget with a sticky header,
- * scrollable messages, and a bottom ask-question button.
- *
- * @component
- * @returns {JSX.Element} The WidgetAssistant component.
- */
 export function WidgetAssistant({
   pushScreen,
 }: WidgetAssistantProps): React.JSX.Element {
@@ -200,18 +156,19 @@ export function WidgetAssistant({
         )}
 
         {!loading && threads && threads.length > 0 ? (
-          threads.map((thread) => (
+          threads.map((thread, index) => (
             <MessagePreview
               key={thread.id}
+              sender_name="Assistant"
+              thread_title={thread.title}
+              timestamp={shortTimeAgo(thread.created_at)}
+              Icon={robotIcons[index % robotIcons.length]}
               action={() =>
                 pushScreen({
                   component: WidgetChatThreadUI,
                   props: { id: thread.id, title: thread.title },
                 })
               }
-              sender_name="Assistant"
-              thread_title={thread.title}
-              timestamp={shortTimeAgo(thread.created_at)}
             />
           ))
         ) : (
@@ -226,6 +183,7 @@ export function WidgetAssistant({
       {/* Sticky bottom ask question button */}
       <div className="absolute bottom-2 w-full flex justify-center z-20">
         <AskQuestionButton
+          className="w-[max-content]"
           onClick={() => {
             setCurrentThreadId(null);
             pushScreen({
@@ -233,7 +191,6 @@ export function WidgetAssistant({
               props: { id: null, title: null },
             });
           }}
-          className="w-[max-content]"
         />
       </div>
     </section>

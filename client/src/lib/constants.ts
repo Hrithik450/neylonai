@@ -1,3 +1,16 @@
+import {
+  Bot,
+  Cpu,
+  Sparkles,
+  CircuitBoard,
+  Brain,
+  Workflow,
+  Binary,
+  Gauge,
+  Atom,
+  MessageSquare,
+} from "lucide-react";
+
 import { NavItem, Policy } from "@/lib/types";
 
 export const NavItems: NavItem[] = [
@@ -47,4 +60,17 @@ export const faqs = [
     answer:
       "Absolutely. We follow enterprise-grade security practices, encryption, and compliance standards to ensure your data remains secure and private.",
   },
+];
+
+export const robotIcons = [
+  Bot,
+  Cpu,
+  Sparkles,
+  CircuitBoard,
+  Brain,
+  Workflow,
+  Binary,
+  Gauge,
+  Atom,
+  MessageSquare,
 ];
