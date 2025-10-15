@@ -35,8 +35,8 @@ function MessagePreview({
     >
       {/* Avatar */}
       <div className="flex-shrink-0">
-        <div className="p-2 bg-gray-100 rounded-full shadow-sm">
-          <Icon className="w-5 h-5 text-gray-700" />
+        <div className="p-2 bg-gray-100 border border-gray-300 rounded-full shadow-sm">
+          <Icon className="w-6 h-6 text-gray-700" />
         </div>
       </div>
 

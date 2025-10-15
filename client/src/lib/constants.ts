@@ -74,3 +74,31 @@ export const robotIcons = [
   Atom,
   MessageSquare,
 ];
+
+export const messageSets = {
+  1: [
+    "Analyzing your sentence...",
+    "Parsing intent & context...",
+    "Interpreting semantic nuances...",
+    "Engaging in multi-layered reasoning...",
+    "Correlating with prior knowledge...",
+    "Expanding contextual awareness...",
+    "Evaluating hidden assumptions...",
+    "Testing alternate explanations...",
+    "Cross-validating logical flow...",
+    "Weighing competing interpretations...",
+    "Refining language precision...",
+    "Balancing clarity with depth...",
+    "Assessing coherence across dimensions...",
+    "Integrating abstract and concrete insights...",
+    "Tracing implications of key points...",
+    "Reconciling potential contradictions...",
+    "Ensuring conceptual completeness...",
+    "Optimizing phrasing for readability...",
+    "Enhancing narrative fluidity...",
+    "Running final consistency checks...",
+    "Synthesizing comprehensive answer...",
+    "Delivering polished and accurate output...",
+    "Generating best possible response...",
+  ],
+} as const;

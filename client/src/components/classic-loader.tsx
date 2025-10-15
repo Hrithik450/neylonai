@@ -1,9 +1,10 @@
+import { cn } from "@/lib/utils";
 import React from "react";
 
-export function ClassicLoader() {
+export function ClassicLoader({ className }: { className?: string }) {
   return (
-    <div className="spinner-container">
-      <div className="classic-spinner" />
+    <div className={cn("flex flex-col items-center font-sans", className)}>
+      <div className="w-5 h-5 border-[3px] border-gray-300 border-t-black rounded-full animate-spin" />
     </div>
   );
 }

@@ -26,7 +26,7 @@ Given the previous conversation and a new user question,
 1. Decide if it is a FOLLOW-UP (depends on prior context) or NEW.
 2. Produce a concise, self-contained query (≤200 chars).
 3. Choose the minimal set of tools and arguments to best satisfy the intent.
-4. Use semantic search only if the query is vague or no metadata (0 fields), avoid when metadata (even 1 field is present) explicitly provided.
+4. Use semantic search only if the query is vague or no metadata (0 fields), avoid when metadata (even 1 field is present) explicitly provided (not on general questions which you can answer from your own).
 5. Output only valid JSON.
 
 Output format:
@@ -39,25 +39,27 @@ Output format:
 }}
 
 Guidelines rules — apply in order:
-0. Avoid date's as much as possible while optimizing the query unless user explicitly asks or provides.
-1. CORE TEST (must pass to be FOLLOW-UP):
+0. CONVERSATIONAL / GENERIC CHECK:
+    - If the query is a casual greeting, personal question, or general factual query (e.g., "what is the date", "how are you", "what’s the time"), do NOT call any external tools — handle directly via general reasoning.
+1. Avoid date's as much as possible while optimizing the query unless user explicitly asks or provides.
+2. CORE TEST (must pass to be FOLLOW-UP):
    - Classify as FOLLOW-UP only if the new question **cannot be correctly answered or understood** without the previous messages, OR the user explicitly references the earlier conversation.
    - If the new question can stand alone (it contains all required details to be answered independent of earlier messages), classify as NEW.
-2. PRONOUN / AMBIGUITY CHECK:
+3. PRONOUN / AMBIGUITY CHECK:
    - If the new question uses ambiguous referents (single-word pronouns like "it", "that", "those", or "the file") and the referent is **only** introduced in prior messages, treat as FOLLOW-UP.
    - If pronouns refer to an entity named in the new question itself, treat as NEW.
-3. KEYWORD OVERLAP IS NOT SUFFICIENT:
+4. KEYWORD OVERLAP IS NOT SUFFICIENT:
    - Shared words or topics alone do NOT imply follow-up. Require either explicit referential cue (rule 1) or at least 2 distinct content keywords that match the immediately prior message **and** change meaning if earlier context is removed.
-4. WHEN FOLLOW-UP:
+5. WHEN FOLLOW-UP:
    - Rewrite the user question as a concise, self-contained single-sentence query ready for downstream tools.
    - Include only minimal relevant context keywords from previous conversation (sender, recipient, subject, or short identifier) *only if* they affect the answer.
    - Keep optimized_query <= 200 characters; remove politeness and unnecessary text.
-5. WHEN NEW:
+6. WHEN NEW:
    - Rewrite the original question into a concise, self-contained query (≤200 chars) suitable for downstream tools.
    - Include all relevant context keywords from query (sender, recipient, subject, or short identifier) *only if* they affect the answer and can be retrived via any available tool.
-6. FORMATTING:
+7. FORMATTING:
    - Output exactly the JSON object and nothing else.
-7. LIMIT HANDLING
+8. LIMIT HANDLING
    - If the query explicitly requests a fixed number (e.g., “latest 3”, “last 5”), set limit=N.
    - Else if the query is about listings or length-specific requests, use the default limit=5.
    - Otherwise (e.g., summaries, full chains, analytical queries), do not use limit.

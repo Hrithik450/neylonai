@@ -8,6 +8,7 @@ import { useAssistantStore } from "@/store/store";
 import { ChevronsDown, Copy, Volume2 } from "lucide-react";
 import { ClassicLoader } from "@/components/classic-loader";
 import { NewMessage } from "@/actions/thread_messages/thread_messages.types";
+import { DynamicAssistantTyping } from "./assistant-typing";
 
 export function ConversationUI({
   conversations,
@@ -81,7 +82,7 @@ export function ConversationUI({
         conversations.map((conversation, index) => (
           <div
             key={index}
-            className={`mb-3 md:mb-4 p-3 md:p-4 text-sm md:text-base rounded-xl ${
+            className={`p-3 md:p-4 text-sm md:text-base rounded-xl ${
               conversation.role === "user"
                 ? "bg-zinc-200/90 ml-auto max-w-[80%] border border-black/40"
                 : "max-w-[90%] md:max-w-[100%]"
@@ -189,21 +190,7 @@ export function ConversationUI({
           </div>
         ))}
 
-      {isAssistantTyping && (
-        <div className="mb-3 md:mb-4 p-3 md:p-4 rounded-lg bg-gray-100 mr-auto max-w-[90%] md:max-w-[80%]">
-          <div className="flex items-center gap-2">
-            <div className="animate-pulse flex space-x-2">
-              <div className="h-2 w-2 bg-gray-400 rounded-full"></div>
-              <div className="h-2 w-2 bg-gray-400 rounded-full"></div>
-              <div className="h-2 w-2 bg-gray-400 rounded-full"></div>
-            </div>
-
-            <span className="text-sm md:text-base">
-              Analyzing your sentence...
-            </span>
-          </div>
-        </div>
-      )}
+      <DynamicAssistantTyping isAssistantTyping={isAssistantTyping} />
 
       {showScrollButton && (
         <div className="sticky bottom-2 z-199 w-full flex justify-end items-center px-2 pr-3">
