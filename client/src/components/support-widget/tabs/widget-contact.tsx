@@ -149,14 +149,6 @@ export function WigetContact({
             rel="noopener noreferrer"
             className="text-gray-600 hover:text-purple-600"
           >
-            <Github className="w-6 h-6" />
-          </a>
-          <a
-            href="https://github.com/aisolutionz"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-gray-600 hover:text-purple-600"
-          >
             <Youtube className="w-6 h-6" />
           </a>
           <a
@@ -166,6 +158,14 @@ export function WigetContact({
             className="text-gray-600 hover:text-purple-600"
           >
             <Twitter className="w-6 h-6" />
+          </a>
+          <a
+            href="https://github.com/aisolutionz"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-gray-600 hover:text-purple-600"
+          >
+            <Mail className="w-6 h-6" />
           </a>
         </div>
         <p className="text-center">CEO, AI-Solutionz</p>

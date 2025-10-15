@@ -105,15 +105,19 @@ export function Navbar({ session }: { session: Session | null }) {
     >
       <nav
         className={cn(
-          "container mx-auto flex justify-between items-center w-full backdrop-blur-xs border border-gray-400/60 rounded-full py-2 sm:py-3 md:p-2 xl:p-3 transition-colors duration-300 ease-in-out",
+          "container mx-auto flex justify-between items-center w-full backdrop-blur-xs border border-gray-400/60 rounded-full py-3 md:p-2 xl:p-3 transition-colors duration-300 ease-in-out",
           menuOpen
             ? "bg-[linear-gradient(to_bottom,rgb(210,245,130)_0%,white_100%)]"
             : "bg-white/25"
         )}
       >
         {/* Logo */}
-        <div className="px-6 max-w-[180px] xl:max-w-[240px] w-full flex items-center">
-          <Image src={AISolutionz} alt="ai-solutionz" />
+        <div className="px-4 flex items-center w-full max-w-[220px] sm:max-w-[180px] xl:max-w-[240px]">
+          <Image
+            src={AISolutionz}
+            alt="ai-solutionz"
+            className="w-full h-auto"
+          />
         </div>
 
         {/* Desktop Nav Links */}
