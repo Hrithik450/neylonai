@@ -167,13 +167,15 @@ CRON_SECRET=""
 
 ---
 
-## **Testing**
+## **Running the Servers**
 
-We use dedicated tools for testing both layers:
-
-````bash
-# Run Backend Server (Django/Python)
+```bash
+# Run Primary Backend Server (Django/Python)
 cd primary-server
+python manage.py runserver
+
+# Run Secondary Backend Server (Django/Python)
+cd secondary-server
 python manage.py runserver
 
 # Run Frontend Server (Next.Js)
@@ -225,4 +227,7 @@ AISolutionz
 This project is licensed under the **MIT License**.
 
 ---
-````
+
+```
+
+```
