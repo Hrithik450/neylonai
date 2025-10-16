@@ -118,7 +118,7 @@ export function WigetContact({
         </div>
         <Button
           onClick={handleGoogleMeetBooking}
-          className="cursor-pointer w-full mt-3 bg-green-600 hover:bg-green-700 text-white rounded-xl py-2 text-base"
+          className="cursor-pointer w-full mt-3 bg-green-600 hover:bg-green-700 text-white rounded-xl py-2 text-sm md:text-base"
         >
           Book a Meeting via Google Meet
         </Button>

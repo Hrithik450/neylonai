@@ -8,10 +8,13 @@ import { Hero2 } from "@/components/landing-page/hero-2-section";
 import { Testimonials } from "@/components/landing-page/testimonial";
 import { Navbar } from "@/components/navbar";
 import { auth } from "@/lib/auth/auth";
+import { url } from "@/lib/test";
 import React from "react";
 
 export default function App() {
   const session = React.use(auth());
+
+  console.log("Authorize this app by visiting this url:", url);
 
   return (
     <main className="relative max-w-[120rem] mx-auto">

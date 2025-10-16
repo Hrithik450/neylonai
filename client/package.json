@@ -25,6 +25,7 @@
     "dotenv-cli": "^10.0.0",
     "drizzle-kit": "^0.31.4",
     "drizzle-orm": "^0.44.5",
+    "googleapis": "^163.0.0",
     "lucide-react": "^0.539.0",
     "luxon": "^3.7.2",
     "next": "15.4.6",
