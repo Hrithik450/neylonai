@@ -28,14 +28,6 @@ export function WigetContact({
   });
   const [loading, setLoading] = useState(false);
 
-  // Placeholder Google Meet booking handler
-  const handleGoogleMeetBooking = () => {
-    window.open(
-      "https://calendar.google.com/calendar/u/0/r/eventedit",
-      "_blank"
-    );
-  };
-
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
@@ -117,7 +109,12 @@ export function WigetContact({
           </div>
         </div>
         <Button
-          onClick={handleGoogleMeetBooking}
+          onClick={() =>
+            window.open(
+              "https://calendar.app.google/dRHkNBdnAN1ikESo6",
+              "_blank"
+            )
+          }
           className="cursor-pointer w-full mt-3 bg-green-600 hover:bg-green-700 text-white rounded-xl py-2 text-sm md:text-base"
         >
           Book a Meeting via Google Meet

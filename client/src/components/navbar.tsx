@@ -5,12 +5,12 @@ import { signInWithGoogle } from "@/actions/auth/sign-in";
 import { signOutAccount } from "@/actions/auth/sign-out";
 import { guminertRegular } from "@/assets/fonts";
 import { Button } from "@/components/ui/button";
+import { LogOut, Menu, X } from "lucide-react";
+import { useUserStore } from "@/store/store";
 import { cn, navLists } from "@/lib/utils";
-import { LogIn, LogOut, Menu, X } from "lucide-react";
 import { Session } from "next-auth";
 import Image from "next/image";
 import React from "react";
-import { useUserStore } from "@/store/store";
 
 function PageNavigations({
   className,
