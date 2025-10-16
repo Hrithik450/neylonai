@@ -9,8 +9,7 @@ export class GoogleMeetService {
     if (
       !process.env.GOOGLE_CLIENT_ID ||
       !process.env.GOOGLE_CLIENT_SECRET ||
-      !process.env.GOOGLE_REDIRECT_URI ||
-      !process.env.GOOGLE_REFRESH_TOKEN
+      !process.env.GOOGLE_REDIRECT_URI
     ) {
       throw new Error("Missing one or more Google API environment variables.");
     }

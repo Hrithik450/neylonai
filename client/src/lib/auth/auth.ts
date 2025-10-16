@@ -24,17 +24,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   secret: process.env.AUTH_SECRET,
   trustHost: true,
   cookies: {
-    pkceCodeVerifier: {
-      name: "__Host-next-auth.pkce.code_verifier",
-      options: {
-        httpOnly: true,
-        sameSite: "lax",
-        path: "/",
-        secure: true,
-      },
-    },
     sessionToken: {
-      name: `__Host-next-auth.session-token`,
+      name: `__Secure-authjs.session-token`,
       options: {
         httpOnly: true,
         sameSite: "lax",

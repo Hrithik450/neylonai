@@ -9,10 +9,8 @@ export async function middleware(request: NextRequest) {
     secret: process.env.AUTH_SECRET,
     secureCookie:
       process.env.NEXTAUTH_URL?.startsWith("https://") ?? !!process.env.VERCEL,
-    cookieName: "__Host-next-auth.session-token",
+    cookieName: "__Secure-authjs.session-token",
   });
-
-  console.log(token);
 
   if (!token && pathname !== "/")
     return NextResponse.redirect(new URL("/", request.url));
