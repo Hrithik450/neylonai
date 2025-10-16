@@ -69,7 +69,7 @@ export function WigetContact({
           Contact & Partnerships
         </h2>
         <p className="text-sm md:text-md text-gray-600 mt-1">
-          Let’s collaborate, partner, or discuss business opportunities.
+          Let&apos;s collaborate, partner, or discuss business opportunities.
         </p>
       </div>
 
@@ -111,7 +111,7 @@ export function WigetContact({
         <Button
           onClick={() =>
             window.open(
-              "https://calendar.app.google/dRHkNBdnAN1ikESo6",
+              "https://calendar.google.com/calendar/appointments/schedules/AcZssZ2aZ24beHtKBzLbo9PCfaEZQ6kDsOPDtaxt1E2Yg2eY1P00qTWhs_TeUamfS4AyJZ9gjGnyh-fM?gv=true",
               "_blank"
             )
           }
