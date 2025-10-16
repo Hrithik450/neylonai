@@ -110,10 +110,7 @@ export function WigetContact({
         </div>
         <Button
           onClick={() =>
-            window.open(
-              "https://calendar.google.com/calendar/appointments/schedules/AcZssZ2aZ24beHtKBzLbo9PCfaEZQ6kDsOPDtaxt1E2Yg2eY1P00qTWhs_TeUamfS4AyJZ9gjGnyh-fM?gv=true",
-              "_blank"
-            )
+            window.open("https://cal.com/hruthik-m-n9i1qx/45min", "_blank")
           }
           className="cursor-pointer w-full mt-3 bg-green-600 hover:bg-green-700 text-white rounded-xl py-2 text-sm md:text-base"
         >
