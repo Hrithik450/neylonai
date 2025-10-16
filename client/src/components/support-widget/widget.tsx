@@ -1,107 +1,23 @@
 "use client";
 
-import { House, MessageSquareText, Mail } from "lucide-react";
-import React from "react";
-import { cn } from "@/lib/utils";
-import { guminertRegular } from "@/assets/fonts";
 import {
   useSupportWidgetToggleStore,
   useNavigationStore,
   type Screen,
 } from "@/store/store";
+import React from "react";
+import { cn } from "@/lib/utils";
+import { guminertRegular } from "@/assets/fonts";
+import { House, MessageSquareText, Mail } from "lucide-react";
 import { WidgetHome } from "@/components/support-widget/tabs/widget-home";
 import { WidgetAssistant } from "@/components/support-widget/tabs/widget-messages";
 import { WigetContact } from "@/components/support-widget/tabs/widget-contact";
+import { Session } from "next-auth";
 
-/* -------------------------------------------------------------------------- */
-/*                                Tab Config                                  */
-/* -------------------------------------------------------------------------- */
-/**
- * Configuration for a single tab in a tab navigator.
- *
- * @interface TabConfig
- * @property {string} label - The display label for the tab.
- * @property {React.ReactNode} icon - Icon to show in the tab bar.
- * @property {React.FC} component - The main component to render when the tab is active.
- */
 export interface TabConfig {
   label: string;
   icon: React.ReactNode;
   component: React.FC<any>;
-}
-
-const TAB_CONFIG: TabConfig[] = [
-  {
-    icon: <House className="w-6 h-6" />,
-    label: "Home",
-    component: WidgetHome,
-  },
-  {
-    icon: <MessageSquareText className="w-6 h-6" />,
-    label: "Messages",
-    component: WidgetAssistant,
-  },
-  {
-    icon: <Mail className="w-6 h-6" />,
-    label: "Contact Us",
-    component: WigetContact,
-  },
-] as const;
-
-/* -------------------------------------------------------------------------- */
-/*                           Typing Animation Hook                            */
-/* -------------------------------------------------------------------------- */
-export function useTypingAnimation(texts: string[], introTextFull: string) {
-  const [introText, setIntroText] = React.useState("");
-  const [displayText, setDisplayText] = React.useState("");
-
-  const typingIntervalRef = React.useRef<NodeJS.Timeout | null>(null);
-  const introIntervalRef = React.useRef<NodeJS.Timeout | null>(null);
-  const nextTextTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
-
-  const clearAll = React.useCallback(() => {
-    if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
-    if (introIntervalRef.current) clearInterval(introIntervalRef.current);
-    if (nextTextTimeoutRef.current) clearTimeout(nextTextTimeoutRef.current);
-  }, []);
-
-  const loopTexts = React.useCallback(
-    (text: string, index: number) => {
-      let i = -1;
-      typingIntervalRef.current = setInterval(() => {
-        setDisplayText((prev) => prev + text.charAt(i));
-        i++;
-        if (i === text.length) {
-          clearInterval(typingIntervalRef.current!);
-          nextTextTimeoutRef.current = setTimeout(() => {
-            setDisplayText("");
-            const nextIndex = (index + 1) % texts.length;
-            loopTexts(texts[nextIndex], nextIndex);
-          }, 1000);
-        }
-      }, 70);
-    },
-    [texts]
-  );
-
-  const startAnimation = React.useCallback(() => {
-    clearAll();
-    setIntroText("");
-    setDisplayText("");
-    let i = 0;
-    introIntervalRef.current = setInterval(() => {
-      setIntroText(introTextFull.slice(0, i + 1));
-      i++;
-      if (i === introTextFull.length) {
-        clearInterval(introIntervalRef.current!);
-        loopTexts(texts[0], 0);
-      }
-    }, 70);
-  }, [introTextFull, texts, loopTexts, clearAll]);
-
-  React.useEffect(() => clearAll, [clearAll]);
-
-  return { introText, displayText, startAnimation };
 }
 
 /* -------------------------------------------------------------------------- */
@@ -110,11 +26,13 @@ export function useTypingAnimation(texts: string[], introTextFull: string) {
 export function SupportWidget({
   setMessage,
   setStatus,
+  session,
 }: {
   setMessage: React.Dispatch<React.SetStateAction<string | null>>;
   setStatus: React.Dispatch<
     React.SetStateAction<"error" | "saving" | "saved" | null>
   >;
+  session: Session | null;
 }) {
   const { isOpen } = useSupportWidgetToggleStore();
   const { tabStacks, setTabStacks, pushScreen, popScreen } =
@@ -123,6 +41,28 @@ export function SupportWidget({
   const [activeIndex, setActiveIndex] = React.useState(0);
   const [visited, setVisited] = React.useState<Set<number>>(new Set([0]));
   const isRootLevel = tabStacks[activeIndex]?.stack.length <= 1;
+
+  const TAB_CONFIG: TabConfig[] = React.useMemo(
+    () =>
+      [
+        {
+          icon: <House className="w-6 h-6" />,
+          label: "Home",
+          component: WidgetHome,
+        },
+        {
+          icon: <MessageSquareText className="w-6 h-6" />,
+          label: "Messages",
+          component: WidgetAssistant,
+        },
+        {
+          icon: <Mail className="w-6 h-6" />,
+          label: "Contact Us",
+          component: WigetContact,
+        },
+      ] as const,
+    []
+  );
 
   // Initialize default screens
   React.useEffect(() => {
@@ -170,6 +110,7 @@ export function SupportWidget({
             ...stack[stack.length - 1]?.props,
             setMessage,
             setStatus,
+            session,
           };
 
           return (

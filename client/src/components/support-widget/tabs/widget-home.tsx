@@ -14,35 +14,18 @@ import { faqs } from "@/lib/constants";
 import { guminertBold } from "@/assets/fonts";
 import CTAImage from "@/assets/images/ai-solutionz-logo.jpg";
 import { type Screen, useSupportWidgetToggleStore } from "@/store/store";
-import { useTypingAnimation } from "@/components/support-widget/widget";
+import { WidgetIntroText } from "@/components/support-widget/widget-intro-texts";
+import { Session } from "next-auth";
 
 export interface WidgetHomeProps {
   pushScreen?: (screen: Screen) => void;
   popScreen?: () => void;
+  session: Session | null;
 }
 
-export function WidgetHome({}: WidgetHomeProps) {
-  const texts = React.useMemo(
-    () => [
-      "How can I assist you today?",
-      "I am your AI assistant from AI Solutionz.",
-      "We build smart and scalable AI solutions for your business.",
-      "From chatbots to automation, we make AI simple.",
-      "Your growth partner in intelligent automation.",
-    ],
-    []
-  );
-
+export function WidgetHome({ session }: WidgetHomeProps) {
   const { isOpen, setIsOpen } = useSupportWidgetToggleStore();
   const [faqOpen, setFaqOpen] = React.useState<number | null>(0);
-  const { introText, displayText, startAnimation } = useTypingAnimation(
-    texts,
-    "Hi there!"
-  );
-
-  React.useEffect(() => {
-    startAnimation();
-  }, [isOpen, startAnimation]);
 
   return (
     <section className="px-2 lg:px-3">
@@ -69,14 +52,7 @@ export function WidgetHome({}: WidgetHomeProps) {
         </div>
 
         {/* Introduction texts */}
-        <div className={cn("mt-8 px-1 text-[#0E3228]", guminertBold.className)}>
-          <h2 className="text-2xl font-bold mb-1">
-            <span className="fade-in">{introText}</span>
-          </h2>
-          <p className="text-lg font-normal fade-in h-6 text-black/70">
-            <span className="fade-in">{displayText}</span>
-          </p>
-        </div>
+        <WidgetIntroText session={session} />
       </div>
 
       <div className="pb-4 px-2 space-y-4 flex-1">
