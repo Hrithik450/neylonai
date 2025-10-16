@@ -13,17 +13,23 @@ import { cn } from "@/lib/utils";
 import { faqs } from "@/lib/constants";
 import { guminertBold } from "@/assets/fonts";
 import CTAImage from "@/assets/images/ai-solutionz-logo.jpg";
-import { type Screen, useSupportWidgetToggleStore } from "@/store/store";
+import {
+  type Screen,
+  useSupportWidgetToggleStore,
+  useThreadStore,
+} from "@/store/store";
 import { WidgetIntroText } from "@/components/support-widget/widget-intro-texts";
 import { Session } from "next-auth";
+import { WidgetChatThreadUI } from "./widget-messages/widget-chat-messages-ui";
 
 export interface WidgetHomeProps {
   pushScreen?: (screen: Screen) => void;
   popScreen?: () => void;
-  session: Session | null;
+  session?: Session | null;
 }
 
-export function WidgetHome({ session }: WidgetHomeProps) {
+export function WidgetHome({ session, pushScreen }: WidgetHomeProps) {
+  const { setCurrentThreadId } = useThreadStore();
   const { isOpen, setIsOpen } = useSupportWidgetToggleStore();
   const [faqOpen, setFaqOpen] = React.useState<number | null>(0);
 
@@ -36,7 +42,7 @@ export function WidgetHome({ session }: WidgetHomeProps) {
             <Image
               src={CTAImage}
               alt="cta-image"
-              className="w-12 h-12 rounded-full"
+              className="w-10 h-10 rounded-full"
             />
             <h3 className={cn(guminertBold.className, "text-xl text-black")}>
               AI Solutionz
@@ -58,11 +64,22 @@ export function WidgetHome({ session }: WidgetHomeProps) {
       <div className="pb-4 px-2 space-y-4 flex-1">
         {/* Top widgets */}
         <div className="flex flex-col gap-2.5">
-          <div className="group cursor-pointer bg-white shadow-sm border rounded-xl px-4 pr-6 py-4 flex justify-between items-center">
+          <button
+            onClick={() => {
+              setCurrentThreadId(null);
+              if (pushScreen) {
+                pushScreen({
+                  component: WidgetChatThreadUI,
+                  props: { id: null, title: null },
+                });
+              }
+            }}
+            className="group cursor-pointer bg-white shadow-sm border rounded-xl px-4 pr-6 py-4 flex justify-between items-center"
+          >
             <div className="flex items-center gap-4">
               <MessageCircle className="text-gray-500 w-6 h-6 group-hover:-rotate-12 transition-all duration-150 ease-in-out" />
               <div>
-                <p className="font-semibold text-sm md:text-base">
+                <p className="text-start font-semibold text-sm md:text-base">
                   Ask a question
                 </p>
                 <p className="text-xs md:text-sm text-gray-600">
@@ -71,14 +88,14 @@ export function WidgetHome({ session }: WidgetHomeProps) {
               </div>
             </div>
             <ArrowRight className="text-gray-500 w-5 h-5 group-hover:-rotate-45 transition-all duration-150 ease-in-out" />
-          </div>
+          </button>
 
-          <div className="group cursor-pointer bg-white shadow-sm border rounded-xl px-4 pr-6 py-4 flex justify-between items-center">
+          <button className="group cursor-pointer bg-white shadow-sm border rounded-xl px-4 pr-6 py-4 flex justify-between items-center">
             <div className="flex items-center gap-4">
               <Calendar className="text-gray-500 w-6 h-6 group-hover:-rotate-12 transition-all duration-150 ease-in-out" />
 
               <div>
-                <p className="font-semibold text-sm md:text-base">
+                <p className="text-start font-semibold text-sm md:text-base">
                   Book an appointment
                 </p>
                 <p className="text-xs md:text-sm text-gray-600">
@@ -87,7 +104,7 @@ export function WidgetHome({ session }: WidgetHomeProps) {
               </div>
             </div>
             <ArrowRight className="text-gray-500 w-5 h-5 group-hover:-rotate-45 transition-all duration-150 ease-in-out" />
-          </div>
+          </button>
         </div>
 
         {/* FAQ's */}

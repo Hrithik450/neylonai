@@ -15,7 +15,7 @@ const texts = [
   "Your growth partner in intelligent automation.",
 ];
 
-export function WidgetIntroText({ session }: { session: Session | null }) {
+export function WidgetIntroText({ session }: { session?: Session | null }) {
   const { isOpen } = useSupportWidgetToggleStore();
   const { introText, displayText, startAnimation } = useTypingAnimation(
     texts,
