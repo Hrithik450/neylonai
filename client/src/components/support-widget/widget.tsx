@@ -116,12 +116,16 @@ export function SupportWidget({
             const activeIndex = Object.keys(TAB_CONFIG).indexOf(activeTab);
             const offset = (tabIndex - activeIndex) * 100;
 
+            if (isActive && !visited.has(tab))
+              setVisited((prev) => new Set(prev).add(tab));
+
             const stack = tabStacks[tab]?.stack ?? [
               { component: config.component },
             ];
 
             const ActiveScreen =
               stack[stack.length - 1]?.component ?? (() => null);
+
             const screenProps = {
               pushScreen: (tab: TabType, screen: Screen) =>
                 pushScreen(tab, screen),
@@ -133,19 +137,15 @@ export function SupportWidget({
               session,
             };
 
-            React.useCallback(() => {
-              if (isActive && !visited.has(tab)) {
-                setVisited((prev) => new Set(prev).add(tab));
-              }
-            }, [isActive, tab]);
-
             return (
               <div
                 key={tab}
                 className="absolute inset-0 w-full h-full transition-transform duration-300"
                 style={{ transform: `translateX(${offset}%)` }}
               >
-                {isActive && <ActiveScreen {...screenProps} />}
+                {visited.has(tab) && isActive && (
+                  <ActiveScreen {...screenProps} />
+                )}
               </div>
             );
           }
