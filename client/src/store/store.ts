@@ -6,9 +6,15 @@ import {
   NewMessage,
 } from "@/actions/thread_messages/thread_messages.types";
 
+export enum TabType {
+  Home = "Home",
+  Messages = "Messages",
+  Contact = "Contact",
+}
+
 export interface Screen {
-  component: React.FC<any>;
-  props?: any;
+  component: React.ComponentType<any>;
+  props?: Record<string, any>;
 }
 
 export interface TabState {
@@ -60,10 +66,12 @@ interface ErrorStore {
 }
 
 interface NavigationStore {
-  tabStacks: Array<TabState>;
-  setTabStacks: (stacks: Array<TabState>) => void;
-  pushScreen: (tabIndex: number, screen: Screen) => void;
-  popScreen: (tabIndex: number) => void;
+  activeTab: TabType;
+  tabStacks: Record<TabType, TabState>;
+  setTabStacks: (stacks: Record<TabType, TabState>) => void;
+  pushScreen: (tab: TabType, screen: Screen) => void;
+  popScreen: (tab: TabType) => void;
+  switchTab: (tab: TabType) => void;
 }
 
 export const useSupportWidgetToggleStore = create<SupportWidgetToggleStore>(
@@ -117,22 +125,29 @@ export const useThreadMessageStore = create<ThreadMessageStore>()(
 
 export const useNavigationStore = create<NavigationStore>()(
   devtools((set) => ({
-    tabStacks: [],
+    activeTab: TabType.Home,
+    tabStacks: {
+      [TabType.Home]: { stack: [] },
+      [TabType.Messages]: { stack: [] },
+      [TabType.Contact]: { stack: [] },
+    },
     setTabStacks: (stacks) => set({ tabStacks: stacks }),
-    pushScreen: (tabIndex, screen) =>
+    pushScreen: (tab, screen) =>
       set((state) => {
-        const newStacks = [...state.tabStacks];
-        newStacks[tabIndex].stack.push(screen);
+        const newStacks = { ...state.tabStacks };
+        newStacks[tab].stack.push(screen);
+        return {
+          activeTab: tab,
+          tabStacks: newStacks,
+        };
+      }),
+    popScreen: (tab) =>
+      set((state) => {
+        const newStacks = { ...state.tabStacks };
+        if (newStacks[tab].stack.length > 1) newStacks[tab].stack.pop();
         return { tabStacks: newStacks };
       }),
-    popScreen: (tabIndex) =>
-      set((state) => {
-        const newStacks = [...state.tabStacks];
-        if (newStacks[tabIndex].stack.length > 1) {
-          newStacks[tabIndex].stack.pop();
-        }
-        return { tabStacks: newStacks };
-      }),
+    switchTab: (tab) => set({ activeTab: tab }),
   }))
 );
 

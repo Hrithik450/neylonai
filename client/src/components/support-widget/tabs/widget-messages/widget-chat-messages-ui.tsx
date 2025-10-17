@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { InputForm } from "@/components/support-widget/input-form";
 import { ConversationUI } from "@/components/support-widget/conversation-ui";
 import {
+  TabType,
   useAssistantStore,
   useInputStore,
   useThreadMessageStore,
@@ -15,7 +16,6 @@ import { Thread } from "@/actions/threads/threads.types";
 import { WidgetHeader } from "@/components/support-widget/widget-header";
 import { MessagesResponse } from "@/actions/thread_messages/thread_messages.types";
 import { Skeleton } from "@/components/ui/skeleton";
-import { X } from "lucide-react";
 
 interface WidgetChatUIProps {
   id: string;
@@ -189,8 +189,6 @@ export function WidgetChatThreadUI({
               case "assistantResponseCompleted":
                 setIsAssistantTyping(false);
                 const { assistantResponse } = JSON.parse(data);
-                // if (threadId) router.push(`/c/${threadId}`);
-                // await autoSpeak(assistantResponse);
 
                 updateMessage((prev) => {
                   if (!prev || prev.length === 0)

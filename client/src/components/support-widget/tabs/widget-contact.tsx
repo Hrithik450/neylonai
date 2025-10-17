@@ -10,15 +10,18 @@ import {
   Youtube,
   Instagram,
 } from "lucide-react";
+import { WidgetHeader } from "../widget-header";
 
 export function WigetContact({
   setMessage,
   setStatus,
+  popScreen,
 }: {
   setMessage: React.Dispatch<React.SetStateAction<string | null>>;
   setStatus: React.Dispatch<
     React.SetStateAction<"error" | "saving" | "saved" | null>
   >;
+  popScreen: () => void;
 }) {
   const [form, setForm] = useState({
     name: "",
@@ -63,7 +66,6 @@ export function WigetContact({
 
   return (
     <div className="flex flex-col h-full px-4 sm:px-5 py-4 space-y-6 overflow-y-auto scrollbar-hide">
-      {/* Header */}
       <div className="text-center">
         <h2 className="text-lg sm:text-xl font-semibold text-gray-800">
           Contact & Partnerships

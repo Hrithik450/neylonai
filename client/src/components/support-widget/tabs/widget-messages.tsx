@@ -3,14 +3,17 @@
 import React from "react";
 import { WidgetHeader } from "@/components/support-widget/widget-header";
 import { ChevronRight, HelpCircle } from "lucide-react";
-import Image, { StaticImageData } from "next/image";
 import { cn, shortTimeAgo } from "@/lib/utils";
 import { guminertRegular } from "@/assets/fonts";
-import { type Screen, useThreadStore, useUserStore } from "@/store/store";
+import {
+  type Screen,
+  TabType,
+  useThreadStore,
+  useUserStore,
+} from "@/store/store";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ThreadsResponse } from "@/actions/threads/threads.types";
 import { WidgetChatThreadUI } from "@/components/support-widget/tabs/widget-messages/widget-chat-messages-ui";
-import AssistantIcon from "@/assets/images/assistant-icon.jpg";
 import { robotIcons } from "@/lib/constants";
 
 interface MessagePreviewProps {
@@ -91,8 +94,7 @@ function AskQuestionButton({
 }
 
 interface WidgetAssistantProps {
-  popScreen: () => void;
-  pushScreen: (screen: Screen) => void;
+  pushScreen: (tab: TabType, screen: Screen) => void;
 }
 
 export function WidgetAssistant({
@@ -164,7 +166,7 @@ export function WidgetAssistant({
               timestamp={shortTimeAgo(thread.created_at)}
               Icon={robotIcons[index % robotIcons.length]}
               action={() =>
-                pushScreen({
+                pushScreen(TabType.Messages, {
                   component: WidgetChatThreadUI,
                   props: { id: thread.id, title: thread.title },
                 })
@@ -186,7 +188,7 @@ export function WidgetAssistant({
           className="w-[max-content]"
           onClick={() => {
             setCurrentThreadId(null);
-            pushScreen({
+            pushScreen(TabType.Messages, {
               component: WidgetChatThreadUI,
               props: { id: null, title: null },
             });

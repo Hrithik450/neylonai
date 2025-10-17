@@ -15,20 +15,25 @@ import { guminertBold } from "@/assets/fonts";
 import CTAImage from "@/assets/images/ai-solutionz-logo.jpg";
 import {
   type Screen,
+  TabType,
   useSupportWidgetToggleStore,
   useThreadStore,
 } from "@/store/store";
 import { WidgetIntroText } from "@/components/support-widget/widget-intro-texts";
 import { Session } from "next-auth";
-import { WidgetChatThreadUI } from "./widget-messages/widget-chat-messages-ui";
+import { WidgetChatThreadUI } from "@/components/support-widget/tabs/widget-messages/widget-chat-messages-ui";
 
 export interface WidgetHomeProps {
-  pushScreen?: (screen: Screen) => void;
-  popScreen?: () => void;
+  pushScreen?: (tab: TabType, screen: Screen) => void;
+  switchTab?: (tabIndex: number) => void;
   session?: Session | null;
 }
 
-export function WidgetHome({ session, pushScreen }: WidgetHomeProps) {
+export function WidgetHome({
+  session,
+  pushScreen,
+  switchTab,
+}: WidgetHomeProps) {
   const { setCurrentThreadId } = useThreadStore();
   const { isOpen, setIsOpen } = useSupportWidgetToggleStore();
   const [faqOpen, setFaqOpen] = React.useState<number | null>(0);
@@ -68,7 +73,7 @@ export function WidgetHome({ session, pushScreen }: WidgetHomeProps) {
             onClick={() => {
               setCurrentThreadId(null);
               if (pushScreen) {
-                pushScreen({
+                pushScreen(TabType.Messages, {
                   component: WidgetChatThreadUI,
                   props: { id: null, title: null },
                 });
@@ -90,7 +95,12 @@ export function WidgetHome({ session, pushScreen }: WidgetHomeProps) {
             <ArrowRight className="text-gray-500 w-5 h-5 group-hover:-rotate-45 transition-all duration-150 ease-in-out" />
           </button>
 
-          <button className="group cursor-pointer bg-white shadow-sm border rounded-xl px-4 pr-6 py-4 flex justify-between items-center">
+          <button
+            onClick={() => {
+              if (switchTab) switchTab(2);
+            }}
+            className="group cursor-pointer bg-white shadow-sm border rounded-xl px-4 pr-6 py-4 flex justify-between items-center"
+          >
             <div className="flex items-center gap-4">
               <Calendar className="text-gray-500 w-6 h-6 group-hover:-rotate-12 transition-all duration-150 ease-in-out" />
 

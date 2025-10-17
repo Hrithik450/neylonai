@@ -1,24 +1,44 @@
 "use client";
 
 import {
-  useSupportWidgetToggleStore,
-  useNavigationStore,
+  TabType,
   type Screen,
+  type TabState,
+  useNavigationStore,
+  useSupportWidgetToggleStore,
 } from "@/store/store";
 import React from "react";
 import { cn } from "@/lib/utils";
+import { type Session } from "next-auth";
 import { guminertRegular } from "@/assets/fonts";
 import { House, MessageSquareText, Mail } from "lucide-react";
 import { WidgetHome } from "@/components/support-widget/tabs/widget-home";
 import { WidgetAssistant } from "@/components/support-widget/tabs/widget-messages";
 import { WigetContact } from "@/components/support-widget/tabs/widget-contact";
-import { Session } from "next-auth";
 
 export interface TabConfig {
-  label: string;
+  label: TabType;
   icon: React.ReactNode;
-  component: React.FC<any>;
+  component: React.ComponentType<any>;
 }
+
+const TAB_CONFIG: Record<TabType, TabConfig> = {
+  Home: {
+    icon: <House className="w-6 h-6" />,
+    label: TabType.Home,
+    component: WidgetHome,
+  },
+  Messages: {
+    icon: <MessageSquareText className="w-6 h-6" />,
+    label: TabType.Messages,
+    component: WidgetAssistant,
+  },
+  Contact: {
+    icon: <Mail className="w-6 h-6" />,
+    label: TabType.Contact,
+    component: WigetContact,
+  },
+} as const;
 
 /* -------------------------------------------------------------------------- */
 /*                              Main Component                                */
@@ -35,47 +55,39 @@ export function SupportWidget({
   session: Session | null;
 }) {
   const { isOpen } = useSupportWidgetToggleStore();
-  const { tabStacks, setTabStacks, pushScreen, popScreen } =
-    useNavigationStore();
+  const {
+    activeTab,
+    tabStacks,
+    setTabStacks,
+    pushScreen,
+    popScreen,
+    switchTab,
+  } = useNavigationStore();
 
-  const [activeIndex, setActiveIndex] = React.useState(0);
-  const [visited, setVisited] = React.useState<Set<number>>(new Set([0]));
-  const isRootLevel = tabStacks[activeIndex]?.stack.length <= 1;
-
-  const TAB_CONFIG: TabConfig[] = React.useMemo(
-    () =>
-      [
-        {
-          icon: <House className="w-6 h-6" />,
-          label: "Home",
-          component: WidgetHome,
-        },
-        {
-          icon: <MessageSquareText className="w-6 h-6" />,
-          label: "Messages",
-          component: WidgetAssistant,
-        },
-        {
-          icon: <Mail className="w-6 h-6" />,
-          label: "Contact Us",
-          component: WigetContact,
-        },
-      ] as const,
-    []
+  const isRootLevel = tabStacks[activeTab]?.stack.length <= 1;
+  const [visited, setVisited] = React.useState<Set<TabType>>(
+    new Set<TabType>([TabType.Home])
   );
 
   // Initialize default screens
   React.useEffect(() => {
-    setTabStacks(
-      TAB_CONFIG.map((tab) => ({
-        stack: [{ component: tab.component }],
-      }))
-    );
+    const initialStacks: Record<TabType, TabState> = Object.values(
+      TAB_CONFIG
+    ).reduce((acc, tab) => {
+      acc[tab.label] = { stack: [{ component: tab.component }] };
+      return acc;
+    }, {} as Record<TabType, TabState>);
+
+    setTabStacks(initialStacks);
   }, [setTabStacks]);
 
-  function handleTabChange(i: number) {
-    setActiveIndex(i);
-    setVisited((prev) => new Set(prev).add(i)); // mark as visited
+  // React.useEffect(() => {
+  //   console.log(tabStacks);
+  // }, [tabStacks]);
+
+  function handleTabChange(tab: TabType) {
+    switchTab(tab);
+    setVisited((prev) => new Set(prev).add(tab)); // mark as visited
   }
 
   return (
@@ -97,52 +109,67 @@ export function SupportWidget({
     >
       {/* Active Screen */}
       <div className="relative flex-1 w-full h-full overflow-x-hidden overflow-y-auto scrollbar-hide">
-        {TAB_CONFIG.map((tab, i) => {
-          const offset = (i - activeIndex) * 100;
-          const stack = tabStacks[i]?.stack ?? [
-            { component: TAB_CONFIG[i].component },
-          ];
-          const ActiveScreen =
-            stack[stack.length - 1]?.component ?? (() => null);
-          const screenProps = {
-            pushScreen: (screen: Screen) => pushScreen(activeIndex, screen),
-            popScreen: () => popScreen(activeIndex),
-            ...stack[stack.length - 1]?.props,
-            setMessage,
-            setStatus,
-            session,
-          };
+        {(Object.entries(TAB_CONFIG) as Array<[TabType, TabConfig]>).map(
+          ([tab, config]) => {
+            const isActive = tab === activeTab;
+            const tabIndex = Object.keys(TAB_CONFIG).indexOf(tab);
+            const activeIndex = Object.keys(TAB_CONFIG).indexOf(activeTab);
+            const offset = (tabIndex - activeIndex) * 100;
 
-          return (
-            <div
-              key={tab.label}
-              className="absolute inset-0 w-full h-full transition-transform duration-300"
-              style={{ transform: `translateX(${offset}%)` }}
-            >
-              {visited.has(i) && i === activeIndex && (
-                <ActiveScreen {...screenProps} />
-              )}
-            </div>
-          );
-        })}
+            const stack = tabStacks[tab]?.stack ?? [
+              { component: config.component },
+            ];
+
+            const ActiveScreen =
+              stack[stack.length - 1]?.component ?? (() => null);
+            const screenProps = {
+              pushScreen: (tab: TabType, screen: Screen) =>
+                pushScreen(tab, screen),
+              popScreen: () => popScreen(activeTab),
+              ...stack[stack.length - 1]?.props,
+              switchTab,
+              setMessage,
+              setStatus,
+              session,
+            };
+
+            React.useCallback(() => {
+              if (isActive && !visited.has(tab)) {
+                setVisited((prev) => new Set(prev).add(tab));
+              }
+            }, [isActive, tab]);
+
+            return (
+              <div
+                key={tab}
+                className="absolute inset-0 w-full h-full transition-transform duration-300"
+                style={{ transform: `translateX(${offset}%)` }}
+              >
+                {isActive && <ActiveScreen {...screenProps} />}
+              </div>
+            );
+          }
+        )}
       </div>
 
       {/* Navigation */}
       {isRootLevel && (
         <nav className="border-t flex justify-around pt-3">
-          {TAB_CONFIG.map((tab, i) => (
-            <button
-              key={tab.label}
-              onClick={() => handleTabChange(i)}
-              className={cn(
-                "flex-1 flex flex-col items-center cursor-pointer",
-                i === activeIndex ? "text-purple-600" : "text-gray-500"
-              )}
-            >
-              {tab.icon}
-              <span className="text-xs sm:text-sm">{tab.label}</span>
-            </button>
-          ))}
+          {(Object.entries(TAB_CONFIG) as Array<[TabType, TabConfig]>).map(
+            ([tab, config]) => (
+              <button
+                key={config.label}
+                onClick={() => handleTabChange(tab)}
+                className={cn(
+                  "flex-1 flex flex-col items-center cursor-pointer",
+                  tab === activeTab ? "text-purple-600" : "text-gray-500"
+                )}
+              >
+                {config.icon}
+                <span className="text-xs sm:text-sm">{config.label}</span>
+              </button>
+            )
+          )}
         </nav>
       )}
     </div>
