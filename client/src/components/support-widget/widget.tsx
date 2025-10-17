@@ -11,7 +11,7 @@ import React from "react";
 import { cn } from "@/lib/utils";
 import { type Session } from "next-auth";
 import { guminertRegular } from "@/assets/fonts";
-import { House, MessageSquareText, Mail } from "lucide-react";
+import { House, MessageSquareText, Mail, Currency } from "lucide-react";
 
 import { WidgetHome } from "@/components/support-widget/tabs/widget-home";
 import { WigetContact } from "@/components/support-widget/tabs/widget-contact";
@@ -120,6 +120,10 @@ export function SupportWidget({
         {(Object.entries(TAB_CONFIG) as Array<[TabType, TabConfig]>).map(
           ([tab, config]) => {
             const isActive = tab === activeTab;
+            const tabIndex = Object.keys(TAB_CONFIG).indexOf(tab);
+            const activeIndex = Object.keys(TAB_CONFIG).indexOf(activeTab);
+            const direction = tabIndex > activeIndex ? "right" : "left";
+
             if (!visited.has(tab) && !isActive) return null;
 
             const stack = tabStacks[tab]?.stack ?? [
@@ -143,7 +147,15 @@ export function SupportWidget({
             return (
               <div
                 key={tab}
-                className={cn("w-full h-full", isActive ? "block" : "hidden")}
+                // className={cn("w-full h-full", isActive ? "block" : "hidden")}
+                className={cn(
+                  "absolute inset-0 w-full h-full transition-transform duration-300 ease-in-out",
+                  isActive
+                    ? "translate-x-0 opacity-100 z-10"
+                    : direction === "right"
+                    ? "translate-x-full opacity-0 z-0"
+                    : "-translate-x-full opacity-0 z-0"
+                )}
               >
                 <ActiveScreen {...screenProps} />
               </div>
