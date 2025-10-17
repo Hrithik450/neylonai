@@ -12,9 +12,10 @@ import { cn } from "@/lib/utils";
 import { type Session } from "next-auth";
 import { guminertRegular } from "@/assets/fonts";
 import { House, MessageSquareText, Mail } from "lucide-react";
+
 import { WidgetHome } from "@/components/support-widget/tabs/widget-home";
-import { WidgetAssistant } from "@/components/support-widget/tabs/widget-messages";
 import { WigetContact } from "@/components/support-widget/tabs/widget-contact";
+import { WidgetAssistant } from "@/components/support-widget/tabs/widget-messages";
 
 export interface TabConfig {
   label: TabType;
@@ -81,14 +82,21 @@ export function SupportWidget({
     setTabStacks(initialStacks);
   }, [setTabStacks]);
 
-  // React.useEffect(() => {
-  //   console.log(tabStacks);
-  // }, [tabStacks]);
+  React.useEffect(() => {
+    console.log(tabStacks);
+  }, [tabStacks]);
 
-  function handleTabChange(tab: TabType) {
-    switchTab(tab);
-    setVisited((prev) => new Set(prev).add(tab)); // mark as visited
-  }
+  const handleTabChange = React.useCallback(
+    (tab: TabType) => {
+      switchTab(tab);
+      setVisited((prev) => new Set(prev).add(tab));
+    },
+    [switchTab]
+  );
+
+  React.useEffect(() => {
+    console.log(visited);
+  }, [visited]);
 
   return (
     <div
@@ -112,12 +120,7 @@ export function SupportWidget({
         {(Object.entries(TAB_CONFIG) as Array<[TabType, TabConfig]>).map(
           ([tab, config]) => {
             const isActive = tab === activeTab;
-            const tabIndex = Object.keys(TAB_CONFIG).indexOf(tab);
-            const activeIndex = Object.keys(TAB_CONFIG).indexOf(activeTab);
-            const offset = (tabIndex - activeIndex) * 100;
-
-            if (isActive && !visited.has(tab))
-              setVisited((prev) => new Set(prev).add(tab));
+            if (!visited.has(tab) && !isActive) return null;
 
             const stack = tabStacks[tab]?.stack ?? [
               { component: config.component },
@@ -140,12 +143,9 @@ export function SupportWidget({
             return (
               <div
                 key={tab}
-                className="absolute inset-0 w-full h-full transition-transform duration-300"
-                style={{ transform: `translateX(${offset}%)` }}
+                className={cn("w-full h-full", isActive ? "block" : "hidden")}
               >
-                {visited.has(tab) && isActive && (
-                  <ActiveScreen {...screenProps} />
-                )}
+                <ActiveScreen {...screenProps} />
               </div>
             );
           }
@@ -162,7 +162,9 @@ export function SupportWidget({
                 onClick={() => handleTabChange(tab)}
                 className={cn(
                   "flex-1 flex flex-col items-center cursor-pointer",
-                  tab === activeTab ? "text-purple-600" : "text-gray-500"
+                  tab === activeTab
+                    ? "text-purple-600"
+                    : "text-gray-500 hover:text-purple-400"
                 )}
               >
                 {config.icon}

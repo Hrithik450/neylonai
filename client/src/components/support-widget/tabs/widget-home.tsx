@@ -25,7 +25,7 @@ import { WidgetChatThreadUI } from "@/components/support-widget/tabs/widget-mess
 
 export interface WidgetHomeProps {
   pushScreen?: (tab: TabType, screen: Screen) => void;
-  switchTab?: (tabIndex: number) => void;
+  switchTab?: (tab: TabType) => void;
   session?: Session | null;
 }
 
@@ -97,7 +97,7 @@ export function WidgetHome({
 
           <button
             onClick={() => {
-              if (switchTab) switchTab(2);
+              if (switchTab) switchTab(TabType.Contact);
             }}
             className="group cursor-pointer bg-white shadow-sm border rounded-xl px-4 pr-6 py-4 flex justify-between items-center"
           >

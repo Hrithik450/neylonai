@@ -136,10 +136,7 @@ export const useNavigationStore = create<NavigationStore>()(
       set((state) => {
         const newStacks = { ...state.tabStacks };
         newStacks[tab].stack.push(screen);
-        return {
-          activeTab: tab,
-          tabStacks: newStacks,
-        };
+        return { activeTab: tab, tabStacks: newStacks };
       }),
     popScreen: (tab) =>
       set((state) => {
