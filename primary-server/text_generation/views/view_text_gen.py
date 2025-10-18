@@ -181,6 +181,7 @@ class StreamChatView(APIView):
             cls.sender_id: str = getattr(validatedData, "senderId", "")
             cls.current_thread_id: Optional[str] = getattr(validatedData, "threadId", None)
 
+
             # fetch last messages for the thread if available (handle None)
             last_msgs: List[StateMessage] = []
             

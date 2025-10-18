@@ -76,7 +76,7 @@ class EmailFilteringTool:
         threadId: str = None,
         thread_count: bool = False,
         thread_details: bool = False,
-        thread_details_limit: int = None,
+        thread_details_limit: int = 1,
         sender: str = None,
         recipient: str = None,
         subject: str = None,
@@ -88,7 +88,7 @@ class EmailFilteringTool:
         html: bool = False,
         sort_by: str = "date_dt",
         sort_order: str = "desc",
-        limit: int = None,):
+        limit: int = 5,):
         try:
             print(f"email_filtering_tool is being called {uid}, {threadId}, {thread_count}, {thread_details}, {thread_details_limit}, {sender}, {recipient}, {subject}, {cc}, {labels}, {start_date}, {end_date}, {body}, {html}, {sort_by}, {sort_order}, {limit}")
             temp_df = df.clone()
@@ -188,21 +188,14 @@ class EmailFilteringTool:
                 unique_threads = unique_threads_df["threadId"].to_list()
 
                 summaries: List[Tuple[str, str]] = []
-                if thread_details_limit is None:
-                    for tid in unique_threads:
-                        thread_df = temp_df.filter(pl.col("threadId") == tid).sort("date_dt", descending=False)
-                        emails = thread_df.select(["from", "to", "subject", "snippet", "body_text", "date_dt"]).to_dicts()
-                        for email in emails:
-                            summaries.append((tid, json.dumps(email, default=str)))
-                else:
-                    for tid in unique_threads[:thread_details_limit]:
-                        thread_df = temp_df.filter(pl.col("threadId") == tid).sort("date_dt", descending=False)
-                        emails = thread_df.select(["from", "to", "subject", "snippet", "body_text", "date_dt"]).to_dicts()
-                        for email in emails:
-                            summaries.append((tid, json.dumps(email, default=str)))
+                for tid in unique_threads[:thread_details_limit]:
+                    thread_df = temp_df.filter(pl.col("threadId") == tid).sort("date_dt", descending=False)
+                    emails = thread_df.select(["from", "to", "subject", "snippet", "body_text", "date_dt"]).to_dicts()
+                    for email in emails:
+                        summaries.append((tid, json.dumps(email, default=str)))
 
                 final_summary = EmailFilteringTool.hierarchical_summary(summaries)
-                return f"Total {unique_threads_count} threads matching the criteria.\n\nSummary of {min(thread_details_limit, len(summaries)) if thread_details_limit else len(summaries)} threads:\n{final_summary}"
+                return f"Total {unique_threads_count} threads matching the criteria.\n\nSummary of {min(thread_details_limit, len(summaries))} threads:\n{final_summary}"
 
             if thread_count:
                 unique_threads_count = temp_df.select(pl.col("threadId")).unique().height
@@ -216,10 +209,7 @@ class EmailFilteringTool:
             if html:
                 preview_cols.append("body_html")
 
-            if limit is None:
-                results_preview = temp_df.select(preview_cols).to_dicts()
-            else:
-                results_preview = temp_df.head(limit).select(preview_cols).to_dicts()
+            results_preview = temp_df.head(limit).select(preview_cols).to_dicts()
 
             def fmt(res):
                 parts = [
