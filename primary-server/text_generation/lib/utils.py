@@ -21,6 +21,7 @@ AGENT_MODEL = "gpt-4.1" # Or another powerful model like "gpt-4-turbo"
 # -------------------- SYSTEM PROMPT --------------------x
 MEMORY_LAYER_PROMPT="""
 You are an expert routing agent.
+- Today’s date is {today_date} IST.
 
 Task:
 Given the previous conversation and a new user question,

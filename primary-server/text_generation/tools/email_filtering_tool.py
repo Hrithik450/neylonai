@@ -3,8 +3,8 @@ import json
 import traceback
 import polars as pl
 from ..lib.load_data import df
-from typing import List, Tuple
 from collections import defaultdict
+from typing import List, Tuple, Dict, Optional
 from langchain_google_genai import ChatGoogleGenerativeAI
 from ..lib.utils import normalize_list, match_value_in_columns, smart_subject_match, build_date_range, human_readable_date, count_tokens
 
@@ -88,15 +88,19 @@ class EmailFilteringTool:
         html: bool = False,
         sort_by: str = "date_dt",
         sort_order: str = "desc",
-        limit: int = 5,):
+        limit: int = 5,
+        analysis: Optional[Dict] = None,):
         try:
-            print(f"email_filtering_tool is being called {uid}, {threadId}, {thread_count}, {thread_details}, {thread_details_limit}, {sender}, {recipient}, {subject}, {cc}, {labels}, {start_date}, {end_date}, {body}, {html}, {sort_by}, {sort_order}, {limit}")
+            print(f"email_filtering_tool is being called {uid}, {threadId}, {thread_count}, {thread_details}, {thread_details_limit}, {sender}, {recipient}, {subject}, {cc}, {labels}, {start_date}, {end_date}, {body}, {html}, {sort_by}, {sort_order}, {limit}, {analysis}")
             temp_df = df.clone()
             mask = pl.lit(True)
 
             temp_df = temp_df.with_columns([
                 temp_df["body"].struct.field("text").alias("body_text"),
                 temp_df["body"].struct.field("html").alias("body_html"),
+                pl.col("from").map_elements(normalize_list, return_dtype=str).alias("from_normalized"),
+                pl.col("to").map_elements(normalize_list, return_dtype=str).alias("to_normalized"),
+                pl.col("cc").map_elements(normalize_list, return_dtype=str).alias("cc_normalized")
             ])
 
             if uid:
@@ -108,10 +112,6 @@ class EmailFilteringTool:
             # --- Sender filter (case-insensitive, matches name or email) ---
             if sender:
                 sender = sender.lower()
-                # Add a normalized column
-                temp_df = temp_df.with_columns([
-                    pl.col("from").map_elements(normalize_list, return_dtype=str).alias("from_normalized")
-                ])
                 # Filter rows where the normalized 'from' matches sender
                 sender_mask = pl.col("from_normalized").map_elements(lambda x: match_value_in_columns(sender, x), return_dtype=bool)
                 mask = mask & sender_mask
@@ -119,19 +119,11 @@ class EmailFilteringTool:
             # --- Recipient filter ---
             if recipient:
                 recipient = recipient.lower()
-                # Normalize 'to' and 'cc' columns which are lists
-                temp_df = temp_df.with_columns([
-                    pl.col("to").map_elements(normalize_list, return_dtype=str).alias("to_normalized")
-                ])
                 # Filter rows where any normalized 'to' or 'cc' matches the recipient
                 recipient_mask = (
                     pl.col("to_normalized").map_elements(lambda x: match_value_in_columns(recipient, x), return_dtype=bool)
                 )
                 if cc:
-                    # Normalize 'to' and 'cc' columns which are lists
-                    temp_df = temp_df.with_columns([
-                        pl.col("cc").map_elements(normalize_list, return_dtype=str).alias("cc_normalized")
-                    ])
                     # Filter rows where any normalized 'to' or 'cc' matches the recipient
                     cc_mask = (
                         pl.col("cc_normalized").map_elements(lambda x: match_value_in_columns(recipient, x), return_dtype=bool)
@@ -172,15 +164,50 @@ class EmailFilteringTool:
             # Apply the mask only once
             temp_df = temp_df.filter(mask)
 
+            # --- Handle empty result ---
+            if temp_df.is_empty():
+                return "No emails found matching the specified criteria."
+
+            if analysis:
+                analysis_type = analysis.get('analysis_type')
+                field = analysis.get('field', "from_normalized")
+                top_n = analysis.get('top_n', 10)
+                order = analysis.get('order', "desc")
+                threshold_hours = analysis.get('threshold_hours', 24)
+                min_delayed = analysis.get('min_delayed_replies')
+
+                match analysis_type:
+                    case "active_status":
+                        df_to_agg = temp_df
+                        if field in ["from_normalized", "to_normalized", "cc_normalized", "threadId"]:
+                            df_to_agg = df_to_agg.with_columns(pl.col(field).str.split(by=", ").alias(field)).explode(field)
+                            result = df_to_agg.group_by(field).agg(pl.count().alias("email_count")).sort("email_count", descending=(order=="desc")).head(top_n)
+                        return "\n---".join(json.dumps(result.to_dicts(), default=str))
+                        
+                    case "threads_status":
+                        df_thread = temp_df
+                        df_thread = df_thread.group_by(field).agg([(pl.col("date_dt").max()-pl.col("date_dt").min()).alias("duration")])
+                        if min_delayed:
+                            delayed_counts = temp_df.group_by(field).agg([(pl.col("date_dt").diff().dt.hours()>threshold_hours).sum().alias("delayed_count")])
+                            df_thread = df_thread.join(delayed_counts, on=field).filter(pl.col("delayed_count") >= min_delayed)
+                        return "\n---".join(json.dumps(df_thread.sort("duration", descending=(order=="desc")).head(top_n).to_dicts(), default=str))
+
+                    case "response_time":
+                        df_resp = temp_df
+                        df_resp = df_resp.sort(["threadId", "date_dt"]).with_columns([pl.col("date_dt").diff().over("threadId").alias("response_time_sec")])
+                        df_resp = df_resp.filter(pl.col("response_time_sec")>0)
+                        result = df_resp.group_by(field).agg([pl.col("response_time_sec").mean().alias("avg_response_sec")])
+                        if order == 'desc':
+                            result = result.sort("avg_response_sec", descending=(order=="desc"))
+                        else:
+                            result = result.sort("avg_response_sec")
+                        return "\n---".join(json.dumps(result.head(top_n).to_dicts(), default=str))
+
             # --- Sorting ---
             temp_df = temp_df.sort(
                 by=sort_by,
                 descending=(sort_order.lower() == "desc")
             )
-
-            # --- Handle empty result ---
-            if temp_df.is_empty():
-                return "No emails found matching the specified criteria."
             
             if thread_details:
                 unique_threads_count = temp_df.select(pl.col("threadId")).unique().height

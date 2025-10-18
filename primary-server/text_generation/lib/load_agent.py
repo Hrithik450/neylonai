@@ -4,7 +4,7 @@ import pytz
 from datetime import datetime
 from dotenv import load_dotenv
 from rich.console import Console
-from typing import List, Literal, TypedDict, Dict, Callable
+from typing import List, Literal, TypedDict, Dict, Optional
 
 # --- LangChain / LangGraph imports ---
 from langchain.tools import tool
@@ -109,6 +109,7 @@ class LoadInitialAgentConfig:
         sort_by: str = "date",
         sort_order: str = "desc",
         limit: int = 5,
+        analysis: Optional[Dict] = None
     ) -> str:
         """
         This tool filter emails based on metadata such as sender (human), recipient (human), date range, or thread ID.
@@ -131,8 +132,9 @@ class LoadInitialAgentConfig:
             sort_by (str, optional): Column to sort the results by. Default is 'date_dt'.
             sort_order (str, optional): Sort order: 'asc' for ascending, 'desc' for descending. Default is 'desc'.
             limit (int, default=5): Maximum number of results to return. set default value to 5.
+            analysis (dict, optional): Specifies workflow or bottleneck analytics; keys include "type" (str: "active_status" → top/mid/least active, "threads_status" → slowest/fastest replies, "response_time" → average reply time), "field" (str: e.g. "from_normalized", "to_normalized", "cc_normalized", "threadId", "subject"), "sort_order" (str, default "desc") -> "desc" for top/slowest, "asc" for least/fastest, "threshold_hours" (int, default 24) -> For unanswered emails, "top_n" (int, default 10) -> Number of results to return, and "min_delayed_replies" (int, optional) -> Minimum number of delayed replies per thread.
             """
-        return LoadInitialAgentConfig.email_tool_instance.run_tool(uid, threadId, thread_count, thread_details, thread_details_limit, sender, recipient, subject, cc, labels, start_date, end_date, body, html, sort_by, sort_order, limit)
+        return LoadInitialAgentConfig.email_tool_instance.run_tool(uid, threadId, thread_count, thread_details, thread_details_limit, sender, recipient, subject, cc, labels, start_date, end_date, body, html, sort_by, sort_order, limit, analysis)
 
     # ============================================================
     # HELPER FUNCTIONS
@@ -187,7 +189,7 @@ class LoadInitialAgentConfig:
         {user_input}
         """
 
-        raw_response = await self.call_llm(MEMORY_LAYER_PROMPT, user_prompt)
+        raw_response = await self.call_llm(MEMORY_LAYER_PROMPT.format(today_date=self.today_date), user_prompt)
         try:
             result = parse_json(raw_response)
         except (json.JSONDecodeError, TypeError) as e:
