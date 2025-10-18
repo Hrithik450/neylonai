@@ -193,12 +193,12 @@ export function ConversationUI({
       <DynamicAssistantTyping isAssistantTyping={isAssistantTyping} />
 
       {showScrollButton && (
-        <div className="sticky bottom-2 z-199 w-full flex justify-end items-center px-2 pr-3">
+        <div className="sticky bottom-3 z-199 w-full flex justify-center items-center px-2 pr-3">
           <button
             onClick={() => scrollToBottom(true)}
             className="p-1 w-fit cursor-pointer rounded-full border border-black/50 bg-gray-200 shadow-md hover:bg-gray-300 transition"
           >
-            <ChevronsDown size={20} />
+            <ChevronsDown size={22} />
           </button>
         </div>
       )}

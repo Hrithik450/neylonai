@@ -19,7 +19,7 @@ export default function App() {
       {/* <Hero /> */}
       {/* <WhyChooseUs /> */}
       <Navbar session={session} />
-      <Hero2 />
+      <Hero2 session={session} />
       <FeatureSection />
       <Faq />
       <Testimonials />

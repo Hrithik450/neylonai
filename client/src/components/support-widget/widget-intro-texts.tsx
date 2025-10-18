@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { Session } from "next-auth";
 import { guminertBold } from "@/assets/fonts";
 import { useTypingAnimation } from "@/hooks/use-animation-hook";
-import { useSupportWidgetToggleStore } from "@/store/store";
+import { useNavigationStore, useSupportWidgetToggleStore } from "@/store/store";
 
 const texts = [
   "How can I assist you today?",
@@ -16,6 +16,7 @@ const texts = [
 ];
 
 export function WidgetIntroText({ session }: { session?: Session | null }) {
+  const { activeTab } = useNavigationStore();
   const { isOpen } = useSupportWidgetToggleStore();
   const { introText, displayText, startAnimation } = useTypingAnimation(
     texts,
@@ -27,8 +28,8 @@ export function WidgetIntroText({ session }: { session?: Session | null }) {
   );
 
   React.useEffect(() => {
-    if (isOpen) startAnimation();
-  }, [isOpen]);
+    startAnimation();
+  }, [isOpen, activeTab]);
 
   return (
     <div className={cn("mt-8 px-1 text-[#0E3228]", guminertBold.className)}>

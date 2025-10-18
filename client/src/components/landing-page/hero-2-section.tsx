@@ -5,10 +5,11 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import IphoneFrameImage from "@/assets/images/iphone-frame.png";
 import HeroImage from "@/assets/images/hero_background_3.jpg";
 import { WidgetHome } from "@/components/support-widget/tabs/widget-home";
+import { Session } from "next-auth";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 
-export function Hero2() {
+export function Hero2({ session }: { session: Session | null }) {
   return (
     <section
       className={cn(
@@ -83,7 +84,7 @@ export function Hero2() {
             {/* Frame Content */}
             <div className="absolute w-full h-full z-10">
               <div className="px-3 md:px-6 pt-12 md:pt-16 bg-[linear-gradient(to_bottom,rgb(230,250,217)_0%,rgb(255,255,255)_100%)] pointer-events-none w-[95%] aspect-[789/1650] mx-auto object-cover rounded-[2.75rem] lg:rounded-[3rem] xl:rounded-[3.70rem] 2xl:rounded-[4.5rem] overflow-hidden">
-                <WidgetHome />
+                <WidgetHome session={session} />
               </div>
             </div>
           </div>
