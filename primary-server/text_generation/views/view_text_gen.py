@@ -5,9 +5,10 @@ from typing import Optional, List
 from ..services.model_message_service import ChatMessagesResponse
 from ..services.model_thread_service import ChatThreadResponse
 from ..services.model_title_service import ChatTitleResponse
-from ..services.model_user_service import UserService, UserResponse
+from ..services.model_user_service import UserService
 from rest_framework.response import Response
 from rest_framework import status
+from langchain.schema import AIMessage
 from ..lib.load_agent import LoadInitialAgentConfig, MessageState, StateMessage
 from ..lib.utils import SYSTEM_PROMPT, safe_serialize
 from datetime import datetime
@@ -79,7 +80,11 @@ class StreamChatView(APIView):
 
                 elif event["event"] == "on_chain_end" and not event.get("parent_ids"):
                     messages = event["data"]["output"]["messages"]
-                    assistant_msg = messages[-1].content if messages else ""
+                    assistant_msg = ""
+                    for msg in reversed(messages):
+                        if isinstance(msg, AIMessage) and msg.content.strip():
+                            assistant_msg = msg.content
+                            break
                     
                     # Persist messages into memory / DB
                     try:

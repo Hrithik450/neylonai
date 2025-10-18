@@ -95,6 +95,8 @@ class LoadInitialAgentConfig:
         uid: str = None,
         threadId: str = None,
         thread_count: bool = False,
+        thread_details: bool = False,
+        thread_details_limit: int = None,
         sender: str = None,
         recipient: str = None,
         subject: str = None,
@@ -115,6 +117,8 @@ class LoadInitialAgentConfig:
             uid (str, optional): Filter emails by their unique UID. Exact match required.
             threadId: Filter emails by their conversation (email chian) thread ID, Returns all messages belonging to that specific chain (thread).
             thread_count: Returns the total number of unique email threads present in the dataset or within the applied filters.
+            thread_details (bool, optional): If True, provides detailed summaries for each thread for further analytics, useful for including metrics  or sentiment analysis of emails within threads.
+            thread_details_limit (int, optional): Maximum number of threads to include when generating thread details (summaries/analytics). Defaults to 1 if not specified. Useful to limit output size for large datasets.
             sender (str or list of str, optional): Filter emails by sender(s). Can be full email address, partial email, or sender names (case-insensitive, only humans).
             recipient (str or list of str, optional): Filter emails by recipient(s). Can be full email addresses, partial emails, or recipient names, but strictly not numbers. (case-insensitive, only humans).
             subject (str, optional): Filter email by subject text. Can be full or partial subject string (case-insensitive).
@@ -128,18 +132,18 @@ class LoadInitialAgentConfig:
             sort_order (str, optional): Sort order: 'asc' for ascending, 'desc' for descending. Default is 'desc'.
             limit (int, optional): Maximum number of results to return. set default value to 5.
             """
-        return LoadInitialAgentConfig.email_tool_instance.run_tool(uid, threadId, thread_count, sender, recipient, subject, cc, labels, start_date, end_date, body, html, sort_by, sort_order, limit)
+        return LoadInitialAgentConfig.email_tool_instance.run_tool(uid, threadId, thread_count, thread_details, thread_details_limit, sender, recipient, subject, cc, labels, start_date, end_date, body, html, sort_by, sort_order, limit)
 
     # ============================================================
     # HELPER FUNCTIONS
     # ============================================================
-    def call_model(self, state: MessagesState) -> MessagesState:
+    async def call_model(self, state: MessagesState) -> MessagesState:
         """
         Sends messages to the model and returns the response wrapped in MessagesState format.
         """
         messages = state["messages"]
 
-        response = self.model_with_tools.invoke(input=messages)
+        response = await self.model_with_tools.ainvoke(messages)
         return {"messages": [response]}
     
     async def call_llm(self, system_prompt: str, user_prompt: str) -> str:

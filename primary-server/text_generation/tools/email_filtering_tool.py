@@ -1,44 +1,73 @@
+import os
 import json
 import traceback
 import polars as pl
 from ..lib.load_data import df
-from ..lib.utils import normalize_list, match_value_in_columns, smart_subject_match, build_date_range, human_readable_date
+from typing import List, Tuple
+from collections import defaultdict
+from langchain_google_genai import ChatGoogleGenerativeAI
+from ..lib.utils import normalize_list, match_value_in_columns, smart_subject_match, build_date_range, human_readable_date, count_tokens
 
 class EmailFilteringTool:
 
-    # @staticmethod
-    # def analyze_threads(df: pl.DataFrame, metrics: Dict[str, Callable[[pl.DataFrame], Any]], filters: List[Callable[[pl.DataFrame], pl.DataFrame]] = None, sort_by: str = None, top_n: str = "5"):
-    #     """
-    #     Generalized email thread analysis tool.
-    #     Args:
-    #         df: Polars DataFrame with columns like threadId, date_dt, labels, id, etc.
-    #         metrics: Dictionary of metric name -> function that computes that metric (takes a group DataFrame).
-    #         filters: Optional list of filters (functions returning filtered DataFrames).
-    #         sort_by: Optional metric column name to sort results by.
-    #         top_n: Limit for top N results.
-    #     """
+    llm_model = ChatGoogleGenerativeAI(
+        model='gemini-2.5-pro',
+        temperature=0.4,
+        max_retries=2,
+        google_api_key=os.getenv("GOOGLE_API_KEY")
+    )
 
-    #     grouped = df.group_by("threadId")
-    #     results = []
-    #     for thread_id, group in grouped:
-    #         stats = {"threadId": thread_id}
-    #         for name, func in metrics.items():
-    #             try:
-    #                 stats[name] = func(group)
-    #             except Exception:
-    #                 stats[name] = None
-    #         results.append(stats)
+    @staticmethod
+    def chunk_items(items: List[Tuple[str, str]], size: int):
+        """Yield successive chunks from a list."""
+        thread_map = defaultdict(list)
+        for thread_id, summary in items:
+            thread_map[thread_id].append(summary)
 
-    #     result_df = pl.DataFrame(results)
+        for thread_id, summaries  in thread_map.items():
+            for i in range(0, len(summaries), size):
+                chunk = [(thread_id, s) for s in summaries[i:i+size]]
+                yield chunk
+
+    @staticmethod
+    def hierarchical_summary(summaries: List[Tuple[str, str]], tpm_limit: int =  200000, target_words: int = 1024, chunk_size: int = 10):
+        """Summarize a list of summaries hierarchically only if the total tokens exceed tpm_limit."""
+
+        thread_text = [f"threadId:{tid}\nthreadSummary:{summary.strip()}\n" for tid, summary in summaries]
+        merged_text = "\n\n".join(thread_text)
+
+        current_tokens = count_tokens(merged_text)
+        if current_tokens <= tpm_limit:
+            print(f"Total tokens ({current_tokens}) within limit ({tpm_limit}). Skipping hierarchical summarization.")
+            return merged_text
         
-    #     if filters:
-    #         for f in filters:
-    #             result_df = f(result_df)
+        print(f"Token count = {current_tokens}, exceeding {tpm_limit}. Starting hierarchical summarization...")
 
-    #     if sort_by and sort_by in result_df.columns:
-    #         result_df = result_df.sort(sort_by, descending=True)
-    #     if top_n:
-    #         result_df = result_df.head(top_n)
+        level = 1
+        while True:
+            new_summaries:List[Tuple[str, str]] = []
+            for group in EmailFilteringTool.chunk_items(summaries, chunk_size):
+                if len(group) < 6:
+                    merged_content = "\n\n".join([summary for _, summary in group])
+                    new_summaries.append((group[0][0],merged_content))
+                    continue
+
+                merged = "\n\n".join([summary for _, summary in group])
+                response = EmailFilteringTool.llm_model.invoke(input=f"Combine and summarize these summaries into one concise summary (~{target_words} words):\n{merged}")
+                new_summaries.append((group[0][0],response.content))
+            
+            summaries = new_summaries
+            thread_text = [f"threadId:{tid}\nthreadSummary:{summary.strip()}\n" for tid, summary in summaries]
+            merged_text = "\n\n".join(thread_text)
+            current_tokens = count_tokens(merged_text)
+
+            print(f"Level {level}: Tokens after summarization = {current_tokens}")
+            if current_tokens <= tpm_limit:
+                break
+
+            level+=1
+        print(f"Final token count: {current_tokens}")
+        return summaries if summaries else ""
 
     @classmethod
     def run_tool(
@@ -46,6 +75,8 @@ class EmailFilteringTool:
         uid: str = None,
         threadId: str = None,
         thread_count: bool = False,
+        thread_details: bool = False,
+        thread_details_limit: int = None,
         sender: str = None,
         recipient: str = None,
         subject: str = None,
@@ -55,11 +86,11 @@ class EmailFilteringTool:
         end_date: str = None,
         body: bool = False,
         html: bool = False,
-        sort_by: str = "date",
+        sort_by: str = "date_dt",
         sort_order: str = "desc",
         limit: int = None,):
         try:
-            print(f"email_filtering_tool is being called {uid}, {threadId}, {thread_count}, {sender}, {recipient}, {subject}, {cc}, {labels}, {start_date}, {end_date}, {body}, {html}, {sort_by}, {sort_order}, {limit}")
+            print(f"email_filtering_tool is being called {uid}, {threadId}, {thread_count}, {thread_details}, {thread_details_limit}, {sender}, {recipient}, {subject}, {cc}, {labels}, {start_date}, {end_date}, {body}, {html}, {sort_by}, {sort_order}, {limit}")
             temp_df = df.clone()
             mask = pl.lit(True)
 
@@ -150,6 +181,32 @@ class EmailFilteringTool:
             # --- Handle empty result ---
             if temp_df.is_empty():
                 return "No emails found matching the specified criteria."
+            
+            if thread_details:
+                unique_threads_count = temp_df.select(pl.col("threadId")).unique().height
+                unique_threads_df = temp_df.sort("date_dt", descending=True).select(pl.col("threadId")).unique()
+                unique_threads = unique_threads_df["threadId"].to_list()
+
+                summaries: List[Tuple[str, str]] = []
+                if thread_details_limit is None:
+                    for tid in unique_threads:
+                        thread_df = temp_df.filter(pl.col("threadId") == tid).sort("date_dt", descending=False)
+                        emails = thread_df.select(["from", "to", "subject", "snippet", "body_text", "date_dt"]).to_dicts()
+                        for email in emails:
+                            summaries.append((tid, json.dumps(email, default=str)))
+                else:
+                    for tid in unique_threads[:thread_details_limit]:
+                        thread_df = temp_df.filter(pl.col("threadId") == tid).sort("date_dt", descending=False)
+                        emails = thread_df.select(["from", "to", "subject", "snippet", "body_text", "date_dt"]).to_dicts()
+                        for email in emails:
+                            summaries.append((tid, json.dumps(email, default=str)))
+
+                final_summary = EmailFilteringTool.hierarchical_summary(summaries)
+                return f"Total {unique_threads_count} threads matching the criteria.\n\nSummary of {min(thread_details_limit, len(summaries)) if thread_details_limit else len(summaries)} threads:\n{final_summary}"
+
+            if thread_count:
+                unique_threads_count = temp_df.select(pl.col("threadId")).unique().height
+                return f"Total unique email threads: {unique_threads_count}"
 
             # --- Preview results ---
             total_matches = temp_df.height
@@ -186,10 +243,6 @@ class EmailFilteringTool:
             formatted_results = "\n\n---\n\n".join(fmt(r) for r in results_preview)
             shown = total_matches if limit is None else min(int(limit), total_matches)
 
-            if thread_count:
-                unique_threads = temp_df.select(pl.col("threadId")).unique().height
-                return f"Total unique email threads: {unique_threads}"
-            
             return f"Found {total_matches} emails matching the criteria. Showing {shown}:\n\n{formatted_results}"
         
         except Exception as e:

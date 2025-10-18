@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from rapidfuzz import fuzz, process
 from pathlib import Path
 import polars as pl
+import tiktoken
 import psutil
 import json
 import time
@@ -495,7 +496,8 @@ def human_readable_date(timestamp) -> str:
     
     return timestamp.strftime("%a, %b %d, %Y %I:%M %p")
 
-def count_tokens(encoding_model, text: str) -> int:
+def count_tokens(text: str) -> int:
+    encoding_model = tiktoken.get_encoding("cl100k_base")
     return len(encoding_model.encode(text))
 
 def run_batch_task(llm: ChatGoogleGenerativeAI, tasks: List[Tuple[int, List[HumanMessage], int]], tpm_limit: int = 200000) -> List[Tuple[int, str]]:
