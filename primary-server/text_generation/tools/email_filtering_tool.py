@@ -6,11 +6,46 @@ from ..lib.utils import normalize_list, match_value_in_columns, smart_subject_ma
 
 class EmailFilteringTool:
 
+    # @staticmethod
+    # def analyze_threads(df: pl.DataFrame, metrics: Dict[str, Callable[[pl.DataFrame], Any]], filters: List[Callable[[pl.DataFrame], pl.DataFrame]] = None, sort_by: str = None, top_n: str = "5"):
+    #     """
+    #     Generalized email thread analysis tool.
+    #     Args:
+    #         df: Polars DataFrame with columns like threadId, date_dt, labels, id, etc.
+    #         metrics: Dictionary of metric name -> function that computes that metric (takes a group DataFrame).
+    #         filters: Optional list of filters (functions returning filtered DataFrames).
+    #         sort_by: Optional metric column name to sort results by.
+    #         top_n: Limit for top N results.
+    #     """
+
+    #     grouped = df.group_by("threadId")
+    #     results = []
+    #     for thread_id, group in grouped:
+    #         stats = {"threadId": thread_id}
+    #         for name, func in metrics.items():
+    #             try:
+    #                 stats[name] = func(group)
+    #             except Exception:
+    #                 stats[name] = None
+    #         results.append(stats)
+
+    #     result_df = pl.DataFrame(results)
+        
+    #     if filters:
+    #         for f in filters:
+    #             result_df = f(result_df)
+
+    #     if sort_by and sort_by in result_df.columns:
+    #         result_df = result_df.sort(sort_by, descending=True)
+    #     if top_n:
+    #         result_df = result_df.head(top_n)
+
     @classmethod
     def run_tool(
         cls, 
         uid: str = None,
         threadId: str = None,
+        thread_count: bool = False,
         sender: str = None,
         recipient: str = None,
         subject: str = None,
@@ -24,7 +59,7 @@ class EmailFilteringTool:
         sort_order: str = "desc",
         limit: int = None,):
         try:
-            print(f"email_filtering_tool is being called {uid}, {threadId}, {sender}, {recipient}, {subject}, {cc}, {labels}, {start_date}, {end_date}, {body}, {html}, {sort_by}, {sort_order}, {limit}")
+            print(f"email_filtering_tool is being called {uid}, {threadId}, {thread_count}, {sender}, {recipient}, {subject}, {cc}, {labels}, {start_date}, {end_date}, {body}, {html}, {sort_by}, {sort_order}, {limit}")
             temp_df = df.clone()
             mask = pl.lit(True)
 
@@ -150,6 +185,11 @@ class EmailFilteringTool:
             
             formatted_results = "\n\n---\n\n".join(fmt(r) for r in results_preview)
             shown = total_matches if limit is None else min(int(limit), total_matches)
+
+            if thread_count:
+                unique_threads = temp_df.select(pl.col("threadId")).unique().height
+                return f"Total unique email threads: {unique_threads}"
+            
             return f"Found {total_matches} emails matching the criteria. Showing {shown}:\n\n{formatted_results}"
         
         except Exception as e:
