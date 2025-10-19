@@ -1,9 +1,9 @@
 "use client";
 
-import AISolutionz from "@/assets/images/ai-solutionz.png";
+import NeylonAI from "@/assets/images/neylon.jpg";
 import { signInWithGoogle } from "@/actions/auth/sign-in";
 import { signOutAccount } from "@/actions/auth/sign-out";
-import { guminertRegular } from "@/assets/fonts";
+import { guminertBold, guminertRegular } from "@/assets/fonts";
 import { Button } from "@/components/ui/button";
 import { LogOut, Menu, X } from "lucide-react";
 import { useUserStore } from "@/store/store";
@@ -67,15 +67,17 @@ function AuthNavigations({
             className="rounded-full"
           />
         )}
-        <span className="font-medium text-gray-700">{session.user?.name}</span>
+        <span className="text-lg font-medium text-gray-700">
+          {session.user?.name}
+        </span>
       </div>
       <div className="relative group">
         <button
           onClick={() => signOutAccount()}
-          className="cursor-pointer px-6 sm:px-2 py-2 rounded-full border border-red-600 text-red-600 hover:bg-red-50 flex justify-center items-center gap-2"
+          className="cursor-pointer px-6 lg:px-2 py-2 rounded-full border border-red-600 text-red-600 hover:bg-red-50 flex justify-center items-center gap-2"
         >
           <LogOut className="w-5 h-5" />
-          <p className="sm:hidden">Logout</p>
+          <p className="lg:hidden">Logout</p>
         </button>
 
         <div className="hidden sm:block absolute -bottom-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-sm rounded-md px-3 py-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ease-in-out pointer-events-none">
@@ -105,29 +107,34 @@ export function Navbar({ session }: { session: Session | null }) {
     >
       <nav
         className={cn(
-          "container mx-auto flex justify-between items-center w-full backdrop-blur-xs border border-gray-400/60 rounded-full py-3 md:p-2 xl:p-3 transition-colors duration-300 ease-in-out",
+          "container mx-auto flex justify-between items-center w-full backdrop-blur-xs border border-gray-400/60 rounded-full p-2 xl:p-3 transition-colors duration-300 ease-in-out",
           menuOpen
             ? "bg-[linear-gradient(to_bottom,rgb(210,245,130)_0%,white_100%)]"
             : "bg-white/25"
         )}
       >
         {/* Logo */}
-        <div className="px-4 flex items-center w-full max-w-[220px] sm:max-w-[180px] xl:max-w-[240px]">
+        <div className="md:flex-1 flex items-center gap-3">
           <Image
-            src={AISolutionz}
-            alt="ai-solutionz"
-            className="w-full h-auto"
+            width={40}
+            height={40}
+            src={NeylonAI}
+            alt="neylon-ai"
+            className="rounded-full"
           />
+          <h1 className={cn(guminertBold.className, "text-xl")}>Neylon AI</h1>
         </div>
 
         {/* Desktop Nav Links */}
-        <PageNavigations
-          className="max-lg:hidden"
-          itemClassName="text-base md:text-base xl:text-lg"
-        />
+        <div className="md:flex-1">
+          <PageNavigations
+            className="max-lg:hidden"
+            itemClassName="text-base md:text-base xl:text-lg"
+          />
+        </div>
 
         {/* Desktop Buttons */}
-        <div className="flex justify-end max-w-[180px] xl:max-w-[240px] w-full">
+        <div className="md:flex-1 flex justify-end">
           <AuthNavigations
             className="ml-auto max-lg:hidden"
             session={session}
@@ -135,7 +142,7 @@ export function Navbar({ session }: { session: Session | null }) {
         </div>
 
         {/* Mobile Menu Toggle */}
-        <div className="lg:hidden flex items-center px-4">
+        <div className="lg:hidden flex items-center px-2">
           {menuOpen ? (
             <X
               className="cursor-pointer text-black"
