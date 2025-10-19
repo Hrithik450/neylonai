@@ -50,7 +50,7 @@ export function AIChat({ session }: { session: Session | null }) {
 
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="bg-[#0E3228] border border-white/80 cursor-pointer w-[max-content] h-auto px-4 py-3 rounded-full flex items-center justify-center transition-transform duration-200 hover:scale-105 active:scale-95"
+        className="bg-[#0E3228] border border-white/80 cursor-pointer w-[max-content] h-auto px-5 py-2 rounded-full flex items-center justify-center transition-transform duration-200 hover:scale-105 active:scale-95"
       >
         <div
           className={cn(
@@ -61,9 +61,9 @@ export function AIChat({ session }: { session: Session | null }) {
           {isOpen ? (
             <ChevronRight className="w-6 h-6 text-white" />
           ) : (
-            <div className="flex items-center justify-center gap-1">
+            <div className="flex items-center justify-center gap-2">
               <Sparkles className="w-6 h-6 text-white" />
-              <h3 className="text-white text-base">Ask AI</h3>
+              <h3 className="text-white text-sm md:text-lg">Ask AI</h3>
             </div>
           )}
         </div>

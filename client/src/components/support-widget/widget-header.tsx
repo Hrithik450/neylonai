@@ -2,33 +2,22 @@
 
 import { cn } from "@/lib/utils";
 import { useSupportWidgetToggleStore } from "@/store/store";
-import { ArrowLeftIcon, X } from "lucide-react";
+import { ArrowLeftIcon, X, Minimize2, Maximize2 } from "lucide-react";
 import React from "react";
 
-/**
- * Props for the WidgetHeader component.
- * @interface WidgetHeaderProps
- * @property {string} [header] - Header text
- * @property {string | null} [className] - Classname for additional css [optional]
- */
 interface WidgetHeaderProps {
   header: string;
   className?: string;
   action?: () => void;
 }
 
-/**
- * WidgetHeader component – displays a sticky header for support widget.
- *
- * @component
- * @returns {JSX.Element} The WidgetHeader component.
- */
 export const WidgetHeader: React.FC<WidgetHeaderProps> = ({
   action,
   header,
   className,
 }): React.JSX.Element => {
-  const { isOpen, setIsOpen } = useSupportWidgetToggleStore();
+  const { isOpen, setIsOpen, isCollapse, setCollapse } =
+    useSupportWidgetToggleStore();
 
   return (
     <nav
@@ -38,7 +27,7 @@ export const WidgetHeader: React.FC<WidgetHeaderProps> = ({
         className
       )}
     >
-      <div className="h-full my-auto mr-auto ml-4">
+      <div className="h-full flex-1 my-auto mr-auto ml-4">
         {action && (
           <button
             className="text-xl font-bold cursor-pointer h-full"
@@ -49,15 +38,30 @@ export const WidgetHeader: React.FC<WidgetHeaderProps> = ({
         )}
       </div>
 
-      <h3 className="text-center flex-1 text-lg">{header}</h3>
+      <h3 className="text-center flex-2 text-lg">{header}</h3>
 
-      <div className="h-full my-auto ml-auto mr-4">
-        <button
-          className="text-xl font-bold cursor-pointer h-full"
-          onClick={() => setIsOpen(!isOpen)}
-        >
-          <X className="w-5 h-5 text-black" />
-        </button>
+      <div className="flex-1 flex justify-center items-center gap-4">
+        <div className="flex items-center h-full my-auto ml-auto">
+          <button
+            className="text-xl font-bold cursor-pointer h-full"
+            onClick={() => setCollapse(!isCollapse)}
+          >
+            {isCollapse ? (
+              <Maximize2 className="w-5 h-5 text-black" />
+            ) : (
+              <Minimize2 className="w-5 h-5 text-black" />
+            )}
+          </button>
+        </div>
+
+        <div className="flex items-center h-full my-auto mr-4">
+          <button
+            className="text-xl font-bold cursor-pointer h-full"
+            onClick={() => setIsOpen(!isOpen)}
+          >
+            <X className="w-5 h-5 text-black" />
+          </button>
+        </div>
       </div>
     </nav>
   );

@@ -55,7 +55,7 @@ export function SupportWidget({
   >;
   session: Session | null;
 }) {
-  const { isOpen } = useSupportWidgetToggleStore();
+  const { isOpen, isCollapse } = useSupportWidgetToggleStore();
   const {
     activeTab,
     tabStacks,
@@ -82,10 +82,6 @@ export function SupportWidget({
     setTabStacks(initialStacks);
   }, [setTabStacks]);
 
-  React.useEffect(() => {
-    console.log(tabStacks);
-  }, [tabStacks]);
-
   const handleTabChange = React.useCallback(
     (tab: TabType) => {
       switchTab(tab);
@@ -94,25 +90,23 @@ export function SupportWidget({
     [switchTab]
   );
 
-  React.useEffect(() => {
-    console.log(visited);
-  }, [visited]);
-
   return (
     <div
       className={cn(
         guminertRegular.className,
         "fixed max-md:inset-0 max-md:bottom-0 overflow-y-auto",
-        "md:bottom-20 md:right-5",
+        "md:bottom-16 md:right-5",
         "2xl:right-[max(1.2rem,calc((100vw-120rem)/2+2rem))]",
-        "w-full md:min-w-sm max-w-sm",
-        "md:h-[65vh] lg:h-[82vh] max-h-[750px] z-99",
+        "md:h-[65vh] lg:h-[85vh] max-h-[750px] z-99",
         "bg-[linear-gradient(to_bottom,rgb(144,238,144)_0%,white_100%)]",
         "border border-gray-400/40 shadow-2xl sm:rounded-2xl py-2 sm:py-3 flex flex-col",
         "origin-bottom-right transition-all duration-300 transform",
         isOpen
           ? "opacity-100 scale-100"
-          : "opacity-0 scale-0 pointer-events-none"
+          : "opacity-0 scale-0 pointer-events-none",
+        isCollapse
+          ? "w-full md:min-w-sm max-w-sm"
+          : "w-full md:min-w-xl max-w-xl"
       )}
     >
       {/* Active Screen */}

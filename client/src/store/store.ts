@@ -23,7 +23,9 @@ export interface TabState {
 
 interface SupportWidgetToggleStore {
   isOpen: boolean;
+  isCollapse: boolean;
   setIsOpen: (flag: boolean) => void;
+  setCollapse: (flag: boolean) => void;
 }
 
 interface ThreadStore {
@@ -77,7 +79,9 @@ interface NavigationStore {
 export const useSupportWidgetToggleStore = create<SupportWidgetToggleStore>(
   (set) => ({
     isOpen: false,
+    isCollapse: true,
     setIsOpen: (flag) => set({ isOpen: flag }),
+    setCollapse: (flag) => set({ isCollapse: flag }),
   })
 );
 

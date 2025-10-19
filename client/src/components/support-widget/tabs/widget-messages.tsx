@@ -34,7 +34,7 @@ function MessagePreview({
   return (
     <div
       onClick={action}
-      className="group flex items-center p-3 max-w-sm mx-autoshadow-sm space-x-3 cursor-pointer hover:bg-violet-100/30 transition-colors border-b-2 border-black/10"
+      className="group flex items-center p-3 mx-autoshadow-sm space-x-3 cursor-pointer hover:bg-violet-100/30 transition-colors border-b-2 border-black/10"
     >
       {/* Avatar */}
       <div className="flex-shrink-0">

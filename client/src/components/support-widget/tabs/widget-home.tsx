@@ -3,6 +3,8 @@
 import {
   X,
   Calendar,
+  Minimize2,
+  Maximize2,
   ArrowRight,
   MessageCircle,
   ArrowDownRight,
@@ -35,7 +37,8 @@ export function WidgetHome({
   switchTab,
 }: WidgetHomeProps) {
   const { setCurrentThreadId } = useThreadStore();
-  const { isOpen, setIsOpen } = useSupportWidgetToggleStore();
+  const { isOpen, isCollapse, setIsOpen, setCollapse } =
+    useSupportWidgetToggleStore();
   const [faqOpen, setFaqOpen] = React.useState<number | null>(0);
 
   return (
@@ -54,12 +57,29 @@ export function WidgetHome({
             </h3>
           </div>
 
-          <button
-            className="text-xl font-bold cursor-pointer pr-2"
-            onClick={() => setIsOpen(!isOpen)}
-          >
-            <X className="w-5 h-5 text-black" />
-          </button>
+          <div className="flex-1 flex justify-center items-center gap-4">
+            <div className="flex items-center h-full my-auto ml-auto">
+              <button
+                className="text-xl font-bold cursor-pointer h-full"
+                onClick={() => setCollapse(!isCollapse)}
+              >
+                {isCollapse ? (
+                  <Maximize2 className="w-5 h-5 text-black" />
+                ) : (
+                  <Minimize2 className="w-5 h-5 text-black" />
+                )}
+              </button>
+            </div>
+
+            <div className="flex items-center h-full my-auto">
+              <button
+                className="text-xl font-bold cursor-pointer h-full"
+                onClick={() => setIsOpen(!isOpen)}
+              >
+                <X className="w-5 h-5 text-black" />
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Introduction texts */}
