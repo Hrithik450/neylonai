@@ -20,6 +20,7 @@ import Image from "next/image";
 export function FeatureSection() {
   return (
     <section
+      id="features"
       className={cn(
         sfProRegular.className,
         "pt-4 md:pt-8 mt-4 md:mt-8 px-3 md:px-5 xl:px-10 2xl:px-15 relative"

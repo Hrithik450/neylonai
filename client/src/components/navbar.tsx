@@ -4,10 +4,16 @@ import NeylonAI from "@/assets/images/neylon.jpg";
 import { signInWithGoogle } from "@/actions/auth/sign-in";
 import { signOutAccount } from "@/actions/auth/sign-out";
 import { guminertBold, guminertRegular } from "@/assets/fonts";
+import { Link as ScrollLink } from "react-scroll";
 import { Button } from "@/components/ui/button";
 import { LogOut, Menu, X } from "lucide-react";
-import { useUserStore } from "@/store/store";
-import { cn, navLists } from "@/lib/utils";
+import {
+  TabType,
+  useNavigationStore,
+  useSupportWidgetToggleStore,
+  useUserStore,
+} from "@/store/store";
+import { cn, NavItem, navLists } from "@/lib/utils";
 import { Session } from "next-auth";
 import Image from "next/image";
 import React from "react";
@@ -19,17 +25,48 @@ function PageNavigations({
   className: string;
   itemClassName: string;
 }) {
+  const { setIsOpen } = useSupportWidgetToggleStore();
+  const { switchTab } = useNavigationStore();
+
+  const handleNavClick = (action: string) => {
+    switch (action) {
+      case "insights":
+        setIsOpen(true);
+        switchTab(TabType.Home);
+        break;
+
+      default:
+        setIsOpen(true);
+        switchTab(TabType.Contact);
+        break;
+    }
+  };
+
   return (
     <div className={cn("flex flex-1 justify-center", className)}>
-      {navLists.map((navItem) => (
+      {navLists.map((navItem: NavItem) => (
         <div
           className={cn(
-            "px-2 xl:px-3 text-black transition-all cursor-pointer",
+            "w-[max-content] px-2 xl:px-3 text-black transition-all cursor-pointer",
             itemClassName
           )}
           key={navItem.id}
         >
-          {navItem.label}
+          {navItem.action ? (
+            <button
+              className="cursor-pointer"
+              onClick={() => {
+                if (typeof navItem.action === "string")
+                  handleNavClick(navItem.action);
+              }}
+            >
+              {navItem.label}
+            </button>
+          ) : (
+            <ScrollLink to={navItem.id} smooth={true} duration={300} offset={0}>
+              {navItem.label}
+            </ScrollLink>
+          )}
         </div>
       ))}
     </div>

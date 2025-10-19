@@ -12,6 +12,7 @@ import Image from "next/image";
 export function Hero2({ session }: { session: Session | null }) {
   return (
     <section
+      id="home"
       className={cn(
         guminertRegular.className,
         "py-4 px-3 md:px-5 h-[max-content] md:h-[1240px] xl:h-[1160px] overflow-hidden"
