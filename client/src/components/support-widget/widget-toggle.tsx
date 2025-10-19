@@ -2,7 +2,7 @@
 
 import React from "react";
 import { cn } from "@/lib/utils";
-import { ChevronRight, MessagesSquare } from "lucide-react";
+import { ChevronRight, MessagesSquare, Sparkles } from "lucide-react";
 import { SupportWidget } from "@/components/support-widget/widget";
 import { useSupportWidgetToggleStore, useUserStore } from "@/store/store";
 import { SuccessAlert } from "@/components/success-alert";
@@ -41,7 +41,7 @@ export function AIChat({ session }: { session: Session | null }) {
   }, [session]);
 
   return (
-    <div className="fixed bottom-3 right-3 sm:right-6 2xl:right-[max(1rem,calc((100vw-120rem)/2+2rem))] z-99 flex flex-col items-end">
+    <div className="fixed bottom-3 right-3 sm:right-6 2xl:right-[max(1rem,calc((100vw-120rem)/2+3rem))] z-99 flex flex-col items-end">
       <SupportWidget
         setMessage={setMessage}
         setStatus={setStatus}
@@ -50,7 +50,7 @@ export function AIChat({ session }: { session: Session | null }) {
 
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="bg-[#0E3228] border border-white/80 cursor-pointer w-15 h-15 rounded-full flex items-center justify-center transition-transform duration-200 hover:scale-105 active:scale-95"
+        className="bg-[#0E3228] border border-white/80 cursor-pointer w-[max-content] h-auto px-4 py-3 rounded-full flex items-center justify-center transition-transform duration-200 hover:scale-105 active:scale-95"
       >
         <div
           className={cn(
@@ -61,7 +61,10 @@ export function AIChat({ session }: { session: Session | null }) {
           {isOpen ? (
             <ChevronRight className="w-6 h-6 text-white" />
           ) : (
-            <MessagesSquare className="w-6 h-6 text-white" />
+            <div className="flex items-center justify-center gap-1">
+              <Sparkles className="w-6 h-6 text-white" />
+              <h3 className="text-white text-base">Ask AI</h3>
+            </div>
           )}
         </div>
       </button>

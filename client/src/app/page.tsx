@@ -15,9 +15,6 @@ export default function App() {
 
   return (
     <main className="relative max-w-[120rem] mx-auto">
-      {/* <Navbar /> */}
-      {/* <Hero /> */}
-      {/* <WhyChooseUs /> */}
       <Navbar session={session} />
       <Hero2 session={session} />
       <FeatureSection />
@@ -26,10 +23,7 @@ export default function App() {
       <LatestBlogs />
       <CTASection />
       <Footer />
-      {/* <Customize /> */}
-      {/* <Products /> */}
 
-      {/* Support widget */}
       <AIChat session={session} />
     </main>
   );
