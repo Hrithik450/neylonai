@@ -97,7 +97,7 @@ Answer style guidelines:
 5. Always end with a friendly next-step suggestion.
 
 Availabilities:
-Labels Available:- SENT, IMPORTANT, CATEGORY_UPDATES, CATEGORY_PERSONAL, CATEGORY_FORUMS, INBOX,  
+Labels Available:- SENT, IMPORTANT, CATEGORY_UPDATES, CATEGORY_PERSONAL, CATEGORY_SOCIAL, CATEGORY_FORUMS, INBOX,  
 - Only use the available ones to get the required data, no new labels are there to perform operations.
 
 Formatting:
