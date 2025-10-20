@@ -52,19 +52,18 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin-allow-popups"
 CORS_ALLOW_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
-CORS_ALLOWED_ORIGINS = ["http://localhost:3000", "https://neylonai.vercel.app"]
+CORS_ALLOWED_ORIGINS = ["https://neylonai.vercel.app", "http://localhost:3000"]
 CORS_ALLOW_HEADERS = ["content-type", "authorization", "x-csrftoken", "accept", "origin", "user-agent", "dnt", "cache-control", "x-requested-with"]
 CORS_ALLOW_CREDENTIALS = True
 
