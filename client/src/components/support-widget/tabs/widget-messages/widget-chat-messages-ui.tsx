@@ -48,7 +48,7 @@ export function WidgetChatThreadUI({
       try {
         setLoading(true);
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/thread_messages/${id}`
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/thread_messages/${id}/`
         );
         const data: MessagesResponse = await res.json();
 
