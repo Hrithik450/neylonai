@@ -132,7 +132,7 @@ export function Navbar({ session }: { session: Session | null }) {
   React.useEffect(() => {
     if (session && session.user && session.user.id)
       setCurrentUserId(session.user?.id);
-  }, [session]);
+  }, [session, setCurrentUserId]);
 
   return (
     <header

@@ -26,7 +26,7 @@ export const FailureAlert = ({
     }, duration);
 
     return () => clearTimeout(timer);
-  }, [duration]);
+  }, [duration, setMessage, setStatus]);
 
   if (!visible) return null;
 

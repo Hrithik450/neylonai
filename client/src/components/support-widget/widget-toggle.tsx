@@ -2,7 +2,7 @@
 
 import React from "react";
 import { cn } from "@/lib/utils";
-import { ChevronRight, MessagesSquare, Sparkles } from "lucide-react";
+import { ChevronRight, Sparkles } from "lucide-react";
 import { SupportWidget } from "@/components/support-widget/widget";
 import { useSupportWidgetToggleStore, useUserStore } from "@/store/store";
 import { SuccessAlert } from "@/components/success-alert";
@@ -38,7 +38,7 @@ export function AIChat({ session }: { session: Session | null }) {
     };
 
     if (session && session.user && session.user.id) fetchUser(session.user.id);
-  }, [session]);
+  }, [session, setTokens]);
 
   return (
     <div className="fixed bottom-3 right-3 sm:right-6 2xl:right-[max(1rem,calc((100vw-120rem)/2+3rem))] z-99 flex flex-col items-end">

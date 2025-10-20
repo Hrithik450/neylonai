@@ -30,7 +30,7 @@ export function useTypingAnimation(texts: string[], introTextFull: string) {
         }
       }, 70);
     },
-    [introTextFull, texts]
+    [texts]
   );
 
   const startAnimation = React.useCallback(() => {
@@ -46,11 +46,11 @@ export function useTypingAnimation(texts: string[], introTextFull: string) {
         loopTexts(texts[0], 0);
       }
     }, 70);
-  }, [introTextFull, texts]);
+  }, [clearAll, introTextFull, texts, loopTexts]);
 
   React.useEffect(() => {
     return () => clearAll();
-  }, []);
+  }, [clearAll]);
 
   return { introText, displayText, startAnimation };
 }

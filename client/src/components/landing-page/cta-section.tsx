@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { guminertMedium, guminertRegular } from "@/assets/fonts";
-import CTAImage from "@/assets/images/ai-solutionz-logo.jpg";
+import NeylonAI from "@/assets/images/neylon.jpg";
 
 export function CTASection() {
   return (
@@ -9,8 +9,8 @@ export function CTASection() {
       className={cn(guminertRegular.className, "pt-2 md:pt-8 px-4 md:px-8")}
     >
       <Image
-        src={CTAImage}
-        alt="cta-image"
+        src={NeylonAI}
+        alt="neylon-image"
         className="w-23 h-23 rounded-full mx-auto my-8"
         style={{ boxShadow: "0 4px 12px rgb(0,0,0)" }}
       />

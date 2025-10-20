@@ -11,7 +11,7 @@ import React from "react";
 import { cn } from "@/lib/utils";
 import { type Session } from "next-auth";
 import { guminertRegular } from "@/assets/fonts";
-import { House, MessageSquareText, Mail, Currency } from "lucide-react";
+import { House, MessageSquareText, Mail } from "lucide-react";
 
 import { WidgetHome } from "@/components/support-widget/tabs/widget-home";
 import { WigetContact } from "@/components/support-widget/tabs/widget-contact";

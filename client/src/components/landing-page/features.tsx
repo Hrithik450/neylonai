@@ -1,5 +1,6 @@
 "use client";
 
+import NeylonAI from "@/assets/images/neylon.jpg";
 import { guminertMedium, guminertRegular, sfProRegular } from "@/assets/fonts";
 import {
   ArrowRightIcon,
@@ -152,8 +153,8 @@ export function FeatureSection() {
           {/* Logo */}
           <div className="flex flex-col justify-center items-start gap-1 bg-white h-16 w-16 rounded-xl text-black overflow-hidden p-0.5 shadow-inner">
             <Image
-              src="/images/ai-solutionz-logo.jpg"
-              alt="ai-solutionz"
+              src={NeylonAI}
+              alt="neylon-ai"
               className="w-full h-full object-cover rounded-full"
               width={48}
               height={48}

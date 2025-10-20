@@ -29,7 +29,7 @@ export function WidgetIntroText({ session }: { session?: Session | null }) {
 
   React.useEffect(() => {
     startAnimation();
-  }, [isOpen, activeTab]);
+  }, [isOpen, activeTab, startAnimation]);
 
   return (
     <div className={cn("mt-8 px-1 text-[#0E3228]", guminertBold.className)}>

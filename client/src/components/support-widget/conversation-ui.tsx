@@ -5,17 +5,15 @@ import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
 import ReactMarkdown from "react-markdown";
 import { useAssistantStore } from "@/store/store";
-import { ChevronsDown, Copy, Volume2 } from "lucide-react";
-import { ClassicLoader } from "@/components/classic-loader";
+import { ChevronsDown, Copy } from "lucide-react";
 import { NewMessage } from "@/actions/thread_messages/thread_messages.types";
-import { DynamicAssistantTyping } from "./assistant-typing";
+import { DynamicAssistantTyping } from "@/components/support-widget/assistant-typing";
 
 export function ConversationUI({
   conversations,
 }: {
   conversations?: NewMessage[];
 }) {
-  const [loadingIndex, setLoadingIndex] = React.useState<number | null>(null);
   const { isAssistantTyping } = useAssistantStore();
 
   // Auto Scroll to bottom on new message
@@ -41,35 +39,32 @@ export function ConversationUI({
 
   React.useEffect(() => {
     if (!userScrolledUp) scrollToBottom(true);
-  }, [conversations, isAssistantTyping]);
+  }, [conversations, isAssistantTyping, userScrolledUp]);
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
   };
 
-  const speak = async (text: string, index?: number) => {
-    try {
-      if (index) setLoadingIndex(index);
-      const res = await fetch("/api/model/text-to-speech", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text }),
-      });
+  // const speak = async (text: string, index?: number) => {
+  //   try {
+  //     const res = await fetch("/api/model/text-to-speech", {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({ text }),
+  //     });
 
-      if (!res.ok) {
-        throw new Error("Failed to get audio");
-      }
+  //     if (!res.ok) {
+  //       throw new Error("Failed to get audio");
+  //     }
 
-      const blob = await res.blob();
-      const audioUrl = URL.createObjectURL(blob);
-      const audio = new Audio(audioUrl);
-      audio.play();
-    } catch (error) {
-      console.error("Speak error:", error);
-    } finally {
-      if (index) setLoadingIndex(null);
-    }
-  };
+  //     const blob = await res.blob();
+  //     const audioUrl = URL.createObjectURL(blob);
+  //     const audio = new Audio(audioUrl);
+  //     audio.play();
+  //   } catch (error) {
+  //     console.error("Speak error:", error);
+  //   }
+  // };
 
   return (
     <div

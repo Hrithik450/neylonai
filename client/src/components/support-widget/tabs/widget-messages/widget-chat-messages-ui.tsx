@@ -5,7 +5,6 @@ import { cn } from "@/lib/utils";
 import { InputForm } from "@/components/support-widget/input-form";
 import { ConversationUI } from "@/components/support-widget/conversation-ui";
 import {
-  TabType,
   useAssistantStore,
   useInputStore,
   useThreadMessageStore,
@@ -69,12 +68,12 @@ export function WidgetChatThreadUI({
     };
 
     if (id && (!messages || currentThreadId !== id)) fetchThreadMessages();
-  }, [id, currentThreadId, setMessages]);
+  }, [id, currentThreadId, messages, setMessages]);
 
   React.useEffect(() => {
     setCurrentThreadId(id);
     if (!id || !currentThreadId) setMessages([]);
-  }, [id]);
+  }, [id, currentThreadId, setCurrentThreadId, setMessages]);
 
   React.useEffect(() => {
     if (tokens <= 0) setLimitReached(true);

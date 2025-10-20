@@ -1,7 +1,7 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { intervalToDuration } from "date-fns";
-import { DateTime } from "@/node_modules/@types/luxon";
+import { DateTime } from "luxon";
 
 export interface NavItem {
   label: string;

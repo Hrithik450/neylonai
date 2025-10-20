@@ -1,12 +1,15 @@
 import Image from "next/image";
-import { ArrowRight, ArrowRightIcon, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ArrowRight, ArrowRightIcon, Calendar } from "lucide-react";
 import { guminertBold, guminertMedium, guminertRegular } from "@/assets/fonts";
+import Blog1 from "@/assets/images/blog-1.jpg";
+import Blog2 from "@/assets/images/blog-2.jpg";
+import Blog3 from "@/assets/images/blog-3.jpg";
 
 const blogs = [
   {
     id: 1,
-    image: "/images/blog-1.jpg",
+    image: Blog1,
     location: "Vancouver",
     date: "March 15, 2026",
     title:
@@ -14,14 +17,14 @@ const blogs = [
   },
   {
     id: 2,
-    image: "/images/blog-2.jpg",
+    image: Blog2,
     location: "Toronto",
     date: "July 4, 2027",
     title: "Green Finance: The Rise of Sustainable Investment Decisions",
   },
   {
     id: 3,
-    image: "/images/blog-3.jpg",
+    image: Blog3,
     location: "Montreal",
     date: "November 30, 2028",
     title: "Investing in Tomorrow: How Sustainable Practices Shape Finance",
