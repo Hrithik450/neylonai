@@ -1,10 +1,11 @@
 "use client";
 
-import React from "react";
-import { cn } from "@/lib/utils";
 import { guminertMedium, guminertRegular, sfProRegular } from "@/assets/fonts";
 import { ArrowDownRight, ArrowRightIcon } from "lucide-react";
+import { Link as ScrollLink } from "react-scroll";
 import { faqs } from "@/lib/constants";
+import { cn } from "@/lib/utils";
+import React from "react";
 
 export function Faq() {
   const [openInd, setOpenInd] = React.useState<number | null>(0);
@@ -28,12 +29,20 @@ export function Faq() {
 
         <button
           className={cn(
-            "group flex items-center gap-3 2xl:mr-10 bg-[#0d3129] p-3 px-6 rounded-full text-white cursor-pointer text-sm md:text-lg",
+            "group 2xl:mr-10 bg-[#0d3129] p-3 px-6 rounded-full text-white cursor-pointer text-sm md:text-lg",
             guminertRegular.className
           )}
         >
-          Explore Services
-          <ArrowRightIcon className="w-5 h-5 group-hover:-rotate-45 transition-all duration-150 ease-in-out" />
+          <ScrollLink
+            to="products"
+            smooth={true}
+            duration={300}
+            offset={0}
+            className="flex items-center gap-3"
+          >
+            Explore Products
+            <ArrowRightIcon className="w-5 h-5 group-hover:-rotate-45 transition-all duration-150 ease-in-out" />
+          </ScrollLink>
         </button>
       </header>
 
@@ -51,7 +60,7 @@ export function Faq() {
                     : ""
                 )}
               >
-                <div className="w-full flex items-center justify-start gap-6 md:gap-8">
+                <div className="w-full flex items-center justify-start gap-6">
                   <div className="text-3xl md:text-4xl font-bold text-gray-500/60">
                     0{idx + 1}
                   </div>
@@ -81,24 +90,26 @@ export function Faq() {
                   )}
                 >
                   <div className="overflow-hidden">
-                    <p className="text-md text-gray-500">{faq.answer}</p>
+                    <p className="text-sm md:text-lg text-gray-500">
+                      {faq.answer}
+                    </p>
                   </div>
                 </div>
               </div>
             ))}
         </div>
 
-        <div className="flex-1 flex flex-col bg-[#f2f2f2] p-4 md:p-8 rounded-2xl space-y-6">
-          <div className="flex-1 flex flex-col bg-white rounded-2xl p-5 md:p-10 px-4 md:px-8 relative overflow-hidden shadow-md hover:rotate-2 transition-all duration-150 ease-in-out">
+        <div className="flex-1 flex flex-col bg-[#f2f2f2] p-4 rounded-2xl space-y-3">
+          <div className="flex-2 flex flex-col bg-white rounded-2xl p-5 px-4 md:px-8 relative overflow-hidden shadow-md hover:rotate-2 transition-all duration-150 ease-in-out">
             <h2 className="relative z-10 text-2xl font-semibold">
-              Revenue Overview
+              Career Growth Overview
             </h2>
 
             <h1 className="relative z-10 mt-8 text-4xl xl:text-5xl font-semibold">
-              <sup className="text-gray-500">$</sup> 9,679.00
+              +23%
             </h1>
             <p className="relative z-10 text-sm lg:text-md 2xl:text-lg text-gray-500 mt-2 mb-4">
-              Our most recent marketing profit
+              Your skill-match improvement this month (based on live job data)
             </p>
 
             <div className="absolute bottom-0 left-10 md:left-15 2xl:left-20 w-full flex items-end justify-between px-8 gap-6 z-0">
@@ -110,40 +121,61 @@ export function Faq() {
             </div>
           </div>
 
-          <div className="relative flex-1 flex flex-col bg-white pt-6 rounded-2xl overflow-hidden shadow-md hover:rotate-2 transition-all duration-150 ease-in-out">
-            <div className="flex-1 px-4 md:px-8 max-lg:mb-6">
-              <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-semibold">Total Expenses</h2>
-                <span className="p-0.5 px-4 rounded-2xl shadow-sm bg-green-200 text-green-700">
-                  40%
+          <div className="relative flex-3 flex flex-col bg-white pt-6 rounded-2xl overflow-hidden shadow-md hover:rotate-2 transition-all duration-150 ease-in-out">
+            <div className="flex-1 px-4 md:px-8">
+              <div className="flex flex-wrap justify-between items-center gap-3">
+                <h2 className="text-2xl font-semibold text-gray-800">
+                  Live Job-Market Insights
+                </h2>
+                <span className="p-0.5 px-4 rounded-2xl shadow-sm bg-green-200 text-green-700 text-sm font-medium">
+                  Updated Daily
                 </span>
               </div>
 
-              <div className="mt-8 flex items-center justify-between gap-2 w-full">
-                <div className="flex flex-col gap-2 flex-[35]">
-                  <div className="h-2 rounded-full bg-[#57a2ed] w-full" />
-                  Living
+              <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-6 w-full">
+                <div className="flex flex-col justify-between border border-gray-300/80 bg-[#f9fafb] rounded-xl p-4 shadow-xs hover:shadow-sm transition-all duration-200">
+                  <span className="text-gray-600 text-sm mb-1">
+                    Most demanded skills this week
+                  </span>
+                  <span className="font-semibold text-gray-900 text-lg">
+                    SQL, Power BI, Python
+                  </span>
                 </div>
 
-                <div className="flex flex-col gap-2 flex-[30]">
-                  <div className="h-2 rounded-full bg-[#9e59ea] w-full" />
-                  Shopping
+                <div className="flex flex-col justify-between border border-gray-300/80 bg-[#f9fafb] rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-200">
+                  <span className="text-gray-600 text-sm mb-1">
+                    Your profile coverage
+                  </span>
+                  <span className="font-semibold text-green-600 text-lg">
+                    68%
+                  </span>
                 </div>
 
-                <div className="flex flex-col gap-2 flex-[25]">
-                  <div className="h-2 rounded-full bg-[#facb4a] w-full" />
-                  Travel
+                <div className="flex flex-col justify-between border border-gray-300/80 bg-[#f9fafb] rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-200">
+                  <span className="text-gray-600 text-sm mb-1">
+                    Top roles matched
+                  </span>
+                  <span className="font-semibold text-gray-900 text-lg">
+                    Data Analyst, BI Engineer
+                  </span>
                 </div>
 
-                <div className="flex flex-col gap-2 flex-[40]">
-                  <div className="h-2 rounded-full bg-[#68994a] w-full" />
-                  Saving
+                <div className="flex flex-col justify-between border border-gray-300/80 bg-[#f9fafb] rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-200">
+                  <span className="text-gray-600 text-sm mb-1">
+                    Peers above your score
+                  </span>
+                  <span className="font-semibold text-red-600 text-lg">
+                    +14%
+                  </span>
                 </div>
               </div>
             </div>
 
             <div className="mt-auto w-full cursor-pointer px-5 md:px-10 py-2 flex justify-between items-center bg-[#0d3129] group">
-              <span className="text-md text-white">See Details</span>
+              <span className="text-md text-white">
+                {/*  View Skill Gaps & Apply Jobs */}
+                (under development)
+              </span>
               <ArrowRightIcon className="text-white w-5 h-5 group-hover:-rotate-45 transition-all duration-300 ease-in-out" />
             </div>
           </div>

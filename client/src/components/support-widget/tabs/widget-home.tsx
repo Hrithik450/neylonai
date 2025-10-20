@@ -14,7 +14,7 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { faqs } from "@/lib/constants";
 import { guminertBold } from "@/assets/fonts";
-import CTAImage from "@/assets/images/ai-solutionz-logo.jpg";
+import NeylonAI from "@/assets/images/neylon.jpg";
 import {
   type Screen,
   TabType,
@@ -48,12 +48,12 @@ export function WidgetHome({
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2">
             <Image
-              src={CTAImage}
-              alt="cta-image"
+              src={NeylonAI}
+              alt="neylon-image"
               className="w-10 h-10 rounded-full"
             />
             <h3 className={cn(guminertBold.className, "text-xl text-black")}>
-              AI Solutionz
+              Nelyon AI
             </h3>
           </div>
 

@@ -1,15 +1,26 @@
+"use client";
+
 import { guminertBold, guminertMedium, guminertRegular } from "@/assets/fonts";
+import { WidgetHome } from "@/components/support-widget/tabs/widget-home";
 import { ChartRadarLegend } from "@/components/ui/charts/radar-chart";
 import { ArrowDownRight, BadgeCheck, Cpu, Play } from "lucide-react";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import IphoneFrameImage from "@/assets/images/iphone-frame.png";
 import HeroImage from "@/assets/images/hero_background_3.jpg";
-import { WidgetHome } from "@/components/support-widget/tabs/widget-home";
+import { Link as ScrollLink } from "react-scroll";
 import { Session } from "next-auth";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
+import {
+  TabType,
+  useNavigationStore,
+  useSupportWidgetToggleStore,
+} from "@/store/store";
 
 export function Hero2({ session }: { session: Session | null }) {
+  const { setIsOpen } = useSupportWidgetToggleStore();
+  const { switchTab } = useNavigationStore();
+
   return (
     <section
       id="home"
@@ -42,7 +53,7 @@ export function Hero2({ session }: { session: Session | null }) {
             "relative text-[1.75rem] md:text-5xl lg:text-6xl xl:text-7xl max-w-5xl 2xl:max-w-[90rem] text-left md:text-center mx-auto my-4 leading-tight md:leading-16 lg:leading-18 xl:leading-20"
           )}
         >
-          AI Solutionz, Engineered for Unmatched{" "}
+          Neylon AI, Engineered for Unmatched{" "}
           <span className={cn(guminertBold.className, "text-[#0E3228]")}>
             Accuracy
           </span>{" "}
@@ -60,14 +71,28 @@ export function Hero2({ session }: { session: Session | null }) {
         </p>
 
         <div className="relative flex items-center justify-start md:justify-center gap-3 md:gap-4 mt-6">
-          <button className="flex items-center gap-2 bg-[#0E3228] text-white text-sm md:text-lg border border-gray-400 rounded-full p-2.5 px-8 cursor-pointer group overflow-hidden">
+          <button
+            onClick={() => {
+              setIsOpen(true);
+              switchTab(TabType.Home);
+            }}
+            className="flex items-center gap-2 bg-[#0E3228] text-white text-sm md:text-lg border border-gray-400 rounded-full p-2.5 px-8 cursor-pointer group overflow-hidden"
+          >
             Try Now!
             <ArrowDownRight className="-rotate-90 group-hover:-rotate-45 transition-all duration-300 ease-in-out text-white w-5 md:w-6 h-5 md:h-6" />
           </button>
 
-          <button className="flex items-center gap-2 bg-[#E9E9E7] text-sm md:text-lg border border-gray-400 rounded-full p-2.5 px-7 cursor-pointer group">
-            <Play className="group-hover:-rotate-15 transition-all duration-300 ease-in-out w-5 md:w-6 h-5 md:h-6" />
-            Explore
+          <button className="bg-[#E9E9E7] text-sm md:text-lg border border-gray-400 rounded-full p-2.5 px-7 cursor-pointer group">
+            <ScrollLink
+              to="features"
+              smooth={true}
+              duration={300}
+              offset={0}
+              className="flex items-center gap-2"
+            >
+              <Play className="group-hover:-rotate-15 transition-all duration-300 ease-in-out w-5 md:w-6 h-5 md:h-6" />
+              Explore
+            </ScrollLink>
           </button>
         </div>
 

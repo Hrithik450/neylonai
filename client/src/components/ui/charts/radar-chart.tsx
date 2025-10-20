@@ -24,45 +24,45 @@ export const description = "A radar chart with a legend";
 const chartData = [
   {
     metric: "Accuracy",
-    aiSolutionz: 99,
+    neylonAI: 99,
     others: 80,
     note: "How precise AI decisions are (core strength).",
   },
   {
     metric: "Efficiency",
-    aiSolutionz: 95,
+    neylonAI: 95,
     others: 70,
     note: "Time saved per task compared to legacy/manual systems.",
   },
   {
     metric: "Error Reduction",
-    aiSolutionz: 98,
+    neylonAI: 98,
     others: 75,
     note: "How much mistakes are prevented.",
   },
   {
     metric: "Revenue Impact",
-    aiSolutionz: 90,
+    neylonAI: 90,
     others: 65,
     note: "Measurable business impact.",
   },
   {
     metric: "Adaptability",
-    aiSolutionz: 97,
+    neylonAI: 97,
     others: 72,
     note: "Ability of AI agents to handle new/unseen tasks.",
   },
   {
     metric: "Scalability",
-    aiSolutionz: 96,
+    neylonAI: 96,
     others: 68,
     note: "Performance when multiple agents run simultaneously.",
   },
 ];
 
 const chartConfig = {
-  aiSolutionz: {
-    label: "AI Solutionz",
+  neylonAI: {
+    label: "Neylon AI",
     color: "var(--chart-1)",
   },
   others: {
@@ -92,8 +92,8 @@ export function ChartRadarLegend() {
             <PolarGrid />
 
             <Radar
-              name="AI Solutionz"
-              dataKey="aiSolutionz"
+              name="Neylon AI"
+              dataKey="neylonAI"
               stroke="#7C3AED"
               fill="#C4B5FD"
               fillOpacity={0.6}

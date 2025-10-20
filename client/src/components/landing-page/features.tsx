@@ -1,3 +1,5 @@
+"use client";
+
 import { guminertMedium, guminertRegular, sfProRegular } from "@/assets/fonts";
 import {
   ArrowRightIcon,
@@ -16,8 +18,16 @@ import gpt from "@/assets/images/gpt.png";
 import { AvatarGroup } from "../avatar-group";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
+import {
+  TabType,
+  useNavigationStore,
+  useSupportWidgetToggleStore,
+} from "@/store/store";
 
 export function FeatureSection() {
+  const { switchTab } = useNavigationStore();
+  const { setIsOpen } = useSupportWidgetToggleStore();
+
   return (
     <section
       id="features"
@@ -37,6 +47,10 @@ export function FeatureSection() {
         </h2>
 
         <button
+          onClick={() => {
+            setIsOpen(true);
+            switchTab(TabType.Contact);
+          }}
           className={cn(
             "group flex items-center gap-3 bg-[#0d3129] p-3 px-6 rounded-full text-white cursor-pointer text-sm md:text-lg",
             guminertRegular.className
