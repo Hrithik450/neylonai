@@ -10,7 +10,6 @@ import {
   Youtube,
   Instagram,
 } from "lucide-react";
-import { WidgetHeader } from "../widget-header";
 
 export function WigetContact({
   setMessage,
@@ -164,7 +163,7 @@ export function WigetContact({
             <Mail className="w-6 h-6" />
           </a>
         </div>
-        <p className="text-center">CEO, AI-Solutionz</p>
+        <p className="text-center">Tean, Neylon AI</p>
       </div>
     </div>
   );

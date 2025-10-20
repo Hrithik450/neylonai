@@ -41,8 +41,6 @@ export class ThreadsModel {
   }
 
   static async listThreadsByUserId(userId: string): Promise<Thread[]> {
-    const cacheKey = `user:${userId}:user_threads`;
-
     // Try cached value if present
     // const cachedValue = await redis.get(cacheKey);/
     // if (cachedValue) {

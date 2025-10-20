@@ -36,12 +36,12 @@ export const faqs = [
       "So depending on your requirements, you can start seeing results within days. To begin right away, just tell our assistant — 'Book my appointment' — and it will schedule everything for you instantly.",
   },
   {
-    question: "What services does AI Solutionz provide?",
+    question: "What services does Neylon AI provide?",
     answer:
       "We specialize in building scalable AI solutions, from chatbots and multi-agent systems to workflow automation and data-driven insights.",
   },
   {
-    question: "How can AI Solutionz help my business grow?",
+    question: "How can Neylon AI help my business grow?",
     answer:
       "Our AI systems improve accuracy, reliability, automate repetitive tasks, and provide actionable insights, helping you scale faster with reduced costs.",
   },
@@ -56,7 +56,7 @@ export const faqs = [
       "Yes, our solutions are built to integrate seamlessly with CRMs, ERPs, email systems, and other business software you already use.",
   },
   {
-    question: "Is my data safe with AI Solutionz?",
+    question: "Is my data safe with Neylon AI?",
     answer:
       "Absolutely. We follow enterprise-grade security practices, encryption, and compliance standards to ensure your data remains secure and private.",
   },
