@@ -1,6 +1,6 @@
-# **AI-Solutionz**
+# **Neylon-AI**
 
-AI-Solutionz is a full-service AI agency specializing in the development of custom **AI solutions**, **intelligent agents**, and **automation systems** for both **enterprises** and individual **consumers**.
+Neylon-AI is a full-service AI agency specializing in the development of custom **AI solutions**, **intelligent agents**, and **automation systems** for both **enterprises** and individual **consumers**.
 
 We merge **Next.js** (for performance) and **Django** (for reliability) to deliver a unified, secure platform that brings cutting-edge AI into real-world use — whether you’re scaling your business operations or enhancing personal productivity and learning.
 
@@ -28,7 +28,7 @@ We merge **Next.js** (for performance) and **Django** (for reliability) to deliv
 
 ## **Consumer AI Experiences**
 
-AI-Solutionz isn’t just for enterprises anymore.
+Neylon-AI isn’t just for enterprises anymore.
 We’re building an ecosystem of personalized AI assistants that empower individuals to learn, grow, and act smarter every day.
 
 | Assistant                   | Purpose                                                                                               |
@@ -77,7 +77,7 @@ We’re building an ecosystem of personalized AI assistants that empower individ
 
 ## **Integration Options**
 
-You can integrate AI-Solutionz into your existing systems via:
+You can integrate Neylon-AI into your existing systems via:
 
 - **REST APIs** (Standardized, language-agnostic integration)
 - **Webhooks** (Real-time data flow for events)
@@ -130,7 +130,7 @@ All agents (enterprise + consumer) include built-in analytics for:
 
 ---
 
-## **Why Choose AI-Solutionz**
+## **Why Choose Neylon-AI**
 
 Because we don’t just build AI — we build AI ecosystems that **learn**, **adapt**, and **deliver** measurable value.
 
@@ -145,8 +145,8 @@ AI that works — for companies and for people.
 
 | Platform     | Details                                                                                                                                            |
 | :----------- | :------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Website**  | [AI Solutionz](https://ai-solutionz.vercel.app/)                                                                                                   |
-| **Email**    | [AI Solutionz](mailto:mhrithik450@gmail.com)                                                                                                       |
+| **Website**  | [Neylon AI](https://neylonai.vercel.app/)                                                                                                          |
+| **Email**    | [Neylon AI](mailto:mhrithik450@gmail.com)                                                                                                          |
 | **LinkedIn** | [LinkedIn](https://www.linkedin.com/in/hruthik-m-3595a0329?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app_app) |
 | **Location** | Bangalore, India 🇮🇳 (IST)                                                                                                                          |
 

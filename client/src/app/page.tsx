@@ -5,7 +5,6 @@ import { Faq } from "@/components/landing-page/faq-section";
 import { FeatureSection } from "@/components/landing-page/features";
 import { Footer } from "@/components/landing-page/footer-section";
 import { Hero2 } from "@/components/landing-page/hero-2-section";
-import { Testimonials } from "@/components/landing-page/testimonial";
 import { Navbar } from "@/components/navbar";
 import { auth } from "@/lib/auth/auth";
 import React from "react";
@@ -18,11 +17,11 @@ export default function App() {
       <Navbar session={session} />
       <Hero2 session={session} />
       <FeatureSection />
-      <Faq />
-      <Testimonials />
       <LatestBlogs />
+      <Faq />
       <CTASection />
       <Footer />
+      {/* <Testimonials /> */}
 
       <AIChat session={session} />
     </main>

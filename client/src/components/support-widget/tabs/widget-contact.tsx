@@ -75,7 +75,15 @@ export function WigetContact({
       </div>
 
       {/* Contact Cards */}
-      <div className="grid grid-cols-1 gap-3">
+      <div
+        onClick={() =>
+          window.open(
+            "https://mail.google.com/mail/u/0/?fs=1&to=mhrithik450@gmail.com&tf=cm",
+            "_blank"
+          )
+        }
+        className="grid grid-cols-1 gap-3"
+      >
         <div className="cursor-pointer p-3 px-5 border rounded-xl bg-white shadow-sm flex items-center gap-3 hover:shadow-md transition-all">
           <Mail className="w-6 h-6 text-green-600 mt-1" />
           <div>
@@ -85,7 +93,15 @@ export function WigetContact({
           </div>
         </div>
 
-        <div className="cursor-pointer p-3 px-5 border rounded-xl bg-white shadow-sm flex items-center gap-3 hover:shadow-md transition-all">
+        <div
+          onClick={() =>
+            window.open(
+              "https://mail.google.com/mail/u/0/?fs=1&to=mhrithik450@gmail.com&tf=cm",
+              "_blank"
+            )
+          }
+          className="cursor-pointer p-3 px-5 border rounded-xl bg-white shadow-sm flex items-center gap-3 hover:shadow-md transition-all"
+        >
           <Phone className="w-6 h-6 text-green-600 mt-1" />
           <div>
             <h3 className="font-medium text-sm md:text-base">
@@ -155,7 +171,7 @@ export function WigetContact({
             <Twitter className="w-6 h-6" />
           </a>
           <a
-            href="https://github.com/aisolutionz"
+            href="https://mail.google.com/mail/u/0/?fs=1&to=mhrithik450@gmail.com&tf=cm"
             target="_blank"
             rel="noopener noreferrer"
             className="text-gray-600 hover:text-purple-600"
@@ -163,7 +179,7 @@ export function WigetContact({
             <Mail className="w-6 h-6" />
           </a>
         </div>
-        <p className="text-center">Tean, Neylon AI</p>
+        <p className="text-center">Team, Neylon AI</p>
       </div>
     </div>
   );
