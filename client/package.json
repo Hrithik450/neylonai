@@ -1,5 +1,5 @@
 {
-  "name": "ai-solutionz",
+  "name": "neylon-ai",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -25,7 +25,6 @@
     "dotenv-cli": "^10.0.0",
     "drizzle-kit": "^0.31.4",
     "drizzle-orm": "^0.44.5",
-    "googleapis": "^163.0.0",
     "lucide-react": "^0.539.0",
     "luxon": "^3.7.2",
     "next": "15.4.6",
@@ -37,7 +36,6 @@
     "react-dom": "19.1.0",
     "react-hook-form": "^7.63.0",
     "react-markdown": "^10.1.0",
-    "react-scroll": "^1.9.3",
     "recharts": "^2.15.4",
     "remark-breaks": "^4.0.0",
     "remark-gfm": "^4.0.1",
@@ -53,7 +51,6 @@
     "@types/pg": "^8.15.5",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@types/react-scroll": "^1.8.10",
     "eslint": "^9",
     "eslint-config-next": "15.4.6",
     "tailwindcss": "^4",
