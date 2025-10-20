@@ -27,7 +27,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     sessionToken: {
       name: `__Secure-authjs.session-token`,
       options: {
-        domain: ".vercel.app",
         httpOnly: true,
         sameSite: "lax",
         secure: true,
