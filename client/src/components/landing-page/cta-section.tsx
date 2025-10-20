@@ -1,39 +1,62 @@
+"use client";
+
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import NeylonAI from "@/assets/images/neylon.jpg";
 import { guminertMedium, guminertRegular } from "@/assets/fonts";
+import {
+  TabType,
+  useNavigationStore,
+  useSupportWidgetToggleStore,
+} from "@/store/store";
 
 export function CTASection() {
+  const { switchTab } = useNavigationStore();
+  const { setIsOpen } = useSupportWidgetToggleStore();
+
   return (
     <section
       className={cn(
         guminertRegular.className,
-        "pt-2 md:pt-8 px-4 md:px-8 space-y-4"
+        "relative pt-6 md:pt-8 lg:pt-12 px-6 md:px-12 text-center overflow-hidden"
       )}
     >
+      {/* <div className="absolute inset-0 bg-gradient-to-b from-[#0d3129]/10 via-transparent to-white pointer-events-none" /> */}
+
+      {/* Logo */}
       <Image
         src={NeylonAI}
         alt="neylon-image"
-        className="w-24 h-24 mx-auto rounded-full"
+        className="w-24 h-24 mx-auto rounded-full mb-6"
+        style={{ boxShadow: "0 8px 25px rgba(13, 49, 41, 0.25)" }}
       />
 
+      {/* Heading */}
       <h1
         className={cn(
-          "text-3xl lg:text-5xl xl:text-6xl max-w-2xl lg:max-w-4xl xl:max-w-6xl leading-tight md:leading-12 xl:leading-17 mx-auto text-center",
+          "text-3xl md:text-5xl xl:text-6xl font-bold max-w-4xl mx-auto leading-tight",
           guminertMedium.className
         )}
       >
-        Ready To Elevate Your Customer Conversations?
+        Power Conversations. Amplify Intelligence.
       </h1>
-      <p className="text-center max-w-lg mx-auto text-md mt-5 mb-7">
-        Start Your Free Trial Or Book A Demo Call With Our Experts To See
-        AISolutionz AI In Action
+
+      {/* Subheading */}
+      <p className="text-center text-gray-700 max-w-xl mx-auto text-lg my-5 lg:mb-10">
+        Experience the future of customer engagement with{" "}
+        <span className="font-semibold text-[#0d3129]">Neylon AI</span> — where
+        human connection meets intelligent automation.
       </p>
-      <div className="flex flex-col px-4 md:px-0 md:flex-row justify-start md:justify-center gap-4">
-        <button className="bg-[#0d3129] text-white shadow-sm rounded-full p-3 px-10 cursor-pointer text-md md:text-lg">
-          Get Started Free
-        </button>
-        <button className="shadow-sm border border-gray-500 rounded-full p-3 px-10 cursor-pointer text-md md:text-lg">
+
+      {/* CTA Buttons */}
+      <div className="flex flex-col md:flex-row justify-center gap-4">
+        <button
+          onClick={() => {
+            setIsOpen(true);
+            switchTab(TabType.Contact);
+          }}
+          className="cursor-pointer border border-[#0d3129] bg-[#0d3129] hover:bg-white text-white hover:text-[#0d3129] shadow-sm rounded-full py-3 px-10 text-lg transition-all duration-300"
+        >
           Book a Demo
         </button>
       </div>

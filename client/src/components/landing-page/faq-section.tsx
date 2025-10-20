@@ -132,7 +132,7 @@ export function Faq() {
                 </span>
               </div>
 
-              <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-6 w-full">
+              <div className="pb-4 mt-3 lg:mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6 w-full">
                 <div className="flex flex-col justify-between border border-gray-300/80 bg-[#f9fafb] rounded-xl p-4 shadow-xs hover:shadow-sm transition-all duration-200">
                   <span className="text-gray-600 text-sm mb-1">
                     Most demanded skills this week
