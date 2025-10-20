@@ -62,7 +62,7 @@ MIDDLEWARE = [
 ]
 
 CORS_ALLOW_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
-CORS_ALLOWED_ORIGINS = ["http://localhost:3000", "https://ai-solutionz.vercel.app"]
+CORS_ALLOWED_ORIGINS = ["http://localhost:3000", "https://neylonai.vercel.app"]
 CORS_ALLOW_HEADERS = ["content-type", "authorization", "x-csrftoken", "accept", "origin", "user-agent", "dnt", "cache-control", "x-requested-with"]
 
 ROOT_URLCONF = 'core.urls'

@@ -1,7 +1,7 @@
 import NextAuth from "next-auth";
 import { db } from "@/lib/db/index";
-import GoogleProvider from "next-auth/providers/google";
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
+import GoogleProvider from "next-auth/providers/google";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: DrizzleAdapter(db),
@@ -27,10 +27,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     sessionToken: {
       name: `__Secure-authjs.session-token`,
       options: {
+        domain: ".vercel.app",
         httpOnly: true,
         sameSite: "lax",
-        path: "/",
         secure: true,
+        path: "/",
       },
     },
   },
