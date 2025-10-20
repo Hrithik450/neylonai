@@ -10,6 +10,7 @@ import { FailureAlert } from "@/components/failure-alert";
 import { Session } from "next-auth";
 
 export function AIChat({ session }: { session: Session | null }) {
+  console.log(session);
   const { setTokens } = useUserStore();
   const { isOpen, setIsOpen } = useSupportWidgetToggleStore();
 
