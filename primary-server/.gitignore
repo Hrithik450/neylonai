@@ -31,4 +31,4 @@ staticfiles/
 media/
 
 # Data files
-text_generation/lib/data/
+internal_assistant/lib/data/

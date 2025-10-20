@@ -39,7 +39,7 @@ ALLOWED_HOSTS = ['ai-solutionz.onrender.com', 'ai-solutionz-sec.onrender.com', '
 INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
-    'text_generation',
+    'internal_assistant',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

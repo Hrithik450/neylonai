@@ -132,16 +132,16 @@ CRON_SECRET=""
 
 ## **Core Modules Primary (Backend)**
 
-| Module                                      | Description                                           |
-| :------------------------------------------ | :---------------------------------------------------- |
-| `primary-server/core/settings.py/`          | Main server configurations.                           |
-| `primary-server/text_generation/`           | Core app where AI agents are configured and streamed. |
-| `primary-server/text_generation/lib/`       | Utility functions required by the main app.           |
-| `primary-server/text_generation/services/`  | Core microservices for the main app.                  |
-| `primary-server/text_generation/views/`     | Route handler functions for the main app.             |
-| `primary-server/text_generation/urls.py/`   | API routes for the server.                            |
-| `primary-server/text_generation/models.py/` | Data models for the server.                           |
-| `primary-server/text_generation/tools/`     | Tools and helpers required for AI assistants.         |
+| Module                                         | Description                                           |
+| :--------------------------------------------- | :---------------------------------------------------- |
+| `primary-server/core/settings.py/`             | Main server configurations.                           |
+| `primary-server/internal_assistant/`           | Core app where AI agents are configured and streamed. |
+| `primary-server/internal_assistant/lib/`       | Utility functions required by the main app.           |
+| `primary-server/internal_assistant/services/`  | Core microservices for the main app.                  |
+| `primary-server/internal_assistant/views/`     | Route handler functions for the main app.             |
+| `primary-server/internal_assistant/urls.py/`   | API routes for the server.                            |
+| `primary-server/internal_assistant/models.py/` | Data models for the server.                           |
+| `primary-server/internal_assistant/tools/`     | Tools and helpers required for AI assistants.         |
 
 ## **Core Modules Secondary (Backend)**
 
@@ -204,7 +204,7 @@ AISolutionz
 │   ├── src/app             # Main app pages/routes
 │   └── ...                 # Other frontend files
 ├── primary-server/         # Django Backend
-│   ├── text_generation/    # Core AI agent logic
+│   ├── internal_assistant/    # Core AI agent logic
 │   ├── core/               # Server configurations
 │   └── requirements.txt    # Python dependencies
 ├── README.dev.md           # Developer-focused documentation
