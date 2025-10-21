@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description:
     "Neylon-AI is a full-service AI agency specializing in the development of custom AI solutions, intelligent agents, and automation systems for both enterprises and individual consumers.",
   icons: {
-    icon: "/favicon.jpg",
+    icon: "/images/favicon.jpg",
   },
 };
 
