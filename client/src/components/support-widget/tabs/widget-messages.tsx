@@ -113,7 +113,7 @@ export function WidgetAssistant({
       pushScreen(TabType.Home, { component: WidgetLogin });
       return;
     }
-  }, [session]);
+  }, [session, pushScreen]);
 
   React.useEffect(() => {
     if (threads && threads.length > 0) return;
