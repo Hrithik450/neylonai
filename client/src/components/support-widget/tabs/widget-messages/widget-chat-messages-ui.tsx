@@ -74,12 +74,12 @@ export function WidgetChatThreadUI({
     };
 
     if (id && (!messages || currentThreadId !== id)) fetchThreadMessages();
-  }, [id, currentThreadId, messages, setMessages]);
+  }, [id, currentThreadId, setMessages]);
 
   React.useEffect(() => {
     setCurrentThreadId(id);
     if (!id || !currentThreadId) setMessages([]);
-  }, [id, currentThreadId, setCurrentThreadId, setMessages]);
+  }, [id]);
 
   React.useEffect(() => {
     if (tokens <= 0) setLimitReached(true);
