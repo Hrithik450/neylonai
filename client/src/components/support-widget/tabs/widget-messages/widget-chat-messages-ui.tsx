@@ -55,7 +55,7 @@ export function WidgetChatThreadUI({
       pushScreen(TabType.Home, { component: WidgetLogin });
       return;
     }
-  }, [session, pushScreen]);
+  }, [session]);
 
   React.useEffect(() => {
     const fetchThreadMessages = async () => {
