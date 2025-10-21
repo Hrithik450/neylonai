@@ -104,23 +104,23 @@ class SemanticSearchTool:
 
                 # check if email_id is present inside metadata
                 meta_item = sem_metadata[i] if i < len(sem_metadata) else {}
-                email_id = meta_item.get("email_id") if isinstance(meta_item, dict) else None
+                docId = meta_item.get("docId") if isinstance(meta_item, dict) else None
 
                 if doc.startswith("Metadata:"):
-                    metadata_results.append((doc, email_id, combined_score))
+                    metadata_results.append((doc, docId, combined_score))
                 else:
-                    all_results.append((doc, email_id, combined_score))
+                    all_results.append((doc, docId, combined_score))
             # mem = report("After combining dense & BM25 results", mem)
 
             # Add BM25-only docs
             for doc, bm25_score in top_bm25_docs:
                 if doc.startswith("Metadata:"):
-                    metadata_results.append((doc, self.doc_to_meta.get(doc, {}).get("email_id") if doc in self.doc_to_meta else None, bm25_score))
+                    metadata_results.append((doc, self.doc_to_meta.get(doc, {}).get("docId") if doc in self.doc_to_meta else None, bm25_score))
                     continue
 
                 if doc not in sem_docs:
-                    email_id = self.doc_to_meta[doc].get("email_id") if doc in self.doc_to_meta else None
-                    all_results.append((doc, email_id, bm25_score))
+                    docId = self.doc_to_meta[doc].get("docId") if doc in self.doc_to_meta else None
+                    all_results.append((doc, docId, bm25_score))
             # mem = report("After adding BM25-only docs", mem)
 
             print(f"{datetime.datetime.now()} - End batch {batch_no} on {thread_name}")
@@ -161,15 +161,15 @@ class SemanticSearchTool:
 
             # Deduplicate (get_unique_union effect)
             unique_results = {}
-            for doc, email_id, score in all_results:
+            for doc, docId, score in all_results:
                 if doc not in unique_results or score > unique_results[doc]["score"]:
-                    unique_results[doc] = {"email_id": email_id, "score": score}
+                    unique_results[doc] = {"docId": docId, "score": score}
 
             # Deduplicate metadata docs separately
             unique_metadata = {}
-            for doc, email_id, score in metadata_results:
+            for doc, docId, score in metadata_results:
                 if doc not in unique_metadata or score > unique_metadata[doc]["score"]:
-                    unique_metadata[doc] = {"email_id": email_id, "score": score}
+                    unique_metadata[doc] = {"docId": docId, "score": score}
             
             top_chunks = sorted(unique_results.items(), key=lambda x:x[1]["score"], reverse=True)
             top_metadata = sorted(unique_metadata.items(), key=lambda x: x[1]["score"], reverse=True) 
@@ -197,21 +197,23 @@ class SemanticSearchTool:
             # Combine final results: top 10 main docs, then all metadata as low-priority
             results_for_llm = []
             for _, (doc, meta) in ranked:
-                email_id = meta.get("email_id") if isinstance(meta, dict) else None
-                if email_id:
-                    results_for_llm.append(f"[id: {email_id}]\n{doc}")
-                else:
-                    results_for_llm.append(doc)
+                results_for_llm.append(doc)
+                # docId = meta.get("docId") if isinstance(meta, dict) else None
+                # if docId:
+                #     results_for_llm.append(f"[docId: {docId}]\n{doc}")
+                # else:
+                #     results_for_llm.append(doc)
 
             threshold = 50
             for doc, meta in top_metadata[:25]:
                 if meta["score"] < threshold:
                     continue
-                email_id = meta.get("email_id") if isinstance(meta, dict) else None
-                if email_id:
-                    results_for_llm.append(f"[id: {email_id}]\n{doc}")
-                else:
-                    results_for_llm.append(doc)
+                results_for_llm.append(doc)
+                # docId = meta.get("docId") if isinstance(meta, dict) else None
+                # if docId:
+                #     results_for_llm.append(f"[docId: {docId}]\n{doc}")
+                # else:
+                #     results_for_llm.append(doc)
 
             mem = report("Before return final results", mem)
             return "\n\n---\n\n".join(results_for_llm) if results_for_llm else "No relevant documents found."

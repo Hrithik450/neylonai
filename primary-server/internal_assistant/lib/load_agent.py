@@ -54,7 +54,7 @@ class LoadInitialAgentConfig:
         self.chat_title_service = ChatTitleService()
 
         # LangGraph model + tools
-        self.tools = [LoadInitialAgentConfig.email_filtering_tool_func, LoadInitialAgentConfig.semantic_search_tool_func]
+        self.tools = [LoadInitialAgentConfig.semantic_search_tool_func]
         self.tool_node = ToolNode(self.tools)
 
         self.base_model = ChatGoogleGenerativeAI(
