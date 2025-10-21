@@ -70,7 +70,7 @@ export function SuggestionBar() {
 
       <div
         ref={scrollRef}
-        className="flex-1 rounded-xs scrollbar-hide overflow-x-auto"
+        className="flex-1 rounded-xl scrollbar-hide overflow-x-auto"
       >
         <div className="flex space-x-1">
           {filterSuggestions.map((suggestion, idx) => (

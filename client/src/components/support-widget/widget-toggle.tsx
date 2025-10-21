@@ -63,7 +63,7 @@ export function AIChat({ session }: { session: Session | null }) {
           ) : (
             <div className="flex items-center justify-center gap-2">
               <Sparkles className="w-6 h-6 text-white" />
-              <h3 className="text-white text-sm md:text-lg">Ask AI</h3>
+              <h3 className="text-white text-lg">Ask AI</h3>
             </div>
           )}
         </div>

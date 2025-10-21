@@ -50,7 +50,7 @@ export function Hero2({ session }: { session: Session | null }) {
         <h1
           className={cn(
             guminertMedium.className,
-            "relative text-[1.75rem] md:text-5xl lg:text-6xl xl:text-7xl max-w-5xl 2xl:max-w-[90rem] text-left md:text-center mx-auto my-4 leading-tight md:leading-16 lg:leading-18 xl:leading-20 bg-gradient-to-r from-[#050c0a] via-[#0d3129] to-[#007a63] bg-clip-text text-transparent"
+            "relative text-[1.5rem] md:text-5xl lg:text-6xl xl:text-7xl max-w-5xl 2xl:max-w-[90rem] text-left md:text-center mx-auto my-4 leading-tight md:leading-16 lg:leading-18 xl:leading-20 bg-gradient-to-r from-[#050c0a] via-[#0d3129] to-[#007a63] bg-clip-text text-transparent"
           )}
         >
           Neylon AI, Engineered for Unmatched{" "}

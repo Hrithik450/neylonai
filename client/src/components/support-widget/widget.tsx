@@ -173,7 +173,7 @@ export function SupportWidget({
                 )}
               >
                 {config.icon}
-                <span className="text-xs sm:text-sm">{config.label}</span>
+                <span className="text-sm">{config.label}</span>
               </button>
             )
           )}

@@ -43,11 +43,11 @@ function PageNavigations({
   };
 
   return (
-    <div className={cn("flex flex-1 justify-center", className)}>
+    <div className={cn("flex flex-1 justify-center items-center", className)}>
       {navLists.map((navItem: NavItem) => (
         <div
           className={cn(
-            "w-[max-content] px-2 xl:px-3 text-black transition-all cursor-pointer",
+            "w-[max-content] text-black px-2 xl:px-3 transition-all cursor-pointer",
             itemClassName
           )}
           key={navItem.id}

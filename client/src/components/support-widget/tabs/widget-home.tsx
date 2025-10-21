@@ -115,7 +115,7 @@ export function WidgetHome({
                 <p className="text-start font-semibold text-sm md:text-base">
                   Ask a question
                 </p>
-                <p className="text-xs md:text-sm text-gray-600">
+                <p className="text-start text-sm text-gray-600">
                   Our AI Assistant Can Help.
                 </p>
               </div>
@@ -136,7 +136,7 @@ export function WidgetHome({
                 <p className="font-semibold text-sm md:text-base">
                   Book an appointment
                 </p>
-                <p className="text-xs md:text-sm text-gray-600">
+                <p className="text-start text-sm text-gray-600">
                   Pick a time that works best for you.
                 </p>
               </div>
