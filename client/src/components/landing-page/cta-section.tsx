@@ -18,7 +18,7 @@ export function CTASection() {
     <section
       className={cn(
         guminertRegular.className,
-        "relative pt-6 md:pt-8 lg:pt-12 px-6 md:px-12 text-center overflow-hidden"
+        "my-4 md:my-16 px-3 md:px-5 xl:px-10 2xl:px-15 relative text-center overflow-hidden"
       )}
     >
       {/* <div className="absolute inset-0 bg-gradient-to-b from-[#0d3129]/10 via-transparent to-white pointer-events-none" /> */}
@@ -42,7 +42,7 @@ export function CTASection() {
       </h1>
 
       {/* Subheading */}
-      <p className="text-center text-gray-700 max-w-xl mx-auto text-lg my-5 lg:mb-10">
+      <p className="text-center text-gray-700 max-w-xl mx-auto text-lg my-5 lg:my-6">
         Experience the future of customer engagement with{" "}
         <span className="font-semibold text-[#0d3129]">Neylon AI</span> — where
         human connection meets intelligent automation.

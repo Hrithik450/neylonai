@@ -11,46 +11,6 @@ import {
 } from "lucide-react";
 
 export function WigetContact() {
-  // const [form, setForm] = useState({
-  //   name: "",
-  //   company: "",
-  //   email: "",
-  //   message: "",
-  // });
-
-  // const handleChange = (
-  //   e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  // ) => {
-  //   const { name, value } = e.target;
-  //   setForm((prev) => ({ ...prev, [name]: value }));
-  // };
-
-  // const handleSubmit = async (e: React.FormEvent) => {
-  //   e.preventDefault();
-  //   if (!form.name || !form.email || !form.message) {
-  //     setMessage("Please fill all required fields.");
-  //     setStatus("error");
-  //     return;
-  //   }
-
-  //   try {
-  //     setLoading(true);
-  //     setStatus("saving");
-
-  //     // Placeholder API call (connect to your backend)
-  //     await new Promise((resolve) => setTimeout(resolve, 1500));
-
-  //     setMessage("Your message has been sent successfully!");
-  //     setStatus("saved");
-  //     setForm({ name: "", company: "", email: "", message: "" });
-  //   } catch (error) {
-  //     setMessage("Something went wrong. Please try again.");
-  //     setStatus("error");
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
   return (
     <div className="flex flex-col h-full px-4 sm:px-5 py-4 space-y-6 overflow-y-auto scrollbar-hide">
       <div className="text-center">

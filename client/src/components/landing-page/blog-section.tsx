@@ -36,7 +36,7 @@ export function LatestBlogs() {
     <section
       className={cn(
         guminertBold.className,
-        "pt-4 md:pt-8 mt-4 md:mt-8 px-3 md:px-5 xl:px-10 2xl:px-15 relative overflow-hidden"
+        "my-4 md:my-16 px-3 md:px-5 xl:px-10 2xl:px-15 relative overflow-hidden"
       )}
     >
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">

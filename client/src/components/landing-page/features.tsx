@@ -34,7 +34,7 @@ export function FeatureSection() {
       id="features"
       className={cn(
         sfProRegular.className,
-        "pt-4 md:pt-8 mt-4 md:mt-8 px-3 md:px-5 xl:px-10 2xl:px-15 relative"
+        "my-4 md:my-16 px-3 md:px-5 xl:px-10 2xl:px-15 relative"
       )}
     >
       <header className="relative flex flex-col gap-4 md:gap-0 md:flex-row justify-between items-start md:items-end">
@@ -110,18 +110,6 @@ export function FeatureSection() {
             <div className="h-50 flex-1 rounded-t-md lg:rounded-t-2xl bg-[linear-gradient(to_bottom,rgba(41,82,52,0.9)_0%,white_100%)]" />
           </div>
         </div>
-        {/* <div className="col-span-1 relative bg-[#0d3129] flex flex-col h-full gap-4 sm:gap-6 p-2 rounded-xl overflow-hidden shadow-md px-4 2xl:px-6 py-6 hover:rotate-2 transition-all duration-150 ease-in-out">
-          <h1 className="text-4xl xl:text-5xl font-semibold text-white">
-            24x7
-          </h1>
-          <span className="text-md lg:text-lg max-w-[200px] text-gray-300/90">
-            AI agents running nonstop for your ops
-          </span>
-
-          <h3 className="mt-auto text-xl lg:text-2xl max-w-[250px] text-white leading-tight font-semibold">
-            Always-On Reliability
-          </h3>
-        </div> */}
 
         <div className="col-span-1 relative bg-gradient-to-b from-[#0d3129] to-[#134239] flex flex-col h-full gap-4 sm:gap-6 p-2 rounded-xl overflow-hidden shadow-lg px-4 2xl:px-6 py-6 hover:rotate-2 transition-all duration-300 ease-in-out">
           {/* Main Stats */}

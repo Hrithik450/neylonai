@@ -1,8 +1,19 @@
+"use client";
+
 import { guminertBold, guminertRegular } from "@/assets/fonts";
+import { Link as ScrollLink } from "react-scroll";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import {
+  TabType,
+  useNavigationStore,
+  useSupportWidgetToggleStore,
+} from "@/store/store";
 
 export function Footer() {
+  const { setIsOpen } = useSupportWidgetToggleStore();
+  const { switchTab } = useNavigationStore();
+
   return (
     <footer
       className={cn(
@@ -28,7 +39,7 @@ export function Footer() {
           </div>
 
           <div>
-            <h3 className="text-lg font-semibold mb-4">Solutions</h3>
+            <h3 className="text-lg font-semibold mb-4">Custom Solutions</h3>
             <ul className="space-y-2 text-gray-300 md:text-base">
               <li>AI Chatbot Development</li>
               <li>Process Automation</li>
@@ -41,24 +52,44 @@ export function Footer() {
           <div>
             <h3 className="text-lg font-semibold mb-4">Resources</h3>
             <ul className="space-y-2 text-gray-300 text-sm md:text-base">
-              <li>
-                <Link href="#">Blog & Insights</Link>
-              </li>
+              <button
+                className="cursor-pointer"
+                onClick={() => {
+                  setIsOpen(true);
+                  switchTab(TabType.Home);
+                }}
+              >
+                Blog & Insights
+              </button>
               <li>
                 <Link href="#">Privacy Policy</Link>
               </li>
-              <li>
-                <Link href="#">Features</Link>
-              </li>
+              <ScrollLink
+                to="features"
+                smooth={true}
+                duration={300}
+                offset={0}
+                className="cursor-pointer flex items-center gap-2"
+              >
+                Features
+              </ScrollLink>
             </ul>
           </div>
 
           {/* Contact */}
           <div>
             <h3 className="text-lg font-semibold mb-4">Contact Us</h3>
-            <p className="text-gray-300 text-sm md:text-base mb-2">
+            <button
+              onClick={() =>
+                window.open(
+                  "https://mail.google.com/mail/u/0/?fs=1&to=mhrithik450@gmail.com&tf=cm",
+                  "_blank"
+                )
+              }
+              className="cursor-pointer text-gray-300 text-sm md:text-base mb-2"
+            >
               mhrithik450@gmail.com{" "}
-            </p>
+            </button>
             <p className="text-gray-300 text-sm md:text-base">
               Bengaluru, India
             </p>

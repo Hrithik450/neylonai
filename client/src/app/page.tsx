@@ -17,7 +17,7 @@ export default function App() {
       <Navbar session={session} />
       <Hero2 session={session} />
       <FeatureSection />
-      <LatestBlogs />
+      {/* <LatestBlogs /> */}
       <Faq />
       <CTASection />
       <Footer />

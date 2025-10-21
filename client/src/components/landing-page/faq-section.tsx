@@ -14,7 +14,7 @@ export function Faq() {
     <section
       className={cn(
         sfProRegular.className,
-        "pt-4 md:pt-8 mt-4 md:mt-8 px-3 md:px-5 xl:px-10 2xl:px-15 relative"
+        "my-4 md:my-16 px-3 md:px-5 xl:px-10 2xl:px-15 relative"
       )}
     >
       <header className="relative flex flex-col gap-4 md:gap-0 md:flex-row justify-between items-start md:items-end">
