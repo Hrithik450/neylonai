@@ -13,6 +13,7 @@ export function ChatInputTextarea({
   disabled,
 }: ChatInputTextareaProps) {
   const { disableInput } = useInputStore();
+
   return (
     <PromptInputTextarea
       onKeyDown={(e) => {

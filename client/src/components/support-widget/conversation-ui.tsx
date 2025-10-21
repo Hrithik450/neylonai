@@ -45,27 +45,6 @@ export function ConversationUI({
     navigator.clipboard.writeText(text);
   };
 
-  // const speak = async (text: string, index?: number) => {
-  //   try {
-  //     const res = await fetch("/api/model/text-to-speech", {
-  //       method: "POST",
-  //       headers: { "Content-Type": "application/json" },
-  //       body: JSON.stringify({ text }),
-  //     });
-
-  //     if (!res.ok) {
-  //       throw new Error("Failed to get audio");
-  //     }
-
-  //     const blob = await res.blob();
-  //     const audioUrl = URL.createObjectURL(blob);
-  //     const audio = new Audio(audioUrl);
-  //     audio.play();
-  //   } catch (error) {
-  //     console.error("Speak error:", error);
-  //   }
-  // };
-
   return (
     <div
       ref={scrollRef}
@@ -168,18 +147,6 @@ export function ConversationUI({
                 >
                   <Copy size={18} />
                 </button>
-
-                {/* <button
-                  onClick={() => speak(conversation.content, index)}
-                  className="text-gray-500 hover:text-gray-700 cursor-pointer"
-                  title="Speak"
-                >
-                  {loadingIndex === index ? (
-                    <ClassicLoader />
-                  ) : (
-                    <Volume2 size={18} />
-                  )}
-                </button> */}
               </div>
             )}
           </div>

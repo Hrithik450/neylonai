@@ -8,6 +8,7 @@ import { AudioVisualizer } from "@/components/support-widget/audio-visualizer";
 import { ChatInputTextarea } from "@/components/support-widget/input-text-area";
 import { MicButton } from "@/components/support-widget/mic-button";
 import { SendButton } from "@/components/support-widget/send-button";
+import { SuggestionBar } from "./suggestion-bar";
 
 export function InputForm({
   handleSendMessage,
@@ -56,30 +57,34 @@ export function InputForm({
       <PromptInput
         value={input}
         onValueChange={(value) => setInput(value)}
-        className="flex justify-center items-center rounded-2xl border border-black/60 my-0"
+        className="flex flex-col justify-center items-center w-full rounded-b-2xl border border-black/60 my-0"
       >
-        {isRecording ? (
-          <AudioVisualizer stream={streamRef.current} className="h-10" />
-        ) : (
-          <ChatInputTextarea
-            placeholder="Ask me anything..."
-            handleSubmit={handleSendMessage}
-            disabled={isAssistantTyping}
-          />
-        )}
+        <SuggestionBar />
 
-        <PromptInputActions className="self-end">
-          <MicButton
+        <div className="flex-1 flex justify-center items-center w-full">
+          {isRecording ? (
+            <AudioVisualizer stream={streamRef.current} className="h-10" />
+          ) : (
+            <ChatInputTextarea
+              placeholder="Ask me anything..."
+              handleSubmit={handleSendMessage}
+              disabled={isAssistantTyping}
+            />
+          )}
+
+          <PromptInputActions className="self-end">
+            {/* <MicButton
             isRecording={isRecording}
             classicLoading={classicLoading}
             toggleRecording={toggleRecording}
-          />
+          /> */}
 
-          <SendButton
-            isDisabled={!input.trim() || disableInput}
-            handleSubmit={handleSendMessage}
-          />
-        </PromptInputActions>
+            <SendButton
+              isDisabled={!input.trim() || disableInput}
+              handleSubmit={handleSendMessage}
+            />
+          </PromptInputActions>
+        </div>
       </PromptInput>
     </div>
   );
