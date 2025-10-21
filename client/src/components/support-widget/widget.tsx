@@ -104,10 +104,10 @@ export function SupportWidget({
     <div
       className={cn(
         guminertRegular.className,
-        "fixed max-md:inset-0 max-md:bottom-0 overflow-y-auto",
-        "md:bottom-16 md:right-5",
+        "fixed max-md:inset-0 overflow-y-auto",
+        "bottom-0 md:bottom-16 md:right-5",
         "2xl:right-[max(1.2rem,calc((100vw-120rem)/2+2rem))]",
-        "md:h-[65vh] lg:h-[85vh] max-h-[750px] z-99",
+        "md:h-[65vh] lg:h-[85vh] max-h-full md:max-h-[750px] z-99",
         "bg-[linear-gradient(to_bottom,rgb(144,238,144)_0%,white_100%)]",
         "border border-gray-400/40 shadow-2xl sm:rounded-2xl py-2 sm:py-3 flex flex-col",
         "origin-bottom-right transition-all duration-300 transform",
@@ -115,8 +115,8 @@ export function SupportWidget({
           ? "opacity-100 scale-100"
           : "opacity-0 scale-0 pointer-events-none",
         isCollapse
-          ? "w-full md:min-w-sm max-w-sm"
-          : "w-full md:min-w-xl max-w-xl"
+          ? "w-full md:min-w-sm md:max-w-sm"
+          : "w-full md:min-w-xl md:max-w-xl"
       )}
     >
       {/* Active Screen */}

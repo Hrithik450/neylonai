@@ -58,8 +58,8 @@ export function WidgetHome({
             </h3>
           </div>
 
-          <div className="flex-1 flex justify-center items-center gap-4">
-            <div className="flex items-center h-full my-auto ml-auto">
+          <div className="flex-1 flex justify-end items-center gap-4">
+            <div className="hidden md:flex items-center h-full my-auto ml-auto">
               <button
                 className="text-xl font-bold cursor-pointer h-full"
                 onClick={() => setCollapse(!isCollapse)}
@@ -111,7 +111,7 @@ export function WidgetHome({
           >
             <div className="flex items-center gap-4">
               <MessageCircle className="text-gray-500 w-6 h-6 group-hover:-rotate-12 transition-all duration-150 ease-in-out" />
-              <div>
+              <div className="flex flex-col items-start">
                 <p className="text-start font-semibold text-sm md:text-base">
                   Ask a question
                 </p>
@@ -129,11 +129,11 @@ export function WidgetHome({
             }}
             className="group cursor-pointer bg-white shadow-sm border rounded-xl px-4 pr-6 py-4 flex justify-between items-center"
           >
-            <div className="flex items-center gap-4">
+            <div className="flex justify-start items-center gap-4">
               <Calendar className="text-gray-500 w-6 h-6 group-hover:-rotate-12 transition-all duration-150 ease-in-out" />
 
-              <div>
-                <p className="text-start font-semibold text-sm md:text-base">
+              <div className="flex flex-col items-start">
+                <p className="font-semibold text-sm md:text-base">
                   Book an appointment
                 </p>
                 <p className="text-xs md:text-sm text-gray-600">

@@ -45,7 +45,7 @@ export const WidgetHeader: React.FC<WidgetHeaderProps> = ({
 
         <div className="flex justify-end items-center gap-4">
           <button
-            className="text-xl font-bold cursor-pointer h-full"
+            className="hidden md:block text-xl font-bold cursor-pointer h-full"
             onClick={() => setCollapse(!isCollapse)}
           >
             {isCollapse ? (
