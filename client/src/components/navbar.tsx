@@ -62,6 +62,19 @@ function PageNavigations({
             >
               {navItem.label}
             </button>
+          ) : navItem.id === "ai" ? (
+            <button
+              onClick={() => {
+                setIsOpen(true);
+                switchTab(TabType.Home);
+              }}
+              className={cn(
+                "text-xl lg:text-2xl cursor-pointer",
+                guminertBold.className
+              )}
+            >
+              {navItem.label}
+            </button>
           ) : (
             <ScrollLink to={navItem.id} smooth={true} duration={300} offset={0}>
               {navItem.label}

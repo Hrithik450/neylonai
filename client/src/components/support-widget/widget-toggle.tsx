@@ -10,35 +10,12 @@ import { FailureAlert } from "@/components/failure-alert";
 import { Session } from "next-auth";
 
 export function AIChat({ session }: { session: Session | null }) {
-  const { setTokens } = useUserStore();
   const { isOpen, setIsOpen } = useSupportWidgetToggleStore();
 
   const [message, setMessage] = React.useState<string | null>(null);
   const [status, setStatus] = React.useState<
     "error" | "saving" | "saved" | null
   >(null);
-
-  React.useEffect(() => {
-    const fetchUser = async (id: string) => {
-      try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/user/${id}/`
-        );
-        const data = await response.json();
-
-        if (!data.success) {
-          console.error("Error fetching user details:", data.error);
-          return;
-        }
-
-        if (data.data) setTokens(data.data.daily_limit);
-      } catch (error) {
-        console.error("Fetch error:", error);
-      }
-    };
-
-    if (session && session.user && session.user.id) fetchUser(session.user.id);
-  }, [session, setTokens]);
 
   return (
     <div className="fixed bottom-3 right-3 sm:right-6 2xl:right-[max(1rem,calc((100vw-120rem)/2+2rem))] z-99 flex flex-col items-end">
@@ -50,7 +27,7 @@ export function AIChat({ session }: { session: Session | null }) {
 
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="bg-[#0E3228] border border-white/80 cursor-pointer w-[max-content] h-auto px-5 py-2 rounded-full flex items-center justify-center transition-transform duration-200 hover:scale-105 active:scale-95"
+        className="bg-[#0E3228] border border-white/80 cursor-pointer w-max h-auto px-5 py-2 rounded-full flex items-center justify-center transition-transform duration-200 hover:scale-105 active:scale-95"
       >
         <div
           className={cn(

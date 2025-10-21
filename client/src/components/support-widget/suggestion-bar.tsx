@@ -85,7 +85,7 @@ export function SuggestionBar() {
       {filterSuggestions.length > 0 && (
         <button
           onClick={() => scroll("left")}
-          className="flex-shrink-0 cursor-pointer"
+          className="shrink-0 cursor-pointer"
         >
           <CircleChevronLeft className="w-5 h-5" />
         </button>
@@ -96,7 +96,7 @@ export function SuggestionBar() {
           {filterSuggestions.map((suggestion, idx) => (
             <button
               key={idx}
-              className="flex-shrink-0 px-3 py-0.25 text-sm border border-gray-400 bg-gray-100 hover:bg-gray-100/80 text-black hover:cursor-pointer rounded-full shadow-sm transition-colors"
+              className="shrink-0 px-3 py-0.25 text-sm border border-gray-400 bg-gray-100 hover:bg-gray-100/80 text-black hover:cursor-pointer rounded-full shadow-sm transition-colors"
               onClick={() => setInput(suggestion)}
             >
               {suggestion}
@@ -114,7 +114,7 @@ export function SuggestionBar() {
       {filterSuggestions.length > 0 && (
         <button
           onClick={() => scroll("right")}
-          className="flex-shrink-0 cursor-pointer"
+          className="shrink-0 cursor-pointer"
         >
           <CircleChevronRight className="w-5 h-5" />
         </button>

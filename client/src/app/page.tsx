@@ -13,7 +13,7 @@ export default function App() {
   const session = React.use(auth());
 
   return (
-    <main className="relative max-w-[120rem] mx-auto">
+    <main className="relative max-w-480 mx-auto">
       <Navbar session={session} />
       <Hero2 session={session} />
       <FeatureSection />

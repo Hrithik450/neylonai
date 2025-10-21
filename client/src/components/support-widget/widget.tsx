@@ -6,13 +6,14 @@ import {
   type TabState,
   useNavigationStore,
   useSupportWidgetToggleStore,
+  useUserStore,
 } from "@/store/store";
 import React from "react";
 import { cn } from "@/lib/utils";
 import { type Session } from "next-auth";
 import { guminertRegular } from "@/assets/fonts";
+import { ClassicLoader } from "@/components/classic-loader";
 import { House, MessageSquareText, Mail } from "lucide-react";
-
 import { WidgetHome } from "@/components/support-widget/tabs/widget-home";
 import { WigetContact } from "@/components/support-widget/tabs/widget-contact";
 import { WidgetAssistant } from "@/components/support-widget/tabs/widget-messages";
@@ -56,7 +57,9 @@ export function SupportWidget({
   >;
   session: Session | null;
 }) {
+  const [loading, setLoading] = React.useState<boolean>(false);
   const { isOpen, isCollapse } = useSupportWidgetToggleStore();
+  const { setTokens } = useUserStore();
   const {
     activeTab,
     tabStacks,
@@ -70,6 +73,33 @@ export function SupportWidget({
   const [visited, setVisited] = React.useState<Set<TabType>>(
     new Set<TabType>([TabType.Home])
   );
+
+  React.useEffect(() => {
+    const fetchUser = async (id: string) => {
+      try {
+        setLoading(true);
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/user/${id}/`
+        );
+        const data = await response.json();
+
+        if (!data.success) {
+          console.error("Error fetching user details:", data.error);
+          return;
+        }
+
+        if (data.data) {
+          setTokens(data.data.daily_limit);
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error("Fetch error:", error);
+        setLoading(false);
+      }
+    };
+
+    if (session && session.user && session.user.id) fetchUser(session.user.id);
+  }, [session, setTokens]);
 
   // Initialize default screens
   React.useEffect(() => {
@@ -100,6 +130,32 @@ export function SupportWidget({
     [switchTab, session]
   );
 
+  if (loading) {
+    return (
+      <div
+        className={cn(
+          guminertRegular.className,
+          "fixed max-md:inset-0 overflow-y-auto",
+          "bottom-0 md:bottom-16 md:right-5",
+          "2xl:right-[max(1.2rem,calc((100vw-120rem)/2+2rem))]",
+          "md:h-[65vh] lg:h-[85vh] max-h-full md:max-h-[750px] z-99",
+          "bg-[linear-gradient(to_bottom,rgb(144,238,144)_0%,white_100%)]",
+          "border border-gray-400/40 shadow-2xl sm:rounded-2xl py-2 sm:py-3 flex flex-col",
+          "origin-bottom-right transition-all duration-300 transform",
+          "flex flex-col justify-center items-center",
+          isOpen
+            ? "opacity-100 scale-100"
+            : "opacity-0 scale-0 pointer-events-none",
+          isCollapse
+            ? "w-full md:min-w-sm md:max-w-sm"
+            : "w-full md:min-w-xl md:max-w-xl"
+        )}
+      >
+        <ClassicLoader />
+      </div>
+    );
+  }
+
   return (
     <div
       className={cn(
@@ -124,16 +180,13 @@ export function SupportWidget({
         {(Object.entries(TAB_CONFIG) as Array<[TabType, TabConfig]>).map(
           ([tab, config]) => {
             const isActive = tab === activeTab;
-
             if (!visited.has(tab) && !isActive) return null;
 
             const stack = tabStacks[tab]?.stack ?? [
               { component: config.component },
             ];
-
             const ActiveScreen =
               stack[stack.length - 1]?.component ?? (() => null);
-
             const screenProps = {
               pushScreen: (tab: TabType, screen: Screen) =>
                 pushScreen(tab, screen),
