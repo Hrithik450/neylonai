@@ -18,7 +18,7 @@ import { WidgetHeader } from "@/components/support-widget/widget-header";
 import { MessagesResponse } from "@/actions/thread_messages/thread_messages.types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Session } from "next-auth";
-import { WidgetLogin } from "@/components/support-widget/tabs/widget-screens/widget-login";
+import { ClassicLoader } from "@/components/classic-loader";
 
 interface WidgetChatUIProps {
   id: string;
@@ -36,26 +36,18 @@ export function WidgetChatThreadUI({
   id,
   title,
   session,
-  pushScreen,
   popScreen,
   setMessage,
   setStatus,
 }: WidgetChatUIProps) {
   const [loading, setLoading] = React.useState<boolean>(false);
+  const [limitReached, setLimitReached] = React.useState(false);
 
   const { currentUserId, tokens, setTokens } = useUserStore();
   const { currentThreadId, setCurrentThreadId, setThreads } = useThreadStore();
   const { messages, updateMessage, setMessages } = useThreadMessageStore();
   const { input, setInput, setDisableInput } = useInputStore();
   const { setIsAssistantTyping } = useAssistantStore();
-  const [limitReached, setLimitReached] = React.useState(false);
-
-  React.useEffect(() => {
-    if (!session) {
-      pushScreen(TabType.Home, { component: WidgetLogin });
-      return;
-    }
-  }, [session]);
 
   React.useEffect(() => {
     const fetchThreadMessages = async () => {
@@ -221,6 +213,14 @@ export function WidgetChatThreadUI({
       setIsAssistantTyping(false);
     }
   };
+
+  if (!session) {
+    return (
+      <div className={cn("flex flex-col justify-center items-center h-full")}>
+        <ClassicLoader />
+      </div>
+    );
+  }
 
   return (
     <div className={cn("flex flex-col justify-center h-full")}>

@@ -16,6 +16,7 @@ import { House, MessageSquareText, Mail } from "lucide-react";
 import { WidgetHome } from "@/components/support-widget/tabs/widget-home";
 import { WigetContact } from "@/components/support-widget/tabs/widget-contact";
 import { WidgetAssistant } from "@/components/support-widget/tabs/widget-messages";
+import { WidgetLogin } from "@/components/support-widget/tabs/widget-screens/widget-login";
 
 export interface TabConfig {
   label: TabType;
@@ -84,10 +85,19 @@ export function SupportWidget({
 
   const handleTabChange = React.useCallback(
     (tab: TabType) => {
-      switchTab(tab);
-      setVisited((prev) => new Set(prev).add(tab));
+      if (tab === TabType.Messages) {
+        if (session) {
+          switchTab(tab);
+          setVisited((prev) => new Set(prev).add(tab));
+        } else {
+          pushScreen(TabType.Home, { component: WidgetLogin });
+        }
+      } else {
+        switchTab(tab);
+        setVisited((prev) => new Set(prev).add(tab));
+      }
     },
-    [switchTab]
+    [switchTab, session]
   );
 
   return (

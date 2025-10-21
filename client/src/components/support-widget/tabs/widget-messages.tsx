@@ -97,23 +97,14 @@ function AskQuestionButton({
 
 interface WidgetAssistantProps {
   pushScreen: (tab: TabType, screen: Screen) => void;
-  session: Session | null;
 }
 
 export function WidgetAssistant({
   pushScreen,
-  session,
 }: WidgetAssistantProps): React.JSX.Element {
   const [loading, setLoading] = React.useState<boolean>(false);
   const { threads, setThreads, setCurrentThreadId } = useThreadStore();
   const { currentUserId } = useUserStore();
-
-  React.useEffect(() => {
-    if (!session) {
-      pushScreen(TabType.Home, { component: WidgetLogin });
-      return;
-    }
-  }, [session]);
 
   React.useEffect(() => {
     if (threads && threads.length > 0) return;

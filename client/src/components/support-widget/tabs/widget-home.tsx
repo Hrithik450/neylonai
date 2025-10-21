@@ -24,6 +24,7 @@ import {
 import { WidgetIntroText } from "@/components/support-widget/widget-intro-texts";
 import { Session } from "next-auth";
 import { WidgetChatThreadUI } from "@/components/support-widget/tabs/widget-messages/widget-chat-messages-ui";
+import { WidgetLogin } from "@/components/support-widget/tabs/widget-screens/widget-login";
 
 export interface WidgetHomeProps {
   pushScreen?: (tab: TabType, screen: Screen) => void;
@@ -91,12 +92,19 @@ export function WidgetHome({
         <div className="flex flex-col gap-2.5">
           <button
             onClick={() => {
-              setCurrentThreadId(null);
-              if (pushScreen) {
-                pushScreen(TabType.Messages, {
-                  component: WidgetChatThreadUI,
-                  props: { id: null, title: null },
-                });
+              if (session) {
+                setCurrentThreadId(null);
+                if (pushScreen) {
+                  pushScreen(TabType.Messages, {
+                    component: WidgetChatThreadUI,
+                    props: { id: null, title: null },
+                  });
+                }
+              } else {
+                if (pushScreen) {
+                  pushScreen(TabType.Home, { component: WidgetLogin });
+                }
+                return;
               }
             }}
             className="group cursor-pointer bg-white shadow-sm border rounded-xl px-4 pr-6 py-4 flex justify-between items-center"
