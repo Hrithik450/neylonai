@@ -5,6 +5,8 @@ import { cn } from "@/lib/utils";
 import { InputForm } from "@/components/support-widget/input-form";
 import { ConversationUI } from "@/components/support-widget/conversation-ui";
 import {
+  TabType,
+  type Screen,
   useAssistantStore,
   useInputStore,
   useThreadMessageStore,
@@ -15,12 +17,15 @@ import { Thread } from "@/actions/threads/threads.types";
 import { WidgetHeader } from "@/components/support-widget/widget-header";
 import { MessagesResponse } from "@/actions/thread_messages/thread_messages.types";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Session } from "next-auth";
+import { WidgetLogin } from "@/components/support-widget/tabs/widget-screens/widget-login";
 
 interface WidgetChatUIProps {
   id: string;
   title: string;
   popScreen: () => void;
-  pushScreen: (screen: Screen) => void;
+  pushScreen: (tab: TabType, screen: Screen) => void;
+  session: Session | null;
   setMessage: React.Dispatch<React.SetStateAction<string | null>>;
   setStatus: React.Dispatch<
     React.SetStateAction<"error" | "saving" | "saved" | null>
@@ -30,6 +35,8 @@ interface WidgetChatUIProps {
 export function WidgetChatThreadUI({
   id,
   title,
+  session,
+  pushScreen,
   popScreen,
   setMessage,
   setStatus,
@@ -42,6 +49,13 @@ export function WidgetChatThreadUI({
   const { input, setInput, setDisableInput } = useInputStore();
   const { setIsAssistantTyping } = useAssistantStore();
   const [limitReached, setLimitReached] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!session) {
+      pushScreen(TabType.Home, { component: WidgetLogin });
+      return;
+    }
+  }, [session]);
 
   React.useEffect(() => {
     const fetchThreadMessages = async () => {
@@ -78,32 +92,6 @@ export function WidgetChatThreadUI({
   React.useEffect(() => {
     if (tokens <= 0) setLimitReached(true);
   }, [tokens]);
-
-  // const autoSpeak = async (text: string) => {
-  //   try {
-  //     const res = await fetch("/api/model/text-to-speech", {
-  //       method: "POST",
-  //       headers: { "Content-Type": "application/json" },
-  //       body: JSON.stringify({ text }),
-  //     });
-
-  //     if (!res.ok) {
-  //       throw new Error("Failed to get audio");
-  //     }
-
-  //     const blob = await res.blob();
-  //     const audioUrl = URL.createObjectURL(blob);
-  //     const audio = new Audio(audioUrl);
-  //     audio.play();
-
-  //     audio.onended = () => {
-  //       setDisableInput(false);
-  //     };
-  //     return audioUrl;
-  //   } catch (error) {
-  //     console.error("Speak error:", error);
-  //   }
-  // };
 
   const handleSendMessage = async () => {
     if (!currentUserId) {

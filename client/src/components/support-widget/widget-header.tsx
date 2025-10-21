@@ -27,21 +27,23 @@ export const WidgetHeader: React.FC<WidgetHeaderProps> = ({
         className
       )}
     >
-      <div className="h-full flex-1 my-auto mr-auto ml-4">
-        {action && (
-          <button
-            className="text-xl font-bold cursor-pointer h-full"
-            onClick={action}
-          >
-            <ArrowLeftIcon className="w-5 h-5 text-black" />
-          </button>
-        )}
-      </div>
+      <div className="w-full grid grid-cols-4 items-center px-4">
+        <div className="flex items-center">
+          {action && (
+            <button
+              className="text-xl font-bold cursor-pointer h-full"
+              onClick={action}
+            >
+              <ArrowLeftIcon className="w-5 h-5 text-black" />
+            </button>
+          )}
+        </div>
 
-      <h3 className="text-center flex-2 text-lg">{header}</h3>
+        <div className="flex justify-center col-span-2">
+          <h3 className="text-center text-lg font-semibold">{header}</h3>
+        </div>
 
-      <div className="flex-1 flex justify-center items-center gap-4">
-        <div className="flex items-center h-full my-auto ml-auto">
+        <div className="flex justify-end items-center gap-4">
           <button
             className="text-xl font-bold cursor-pointer h-full"
             onClick={() => setCollapse(!isCollapse)}
@@ -52,9 +54,7 @@ export const WidgetHeader: React.FC<WidgetHeaderProps> = ({
               <Minimize2 className="w-5 h-5 text-black" />
             )}
           </button>
-        </div>
 
-        <div className="flex items-center h-full my-auto mr-4">
           <button
             className="text-xl font-bold cursor-pointer h-full"
             onClick={() => setIsOpen(!isOpen)}

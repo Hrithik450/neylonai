@@ -15,6 +15,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ThreadsResponse } from "@/actions/threads/threads.types";
 import { WidgetChatThreadUI } from "@/components/support-widget/tabs/widget-messages/widget-chat-messages-ui";
 import { robotIcons } from "@/lib/constants";
+import { Session } from "next-auth";
+import { WidgetLogin } from "@/components/support-widget/tabs/widget-screens/widget-login";
 
 interface MessagePreviewProps {
   Icon: React.ElementType;
@@ -95,14 +97,23 @@ function AskQuestionButton({
 
 interface WidgetAssistantProps {
   pushScreen: (tab: TabType, screen: Screen) => void;
+  session: Session | null;
 }
 
 export function WidgetAssistant({
   pushScreen,
+  session,
 }: WidgetAssistantProps): React.JSX.Element {
   const [loading, setLoading] = React.useState<boolean>(false);
   const { threads, setThreads, setCurrentThreadId } = useThreadStore();
   const { currentUserId } = useUserStore();
+
+  React.useEffect(() => {
+    if (!session) {
+      pushScreen(TabType.Home, { component: WidgetLogin });
+      return;
+    }
+  }, [session]);
 
   React.useEffect(() => {
     if (threads && threads.length > 0) return;

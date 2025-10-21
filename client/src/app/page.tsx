@@ -1,5 +1,5 @@
 import { AIChat } from "@/components/support-widget/widget-toggle";
-import { LatestBlogs } from "@/components/landing-page/blog-section";
+// import { LatestBlogs } from "@/components/landing-page/blog-section";
 import { CTASection } from "@/components/landing-page/cta-section";
 import { FeatureSection } from "@/components/landing-page/features";
 import { Footer } from "@/components/landing-page/footer-section";
