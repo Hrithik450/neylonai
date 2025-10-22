@@ -42,11 +42,11 @@ const TAB_CONFIG: Record<TabType, TabConfig> = {
     label: TabType.Contact,
     component: WigetContact,
   },
-  Settings: {
-    icon: <Settings className="w-6 h-6" />,
-    label: TabType.Settings,
-    component: WidgetSettings,
-  },
+  // Settings: {
+  //   icon: <Settings className="w-6 h-6" />,
+  //   label: TabType.Settings,
+  //   component: WidgetSettings,
+  // },
 } as const;
 
 /* -------------------------------------------------------------------------- */

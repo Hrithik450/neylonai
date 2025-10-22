@@ -10,7 +10,7 @@ export enum TabType {
   Home = "Home",
   Messages = "Messages",
   Contact = "Contact",
-  Settings = "Settings",
+  // Settings = "Settings",
 }
 
 export interface Screen {
@@ -135,7 +135,7 @@ export const useNavigationStore = create<NavigationStore>()(
       [TabType.Home]: { stack: [] },
       [TabType.Messages]: { stack: [] },
       [TabType.Contact]: { stack: [] },
-      [TabType.Settings]: { stack: [] },
+      // [TabType.Settings]: { stack: [] },
     },
     setTabStacks: (stacks) => set({ tabStacks: stacks }),
     pushScreen: (tab, screen) =>
