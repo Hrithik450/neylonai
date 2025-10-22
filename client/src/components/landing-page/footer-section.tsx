@@ -21,7 +21,7 @@ export function Footer() {
         "pt-10 md:pt-16 mt-10 px-6 md:px-10 xl:px-16 2xl:px-20 relative overflow-hidden bg-[#000B0E] text-white"
       )}
     >
-      <div className="max-w-[120rem] mx-auto">
+      <div className="max-w-480 mx-auto">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-10 border-b border-gray-700 pb-10">
           <div>
             <h2
@@ -96,7 +96,7 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="w-full text-center mt-6 py-6 text-gray-400 text-sm md:text-base border-t border-gray-700">
+        <div className="w-full text-center mt-6 py-6 text-gray-400 text-md md:text-base border-t border-gray-700">
           <p>
             © {new Date().getFullYear()}{" "}
             <span className="text-white font-semibold">Neylon AI</span> —

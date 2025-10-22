@@ -76,13 +76,13 @@ export function Hero2({ session }: { session: Session | null }) {
               setIsOpen(true);
               switchTab(TabType.Home);
             }}
-            className="flex items-center gap-2 bg-[#0E3228] text-white text-sm md:text-lg border border-gray-400 rounded-full p-2.5 px-8 cursor-pointer group overflow-hidden"
+            className="flex items-center gap-2 bg-[#0E3228] text-white text-sm md:text-lg border border-gray-400 rounded-full p-2.5 px-4 md:px-8 cursor-pointer group overflow-hidden"
           >
             Try Now!
-            <ArrowDownRight className="-rotate-90 group-hover:-rotate-45 transition-all duration-300 ease-in-out text-white w-5 md:w-6 h-5 md:h-6" />
+            <ArrowDownRight className="-rotate-90 group-hover:-rotate-45 transition-all duration-300 ease-in-out text-white w-4 h-4 md:w-6 md:h-6" />
           </button>
 
-          <button className="bg-[#E9E9E7] text-sm md:text-lg border border-gray-400 rounded-full p-2.5 px-7 cursor-pointer group">
+          <button className="bg-[#E9E9E7] text-sm md:text-lg border border-gray-400 rounded-full p-2.5 px-4 md:px-8 cursor-pointer group">
             <ScrollLink
               to="features"
               smooth={true}
@@ -90,7 +90,7 @@ export function Hero2({ session }: { session: Session | null }) {
               offset={0}
               className="flex items-center gap-2"
             >
-              <Play className="group-hover:-rotate-15 transition-all duration-300 ease-in-out w-5 md:w-6 h-5 md:h-6" />
+              <Play className="group-hover:-rotate-15 transition-all duration-300 ease-in-out w-4 h-4 md:w-6 md:h-6" />
               Explore
             </ScrollLink>
           </button>

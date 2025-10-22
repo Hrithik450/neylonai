@@ -112,7 +112,7 @@ export function WidgetFeedback({
       <WidgetHeader header="Share your feedback" action={() => popScreen()} />
 
       <div className="py-8 px-4">
-        <div className="h-8 mb-2 overflow-hidden text-gray-700 relative">
+        <div className="h-14 mb-2 overflow-hidden text-gray-700 relative">
           <p
             key={current}
             className="text-md md:text-lg transition-all duration-500 ease-in-out opacity-100 translate-y-0 bg-linear-to-r from-[#050c0a] via-[#0d3129] to-[#007a63] bg-clip-text text-transparent"

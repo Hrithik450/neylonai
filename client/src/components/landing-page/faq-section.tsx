@@ -60,7 +60,7 @@ export function Faq() {
                     : ""
                 )}
               >
-                <div className="w-full flex items-center justify-start gap-6">
+                <div className="w-full flex items-center justify-start gap-3 md:gap-6">
                   <div className="text-3xl md:text-4xl font-bold text-gray-500/60">
                     0{idx + 1}
                   </div>
@@ -99,8 +99,8 @@ export function Faq() {
             ))}
         </div>
 
-        <div className="flex-1 flex flex-col bg-[#f2f2f2] p-4 rounded-2xl space-y-3">
-          <div className="flex-2 flex flex-col bg-white rounded-2xl p-5 px-4 md:px-8 relative overflow-hidden shadow-md hover:rotate-2 transition-all duration-150 ease-in-out">
+        <div className="flex-1 flex flex-col bg-[#f2f2f2] p-2 md:p-4 rounded-2xl space-y-3">
+          <div className="flex-2 flex flex-col bg-white rounded-2xl p-3 md:p-5 px-4 md:px-8 relative overflow-hidden shadow-md hover:rotate-2 transition-all duration-150 ease-in-out">
             <h2 className="relative z-10 text-2xl font-semibold">
               Career Growth Overview
             </h2>
