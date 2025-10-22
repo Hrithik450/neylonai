@@ -5,6 +5,7 @@ from .views.view_thread_messages import ThreadMessageServiceView, ThreadMessages
 from .views.view_text_gen import StreamChatView
 from .views.view_cron_job import CronJobServiceView
 from .views.view_users import UserServiceView
+from .views.view_health import HealthCheck
 
 urlpatterns = [
     path("threads/", ThreadServiceView.as_view(), name="thread-create"),  # POST to create
@@ -19,4 +20,6 @@ urlpatterns = [
     path("reset-tokens/",  CronJobServiceView.as_view(), name='reset-tokens'),
 
     path("user/<uuid:user_id>/",  UserServiceView.as_view(), name='user-detail'),
+
+    path("health-check/", HealthCheck.as_view(), name='health-check')
 ]
