@@ -278,7 +278,7 @@ export function WidgetChatThreadUI({
       <div className="relative">
         <div
           className={cn(
-            "flex justify-between items-start absolute bottom-26 md:bottom-22 left-0 right-0 w-[87%] mx-auto rounded-t-xl border border-red-300 bg-linear-to-r from-red-50 to-red-100 px-3 py-2 pb-3 text-sm text-center shadow-md backdrop-blur-md transition-all duration-500 ease-out",
+            "flex justify-center items-start absolute bottom-26 md:bottom-23 left-0 right-0 w-[87%] mx-auto rounded-t-xl border border-red-300 bg-linear-to-r from-red-50 to-red-100 px-3 py-2 pb-3 text-sm text-center shadow-md backdrop-blur-md transition-all duration-500 ease-out",
             limitReached
               ? "opacity-100 translate-y-0"
               : "opacity-0 translate-y-5"

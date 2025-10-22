@@ -100,12 +100,12 @@ export function Footer() {
           <p>
             © {new Date().getFullYear()}{" "}
             <span className="text-white font-semibold">Neylon AI</span> —
-            Engineered by{" "}
+            Engineered by Team{" "}
             <Link
-              href="https://github.com/Hrithik450/"
+              href="https://www.linkedin.com/company/neylon-ai/"
               className="text-[#00b894] underline hover:text-[#00d6a7] transition-colors"
             >
-              Hruthik M
+              Neylon AI
             </Link>
           </p>
         </div>
