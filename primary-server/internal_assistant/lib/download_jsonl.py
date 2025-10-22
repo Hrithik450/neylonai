@@ -1,23 +1,21 @@
 import os
 import sys
 import requests
-from pathlib import Path
 from dotenv import load_dotenv
+from .utils import INTERNAL_DATA_PATH
 
 load_dotenv()
 
-BASE_DIR = Path(os.path.dirname(__file__))
-FILE_PATH = BASE_DIR / "data" / "all_mails.jsonl"
 GCS_URL = os.getenv("GCS_URL")
 if not GCS_URL:
     raise ValueError("GCS_URL environment variable not set.")
 
 def ensure_jsonl_file():
     """Ensure the JSONL file exists locally; download from GCS if not."""
-    if FILE_PATH.exists():
-        return str(FILE_PATH)
+    if INTERNAL_DATA_PATH.exists():
+        return str(INTERNAL_DATA_PATH)
     
-    FILE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    INTERNAL_DATA_PATH.parent.mkdir(parents=True, exist_ok=True)
     print("Downloading JSONL file from GCS...")
 
     response = requests.get(GCS_URL, stream=True)
@@ -27,7 +25,7 @@ def ensure_jsonl_file():
     downloaded = 0
     chunk_size = 8192
 
-    with FILE_PATH.open("wb") as f:
+    with INTERNAL_DATA_PATH.open("wb") as f:
         for chunk in response.iter_content(chunk_size=chunk_size):
             f.write(chunk)
             downloaded += len(chunk)
@@ -37,5 +35,5 @@ def ensure_jsonl_file():
                 sys.stdout.write(f"Downloading: {percent:.1f}%")
                 sys.stdout.flush()
 
-    print("Download complete:", FILE_PATH)
-    return str(FILE_PATH)
+    print("Download complete:", INTERNAL_DATA_PATH)
+    return str(INTERNAL_DATA_PATH)
