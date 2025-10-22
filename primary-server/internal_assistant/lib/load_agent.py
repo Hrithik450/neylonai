@@ -58,7 +58,7 @@ class LoadInitialAgentConfig:
         self.tool_node = ToolNode(self.tools)
 
         self.base_model = ChatGoogleGenerativeAI(
-            model='gemini-2.5-pro',
+            model='gemini-2.5-flash',
             temperature=0.4,
             max_retries=2,
             google_api_key=self.GEMINI_API_KEY
