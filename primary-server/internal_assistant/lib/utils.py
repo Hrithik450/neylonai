@@ -13,7 +13,7 @@ import os
 import re
 
 BASE_DIR = Path(os.path.dirname(__file__))  # current file directory
-EMAIL_JSON_PATH = BASE_DIR / "data" / "internal_data.jsonl"
+INTERNAL_DATA_PATH = BASE_DIR / "data" / "internal_data.jsonl"
 EMBEDDING_MODEL_NAME = "text-embedding-3-large"
 CHROMA_COLLECTION_NAME = "organization_data"
 AGENT_MODEL = "gpt-4.1" # Or another powerful model like "gpt-4-turbo"

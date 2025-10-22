@@ -59,7 +59,7 @@ export function ConversationUI({
             className={`p-3 md:p-4 text-sm md:text-base rounded-xl ${
               conversation.role === "user"
                 ? "bg-zinc-200/90 ml-auto max-w-[80%] border border-black/40"
-                : "max-w-[90%] md:max-w-[100%]"
+                : "max-w-[90%] md:max-w-full"
             }`}
           >
             {conversation.role === "assistant" ? (

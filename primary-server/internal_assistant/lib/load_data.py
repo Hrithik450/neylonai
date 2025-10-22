@@ -1,4 +1,4 @@
-from .utils import CHROMA_COLLECTION_NAME, EMAIL_JSON_PATH
+from .utils import CHROMA_COLLECTION_NAME, INTERNAL_DATA_PATH
 from .download_jsonl import ensure_jsonl_file
 
 from chromadb import CloudClient
@@ -17,13 +17,13 @@ def get_data_path() -> Path:
     Ensure the email JSONL data file exists locally.
     Downloads it once via ensure_jsonl_file() if missing.
     """
-    if EMAIL_JSON_PATH.exists() and EMAIL_JSON_PATH.stat().st_size > 0:
-        print(f"Using local data file at {EMAIL_JSON_PATH}")
-        return EMAIL_JSON_PATH
+    if INTERNAL_DATA_PATH.exists() and INTERNAL_DATA_PATH.stat().st_size > 0:
+        print(f"Using local data file at {INTERNAL_DATA_PATH}")
+        return INTERNAL_DATA_PATH
     
     print("⚠️ Local data file not found. Downloading from remote source...")
     path = ensure_jsonl_file()
-    print(f"Downloaded data file to {EMAIL_JSON_PATH}")
+    print(f"Downloaded data file to {INTERNAL_DATA_PATH}")
     return Path(path)
 
 # --- Core loader function ---
@@ -36,12 +36,12 @@ def _load_resources_base():
     data_path = get_data_path()
 
     # --- 2. Load JSONL file into Polars ---
-    print(f"Loading email metadata from: {data_path}")
+    print(f"Loading internal data from: {data_path}")
     try:
         df = pl.read_ndjson(data_path)
-        print(f"Loaded {df.height} email records.")
+        print(f"Loaded {df.height} records.")
     except Exception as e:
-        raise RuntimeError(f"Failed to load email metadata from {data_path}: {e}")
+        raise RuntimeError(f"Failed to load internal data from {data_path}: {e}")
 
     # --- 3. Connect to ChromaDB ---
     print("🔗 Connecting to ChromaDB Vector Store...")

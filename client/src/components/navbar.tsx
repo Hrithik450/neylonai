@@ -47,7 +47,7 @@ function PageNavigations({
       {navLists.map((navItem: NavItem) => (
         <div
           className={cn(
-            "w-[max-content] text-black px-2 xl:px-3 transition-all cursor-pointer",
+            "w-max text-black px-2 xl:px-3 transition-all cursor-pointer",
             itemClassName
           )}
           key={navItem.id}
@@ -151,7 +151,7 @@ export function Navbar({ session }: { session: Session | null }) {
     <header
       id="header"
       className={cn(
-        "max-w-[120rem] mx-auto absolute z-98 w-full py-6 sm:py-8 px-4 md:px-8 lg:px-20 bg-transparent flex justify-between items-center",
+        "max-w-480 mx-auto absolute z-98 w-full py-6 sm:py-8 px-4 md:px-8 lg:px-20 bg-transparent flex justify-between items-center",
         guminertRegular.className
       )}
     >

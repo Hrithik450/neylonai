@@ -15,8 +15,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ThreadsResponse } from "@/actions/threads/threads.types";
 import { WidgetChatThreadUI } from "@/components/support-widget/tabs/widget-messages/widget-chat-messages-ui";
 import { robotIcons } from "@/lib/constants";
-import { Session } from "next-auth";
-import { WidgetLogin } from "@/components/support-widget/tabs/widget-screens/widget-login";
 
 interface MessagePreviewProps {
   Icon: React.ElementType;
@@ -39,7 +37,7 @@ function MessagePreview({
       className="group flex items-center p-3 mx-autoshadow-sm space-x-3 cursor-pointer hover:bg-violet-100/30 transition-colors border-b-2 border-black/10"
     >
       {/* Avatar */}
-      <div className="flex-shrink-0">
+      <div className="shrink-0">
         <div className="p-2 bg-gray-100 border border-gray-300 rounded-full shadow-sm">
           <Icon className="w-6 h-6 text-gray-700" />
         </div>
@@ -149,7 +147,7 @@ export function WidgetAssistant({
                 key={i}
                 className="group flex items-center p-3 w-full mx-auto space-x-3 cursor-pointer transition-colors border-b-2 border-black/10"
               >
-                <div className="flex-shrink-0 h-12 w-12 rounded-full bg-gray-200 animate-pulse" />
+                <div className="shrink-0 h-12 w-12 rounded-full bg-gray-200 animate-pulse" />
                 <div className="flex-1 min-w-0 space-y-2">
                   <div className="h-4 bg-gray-200 rounded w-3/4 animate-pulse" />
                   <div className="h-3 bg-gray-200 rounded w-1/2 animate-pulse" />
@@ -187,7 +185,7 @@ export function WidgetAssistant({
       {/* Sticky bottom ask question button */}
       <div className="absolute bottom-2 w-full flex justify-center z-20">
         <AskQuestionButton
-          className="w-[max-content]"
+          className="w-max"
           onClick={() => {
             setCurrentThreadId(null);
             pushScreen(TabType.Messages, {

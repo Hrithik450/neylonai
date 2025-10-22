@@ -26,7 +26,7 @@ export function Hero2({ session }: { session: Session | null }) {
       id="home"
       className={cn(
         guminertRegular.className,
-        "py-4 px-3 md:px-5 h-[max-content] md:h-[1240px] xl:h-[1160px] overflow-hidden"
+        "py-4 px-3 md:px-5 h-max md:h-[1240px] xl:h-[1160px] overflow-hidden"
       )}
     >
       <div className="relative rounded-2xl overflow-hidden px-3 md:px-6 pt-26 md:pt-34">
@@ -50,7 +50,7 @@ export function Hero2({ session }: { session: Session | null }) {
         <h1
           className={cn(
             guminertMedium.className,
-            "relative text-[1.5rem] md:text-5xl lg:text-6xl xl:text-7xl max-w-5xl 2xl:max-w-[90rem] text-left md:text-center mx-auto my-4 leading-tight md:leading-16 lg:leading-18 xl:leading-20 bg-gradient-to-r from-[#050c0a] via-[#0d3129] to-[#007a63] bg-clip-text text-transparent"
+            "relative text-[1.5rem] md:text-5xl lg:text-6xl xl:text-7xl max-w-5xl 2xl:max-w-360 text-left md:text-center mx-auto my-4 leading-tight md:leading-16 lg:leading-18 xl:leading-20 bg-linear-to-r from-[#050c0a] via-[#0d3129] to-[#007a63] bg-clip-text text-transparent"
           )}
         >
           Neylon AI, Engineered for Unmatched{" "}
@@ -96,7 +96,7 @@ export function Hero2({ session }: { session: Session | null }) {
           </button>
         </div>
 
-        <div className="relative max-w-[90rem] mx-auto mt-10 max-md:mt-48 max-md:mb-26">
+        <div className="relative max-w-360 mx-auto mt-10 max-md:mt-48 max-md:mb-26">
           <div className="relative max-w-xs md:max-w-md mx-auto h-full flex-center">
             {/* Iphone Frame */}
             <div className="relative w-full h-full z-20">
@@ -109,7 +109,7 @@ export function Hero2({ session }: { session: Session | null }) {
 
             {/* Frame Content */}
             <div className="absolute w-full h-full z-10">
-              <div className="px-3 md:px-6 pt-12 md:pt-16 bg-[linear-gradient(to_bottom,rgb(230,250,217)_0%,rgb(255,255,255)_100%)] pointer-events-none w-[95%] aspect-[789/1650] mx-auto object-cover rounded-[2.75rem] lg:rounded-[3rem] xl:rounded-[3.70rem] 2xl:rounded-[4.5rem] overflow-hidden">
+              <div className="px-3 md:px-6 pt-12 md:pt-16 bg-[linear-gradient(to_bottom,rgb(230,250,217)_0%,rgb(255,255,255)_100%)] pointer-events-none w-[95%] aspect-789/1650 mx-auto object-cover rounded-[2.75rem] lg:rounded-[3rem] xl:rounded-[3.70rem] 2xl:rounded-[4.5rem] overflow-hidden">
                 <WidgetHome session={session} />
               </div>
             </div>
@@ -117,7 +117,7 @@ export function Hero2({ session }: { session: Session | null }) {
 
           {/* Supporting Card-1 */}
           <div className="absolute -bottom-20 md:bottom-80 lg:bottom-90 -left-2.5 lg:-left-4 2xl:left-15 z-50">
-            <div className="relative flex flex-col xl:flex-row items-center gap-0 xl:gap-4 p-4 lg:p-3 border border-gray-400 rounded-3xl h-auto md:h-60 xl:h-65 max-w-[15rem] md:max-w-sm xl:max-w-lg w-full shadow-md hover:rotate-2 transition-all duration-150 ease-in-out bg-[linear-gradient(to_bottom,rgb(240,237,255)_0%,rgb(255,255,255)_100%)]">
+            <div className="relative flex flex-col xl:flex-row items-center gap-0 xl:gap-4 p-4 lg:p-3 border border-gray-400 rounded-3xl h-auto md:h-60 xl:h-65 max-w-60 md:max-w-sm xl:max-w-lg w-full shadow-md hover:rotate-2 transition-all duration-150 ease-in-out bg-[linear-gradient(to_bottom,rgb(240,237,255)_0%,rgb(255,255,255)_100%)]">
               <div className="md:px-2 py-4 md:py-2 bg-transparent rounded-xl flex flex-col h-full gap-2 justify-center items-center group">
                 <Cpu className="w-15 h-15 group-hover:scale-110 group-hover:rotate-5 transition-all duration-150 ease-in-out" />
                 <h1 className="text-4xl font-semibold">99.9%</h1>
@@ -138,8 +138,8 @@ export function Hero2({ session }: { session: Session | null }) {
           </div>
 
           {/* Supporting Card-2 */}
-          <div className="absolute -top-40 md:top-10 lg:top-15 -right-2.5 lg:-right-0 2xl:right-30 z-50">
-            <div className="relative border border-gray-400 rounded-3xl overflow-hidden h-60 md:h-65 max-w-sm md:max-w-lg w-[15rem] md:w-[20rem] xl:w-md shadow-md hover:rotate-2 transition-all duration-150 ease-in-out">
+          <div className="absolute -top-40 md:top-10 lg:top-15 -right-2.5 lg:right-0 2xl:right-30 z-50">
+            <div className="relative border border-gray-400 rounded-3xl overflow-hidden h-60 md:h-65 max-w-sm md:max-w-lg w-60 md:w-[20rem] xl:w-md shadow-md hover:rotate-2 transition-all duration-150 ease-in-out">
               <Card className="absolute inset-0 w-full h-full gap-0 md:space-y-1 bg-[linear-gradient(to_bottom,rgb(250,244,215)_0%,rgb(255,255,255)_100%)]">
                 <CardHeader className="items-center px-3">
                   <CardTitle className="absolute top-3 left-1/2 -translate-x-1/2 w-full text-center z-10 text-sm md:text-lg xl:text-xl mb-2 text-black/80 font-bold">
