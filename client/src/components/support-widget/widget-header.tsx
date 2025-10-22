@@ -1,8 +1,8 @@
 "use client";
 
-import { cn } from "@/lib/utils";
 import { useSupportWidgetToggleStore } from "@/store/store";
 import { ArrowLeftIcon, X, Minimize2, Maximize2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import React from "react";
 
 interface WidgetHeaderProps {
@@ -27,7 +27,7 @@ export const WidgetHeader: React.FC<WidgetHeaderProps> = ({
         className
       )}
     >
-      <div className="w-full grid grid-cols-4 items-center px-4">
+      <div className="w-full grid grid-cols-6 md:grid-cols-4 items-center px-4">
         <div className="flex items-center">
           {action && (
             <button
@@ -39,7 +39,7 @@ export const WidgetHeader: React.FC<WidgetHeaderProps> = ({
           )}
         </div>
 
-        <div className="flex justify-center col-span-2">
+        <div className="flex justify-center col-span-4 md:col-span-2">
           <h3 className="text-center text-lg font-semibold">{header}</h3>
         </div>
 

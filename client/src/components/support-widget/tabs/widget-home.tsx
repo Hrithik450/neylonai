@@ -8,6 +8,7 @@ import {
   ArrowRight,
   MessageCircle,
   ArrowDownRight,
+  MessageSquareQuote,
 } from "lucide-react";
 import React from "react";
 import Image from "next/image";
@@ -25,6 +26,7 @@ import { WidgetIntroText } from "@/components/support-widget/widget-intro-texts"
 import { Session } from "next-auth";
 import { WidgetChatThreadUI } from "@/components/support-widget/tabs/widget-messages/widget-chat-messages-ui";
 import { WidgetLogin } from "@/components/support-widget/tabs/widget-screens/widget-login";
+import { WidgetFeedback } from "@/components/support-widget/tabs/widget-screens/widget-feedback";
 
 export interface WidgetHomeProps {
   pushScreen?: (tab: TabType, screen: Screen) => void;
@@ -138,6 +140,37 @@ export function WidgetHome({
                 </p>
                 <p className="text-start text-sm text-gray-600">
                   Pick a time that works best for you.
+                </p>
+              </div>
+            </div>
+            <ArrowRight className="text-gray-500 w-5 h-5 group-hover:-rotate-45 transition-all duration-150 ease-in-out" />
+          </button>
+
+          <button
+            onClick={() => {
+              if (session) {
+                if (pushScreen) {
+                  pushScreen(TabType.Home, {
+                    component: WidgetFeedback,
+                  });
+                }
+              } else {
+                if (pushScreen) {
+                  pushScreen(TabType.Home, { component: WidgetLogin });
+                }
+                return;
+              }
+            }}
+            className="group cursor-pointer bg-white shadow-sm border rounded-xl px-4 pr-6 py-4 flex justify-between items-center"
+          >
+            <div className="flex items-center gap-4">
+              <MessageSquareQuote className="text-blue-500 w-6 h-6 group-hover:scale-110 transition-transform duration-150 ease-in-out" />
+              <div className="flex flex-col items-start">
+                <p className="text-start font-semibold text-sm md:text-base">
+                  Share Your Feedback
+                </p>
+                <p className="text-start text-sm text-gray-600">
+                  Help us improve with your feedback.
                 </p>
               </div>
             </div>

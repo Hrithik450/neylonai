@@ -111,3 +111,23 @@ export const user = pgTable(
   },
   (table) => [unique("user_email_unique").on(table.email)]
 );
+
+export const feedback = pgTable(
+  "feedback",
+  {
+    id: uuid("id").defaultRandom().primaryKey().notNull(),
+    user_id: uuid("user_id").notNull(),
+    user_name: text("user_name").notNull(),
+    content: text("content").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.user_id],
+      foreignColumns: [user.id],
+      name: "feedback_user_id_user_id_fk",
+    }).onDelete("cascade"),
+  ]
+);

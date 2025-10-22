@@ -22,7 +22,7 @@ export function WidgetLogin({ popScreen }: { popScreen: () => void }) {
 
         <Button
           variant="default"
-          className="max-w-[max-content] mx-auto rounded-full px-6 xl:px-10 py-3 text-sm md:text-base cursor-pointer hover:opacity-90 transition-all"
+          className="max-w-max mx-auto rounded-full px-6 xl:px-10 py-3 text-sm md:text-base cursor-pointer hover:opacity-90 transition-all"
           onClick={async () => {
             await signInWithGoogle();
           }}
