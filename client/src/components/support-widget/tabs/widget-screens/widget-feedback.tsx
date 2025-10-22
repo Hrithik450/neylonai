@@ -1,6 +1,5 @@
 "use client";
 
-import z from "zod";
 import React from "react";
 import { Send } from "lucide-react";
 import { useForm } from "react-hook-form";
@@ -17,7 +16,13 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { cn } from "@/lib/utils";
-import { guminertBold, guminertRegular } from "@/assets/fonts";
+import { guminertRegular } from "@/assets/fonts";
+import {
+  FeedbackFormData,
+  FeedbackResponse,
+  feedbackSchema,
+} from "@/actions/feedback/feedback.types";
+import { Session } from "next-auth";
 
 const suggestions = [
   "What did you like about this widget?",
@@ -27,23 +32,42 @@ const suggestions = [
   "Was anything confusing or unclear?",
 ];
 
-const feedbackSchema = z.object({
-  feedback: z
-    .string()
-    .min(5, "Please provide at least 5 characters.")
-    .max(500, "Keep it concise (max 500 characters)."),
-});
-type FeedbackFormData = z.infer<typeof feedbackSchema>;
+export function WidgetFeedback({
+  popScreen,
+  session,
+  setMessage,
+  setStatus,
+}: {
+  popScreen: () => void;
+  session: Session | null;
+  setMessage: React.Dispatch<React.SetStateAction<string | null>>;
+  setStatus: React.Dispatch<
+    React.SetStateAction<"error" | "saving" | "saved" | null>
+  >;
+}) {
+  const [loading, setLoading] = React.useState(false);
 
-export function WidgetFeedback({ popScreen }: { popScreen: () => void }) {
   const [current, setCurrent] = React.useState(0);
-  const [submitted, setSubmitted] = React.useState(false);
   const [isChanging, setIsChanging] = React.useState(false);
 
   const form = useForm<FeedbackFormData>({
     resolver: zodResolver(feedbackSchema),
-    defaultValues: { feedback: "" },
+    defaultValues: {
+      content: "",
+      user_id: session?.user?.id,
+      user_name: session?.user?.name as string,
+    },
   });
+
+  React.useEffect(() => {
+    if (session) {
+      form.reset({
+        content: "",
+        user_id: session.user.id,
+        user_name: session.user.name as string,
+      });
+    }
+  }, [session]);
 
   React.useEffect(() => {
     const interval = setInterval(() => {
@@ -56,12 +80,31 @@ export function WidgetFeedback({ popScreen }: { popScreen: () => void }) {
     return () => clearInterval(interval);
   }, []);
 
-  const onSubmit = (data: FeedbackFormData) => {
-    console.log("Feedback submitted:", data.feedback);
-    setSubmitted(true);
+  const onSubmit = async (data: FeedbackFormData) => {
+    console.log("Feedback data:", data);
+    try {
+      setLoading(true);
+      const response = await fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      const feedbackData: FeedbackResponse = await response.json();
 
-    setTimeout(() => setSubmitted(false), 3000);
-    form.reset();
+      if (!feedbackData.success && feedbackData.error) {
+        setStatus("error");
+        setMessage(feedbackData.error);
+      }
+
+      setStatus("saved");
+      setMessage("Your feedback has been received. Thank you!");
+      form.reset();
+    } catch (error) {
+      console.error("Error occured:", error);
+      setLoading(false);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -87,7 +130,7 @@ export function WidgetFeedback({ popScreen }: { popScreen: () => void }) {
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <FormField
               control={form.control}
-              name="feedback"
+              name="content"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-md md:text-base">
@@ -97,6 +140,7 @@ export function WidgetFeedback({ popScreen }: { popScreen: () => void }) {
                     <Textarea
                       className="border border-black"
                       placeholder="Anything...."
+                      disabled={loading}
                       {...field}
                     />
                   </FormControl>
@@ -110,11 +154,11 @@ export function WidgetFeedback({ popScreen }: { popScreen: () => void }) {
 
             <button
               type="submit"
-              disabled={!form.watch("feedback").trim()}
+              disabled={loading || !form.watch("content").trim()}
               className="mt-3 w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-2 text-sm font-medium transition disabled:opacity-50 cursor-pointer"
             >
               <Send className="w-4 h-4" />
-              {submitted ? "Thanks for your feedback!" : "Submit"}
+              {loading ? "Submitting..." : "Submit"}
             </button>
           </form>
         </Form>
