@@ -59,6 +59,21 @@ export function SuggestionBar() {
   const scrollRef = React.useRef<HTMLDivElement | null>(null);
   const { input, setInput } = useInputStore();
 
+  React.useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      if (e.shiftKey) {
+        e.preventDefault();
+        el.scrollLeft += e.deltaY;
+      }
+    };
+
+    el.addEventListener("wheel", handleWheel, { passive: false });
+    return () => el.removeEventListener("wheel", handleWheel);
+  }, []);
+
   const filterSuggestions = React.useMemo(() => {
     if (!input.trim()) return suggestions;
     const query = input.toLowerCase();
@@ -70,27 +85,8 @@ export function SuggestionBar() {
       );
   }, [input]);
 
-  const scroll = (direction: "right" | "left") => {
-    const scrollAmount = 200;
-    if (scrollRef.current) {
-      scrollRef.current.scrollBy({
-        left: direction === "left" ? -scrollAmount : scrollAmount,
-        behavior: "smooth",
-      });
-    }
-  };
-
   return (
     <div className="flex items-center w-full space-x-1 rounded-full px-1">
-      {filterSuggestions.length > 0 && (
-        <button
-          onClick={() => scroll("left")}
-          className="shrink-0 cursor-pointer"
-        >
-          <CircleChevronLeft className="w-5 h-5" />
-        </button>
-      )}
-
       <div ref={scrollRef} className="flex-1 scrollbar-hide overflow-x-auto">
         <div className="flex space-x-1">
           {filterSuggestions.map((suggestion, idx) => (
@@ -110,15 +106,6 @@ export function SuggestionBar() {
           )}
         </div>
       </div>
-
-      {filterSuggestions.length > 0 && (
-        <button
-          onClick={() => scroll("right")}
-          className="shrink-0 cursor-pointer"
-        >
-          <CircleChevronRight className="w-5 h-5" />
-        </button>
-      )}
     </div>
   );
 }
