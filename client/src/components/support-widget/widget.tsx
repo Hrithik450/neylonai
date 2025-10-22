@@ -13,11 +13,12 @@ import { cn } from "@/lib/utils";
 import { type Session } from "next-auth";
 import { guminertRegular } from "@/assets/fonts";
 import { ClassicLoader } from "@/components/classic-loader";
-import { House, MessageSquareText, Mail } from "lucide-react";
+import { House, MessageSquareText, Mail, Settings } from "lucide-react";
 import { WidgetHome } from "@/components/support-widget/tabs/widget-home";
 import { WigetContact } from "@/components/support-widget/tabs/widget-contact";
 import { WidgetAssistant } from "@/components/support-widget/tabs/widget-messages";
 import { WidgetLogin } from "@/components/support-widget/tabs/widget-screens/widget-login";
+import { WidgetSettings } from "@/components/support-widget/tabs/widget-settings";
 
 export interface TabConfig {
   label: TabType;
@@ -41,6 +42,11 @@ const TAB_CONFIG: Record<TabType, TabConfig> = {
     label: TabType.Contact,
     component: WigetContact,
   },
+  // Settings: {
+  //   icon: <Settings className="w-6 h-6" />,
+  //   label: TabType.Settings,
+  //   component: WidgetSettings,
+  // },
 } as const;
 
 /* -------------------------------------------------------------------------- */
@@ -147,8 +153,8 @@ export function SupportWidget({
             ? "opacity-100 scale-100"
             : "opacity-0 scale-0 pointer-events-none",
           isCollapse
-            ? "w-full md:min-w-sm md:max-w-sm"
-            : "w-full md:min-w-xl md:max-w-xl"
+            ? "w-full md:min-w-md md:max-w-md"
+            : "w-full md:min-w-2xl md:max-w-2xl"
         )}
       >
         <ClassicLoader />
@@ -171,8 +177,8 @@ export function SupportWidget({
           ? "opacity-100 scale-100"
           : "opacity-0 scale-0 pointer-events-none",
         isCollapse
-          ? "w-full md:min-w-sm md:max-w-sm"
-          : "w-full md:min-w-xl md:max-w-xl"
+          ? "w-full md:min-w-md md:max-w-md"
+          : "w-full md:min-w-2xl md:max-w-2xl"
       )}
     >
       {/* Active Screen */}

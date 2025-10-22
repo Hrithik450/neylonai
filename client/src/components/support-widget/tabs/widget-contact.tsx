@@ -87,7 +87,7 @@ export function WigetContact() {
       <div>
         <div className="flex justify-center gap-6 pb-3">
           <a
-            href="https://linkedin.com/company/aisolutionz"
+            href="https://www.linkedin.com/company/neylon-ai/"
             target="_blank"
             rel="noopener noreferrer"
             className="text-gray-600 hover:text-purple-600"
@@ -103,7 +103,7 @@ export function WigetContact() {
             <Instagram className="w-6 h-6" />
           </a>
           <a
-            href="https://github.com/aisolutionz"
+            href="https://youtube.com/@mhrithik450?si=ZdW7Syb486y91znI"
             target="_blank"
             rel="noopener noreferrer"
             className="text-gray-600 hover:text-purple-600"
