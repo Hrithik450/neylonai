@@ -11,7 +11,7 @@ from rest_framework import status
 from langchain.schema import AIMessage
 from ..lib.load_agent import LoadInitialAgentConfig, MessageState, StateMessage
 from ..lib.utils import SYSTEM_PROMPT, safe_serialize
-from asgiref.sync import sync_to_async
+from asgiref.sync import sync_to_async, async_to_sync
 from datetime import datetime
 import traceback
 import asyncio
@@ -202,23 +202,23 @@ class StreamChatView(APIView):
                     )
         
             # reframe/optimize user query
-            # try:
-            #     reframed = async_to_sync(cls.agent_graph.reframe_user_query)(user_input=cls.user_message, last_messages=last_msgs)
-            # except Exception:
-            #     # fallback to raw user message if reframing fails
-            #     reframed = {"optimized_query": cls.user_message, "selected_tools": []}
+            try:
+                reframed = async_to_sync(cls.agent_graph.reframe_user_query)(user_input=cls.user_message, last_messages=last_msgs)
+            except Exception:
+                # fallback to raw user message if reframing fails
+                reframed = {"optimized_query": cls.user_message, "selected_tools": []}
 
-            # internal_message = {
-            #     "query": reframed["optimized_query"],
-            #     "selected_tools": reframed.get("selected_tools", []),
-            # }
-            # print(internal_message, "optmized query")
+            internal_message = {
+                "query": reframed["optimized_query"],
+                "selected_tools": reframed.get("selected_tools", []),
+            }
+            print(internal_message, "optmized query")
 
             messages_state: MessageState = {
                 "messages": [
                     {"role": "system", "content": SYSTEM_PROMPT.format(today_date=cls.today_date)},
                     *last_msgs[-5:],
-                    {"role": "user", "content": cls.user_message},
+                    {"role": "user", "content": json.dumps(internal_message)},
                 ]
             }
 

@@ -19,6 +19,54 @@ CHROMA_COLLECTION_NAME = "organization_data"
 AGENT_MODEL = "gpt-4.1" # Or another powerful model like "gpt-4-turbo"
 
 # -------------------- SYSTEM PROMPT --------------------x
+# MEMORY_LAYER_PROMPT="""
+# You are an expert routing agent.
+# - Today’s date is {today_date} IST.
+
+# Task:
+# Given the previous conversation and a new user question,
+# 1. Decide if it is a FOLLOW-UP (depends on prior context) or NEW.
+# 2. Produce a concise, self-contained query (≤200 chars).
+# 3. Choose the minimal set of tools and arguments to best satisfy the intent.
+# 4. Use semantic search only if the query is vague or no metadata (0 fields), avoid when metadata (even 1 field is present) explicitly provided (not on general questions which you can answer from your own).
+# 5. Output only valid JSON.
+
+# Output format:
+# {{
+#   "is_followup": true | false,
+#   "optimized_query": "<rewritten or original question>",
+#   "selected_tools": [
+#     {{ "name": "<tool_name>", "args": {{ ... }} }}
+#   ]
+# }}
+
+# Guidelines rules — apply in order:
+# 0. CONVERSATIONAL / GENERIC CHECK:
+#     - If the query is a casual greeting, personal question, or general factual query (e.g., "what is the date", "how are you", "what’s the time"), do NOT call any external tools — handle directly via general reasoning.
+# 1. Avoid date's as much as possible while optimizing the query unless user explicitly asks or provides.
+# 2. CORE TEST (must pass to be FOLLOW-UP):
+#    - Classify as FOLLOW-UP only if the new question **cannot be correctly answered or understood** without the previous messages, OR the user explicitly references the earlier conversation.
+#    - If the new question can stand alone (it contains all required details to be answered independent of earlier messages), classify as NEW.
+# 3. PRONOUN / AMBIGUITY CHECK:
+#    - If the new question uses ambiguous referents (single-word pronouns like "it", "that", "those", or "the file") and the referent is **only** introduced in prior messages, treat as FOLLOW-UP.
+#    - If pronouns refer to an entity named in the new question itself, treat as NEW.
+# 4. KEYWORD OVERLAP IS NOT SUFFICIENT:
+#    - Shared words or topics alone do NOT imply follow-up. Require either explicit referential cue (rule 1) or at least 2 distinct content keywords that match the immediately prior message **and** change meaning if earlier context is removed.
+# 5. WHEN FOLLOW-UP:
+#    - Rewrite the user question as a concise, self-contained single-sentence query ready for downstream tools.
+#    - Include only minimal relevant context keywords from previous conversation (sender, recipient, subject, or short identifier) *only if* they affect the answer.
+#    - Keep optimized_query <= 200 characters; remove politeness and unnecessary text.
+# 6. WHEN NEW:
+#    - Rewrite the original question into a concise, self-contained query (≤200 chars) suitable for downstream tools.
+#    - Include all relevant context keywords from query (sender, recipient, subject, or short identifier) *only if* they affect the answer and can be retrived via any available tool.
+# 7. FORMATTING:
+#    - Output exactly the JSON object and nothing else.
+# 8. LIMIT HANDLING
+#    - If the query explicitly requests a fixed number (e.g., “latest 3”, “last 5”), set limit=N.
+#    - Else if the query is about listings or length-specific requests, use the default limit=5.
+#    - Otherwise (e.g., summaries, full chains, analytical queries), do not use limit.
+# """
+
 MEMORY_LAYER_PROMPT="""
 You are an expert routing agent.
 - Today’s date is {today_date} IST.
@@ -28,8 +76,7 @@ Given the previous conversation and a new user question,
 1. Decide if it is a FOLLOW-UP (depends on prior context) or NEW.
 2. Produce a concise, self-contained query (≤200 chars).
 3. Choose the minimal set of tools and arguments to best satisfy the intent.
-4. Use semantic search only if the query is vague or no metadata (0 fields), avoid when metadata (even 1 field is present) explicitly provided (not on general questions which you can answer from your own).
-5. Output only valid JSON.
+4. Output only valid JSON.
 
 Output format:
 {{
@@ -54,18 +101,13 @@ Guidelines rules — apply in order:
    - Shared words or topics alone do NOT imply follow-up. Require either explicit referential cue (rule 1) or at least 2 distinct content keywords that match the immediately prior message **and** change meaning if earlier context is removed.
 5. WHEN FOLLOW-UP:
    - Rewrite the user question as a concise, self-contained single-sentence query ready for downstream tools.
-   - Include only minimal relevant context keywords from previous conversation (sender, recipient, subject, or short identifier) *only if* they affect the answer.
    - Keep optimized_query <= 200 characters; remove politeness and unnecessary text.
 6. WHEN NEW:
    - Rewrite the original question into a concise, self-contained query (≤200 chars) suitable for downstream tools.
-   - Include all relevant context keywords from query (sender, recipient, subject, or short identifier) *only if* they affect the answer and can be retrived via any available tool.
 7. FORMATTING:
    - Output exactly the JSON object and nothing else.
-8. LIMIT HANDLING
-   - If the query explicitly requests a fixed number (e.g., “latest 3”, “last 5”), set limit=N.
-   - Else if the query is about listings or length-specific requests, use the default limit=5.
-   - Otherwise (e.g., summaries, full chains, analytical queries), do not use limit.
 """
+
 
 # SYSTEM_PROMPT = """
 # You are an internal company assistant, designed to help employees, customers access and understand our organization's documents and resources. 

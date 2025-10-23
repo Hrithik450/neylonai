@@ -1,4 +1,3 @@
-import os
 import traceback
 from rest_framework import status
 from django.db import connection

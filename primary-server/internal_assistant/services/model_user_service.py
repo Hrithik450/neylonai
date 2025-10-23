@@ -2,7 +2,7 @@ import json
 import traceback
 from typing import Optional
 from pydantic import BaseModel
-from ..models import User
+from django.db import connection, transaction
 from django.core.cache import cache
 
 class UserFormat(BaseModel):
@@ -27,27 +27,35 @@ class UserService:
     @staticmethod
     def deduct_tokens(deduction_tokens: int, user_id: str) -> UserResponse:
         try:
-           user = User.objects.get(id=user_id)
-           user.daily_limit = max(0, user.daily_limit-deduction_tokens)
-           user.save()
+           with transaction.atomic():
+                with connection.cursor() as cursor:
+                    # Fetch the user
+                    cursor.execute("""
+                        SELECT id, name, email, "emailVerified", image, daily_limit, created_at
+                        FROM "user"
+                        WHERE id = %s
+                        LIMIT 1;
+                    """, [str(user_id)])
+                    row = cursor.fetchone()
+
+                    if not row:
+                        return UserResponse(success=False, data=None, error=f"User {user_id} not found")
+                    
+                    id_db, name, email, emailVerified, image, daily_limit, created_at = row
+                    new_daily_limit = max(0, daily_limit - deduction_tokens)
+
+                    cursor.execute("""
+                        UPDATE "user"
+                        SET daily_limit = %s
+                        WHERE id = %s
+                    """, [new_daily_limit, id_db])
 
            cache_key = f"user:{user_id}"
            cache.delete(cache_key)
 
-           user_response = UserFormat(
-                id=str(user.id),
-                name=str(user.name),
-                email=str(user.email),
-                emailVerified=str(user.emailverified),
-                image=str(user.image),
-                daily_limit=int(user.daily_limit),
-                created_at=str(user.created_at)
-            )
-           
+           user_response = UserFormat(id=str(id_db), name=str(name), email=str(email), emailverified=str(emailVerified), image=str(image), daily_limit=int(new_daily_limit), created_at=str(created_at.isoformat()))
            return UserResponse(success=True, data=user_response, error=None)
-
-        except User.DoesNotExist:
-            return UserResponse(success=False, data=None ,error=f"User with id:{user_id} does not exist")
+        
         except Exception as e:
             return UserResponse(success=False, error=f"Error: {str(e)}, details: {traceback.format_exc()}")
 
@@ -63,22 +71,24 @@ class UserService:
                 cached_user = UserFormat(**cached_data)
                 return UserResponse(success=True, data=cached_user, error=None)
             
-            user_obj = User.objects.get(id=user_id)
+            with transaction.atomic():
+                with connection.cursor() as cursor:
+                    # Fetch the user
+                    cursor.execute("""
+                        SELECT id, name, email, "emailVerified", image, daily_limit, created_at
+                        FROM "user"
+                        WHERE id = %s
+                        LIMIT 1;
+                    """, [str(user_id)])
+                    row = cursor.fetchone()
 
-            user_response = UserFormat(
-                id=str(user_obj.id),
-                name=str(user_obj.name),
-                email=str(user_obj.email),
-                emailVerified=str(user_obj.emailverified),
-                image=str(user_obj.image),
-                daily_limit=int(user_obj.daily_limit),
-                created_at=str(user_obj.created_at)
-            )
+            if not row:
+                return UserResponse(success=False, data=None, error=f"User {user_id} not found")
+
+            user_response = UserFormat(id=str(row[0]), name=str(row[1]), email=str(row[2]), emailverified=str(row[3]), image=str(row[4]), daily_limit=int(row[5]), created_at=str(row[6].isoformat()))
 
             cache.set(cache_key, json.dumps(user_response.model_dump()), timeout=3600)
             return UserResponse(success=True, data=user_response, error=None)
 
-        except User.DoesNotExist:
-            return UserResponse(success=False, data=None, error=f"User with id:{user_id} does not exist")
         except Exception as e:
             return UserResponse(success=False, error=f"Error: {str(e)}, details: {traceback.format_exc()}")

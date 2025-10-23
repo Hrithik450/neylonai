@@ -1,7 +1,7 @@
 import json
 import traceback
 from django.core.cache import cache
-from ..models import ThreadMessages
+from django.db import connection, transaction
 from typing import List, Optional, Literal
 from pydantic import BaseModel, ValidationError
 from django.utils import timezone
@@ -38,15 +38,18 @@ class ChatMessageService:
         """Insert a single chat message."""
         try:
             validated_data = NewChatMessage(**data)
+
+            with transaction.atomic():
+                with connection.cursor() as cursor:
+                    cursor.execute("""
+                        INSERT INTO thread_messages     
+                        (thread_id, role, content, created_at)
+                        VALUES (%s, %s, %s, %s)
+                        RETURNING id, thread_id, role, content, created_at;
+                    """, [str(validated_data.thread_id), str(validated_data.role), str(validated_data.content), timezone.now()])
+                    row = cursor.fetchone()
             
-            thread_message = ThreadMessages.objects.create(
-                thread_id=str(validated_data.thread_id),
-                role=str(validated_data.role),
-                content=str(validated_data.content),
-                created_at=timezone.now()
-            )
-            
-            if not thread_message:
+            if not row:
                 return ChatMessageResponse(success=False, data=None, error=f"Fatal: thread message not saved in DB")
 
             # Clear Redis cache
@@ -55,21 +58,14 @@ class ChatMessageService:
             cache.delete(cache_key_1)
             cache.delete(cache_key_2)
 
-            thread_messages_response = ChatMessage(
-                id=str(thread_message.id),
-                thread_id=str(thread_message.thread_id),
-                role=str(thread_message.role),
-                content=str(thread_message.content),
-                created_at=str(thread_message.created_at.isoformat())
-            )
-
+            thread_messages_response = ChatMessage(id=str(row[0]), thread_id=str(row[1]), role=str(row[2]), content=str(row[3]), created_at=str(row[4].isoformat()))
             return ChatMessageResponse(success=True, data=thread_messages_response, error=None)
 
         except ValidationError as ve:
             return ChatMessageResponse(success=False, error=f"Validation error: {ve.errors()}")
         except Exception as e:
             return ChatMessageResponse(success=False, error=str(e))
-
+        
     @staticmethod
     def list_recent_thread_messages(thread_id: str, limit: int = 10) -> ChatMessagesResponse:
         """Retrieve last N messages for a thread (with Redis cache)."""
@@ -83,25 +79,28 @@ class ChatMessageService:
                 cached_thread_messages = [ChatMessage(**message) for message in cached_data]
                 return ChatMessagesResponse(success=True, data=cached_thread_messages, error=None)
 
-            thread_messages = (ThreadMessages.objects.filter(thread_id=thread_id).order_by("created_at")[:limit])
+            with transaction.atomic():
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        """
+                        SELECT id, thread_id, role, content, created_at
+                        FROM thread_messages
+                        WHERE thread_id = %s
+                        ORDER BY created_at ASC
+                        LIMIT %s;
+                        """,
+                        [str(thread_id), limit],
+                    )
+                    rows = cursor.fetchall()
 
             response_messages = [
-                ChatMessage(
-                    id=str(tm.id),
-                    thread_id=str(tm.thread_id),
-                    role=str(tm.role),
-                    content=str(tm.content),
-                    created_at=str(tm.created_at.isoformat()),
-                )
-                for tm in thread_messages
+                ChatMessage(id=str(row[0]), thread_id=str(row[1]), role=str(row[2]), content=str(row[3]), created_at=str(row[4].isoformat())) for row in rows
             ]
 
             # Cache in Redis for 60 minutes
             cache.set(cache_key, json.dumps([tm.model_dump() for tm in response_messages]), timeout=3600)
             return ChatMessagesResponse(success=True, data=response_messages, error=None)
 
-        except ThreadMessages.DoesNotExist:
-            return ChatMessagesResponse(success=False, data=None, error=f"Thread messages with id:{thread_id} does not exist")
         except Exception as e:
             return ChatMessagesResponse(success=False, error=f"Error: {str(e)}, details: {traceback.format_exc()}")
 
@@ -119,23 +118,28 @@ class ChatMessageService:
                 cached_thread_messages = [ChatMessage(**message) for message in cached_data]
                 return ChatMessagesResponse(success=True, data=cached_thread_messages, error=None)
             
-            thread_messages = (ThreadMessages.objects.filter(thread_id=thread_id).order_by("created_at"))
-
-            response_messages = [
-                ChatMessage(
-                    id=str(tm.id),
-                    thread_id=str(tm.thread_id),
-                    role=str(tm.role),
-                    content=str(tm.content),
-                    created_at=str(tm.created_at.isoformat()),
-                )
-                for tm in thread_messages
-            ]
+            with transaction.atomic():
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        """
+                        SELECT id, thread_id, role, content, created_at
+                        FROM thread_messages
+                        WHERE thread_id = %s
+                        ORDER BY created_at ASC;
+                        """,
+                        [thread_id]
+                    )
+                    rows = cursor.fetchall()
             
+            if not rows:
+                return ChatMessagesResponse(success=False, data=None, error=f"Thread messages with id:{thread_id} do not exist")
+            
+            response_messages = [
+                ChatMessage(id=str(row[0]), thread_id=str(row[1]), role=str(row[2]), content=str(row[3]), created_at=str(row[4].isoformat())) for row in rows
+            ]
+
             cache.set(cache_key, json.dumps([tm.model_dump() for tm in response_messages]), timeout=3600)
             return ChatMessagesResponse(success=True, data=response_messages, error=None)
         
-        except ThreadMessages.DoesNotExist:
-            return ChatMessagesResponse(success=False, data=None, error=f"Thread messages with id:{thread_id} does not exist")
         except Exception as e:
             return ChatMessagesResponse(success=False, error=f"Error: {str(e)}, details: {traceback.format_exc()}")
