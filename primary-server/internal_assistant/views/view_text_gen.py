@@ -11,8 +11,8 @@ from rest_framework import status
 from langchain.schema import AIMessage
 from ..lib.load_agent import LoadInitialAgentConfig, MessageState, StateMessage
 from ..lib.utils import SYSTEM_PROMPT, safe_serialize
+from asgiref.sync import sync_to_async
 from datetime import datetime
-from asgiref.sync import async_to_sync, sync_to_async
 import traceback
 import asyncio
 import json
