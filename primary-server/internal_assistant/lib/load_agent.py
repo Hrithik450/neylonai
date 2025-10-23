@@ -65,8 +65,14 @@ class LoadInitialAgentConfig:
         )
         self.model_with_tools = self.base_model.bind_tools(self.tools)
 
-        self.llm = init_chat_model(model=AGENT_MODEL, temperature=0)
-        self.llm_with_tools = self.llm.bind_tools(self.tools)  # for small helper tasks
+        # self.llm = init_chat_model(model=AGENT_MODEL, temperature=0)
+        self.memory_model = ChatGoogleGenerativeAI(
+            model='gemini-2.5-pro',
+            temperature=0.4,
+            max_retries=2,
+            google_api_key=self.GEMINI_API_KEY
+        )
+        self.llm_with_tools = self.memory_model.bind_tools(self.tools)  # for small helper tasks
 
         self.agent_graph = self.build_agent_graph()
         print("Initialized LangGraph agent.")
@@ -148,7 +154,7 @@ class LoadInitialAgentConfig:
         response = self.model_with_tools.invoke(messages)
         return {"messages": [response]}
     
-    async def call_llm(self, system_prompt: str, user_prompt: str) -> str:
+    async def call_memory_model(self, system_prompt: str, user_prompt: str) -> str:
         messages = [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt}
@@ -189,7 +195,7 @@ class LoadInitialAgentConfig:
         {user_input}
         """
 
-        raw_response = await self.call_llm(MEMORY_LAYER_PROMPT.format(today_date=self.today_date), user_prompt)
+        raw_response = await self.call_memory_model(MEMORY_LAYER_PROMPT.format(today_date=self.today_date), user_prompt)
         try:
             result = parse_json(raw_response)
         except (json.JSONDecodeError, TypeError) as e:
