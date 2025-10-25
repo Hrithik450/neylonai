@@ -66,6 +66,13 @@ export const RoleDisplayMap: Record<RoleKey, string> = {
   admin: "Admin",
 };
 
+export const RoleAssistantMap: Record<RoleKey, AssistantKey[]> = {
+  business_owner: ["customer_service_assistant"],
+  student: ["internal_assistant"],
+  explorer: ["internal_assistant", "customer_service_assistant"],
+  admin: ["internal_assistant"],
+};
+
 export type AssistantKey = (typeof assistantEnum)[number];
 export type RoleKey = (typeof roleEnum)[number];
 

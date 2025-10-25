@@ -42,9 +42,9 @@ export function WidgetSettings({
       {/* Header */}
       <WidgetHeader header="Profile" />
 
-      <div className="p-4 w-full flex flex-col items-center space-y-3">
-        <div className="w-full flex justify-between items-center pr-2">
-          <div className="px-2 w-full flex justify-start items-center gap-3">
+      <div className="p-3 md:p-4 w-full flex flex-col items-center space-y-3">
+        <div className="w-full flex justify-between items-center pr-2 pb-2">
+          <div className="md:px-2 w-full flex justify-start items-center gap-3">
             <Image
               width={20}
               height={20}
@@ -111,7 +111,7 @@ export function WidgetSettings({
             </div>
             <div className="bg-gray-100 rounded-2xl p-4 text-center shadow-sm hover:shadow-md transition">
               <p className="font-medium text-gray-800 text-sm">Role</p>
-              <p className="text-md md:text-lg text-gray-500 break-all">
+              <p className="text-sm md:text-lg text-gray-500 break-all">
                 {role ? RoleDisplayMap[role] : "explorer"}
               </p>
             </div>

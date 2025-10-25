@@ -24,13 +24,14 @@ import { cn } from "@/lib/utils";
 import {
   assistantEnum,
   AssistantKey,
+  RoleAssistantMap,
   roleEnum,
   RoleKey,
   useUserStore,
 } from "@/store/store";
 import { guminertRegular } from "@/assets/fonts";
-import z from "zod";
 import { AssistantDisplayMap, RoleDisplayMap } from "@/store/store";
+import z from "zod";
 
 const updateProfileSchema = z.object({
   assistant: z.enum(assistantEnum),
@@ -62,6 +63,15 @@ export function WidgetUpdateSettings({
       role: role as RoleKey,
     },
   });
+  const selectedRole = form.watch("role");
+  const availableAssistants = RoleAssistantMap[selectedRole] || [];
+
+  React.useEffect(() => {
+    form.reset({
+      assistant: availableAssistants[0] as AssistantKey,
+      role: selectedRole as RoleKey,
+    });
+  }, [selectedRole]);
 
   const onSubmit = async (data: z.infer<typeof updateProfileSchema>) => {
     console.log("Profile data:", data);
@@ -107,35 +117,6 @@ export function WidgetUpdateSettings({
           <form className="space-y-2" onSubmit={form.handleSubmit(onSubmit)}>
             <FormField
               control={form.control}
-              name="assistant"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-md">Assistant</FormLabel>
-                  <FormControl>
-                    <Select
-                      {...field}
-                      onValueChange={field.onChange}
-                      disabled={loading}
-                    >
-                      <SelectTrigger className="w-full border border-black/80">
-                        <SelectValue placeholder="Select Assistant" />
-                      </SelectTrigger>
-                      <SelectContent className="z-999">
-                        {assistantEnum.map((a) => (
-                          <SelectItem key={a} value={a}>
-                            {AssistantDisplayMap[a]}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
               name="role"
               render={({ field }) => (
                 <FormItem>
@@ -157,6 +138,35 @@ export function WidgetUpdateSettings({
                               {RoleDisplayMap[r]}
                             </SelectItem>
                           ))}
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="assistant"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-md">Assistant</FormLabel>
+                  <FormControl>
+                    <Select
+                      {...field}
+                      onValueChange={field.onChange}
+                      disabled={loading}
+                    >
+                      <SelectTrigger className="w-full border border-black/80">
+                        <SelectValue placeholder="Select Assistant" />
+                      </SelectTrigger>
+                      <SelectContent className="z-999">
+                        {availableAssistants.map((a) => (
+                          <SelectItem key={a} value={a}>
+                            {AssistantDisplayMap[a]}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </FormControl>
