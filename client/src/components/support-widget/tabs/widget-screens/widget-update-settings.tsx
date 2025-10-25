@@ -103,7 +103,7 @@ export function WidgetUpdateSettings({
 
   return (
     <div className={cn("h-full w-full", guminertRegular.className)}>
-      <WidgetHeader header="Update Profile" action={() => popScreen()} />
+      <WidgetHeader header="Update Settings" action={() => popScreen()} />
 
       <div className="py-8 px-4">
         <Form {...form}>
