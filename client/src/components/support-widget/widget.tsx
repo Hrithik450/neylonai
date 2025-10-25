@@ -85,7 +85,7 @@ export function SupportWidget({
       try {
         setLoading(true);
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/user/${id}/`
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/core-manager/api/v1/user/${id}/`
         );
         const data = await response.json();
 

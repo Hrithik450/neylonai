@@ -54,7 +54,7 @@ export function WidgetChatThreadUI({
       try {
         setLoading(true);
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/thread_messages/${id}/`
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/core-manager/api/v1/thread_messages/${id}/`
         );
         const data: MessagesResponse = await res.json();
 
@@ -116,7 +116,7 @@ export function WidgetChatThreadUI({
 
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/text-generation/`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/internal-assistant/api/v1/text-generation/`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

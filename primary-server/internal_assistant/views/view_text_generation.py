@@ -2,10 +2,10 @@ from django.http import StreamingHttpResponse
 from rest_framework.views import APIView
 from pydantic import BaseModel, ValidationError
 from typing import Optional, List
-from ..services.model_message_service import ChatMessagesResponse
-from ..services.model_thread_service import ChatThreadResponse
-from ..services.model_title_service import ChatTitleResponse
-from ..services.model_user_service import UserService
+from core_manager.services.model_message_service import ChatMessagesResponse
+from core_manager.services.model_thread_service import ChatThreadResponse
+from core_manager.services.model_title_service import ChatTitleResponse
+from core_manager.services.model_user_service import UserService
 from rest_framework.response import Response
 from rest_framework import status
 from langchain.schema import AIMessage

@@ -1,5 +1,5 @@
 from .utils import CHROMA_COLLECTION_NAME, INTERNAL_DATA_PATH
-from .download_jsonl import ensure_jsonl_file
+from .load_jsonl import ensure_jsonl_file
 
 from chromadb import CloudClient
 from functools import lru_cache

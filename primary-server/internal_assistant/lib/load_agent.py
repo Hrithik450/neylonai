@@ -19,9 +19,9 @@ load_dotenv()
 from ..tools.semantic_search_tool import SemanticSearchTool
 from ..tools.email_filtering_tool import EmailFilteringTool
 from .utils import AGENT_MODEL, MEMORY_LAYER_PROMPT, parse_json
-from ..services.model_message_service import ChatMessageService
-from ..services.model_thread_service import ChatThreadService
-from ..services.model_title_service import ChatTitleService
+from core_manager.services.model_message_service import ChatMessageService
+from core_manager.services.model_thread_service import ChatThreadService
+from core_manager.services.model_title_service import ChatTitleService
 
 # --- Schemas ---
 class StateMessage(TypedDict):

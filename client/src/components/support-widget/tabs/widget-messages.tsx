@@ -111,7 +111,7 @@ export function WidgetAssistant({
       try {
         setLoading(true);
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/threads/user/${currentUserId}/`
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/core-manager/api/v1/threads/user/${currentUserId}/`
         );
         const data: ThreadsResponse = await res.json();
 

@@ -40,6 +40,7 @@ ALLOWED_HOSTS = ['ai-solutionz.onrender.com', 'ai-solutionz-sec.onrender.com', '
 
 INSTALLED_APPS = [
     'corsheaders',
+    'core_manager',
     'rest_framework',
     'internal_assistant',
     'django.contrib.admin',
@@ -51,7 +52,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'internal_assistant.middleware.check_db_connection.AutoReconnectDBMiddleware',
+    'core_manager.middleware.check_db_connection.AutoReconnectDBMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.security.SecurityMiddleware',
