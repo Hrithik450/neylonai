@@ -16,7 +16,7 @@ urlpatterns = [
 
     path("reset-tokens/",  CronJobServiceView.as_view(), name='reset-tokens'),
 
-    path("user/<uuid:user_id>/",  UserServiceView.as_view(), name='user-detail'),
+    path("user/<uuid:user_id>/", UserServiceView.as_view(), name='user-detail'), # GET/PUT
 
     path("health-check/", HealthCheck.as_view(), name='health-check')
 ]

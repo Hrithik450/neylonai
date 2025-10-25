@@ -42,11 +42,11 @@ const TAB_CONFIG: Record<TabType, TabConfig> = {
     label: TabType.Contact,
     component: WigetContact,
   },
-  // Settings: {
-  //   icon: <Settings className="w-6 h-6" />,
-  //   label: TabType.Settings,
-  //   component: WidgetSettings,
-  // },
+  Settings: {
+    icon: <Settings className="w-6 h-6" />,
+    label: TabType.Settings,
+    component: WidgetSettings,
+  },
 } as const;
 
 /* -------------------------------------------------------------------------- */
@@ -65,7 +65,7 @@ export function SupportWidget({
 }) {
   const [loading, setLoading] = React.useState<boolean>(false);
   const { isOpen, isCollapse } = useSupportWidgetToggleStore();
-  const { setTokens } = useUserStore();
+  const { setTokens, setRole, setAssistant } = useUserStore();
   const {
     activeTab,
     tabStacks,
@@ -95,7 +95,9 @@ export function SupportWidget({
         }
 
         if (data.data) {
+          setRole(data.data.role);
           setTokens(data.data.daily_limit);
+          setAssistant(data.data.assistant);
           setLoading(false);
         }
       } catch (error) {
@@ -121,17 +123,13 @@ export function SupportWidget({
 
   const handleTabChange = React.useCallback(
     (tab: TabType) => {
-      if (tab === TabType.Messages) {
-        if (session) {
-          switchTab(tab);
-          setVisited((prev) => new Set(prev).add(tab));
-        } else {
-          pushScreen(TabType.Home, { component: WidgetLogin });
-        }
-      } else {
-        switchTab(tab);
-        setVisited((prev) => new Set(prev).add(tab));
+      if ((tab === TabType.Messages || tab === TabType.Settings) && !session) {
+        pushScreen(TabType.Home, { component: WidgetLogin });
+        return;
       }
+
+      switchTab(tab);
+      setVisited((prev) => new Set(prev).add(tab));
     },
     [switchTab, session]
   );

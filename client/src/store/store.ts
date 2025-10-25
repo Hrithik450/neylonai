@@ -10,7 +10,7 @@ export enum TabType {
   Home = "Home",
   Messages = "Messages",
   Contact = "Contact",
-  // Settings = "Settings",
+  Settings = "Settings",
 }
 
 export interface Screen {
@@ -42,10 +42,29 @@ interface ThreadMessageStore {
   updateMessage: (updater: (prev: NewMessage[] | null) => NewMessage[]) => void;
 }
 
+export const assistantEnum = [
+  "internal_assistant",
+  "customer_service_assistant",
+] as const;
+
+export const roleEnum = [
+  "business_owner",
+  "student",
+  "explorer",
+  "admin",
+] as const;
+
+export type AssistantKey = (typeof assistantEnum)[number];
+export type RoleKey = (typeof roleEnum)[number];
+
 interface UserStore {
   tokens: number;
-  setTokens: (tokens: number) => void;
+  role: RoleKey | null;
+  assistant: AssistantKey;
   currentUserId: string | null;
+  setTokens: (tokens: number) => void;
+  setRole: (role: RoleKey) => void;
+  setAssistant: (assistant: AssistantKey) => void;
   setCurrentUserId: (id: string) => void;
 }
 
@@ -170,9 +189,13 @@ export const useInputStore = create<InputStore>((set) => ({
 
 export const useUserStore = create<UserStore>((set) => ({
   tokens: 0,
-  setTokens: (tokens) => set({ tokens: tokens }),
+  role: null,
   currentUserId: null,
+  assistant: "internal_assistant",
+  setTokens: (tokens) => set({ tokens: tokens }),
+  setRole: (role) => set({ role: role }),
   setCurrentUserId: (id) => set({ currentUserId: id }),
+  setAssistant: (assistant) => set({ assistant: assistant }),
 }));
 
 export const useAssistantStore = create<AssistantStore>((set) => ({
