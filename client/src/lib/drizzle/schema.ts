@@ -96,6 +96,17 @@ export const thread = pgTable(
   ]
 );
 
+export const roleEnum = pgEnum("role", [
+  "student",
+  "business_owner",
+  "explorer",
+  "admin",
+]);
+export const assistantEnum = pgEnum("assistant", [
+  "internal_assistant",
+  "customer_service_assistant",
+]);
+
 export const user = pgTable(
   "user",
   {
@@ -108,6 +119,10 @@ export const user = pgTable(
       .defaultNow()
       .notNull(),
     dailyLimit: integer("daily_limit").default(200).notNull(),
+    role: roleEnum("role").default("explorer").notNull(),
+    assistant: assistantEnum("assistant")
+      .default("internal_assistant")
+      .notNull(),
   },
   (table) => [unique("user_email_unique").on(table.email)]
 );

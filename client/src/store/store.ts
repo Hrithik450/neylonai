@@ -10,7 +10,7 @@ export enum TabType {
   Home = "Home",
   Messages = "Messages",
   Contact = "Contact",
-  // Settings = "Settings",
+  Settings = "Settings",
 }
 
 export interface Screen {

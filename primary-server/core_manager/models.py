@@ -37,6 +37,8 @@ class User(models.Model):
     image = models.TextField(blank=True, null=True)
     daily_limit = models.IntegerField(default=200)
     created_at = models.DateTimeField(auto_now_add=True)
+    role = models.TextField()  # This field type is a guess.
+    assistant = models.TextField()  # This field type is a guess.
 
     class Meta:
         managed = False
