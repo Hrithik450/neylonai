@@ -54,11 +54,11 @@ export default function CustomerServiceAssistantBlog() {
   return (
     <section
       className={cn(
-        "bg-gray-50 text-gray-800 flex justify-start items-start py-12 px-4 md:px-8",
+        "relative max-w-480 mx-auto pt-24 md:pt-30 pb-10 md:px-14 flex justify-start items-start bg-gray-50 text-gray-800",
         guminertRegular.className
       )}
     >
-      <div className="max-w-4xl w-full p-6 md:p-10 space-y-6 overflow-hidden">
+      <div className="max-w-5xl w-full p-6 md:p-10 space-y-6 overflow-hidden">
         <div className="flex flex-col items-start gap-1">
           <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-gray-900 leading-snug">
             {blogPost.title}

@@ -111,7 +111,7 @@ export function FeatureSection() {
           </div>
         </div>
 
-        <div className="col-span-1 relative bg-gradient-to-b from-[#0d3129] to-[#134239] flex flex-col h-full gap-4 sm:gap-6 p-2 rounded-xl overflow-hidden shadow-lg px-4 2xl:px-6 py-6 hover:rotate-2 transition-all duration-300 ease-in-out">
+        <div className="col-span-1 relative bg-linear-to-b from-[#0d3129] to-[#134239] flex flex-col h-full gap-4 sm:gap-6 p-2 rounded-xl overflow-hidden shadow-lg px-4 2xl:px-6 py-6 hover:rotate-2 transition-all duration-300 ease-in-out">
           {/* Main Stats */}
           <h1 className="text-4xl xl:text-5xl font-semibold text-white">
             24x7
@@ -137,7 +137,7 @@ export function FeatureSection() {
           </div>
         </div>
 
-        <div className="col-span-1 sm:col-start-1 lg:col-start-2 flex flex-col h-full bg-gradient-to-b from-[#0d3129] to-[#134239] text-white rounded-xl overflow-hidden shadow-lg px-4 py-6 hover:rotate-2 transition-all duration-300 ease-in-out">
+        <div className="col-span-1 sm:col-start-1 lg:col-start-2 flex flex-col h-full bg-linear-to-b from-[#0d3129] to-[#134239] text-white rounded-xl overflow-hidden shadow-lg px-4 py-6 hover:rotate-2 transition-all duration-300 ease-in-out">
           {/* Logo */}
           <div className="flex flex-col justify-center items-start gap-1 bg-white h-16 w-16 rounded-xl text-black overflow-hidden p-0.5 shadow-inner">
             <Image

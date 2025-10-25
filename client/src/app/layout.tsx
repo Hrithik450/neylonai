@@ -1,5 +1,9 @@
+import { auth } from "@/lib/auth/auth";
 import type { Metadata } from "next";
+import React from "react";
 import "./globals.css";
+import { Navbar } from "@/components/navbar";
+import { AIChat } from "@/components/support-widget/widget-toggle";
 
 export const metadata: Metadata = {
   title: "Neylon AI",
@@ -15,9 +19,15 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = React.use(auth());
+
   return (
     <html lang="en">
-      <body cz-shortcut-listen="false">{children}</body>
+      <body cz-shortcut-listen="false">
+        <Navbar session={session} />
+        {children}
+        <AIChat session={session} />
+      </body>
     </html>
   );
 }
