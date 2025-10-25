@@ -8,12 +8,16 @@ export async function middleware(request: NextRequest) {
     req: request,
     secret: process.env.AUTH_SECRET,
     secureCookie:
-      process.env.NEXTAUTH_URL?.startsWith("https://") ?? !!process.env.VERCEL,
-    cookieName: "__Secure-authjs.session-token",
+      process.env.NEXTAUTH_URL?.startsWith("https://") ||
+      process.env.NODE_ENV === "production",
+    cookieName:
+      process.env.NODE_ENV === "production"
+        ? "__Secure-authjs.session-token"
+        : "authjs.session-token",
   });
 
-  if (!token && pathname !== "/")
-    return NextResponse.redirect(new URL("/", request.url));
+  // if (!token && pathname !== "/")
+  //   return NextResponse.redirect(new URL("/", request.url));
 
   return NextResponse.next();
 }

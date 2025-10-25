@@ -82,7 +82,15 @@ export function WidgetSettings({
 
         {/* Cards */}
         <div className="w-full space-y-3 mb-4">
-          <div className="group hover:cursor-pointer bg-gray-100 rounded-2xl p-4 flex justify-between items-center shadow-sm hover:shadow-md transition">
+          <div
+            className="group hover:cursor-pointer bg-gray-100 rounded-2xl p-4 flex justify-between items-center shadow-sm hover:shadow-md transition"
+            onClick={() =>
+              pushScreen(TabType.Settings, {
+                component: WidgetUpdateSettings,
+                props: { role: role, assistant: assistant },
+              })
+            }
+          >
             <div>
               <p className="text-md font-medium text-gray-800">
                 Selected AI Assistant
@@ -93,15 +101,7 @@ export function WidgetSettings({
                   : "Internal Assistant"}
               </p>
             </div>
-            <FiArrowRight
-              onClick={() =>
-                pushScreen(TabType.Settings, {
-                  component: WidgetUpdateSettings,
-                  props: { role: role, assistant: assistant },
-                })
-              }
-              className="text-gray-400 group-hover:-rotate-45 transition-transform duration-150 ease-linear w-5 h-5"
-            />
+            <FiArrowRight className="text-gray-400 group-hover:-rotate-45 transition-transform duration-150 ease-linear w-5 h-5" />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
