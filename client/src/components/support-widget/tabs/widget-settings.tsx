@@ -6,16 +6,23 @@ import { FiArrowRight } from "react-icons/fi";
 import Image from "next/image";
 import React from "react";
 import { Session } from "next-auth";
-import { useUserStore } from "@/store/store";
+import {
+  AssistantKey,
+  RoleKey,
+  type Screen,
+  TabType,
+  useUserStore,
+} from "@/store/store";
 import { Edit } from "lucide-react";
 import { signOutAccount } from "@/actions/auth/sign-out";
+import { WidgetUpdateSettings } from "./widget-screens/widget-update-settings";
 
-const AssistantDisplayMap: Record<string, string> = {
+export const AssistantDisplayMap: Record<AssistantKey, string> = {
   internal_assistant: "Internal Assistant",
   customer_service_assistant: "Customer Service Assistant",
 };
 
-const RoleDisplayMap: Record<string, string> = {
+export const RoleDisplayMap: Record<RoleKey, string> = {
   business_owner: "Business Owner",
   student: "Student",
   explorer: "Explorer",
@@ -23,9 +30,11 @@ const RoleDisplayMap: Record<string, string> = {
 };
 
 export function WidgetSettings({
+  pushScreen,
   popScreen,
   session,
 }: {
+  pushScreen: (tab: TabType, screen: Screen) => void;
   popScreen: () => void;
   session: Session | null;
 }) {
@@ -69,7 +78,15 @@ export function WidgetSettings({
             className="p-2 hover:bg-gray-100 hover:cursor-pointer rounded-full transition"
             aria-label="Edit Profile"
           >
-            <Edit className="w-5 h-5 text-gray-600 hover:text-gray-800 transition" />
+            <Edit
+              onClick={() =>
+                pushScreen(TabType.Settings, {
+                  component: WidgetUpdateSettings,
+                  props: { role: role, assistant: assistant },
+                })
+              }
+              className="w-5 h-5 text-gray-600 hover:text-gray-800 transition"
+            />
           </button>
         </div>
 

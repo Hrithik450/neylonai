@@ -42,25 +42,29 @@ interface ThreadMessageStore {
   updateMessage: (updater: (prev: NewMessage[] | null) => NewMessage[]) => void;
 }
 
-export enum AssistantType {
-  internal_assistant = "Internal Assistant",
-  customer_service_assistant = "Customer Service",
-}
+export const assistantEnum = [
+  "internal_assistant",
+  "customer_service_assistant",
+] as const;
 
-export enum RoleType {
-  business_owner = "Business Owner",
-  student = "Student",
-  explorer = "Explorer",
-}
+export const roleEnum = [
+  "business_owner",
+  "student",
+  "explorer",
+  "admin",
+] as const;
+
+export type AssistantKey = (typeof assistantEnum)[number];
+export type RoleKey = (typeof roleEnum)[number];
 
 interface UserStore {
   tokens: number;
-  role: RoleType | null;
-  assistant: AssistantType;
+  role: RoleKey | null;
+  assistant: AssistantKey;
   currentUserId: string | null;
   setTokens: (tokens: number) => void;
-  setRole: (role: RoleType) => void;
-  setAssistant: (assistant: AssistantType) => void;
+  setRole: (role: RoleKey) => void;
+  setAssistant: (assistant: AssistantKey) => void;
   setCurrentUserId: (id: string) => void;
 }
 
@@ -187,7 +191,7 @@ export const useUserStore = create<UserStore>((set) => ({
   tokens: 0,
   role: null,
   currentUserId: null,
-  assistant: AssistantType.internal_assistant,
+  assistant: "internal_assistant",
   setTokens: (tokens) => set({ tokens: tokens }),
   setRole: (role) => set({ role: role }),
   setCurrentUserId: (id) => set({ currentUserId: id }),

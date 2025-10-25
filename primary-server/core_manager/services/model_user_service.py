@@ -1,7 +1,7 @@
 import json
 import traceback
-from typing import Optional, Literal
-from pydantic import BaseModel
+from typing import Optional, Literal, Dict, Any
+from pydantic import BaseModel, ValidationError
 from django.db import connection, transaction
 from django.core.cache import cache
 
@@ -60,6 +60,52 @@ class UserService:
         
         except Exception as e:
             return UserResponse(success=False, error=f"Error: {str(e)}, details: {traceback.format_exc()}")
+
+    @staticmethod
+    def update_user(user_id: str, data: Dict[str, Any]) -> UserResponse:
+        try:
+            if not data:
+                return UserResponse(success=False, error="No fields to update")
+
+            set_clauses = []
+            params = []
+            for field, value in data.items():
+                if field in ["assistant", "role"]:
+                    set_clauses.append(f'"{field}" = %s')
+                    params.append(value)
+            params.append(user_id)
+
+            if not set_clauses:
+                return UserResponse(success=False, error="No updatable fields provided")
+
+            sql = f"""
+                UPDATE "user"
+                SET {', '.join(set_clauses)}
+                WHERE id = %s
+                RETURNING id, name, email, "emailVerified", image, daily_limit, created_at, assistant, role;
+            """
+
+            # Get the thread instance
+            with transaction.atomic():
+                with connection.cursor() as cursor:
+                    cursor.execute(sql, params)
+                    row = cursor.fetchone()
+
+            if not row:
+                return UserResponse(success=False, error=f"User {user_id} not found")
+
+            # Clear cache if needed
+            cache_key = f"user:{user_id}"
+            cache.delete(cache_key)
+
+            # Return updated thread as Pydantic model
+            updated_user = UserFormat(id=str(row[0]), name=str(row[1]), email=str(row[2]), emailverified=row[3], image=str(row[4]), daily_limit=int(row[5]), created_at=str(row[6].isoformat()), assistant=str(row[7]), role=str(row[8]))
+            return UserResponse(success=True, data=updated_user, error=None)
+
+        except ValidationError as ve:
+            return UserResponse(success=False, error=f"Validation error: {ve.errors()}")
+        except Exception as e:
+            return UserResponse(success=False, error=str(e))
 
     @staticmethod
     def get_user_by_id(user_id: str) -> UserResponse:
