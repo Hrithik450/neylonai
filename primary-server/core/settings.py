@@ -51,7 +51,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'internal_assistant.middleware.conn_check.AutoReconnectDBMiddleware',
+    'internal_assistant.middleware.check_db_connection.AutoReconnectDBMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.security.SecurityMiddleware',

@@ -2,10 +2,10 @@
 from django.urls import path
 from .views.view_threads import ListThreadServiceView, ThreadServiceView
 from .views.view_thread_messages import ThreadMessageServiceView, ThreadMessagesServiceView
-from .views.view_text_gen import StreamChatView
+from .views.view_text_generation import StreamChatView
 from .views.view_cron_job import CronJobServiceView
 from .views.view_users import UserServiceView
-from .views.view_health import HealthCheck
+from .views.view_server_health import HealthCheck
 
 urlpatterns = [
     path("threads/", ThreadServiceView.as_view(), name="thread-create"),  # POST to create
