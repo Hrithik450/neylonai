@@ -7,8 +7,8 @@ import Image from "next/image";
 import React from "react";
 import { Session } from "next-auth";
 import {
-  AssistantKey,
-  RoleKey,
+  AssistantDisplayMap,
+  RoleDisplayMap,
   type Screen,
   TabType,
   useUserStore,
@@ -17,25 +17,11 @@ import { Edit } from "lucide-react";
 import { signOutAccount } from "@/actions/auth/sign-out";
 import { WidgetUpdateSettings } from "./widget-screens/widget-update-settings";
 
-export const AssistantDisplayMap: Record<AssistantKey, string> = {
-  internal_assistant: "Internal Assistant",
-  customer_service_assistant: "Customer Service Assistant",
-};
-
-export const RoleDisplayMap: Record<RoleKey, string> = {
-  business_owner: "Business Owner",
-  student: "Student",
-  explorer: "Explorer",
-  admin: "Admin",
-};
-
 export function WidgetSettings({
   pushScreen,
-  popScreen,
   session,
 }: {
   pushScreen: (tab: TabType, screen: Screen) => void;
-  popScreen: () => void;
   session: Session | null;
 }) {
   const { tokens, assistant, role } = useUserStore();
@@ -43,7 +29,7 @@ export function WidgetSettings({
   if (!session?.user?.image)
     return (
       <div className="h-full w-full">
-        <WidgetHeader header="Profile" action={() => popScreen()} />
+        <WidgetHeader header="Profile" />
 
         <div className="w-full h-full flex justify-center items-center">
           <ClassicLoader />
@@ -54,7 +40,7 @@ export function WidgetSettings({
   return (
     <div className="h-full w-full">
       {/* Header */}
-      <WidgetHeader header="Profile" action={() => popScreen()} />
+      <WidgetHeader header="Profile" />
 
       <div className="p-4 w-full flex flex-col items-center space-y-3">
         <div className="w-full flex justify-between items-center pr-2">
@@ -64,12 +50,16 @@ export function WidgetSettings({
               height={20}
               alt="Profile"
               src={session.user.image}
-              className="w-17 h-17 rounded-full border mb-2"
+              className="w-14 h-14 md:w-17 md:h-17 rounded-full border"
             />
 
             <div className="space-y-0.5">
-              <h3 className="text-xl font-semibold">{session.user.name}</h3>
-              <p className="text-md text-black/80">{session.user.email}</p>
+              <h3 className="text-lg md:text-xl font-semibold">
+                {session.user.name}
+              </h3>
+              <p className="text-sm md:text-md text-black/80">
+                {session.user.email}
+              </p>
             </div>
           </div>
 
@@ -103,7 +93,15 @@ export function WidgetSettings({
                   : "Internal Assistant"}
               </p>
             </div>
-            <FiArrowRight className="text-gray-400 group-hover:-rotate-45 transition-transform duration-150 ease-linear w-5 h-5" />
+            <FiArrowRight
+              onClick={() =>
+                pushScreen(TabType.Settings, {
+                  component: WidgetUpdateSettings,
+                  props: { role: role, assistant: assistant },
+                })
+              }
+              className="text-gray-400 group-hover:-rotate-45 transition-transform duration-150 ease-linear w-5 h-5"
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -113,7 +111,7 @@ export function WidgetSettings({
             </div>
             <div className="bg-gray-100 rounded-2xl p-4 text-center shadow-sm hover:shadow-md transition">
               <p className="font-medium text-gray-800 text-sm">Role</p>
-              <p className="text-xl text-gray-500 break-all">
+              <p className="text-md md:text-lg text-gray-500 break-all">
                 {role ? RoleDisplayMap[role] : "explorer"}
               </p>
             </div>

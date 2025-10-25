@@ -30,10 +30,7 @@ import {
 } from "@/store/store";
 import { guminertRegular } from "@/assets/fonts";
 import z from "zod";
-import {
-  AssistantDisplayMap,
-  RoleDisplayMap,
-} from "@/components/support-widget/tabs/widget-settings";
+import { AssistantDisplayMap, RoleDisplayMap } from "@/store/store";
 
 const updateProfileSchema = z.object({
   assistant: z.enum(assistantEnum),
