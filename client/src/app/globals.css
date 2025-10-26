@@ -128,7 +128,7 @@ body {
   color: var(--foreground);
   scroll-behavior: smooth;
   overflow-x: hidden;
-  user-select: none;
+  user-select: text;
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
