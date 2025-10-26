@@ -143,7 +143,7 @@ export default function CustomerServiceAssistantBlog() {
     setTimeout(() => {
       if (!isOpen) setIsOpen(true);
     }, 500);
-  }, [isOpen]);
+  }, []);
 
   React.useEffect(() => {
     if (!role || !pageAssistant) return;
