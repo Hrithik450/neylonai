@@ -13,6 +13,7 @@ import {
   RoleAssistantMap,
   useNavigationStore,
   useErrorStore,
+  useSupportWidgetToggleStore,
 } from "@/store/store";
 
 interface ArticlePost {
@@ -132,10 +133,17 @@ const articlePost: ArticlePost = {
 
 export default function CustomerServiceAssistantBlog() {
   const pageAssistant = "customer_service_assistant";
+  const { isOpen, setIsOpen } = useSupportWidgetToggleStore();
   const { setMessage, setStatus } = useErrorStore();
   const { switchTab } = useNavigationStore();
   const { role, assistant } = useUserStore();
   const router = useRouter();
+
+  React.useEffect(() => {
+    setTimeout(() => {
+      if (!isOpen) setIsOpen(true);
+    }, 500);
+  }, [isOpen]);
 
   React.useEffect(() => {
     if (!role || !pageAssistant) return;

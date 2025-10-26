@@ -267,6 +267,7 @@ export function WidgetHome({
                           return;
                         }
 
+                        setIsOpen(false);
                         return router.push(blog.action);
                       } else {
                         if (pushScreen)
