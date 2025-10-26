@@ -4,6 +4,7 @@ import React from "react";
 import "./globals.css";
 import { Navbar } from "@/components/navbar";
 import { AIChat } from "@/components/support-widget/widget-toggle";
+import { NuqsAdapter } from "nuqs/adapters/next/app";
 
 export const metadata: Metadata = {
   title: "Neylon AI",
@@ -24,9 +25,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body cz-shortcut-listen="false">
-        <Navbar session={session} />
-        {children}
-        <AIChat session={session} />
+        <NuqsAdapter>
+          <Navbar session={session} />
+          {children}
+          <AIChat session={session} />
+        </NuqsAdapter>
       </body>
     </html>
   );

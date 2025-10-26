@@ -7,15 +7,23 @@ import { SupportWidget } from "@/components/support-widget/widget";
 import { useSupportWidgetToggleStore, useUserStore } from "@/store/store";
 import { SuccessAlert } from "@/components/success-alert";
 import { FailureAlert } from "@/components/failure-alert";
+import { useSearchParams } from "next/navigation";
 import { Session } from "next-auth";
 
 export function AIChat({ session }: { session: Session | null }) {
+  const searchParams = useSearchParams();
+  const loggedIn = searchParams.get("auth");
+
   const { isOpen, setIsOpen } = useSupportWidgetToggleStore();
 
   const [message, setMessage] = React.useState<string | null>(null);
   const [status, setStatus] = React.useState<
     "error" | "saving" | "saved" | null
   >(null);
+
+  React.useEffect(() => {
+    if (loggedIn === "false") setIsOpen(true);
+  }, [loggedIn]);
 
   return (
     <div className="fixed bottom-3 right-3 sm:right-6 2xl:right-[max(1rem,calc((100vw-120rem)/2+2rem))] z-99 flex flex-col items-end">

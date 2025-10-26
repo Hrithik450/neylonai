@@ -4,7 +4,8 @@ import NeylonAI from "@/assets/images/neylon.jpg";
 import { signInWithGoogle } from "@/actions/auth/sign-in";
 import { signOutAccount } from "@/actions/auth/sign-out";
 import { guminertBold, guminertRegular } from "@/assets/fonts";
-import { Link as ScrollLink } from "react-scroll";
+import { Link as ScrollLink, scroller } from "react-scroll";
+import { useRouter, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { LogOut, Menu, X } from "lucide-react";
 import {
@@ -25,6 +26,8 @@ function PageNavigations({
   className: string;
   itemClassName: string;
 }) {
+  const router = useRouter();
+  const pathname = usePathname();
   const { setIsOpen } = useSupportWidgetToggleStore();
   const { switchTab } = useNavigationStore();
 
@@ -40,6 +43,18 @@ function PageNavigations({
         switchTab(TabType.Contact);
         break;
     }
+  };
+
+  const handleNavRoute = async (section: string) => {
+    if (pathname !== "/") {
+      router.push(`/`);
+    }
+
+    scroller.scrollTo(section, {
+      duration: 300,
+      smooth: true,
+      offset: 0,
+    });
   };
 
   return (
@@ -76,15 +91,22 @@ function PageNavigations({
               {navItem.label}
             </button>
           ) : (
-            <ScrollLink to={navItem.id} smooth={true} duration={300} offset={0}>
+            <button
+              className="cursor-pointer"
+              onClick={() => handleNavRoute(navItem.id)}
+            >
               {navItem.label}
-            </ScrollLink>
+            </button>
           )}
         </div>
       ))}
     </div>
   );
 }
+
+// <ScrollLink to={navItem.id} smooth={true} duration={300} offset={0}>
+// {navItem.label}
+// </ScrollLink>
 
 function AuthNavigations({
   className,

@@ -1,23 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getToken } from "next-auth/jwt";
 
 export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+  const { pathname, searchParams } = request.nextUrl;
 
-  const token = await getToken({
-    req: request,
-    secret: process.env.AUTH_SECRET,
-    secureCookie:
-      process.env.NEXTAUTH_URL?.startsWith("https://") ||
-      process.env.NODE_ENV === "production",
-    cookieName:
-      process.env.NODE_ENV === "production"
-        ? "__Secure-authjs.session-token"
-        : "authjs.session-token",
-  });
+  const sessionCookie =
+    request.cookies.get("__Secure-authjs.session-token") ??
+    request.cookies.get("authjs.session-token");
 
-  // if (!token && pathname !== "/")
-  //   return NextResponse.redirect(new URL("/", request.url));
+  if (!sessionCookie?.value && pathname !== "/") {
+    const redirectUrl = new URL("/", request.url);
+
+    if (!searchParams.has("auth")) {
+      redirectUrl.searchParams.set("auth", "false");
+    }
+
+    return NextResponse.redirect(redirectUrl);
+  }
+
+  if (sessionCookie?.value && searchParams.has("auth")) {
+    const cleanUrl = new URL(request.url);
+    cleanUrl.searchParams.delete("auth");
+    return NextResponse.redirect(cleanUrl);
+  }
 
   return NextResponse.next();
 }

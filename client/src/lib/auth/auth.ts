@@ -18,20 +18,26 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
     }),
   ],
+  pages: {
+    error: "/",
+  },
   session: {
     strategy: "database",
   },
   secret: process.env.AUTH_SECRET,
   trustHost: true,
-  cookies: {
+});
+
+/*
+cookies: {
     sessionToken: {
       name: `__Secure-authjs.session-token`,
       options: {
         httpOnly: true,
         sameSite: "lax",
-        secure: true,
+        secure: process.env.NODE_ENV === "production",
         path: "/",
       },
     },
   },
-});
+*/
