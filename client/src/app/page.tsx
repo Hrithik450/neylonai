@@ -4,21 +4,18 @@ import { FeatureSection } from "@/components/landing-page/features";
 import { Footer } from "@/components/landing-page/footer-section";
 import { Hero2 } from "@/components/landing-page/hero-2-section";
 import { Faq } from "@/components/landing-page/faq-section";
-import { auth } from "@/lib/auth/auth";
 import React from "react";
 
 export default function App() {
-  const session = React.use(auth());
-
   return (
-    <main className="relative max-w-480 mx-auto">
-      <Hero2 session={session} />
+    <div className="relative max-w-480 mx-auto">
+      <Hero2 />
       <FeatureSection />
       {/* <LatestBlogs /> */}
       <Faq />
       <CTASection />
       <Footer />
       {/* <Testimonials /> */}
-    </main>
+    </div>
   );
 }

@@ -77,7 +77,7 @@ export default function FeatureCardList() {
         <div className="relative top-2 left-5 z-10 bg-white rounded-2xl shadow-xl p-4 w-85">
           {features.map((feature, idx) => (
             <div key={idx} className="flex gap-4 py-4 border-b last:border-b-0">
-              <div className="flex-shrink-0">{feature.icon}</div>
+              <div className="shrink-0">{feature.icon}</div>
               <div>
                 <h3 className="font-semibold">{feature.title}</h3>
                 <p className="my-1 text-sm leading-snug text-gray-500">

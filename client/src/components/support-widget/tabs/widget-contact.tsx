@@ -94,14 +94,14 @@ export function WigetContact() {
           >
             <Linkedin className="w-6 h-6" />
           </a>
-          <a
+          {/* <a
             href="https://x.com/aisolutionz"
             target="_blank"
             rel="noopener noreferrer"
             className="text-gray-600 hover:text-purple-600"
           >
             <Instagram className="w-6 h-6" />
-          </a>
+          </a> */}
           <a
             href="https://youtube.com/@mhrithik450?si=ZdW7Syb486y91znI"
             target="_blank"
@@ -110,14 +110,14 @@ export function WigetContact() {
           >
             <Youtube className="w-6 h-6" />
           </a>
-          <a
+          {/* <a
             href="https://github.com/aisolutionz"
             target="_blank"
             rel="noopener noreferrer"
             className="text-gray-600 hover:text-purple-600"
           >
             <Twitter className="w-6 h-6" />
-          </a>
+          </a> */}
           <a
             href="https://mail.google.com/mail/u/0/?fs=1&to=mhrithik450@gmail.com&tf=cm"
             target="_blank"

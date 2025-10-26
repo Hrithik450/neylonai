@@ -7,10 +7,10 @@ import {
   useNavigationStore,
   useSupportWidgetToggleStore,
   useUserStore,
+  useErrorStore,
 } from "@/store/store";
 import React from "react";
 import { cn } from "@/lib/utils";
-import { type Session } from "next-auth";
 import { guminertRegular } from "@/assets/fonts";
 import { ClassicLoader } from "@/components/classic-loader";
 import { House, MessageSquareText, Mail, Settings } from "lucide-react";
@@ -19,6 +19,7 @@ import { WigetContact } from "@/components/support-widget/tabs/widget-contact";
 import { WidgetAssistant } from "@/components/support-widget/tabs/widget-messages";
 import { WidgetLogin } from "@/components/support-widget/tabs/widget-screens/widget-login";
 import { WidgetSettings } from "@/components/support-widget/tabs/widget-settings";
+import { SessionContext } from "@/app/layout-wrapper";
 import { useSearchParams } from "next/navigation";
 
 export interface TabConfig {
@@ -53,23 +54,16 @@ const TAB_CONFIG: Record<TabType, TabConfig> = {
 /* -------------------------------------------------------------------------- */
 /*                              Main Component                                */
 /* -------------------------------------------------------------------------- */
-export function SupportWidget({
-  setMessage,
-  setStatus,
-  session,
-}: {
-  setMessage: React.Dispatch<React.SetStateAction<string | null>>;
-  setStatus: React.Dispatch<
-    React.SetStateAction<"error" | "saving" | "saved" | null>
-  >;
-  session: Session | null;
-}) {
+export function SupportWidget() {
+  const session = React.useContext(SessionContext);
+
   const searchParams = useSearchParams();
   const loggedIn = searchParams.get("auth");
 
   const [loading, setLoading] = React.useState<boolean>(false);
+  const { setMessage, setStatus } = useErrorStore();
   const { isOpen, isCollapse } = useSupportWidgetToggleStore();
-  const { setTokens, setRole, setAssistant } = useUserStore();
+  const { setTokens, setRole, setAssistant, currentUserId } = useUserStore();
   const {
     activeTab,
     tabStacks,
@@ -110,7 +104,8 @@ export function SupportWidget({
       }
     };
 
-    if (session && session.user && session.user.id) fetchUser(session.user.id);
+    if (session && session.user && session.user.id && !currentUserId)
+      fetchUser(session.user.id);
   }, [session]);
 
   // Initialize default screens

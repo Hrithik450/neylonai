@@ -4,10 +4,8 @@ import { CircleX } from "lucide-react";
 type FailureAlertProps = {
   message: string;
   duration?: number;
-  setMessage?: React.Dispatch<React.SetStateAction<string | null>>;
-  setStatus?: React.Dispatch<
-    React.SetStateAction<"error" | "saving" | "saved" | null>
-  >;
+  setMessage?: (message: string | null) => void;
+  setStatus?: (status: "error" | "saving" | "saved" | null) => void;
 };
 
 export const FailureAlert = ({
@@ -34,7 +32,7 @@ export const FailureAlert = ({
     <div className="fixed max-sm:w-[95%] max-sm:mx-auto bottom-3 max-sm:left-1/2 max-sm:-translate-x-1/2 sm:right-4 z-999">
       <div className="rounded-md bg-red-50 border border-red-400 p-4 shadow-lg">
         <div className="flex">
-          <div className="flex-shrink-0">
+          <div className="shrink-0">
             <CircleX className="h-5 w-5 text-red-400" aria-hidden="true" />
           </div>
           <div className="ml-3">

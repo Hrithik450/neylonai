@@ -1,10 +1,19 @@
 "use client";
 
-import { guminertRegular } from "@/assets/fonts";
 import CustomerServiceAssistantImage from "@/assets/images/articles/customer-service-assistant.png";
-import { cn } from "@/lib/utils";
 import Image, { StaticImageData } from "next/image";
+import { guminertRegular } from "@/assets/fonts";
+import { useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
 import React from "react";
+import {
+  TabType,
+  AssistantKey,
+  useUserStore,
+  RoleAssistantMap,
+  useNavigationStore,
+  useErrorStore,
+} from "@/store/store";
 
 interface ArticlePost {
   title: string;
@@ -21,7 +30,7 @@ interface ArticlePost {
 
 const articlePost: ArticlePost = {
   title:
-    "Ask the Customer Service Assistant questions about this article to see it in action.",
+    "Use this article to interact with the Customer Service Assistant and experience real-time support.",
   description: "",
   date: "October 26, 2025",
   image: CustomerServiceAssistantImage,
@@ -122,10 +131,42 @@ const articlePost: ArticlePost = {
 };
 
 export default function CustomerServiceAssistantBlog() {
+  const pageAssistant = "customer_service_assistant";
+  const { setMessage, setStatus } = useErrorStore();
+  const { switchTab } = useNavigationStore();
+  const { role, assistant } = useUserStore();
+  const router = useRouter();
+
+  React.useEffect(() => {
+    if (!role || !pageAssistant) return;
+
+    const allowedAssistants = RoleAssistantMap[role] ?? [];
+
+    // If role doesn't permit this assistant
+    if (!allowedAssistants.includes(pageAssistant as AssistantKey)) {
+      setStatus("error");
+      setMessage(
+        "Please change your role to Business Owner to access this article."
+      );
+      switchTab(TabType.Settings);
+      return router.push("/");
+    }
+
+    // If selected assistant doesn't match the page assistant
+    if (assistant !== pageAssistant) {
+      setStatus("error");
+      setMessage(
+        "Please select the Customer Service Assistant to access this article."
+      );
+      switchTab(TabType.Settings);
+      return router.push("/");
+    }
+  }, [role, assistant, pageAssistant, router]);
+
   return (
     <section
       className={cn(
-        "relative max-w-480 mx-auto pt-24 md:pt-30 pb-10 md:px-14 flex justify-start items-start bg-gray-50 text-gray-800",
+        "relative max-w-480 mx-auto pt-24 md:pt-30 pb-4 md:pb-10 md:px-14 flex justify-start items-start bg-gray-50 text-gray-800",
         guminertRegular.className
       )}
     >
@@ -161,12 +202,12 @@ export default function CustomerServiceAssistantBlog() {
                   {section.heading}
                 </h2>
               )}
-              <p className="text-gray-700 leading-relaxed text-sm md:text-base">
+              <p className="text-gray-700 leading-relaxed text-md md:text-base">
                 {section.content}
               </p>
 
               {section.quote && (
-                <blockquote className="text-sm md:text-base border-l-4 border-black/60 pl-4 italic text-gray-600 bg-black/10 rounded-md py-3 px-4">
+                <blockquote className="text-md md:text-base border-l-4 border-black/60 pl-4 italic text-gray-600 bg-black/10 rounded-md py-3 px-4">
                   “{section.quote}”
                 </blockquote>
               )}
@@ -176,7 +217,7 @@ export default function CustomerServiceAssistantBlog() {
                   {section.points.map((point, i) => (
                     <li
                       key={i}
-                      className="leading-relaxed text-sm md:text-base"
+                      className="leading-relaxed text-md md:text-base"
                     >
                       {point}
                     </li>
@@ -187,8 +228,8 @@ export default function CustomerServiceAssistantBlog() {
           ))}
         </div>
 
-        <div className="mt-12 text-center border-t border-gray-200">
-          <p className="text-sm md:text-base text-gray-500">
+        <div className="mt-6 md:mt-12 text-center border-t border-gray-200">
+          <p className="text-md md:text-base text-gray-500">
             Thanks for reading. Stay curious, stay inspired ✨
           </p>
         </div>

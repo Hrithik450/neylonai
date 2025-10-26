@@ -7,26 +7,43 @@ import {
   Maximize2,
   ArrowRight,
   MessageCircle,
-  ArrowDownRight,
   MessageSquareQuote,
 } from "lucide-react";
 import React from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
-import { faqs } from "@/lib/constants";
+import { Session } from "next-auth";
 import { guminertBold } from "@/assets/fonts";
 import NeylonAI from "@/assets/images/neylon.jpg";
 import {
+  AssistantKey,
+  RoleAssistantMap,
   type Screen,
   TabType,
+  useErrorStore,
   useSupportWidgetToggleStore,
   useThreadStore,
+  useUserStore,
 } from "@/store/store";
 import { WidgetIntroText } from "@/components/support-widget/widget-intro-texts";
-import { Session } from "next-auth";
 import { WidgetChatThreadUI } from "@/components/support-widget/tabs/widget-messages/widget-chat-messages-ui";
 import { WidgetLogin } from "@/components/support-widget/tabs/widget-screens/widget-login";
 import { WidgetFeedback } from "@/components/support-widget/tabs/widget-screens/widget-feedback";
+import CustomerServiceAssistantImage from "@/assets/images/articles/customer-service-assistant.png";
+import { useRouter } from "next/navigation";
+
+const blogs = [
+  {
+    id: 1,
+    image: CustomerServiceAssistantImage,
+    type: "Customer service",
+    date: "October 26, 2025",
+    title:
+      "Optimizing Customer Support with AI: The Customer Service Assistant",
+    action: "/article/customer-service-assistant",
+    assistant: "customer_service_assistant",
+  },
+] as const;
 
 export interface WidgetHomeProps {
   pushScreen?: (tab: TabType, screen: Screen) => void;
@@ -39,10 +56,12 @@ export function WidgetHome({
   pushScreen,
   switchTab,
 }: WidgetHomeProps) {
+  const router = useRouter();
+  const { role, assistant } = useUserStore();
   const { setCurrentThreadId } = useThreadStore();
+  const { setMessage, setStatus } = useErrorStore();
   const { isOpen, isCollapse, setIsOpen, setCollapse } =
     useSupportWidgetToggleStore();
-  const [faqOpen, setFaqOpen] = React.useState<number | null>(0);
 
   return (
     <section className="px-2 lg:px-3">
@@ -89,24 +108,21 @@ export function WidgetHome({
         <WidgetIntroText session={session} />
       </div>
 
-      <div className="pb-4 px-2 space-y-4 flex-1">
+      <div className="pb-4 px-2 space-y-6 flex-1">
         {/* Top widgets */}
         <div className="flex flex-col gap-2.5">
           <button
             onClick={() => {
               if (session) {
                 setCurrentThreadId(null);
-                if (pushScreen) {
+                if (pushScreen)
                   pushScreen(TabType.Messages, {
                     component: WidgetChatThreadUI,
                     props: { id: null, title: null },
                   });
-                }
               } else {
-                if (pushScreen) {
+                if (pushScreen)
                   pushScreen(TabType.Home, { component: WidgetLogin });
-                }
-                return;
               }
             }}
             className="group cursor-pointer bg-white shadow-sm border rounded-xl px-4 pr-6 py-4 flex justify-between items-center"
@@ -178,62 +194,94 @@ export function WidgetHome({
           </button>
         </div>
 
-        {/* FAQ's */}
-        <h3
-          className={cn(guminertBold.className, "px-1 text-xl text-[#0E3228]")}
-        >
-          Frequently Asked Questions
-        </h3>
+        {/* Latest Insights */}
+        <div className="flex flex-col">
+          <h3
+            className={cn(
+              guminertBold.className,
+              "mb-2 px-1 text-2xl text-[#0E3228]"
+            )}
+          >
+            Latest Insights
+          </h3>
 
-        {/* Q&A's */}
-        <div className="space-y-3">
-          {faqs.length > 0 &&
-            faqs.map((faq, idx) => (
+          <div className="space-y-4 my-3">
+            {blogs.map((blog) => (
               <div
-                key={idx}
-                onClick={() => setFaqOpen(faqOpen === idx ? null : idx)}
-                className={cn(
-                  "flex-1 flex flex-col justify-center items-start py-4 px-4 border border-gray-500/40 rounded-xl transition-all duration-300",
-                  faqOpen === idx
-                    ? "bg-[linear-gradient(rgb(245,255,249)_0%,rgb(251,255,242)_100%)]"
-                    : ""
-                )}
+                key={blog.id}
+                className="rounded-2xl border border-gray-600/30 shadow-sm hover:shadow-lg transition-all duration-300 ease-in-out overflow-hidden group"
               >
-                <div className="w-full flex items-center justify-start gap-4 md:gap-6 space-y-1">
-                  <div className="text-xl md:text-2xl font-bold text-gray-500">
-                    0{idx + 1}
-                  </div>
-
-                  <div>
-                    <h3 className="text-md md:text-md font-semibold">
-                      {faq.question}
-                    </h3>
-                  </div>
-
-                  <div
-                    className={cn(
-                      "ml-auto bg-white p-3 rounded-full cursor-pointer transition-all duration-300 ease-in-out",
-                      faqOpen === idx ? "-rotate-90 self-start" : ""
-                    )}
-                  >
-                    <ArrowDownRight />
-                  </div>
+                {/* Image Section */}
+                <div className="relative w-full aspect-1900/900 overflow-hidden">
+                  <Image
+                    fill
+                    src={blog.image}
+                    alt={blog.title}
+                    className="object-cover w-full h-full transition-transform duration-500"
+                  />
                 </div>
 
-                <div
-                  className={cn(
-                    "grid transition-all duration-500 ease-in-out",
-                    faqOpen === idx
-                      ? "grid-rows-[1fr] opacity-100 mt-1"
-                      : "grid-rows-[0fr] opacity-0"
-                  )}
-                >
-                  <div className="overflow-hidden">
-                    <p className="text-sm text-gray-500">{faq.answer}</p>
+                {/* Content Section */}
+                <div className="space-y-3 p-4">
+                  {/* Meta info */}
+                  <div className="flex items-center justify-between text-black/90 text-sm ">
+                    <span className="truncate max-w-[60%]">{blog.type}</span>
+                    <span className="flex items-center gap-1">
+                      <Calendar className="w-3.5 h-3.5" /> {blog.date}
+                    </span>
                   </div>
+
+                  {/* Title */}
+                  <h3 className="text-base md:text-lg font-semibold text-black line-clamp-2">
+                    {blog.title}
+                  </h3>
+
+                  {/* CTA Button */}
+                  <button
+                    onClick={() => {
+                      if (session) {
+                        if (!role) return;
+                        const allowedAssistants = RoleAssistantMap[role] ?? [];
+
+                        // If role doesn't permit this assistant
+                        if (
+                          !allowedAssistants.includes(
+                            blog.assistant as AssistantKey
+                          )
+                        ) {
+                          setStatus("error");
+                          setMessage(
+                            "Please change your role to Business Owner to access this article."
+                          );
+                          if (switchTab) switchTab(TabType.Settings);
+                          return;
+                        }
+
+                        // If selected assistant doesn't match the page assistant
+                        if (assistant !== blog.assistant) {
+                          setStatus("error");
+                          setMessage(
+                            "Please select the Customer Service Assistant to access this article."
+                          );
+                          if (switchTab) switchTab(TabType.Settings);
+                          return;
+                        }
+
+                        return router.push(blog.action);
+                      } else {
+                        if (pushScreen)
+                          pushScreen(TabType.Home, { component: WidgetLogin });
+                      }
+                    }}
+                    className="group/btn flex items-center justify-center gap-1.5 text-md font-medium border border-gray-500 text-black px-4 py-1.5 rounded-full hover:cursor-pointer hover:bg-[#00b894]/20 hover:border-[#00b894] transition-all duration-300 ease-in-out w-full"
+                  >
+                    Read More
+                    <ArrowRight className="w-4 h-4 text-black group-hover/btn:translate-x-1 transition-transform duration-300" />
+                  </button>
                 </div>
               </div>
             ))}
+          </div>
         </div>
       </div>
     </section>

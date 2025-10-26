@@ -4,10 +4,8 @@ import { CircleCheck } from "lucide-react";
 type SuccessAlertProps = {
   message: string;
   duration?: number;
-  setMessage?: React.Dispatch<React.SetStateAction<string | null>>;
-  setStatus?: React.Dispatch<
-    React.SetStateAction<"error" | "saving" | "saved" | null>
-  >;
+  setMessage?: (message: string | null) => void;
+  setStatus?: (status: "error" | "saving" | "saved" | null) => void;
 };
 
 export const SuccessAlert = ({
@@ -34,7 +32,7 @@ export const SuccessAlert = ({
     <div className="fixed max-sm:w-[95%] max-sm:mx-auto bottom-3 max-sm:left-1/2 max-sm:-translate-x-1/2 sm:right-4 z-999">
       <div className="rounded-md bg-green-50 border border-green-400 p-4 shadow-lg">
         <div className="flex items-center">
-          <div className="flex-shrink-0">
+          <div className="shrink-0">
             <CircleCheck
               className="h-5 w-5 text-green-400"
               aria-hidden="true"

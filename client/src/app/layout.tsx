@@ -1,10 +1,11 @@
-import { auth } from "@/lib/auth/auth";
-import type { Metadata } from "next";
-import React from "react";
 import "./globals.css";
+import React from "react";
+import type { Metadata } from "next";
+import { auth } from "@/lib/auth/auth";
 import { Navbar } from "@/components/navbar";
-import { AIChat } from "@/components/support-widget/widget-toggle";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
+import { LayoutWrapper } from "@/app/layout-wrapper";
+import { AIChat } from "@/components/support-widget/widget-toggle";
 
 export const metadata: Metadata = {
   title: "Neylon AI",
@@ -26,9 +27,11 @@ export default function RootLayout({
     <html lang="en">
       <body cz-shortcut-listen="false">
         <NuqsAdapter>
-          <Navbar session={session} />
-          {children}
-          <AIChat session={session} />
+          <LayoutWrapper session={session}>
+            <Navbar />
+            {children}
+            <AIChat />
+          </LayoutWrapper>
         </NuqsAdapter>
       </body>
     </html>

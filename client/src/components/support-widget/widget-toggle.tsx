@@ -4,22 +4,18 @@ import React from "react";
 import { cn } from "@/lib/utils";
 import { ChevronRight, Sparkles } from "lucide-react";
 import { SupportWidget } from "@/components/support-widget/widget";
-import { useSupportWidgetToggleStore, useUserStore } from "@/store/store";
-import { SuccessAlert } from "@/components/success-alert";
-import { FailureAlert } from "@/components/failure-alert";
+import { useSupportWidgetToggleStore } from "@/store/store";
 import { useSearchParams } from "next/navigation";
-import { Session } from "next-auth";
 
-export function AIChat({ session }: { session: Session | null }) {
+export function AIChat() {
   const searchParams = useSearchParams();
   const loggedIn = searchParams.get("auth");
 
   const { isOpen, setIsOpen } = useSupportWidgetToggleStore();
 
-  const [message, setMessage] = React.useState<string | null>(null);
-  const [status, setStatus] = React.useState<
-    "error" | "saving" | "saved" | null
-  >(null);
+  React.useEffect(() => {
+    setIsOpen(true);
+  }, []);
 
   React.useEffect(() => {
     if (loggedIn === "false") setIsOpen(true);
@@ -27,11 +23,7 @@ export function AIChat({ session }: { session: Session | null }) {
 
   return (
     <div className="fixed bottom-3 right-3 sm:right-6 2xl:right-[max(1rem,calc((100vw-120rem)/2+2rem))] z-99 flex flex-col items-end">
-      <SupportWidget
-        setMessage={setMessage}
-        setStatus={setStatus}
-        session={session}
-      />
+      <SupportWidget />
 
       <button
         onClick={() => setIsOpen(!isOpen)}
@@ -53,23 +45,6 @@ export function AIChat({ session }: { session: Session | null }) {
           )}
         </div>
       </button>
-
-      {status === "saved" && message && (
-        <SuccessAlert
-          message={message}
-          duration={2000}
-          setStatus={setStatus}
-          setMessage={setMessage}
-        />
-      )}
-      {status === "error" && message && (
-        <FailureAlert
-          message={message}
-          duration={2000}
-          setStatus={setStatus}
-          setMessage={setMessage}
-        />
-      )}
     </div>
   );
 }

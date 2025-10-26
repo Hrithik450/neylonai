@@ -4,7 +4,7 @@ import NeylonAI from "@/assets/images/neylon.jpg";
 import { signInWithGoogle } from "@/actions/auth/sign-in";
 import { signOutAccount } from "@/actions/auth/sign-out";
 import { guminertBold, guminertRegular } from "@/assets/fonts";
-import { Link as ScrollLink, scroller } from "react-scroll";
+import { scroller } from "react-scroll";
 import { useRouter, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { LogOut, Menu, X } from "lucide-react";
@@ -15,6 +15,7 @@ import {
   useUserStore,
 } from "@/store/store";
 import { cn, NavItem, navLists } from "@/lib/utils";
+import { SessionContext } from "@/app/layout-wrapper";
 import { Session } from "next-auth";
 import Image from "next/image";
 import React from "react";
@@ -160,7 +161,9 @@ function AuthNavigations({
   );
 }
 
-export function Navbar({ session }: { session: Session | null }) {
+export function Navbar() {
+  const session = React.useContext(SessionContext);
+
   const [menuOpen, setMenuOpen] = React.useState<boolean>(false);
   const { setCurrentUserId } = useUserStore();
 

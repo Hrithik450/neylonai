@@ -7,8 +7,8 @@ import { ArrowDownRight, BadgeCheck, Cpu, Play } from "lucide-react";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import IphoneFrameImage from "@/assets/images/iphone-frame.png";
 import HeroImage from "@/assets/images/hero_background_3.jpg";
+import { SessionContext } from "@/app/layout-wrapper";
 import { Link as ScrollLink } from "react-scroll";
-import { Session } from "next-auth";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import {
@@ -16,8 +16,11 @@ import {
   useNavigationStore,
   useSupportWidgetToggleStore,
 } from "@/store/store";
+import React from "react";
 
-export function Hero2({ session }: { session: Session | null }) {
+export function Hero2() {
+  const session = React.useContext(SessionContext);
+
   const { setIsOpen } = useSupportWidgetToggleStore();
   const { switchTab } = useNavigationStore();
 
