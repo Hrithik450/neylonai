@@ -19,6 +19,7 @@ import { WigetContact } from "@/components/support-widget/tabs/widget-contact";
 import { WidgetAssistant } from "@/components/support-widget/tabs/widget-messages";
 import { WidgetLogin } from "@/components/support-widget/tabs/widget-screens/widget-login";
 import { WidgetSettings } from "@/components/support-widget/tabs/widget-settings";
+import { useSearchParams } from "next/navigation";
 
 export interface TabConfig {
   label: TabType;
@@ -63,6 +64,9 @@ export function SupportWidget({
   >;
   session: Session | null;
 }) {
+  const searchParams = useSearchParams();
+  const loggedIn = searchParams.get("auth");
+
   const [loading, setLoading] = React.useState<boolean>(false);
   const { isOpen, isCollapse } = useSupportWidgetToggleStore();
   const { setTokens, setRole, setAssistant } = useUserStore();
@@ -107,7 +111,7 @@ export function SupportWidget({
     };
 
     if (session && session.user && session.user.id) fetchUser(session.user.id);
-  }, [session, setTokens]);
+  }, [session]);
 
   // Initialize default screens
   React.useEffect(() => {
@@ -120,6 +124,11 @@ export function SupportWidget({
 
     setTabStacks(initialStacks);
   }, [setTabStacks]);
+
+  React.useEffect(() => {
+    if (loggedIn === "false")
+      pushScreen(TabType.Home, { component: WidgetLogin });
+  }, [loggedIn]);
 
   const handleTabChange = React.useCallback(
     (tab: TabType) => {
