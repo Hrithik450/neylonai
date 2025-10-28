@@ -7,60 +7,61 @@ Software Development Engineer
 April 2025 – Present
 Next.js Developer | Codedale
 India
-- Developed and scaled over 100 robust backend APIs using Next.js and TypeScript, enhancing system reliability for 100k users and reducing response time by 90%.
+- Built and maintained 100+ robust backend endpoints using TypeScript and Next.js, reducing API response time by 90% and improving system reliability for 100k users.
 - Designed and implemented PostgreSQL schemas and Drizzle ORM models handling 20K+ records, optimizing queries and reducing average database load by 60%.
-- Engineered 50+ end-to-end features, implementing secure authentication systems and robust data validation for over 10k active users.
+- Contributed to 50+ production features end-to-end, including API design, secure authentication, and data validation, supporting 10k+ active users.
 
 Founder & Lead Engineer
 Aug 2025 – Present
 Next.js And Django Developer | Neylon AI
 India
-- Founded Neylon AI, an AI agency delivering scalable full-stack solutions and intelligent automation to a diverse client base.
-- Architected and built a full-stack platform using a Django backend and Next.js frontend to deliver intelligent automation solutions to clients.
-- Engineered a scalable system capable of processing and querying 10GB+ datasets, ensuring high-performance data delivery to an interactive Next.js user interface.
+- Led full-stack development for Neylon AI, an AI agency delivering scalable AI assistants and agent-based solutions, serving diverse clients with intelligent automation.
+- Developed robust backend systems for AI agents using LangGraph, LangChain, and vector databases, implementing a RAG pipeline capable of efficiently handling 20K+ data records.
+- Engineered the platform to process and query 10GB+ datasets seamlessly using Django backend and Next.js frontend, ensuring high-performance AI workflows.
 
 UVCE College
 Sep 2024 – Aug 2024
 React.js And Node.js Developer
 Bengaluru, India
-- Developed a unified college website by merging two existing platforms, improving accessibility and user navigation for students and faculty.
-- Built an interactive and modern user interface using React.js and Styled Components, creating a dynamic frontend experience.
+- Developed a unified college website by merging two existing platforms, significantly improving accessibility and user navigation.
+- Utilized React.js and Styled Components to create a modern, dynamic, and interactive frontend experience.
 
 Projects
 
-CloudMetrics Dashboard | Next.js, Express.js, AWS, Docker
-- Designed and developed a full-stack cloud monitoring dashboard using Next.js for an interactive UI and Express.js for the backend API.
-- Integrated AWS CloudWatch APIs to visualize real-time infrastructure metrics, providing actionable insights.
-- Containerized the application using Docker and deployed it on AWS EC2, ensuring scalability and portability.
+CloudMetrics Dashboard | Next.js, Express.js, AWS
+View Live | GitHub
+- Designed and developed a cloud monitoring dashboard using Next.js and Express.js, providing interactive data visualization.
+- Integrated AWS CloudWatch APIs for real-time performance metrics and data aggregation.
+- Deployed the application using Docker on AWS EC2, ensuring scalable and reliable operation.
 
 AI-Powered Market Sentiment Analyzer | Python, React.js, VPS
 View Live | GitHub
-- Developed a full-stack sentiment analysis application that processes over 100,000 data points daily from crypto news, social media, and market trends.
+- Developed an AI-driven sentiment analysis tool that gathers 100,000+ data points daily from crypto news, social media, and market trends.
 - Integrated Natural Language Processing (NLP) using VADER, achieving 85%+ accuracy in sentiment classification (bullish / bearish).
 - Built a scalable backend with Flask, handling 500+ API requests per second while fetching data from RSS feeds, Twitter API’s and crypto forums.
 - Potential Impact: Help traders reduce decision-making time by 30%, improving trade success rates based on sentiment analysis.
 
 MERN Launcher – Automation for MERN Stack Setup | bash, node.js
 View Live | GitHub
-- Developed a CLI tool to automate the setup of a complete MERN (MongoDB, Express.js, React.js, Node.js) stack application with a single command.
-- Streamlined the creation of boilerplate code, including frontend/backend dependencies and secure authentication modules.
+- Developed an automation tool that streamlines the setup of a fully functional MERN (MongoDB, Express.js, React.js, Node.js) stack with a single command.
+- Automated the installation of critical frontend and backend dependencies, including React Router, Redux, Express, Mongoose, and secure authentication modules.
 - Potential impact: Reduces setup time from hours to minutes, enabling developers to kickstart MERN projects with minimal effort.
 
 Feature-Rich eCommerce Platform | React.js, Firebase, Express.js, node.js
 View Live | GitHub
-- Engineered a full-stack eCommerce platform featuring an interactive UI built with React and Styled Components.
-- Implemented a secure OAuth authentication system (Google, Facebook) to ensure seamless and safe user access.
-- Integrated Razorpay for secure payment processing and Firebase for dynamic product management.
+- Engineered a full-stack eCommerce website with modern UI/UX using React and Styled Components.
+- Implemented OAuth authentication (Google, Facebook) for seamless and secure user access.
+- Integrated Razorpay for secure payment processing and Firebase for dynamic product management and backend services.
 
 Technical Skills
 
 Frontend: React.js, Next.js, Tailwind CSS.
-Backend: Node.js, Express.js, Django, FastAPI, Postman API, Websockets, REST API’s.
-Databases: MongoDB, PostgreSQL.
-Cloud: AWS, Google Cloud Platform, Firebase, Docker.
-Languages: JavaScript, Python, C++.
 AI Frameworks: Langchain, Langgraph, Chroma DB, Open AI, Google Gemini.
-Tools: Git, GitHub, Vercel, Render, Figma, Cloud Run.
+Backend: Django, FastAPI, Express.js, Node.js, Postman API, Websockets, REST API’s.
+Databases: MongoDB, PostgreSQL.
+Cloud: Google Cloud Platform, Firebase, AWS.
+Languages: Python, JavaScript, C++.
+Tools: Git, GitHub, Vercel, Render, VPS, Figma, Cloud Run, Docker.
 
 Education
 
