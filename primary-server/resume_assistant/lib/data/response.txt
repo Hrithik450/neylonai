@@ -1,5 +1,5 @@
 Hruthik M
-+91 7483229386 | mhrithik450@gmail.com | LinkedIn | GitHub
++91 7483229386 | mhrithik450@gmail.com | https://www.linkedin.com/in/hruthik-m-3595a0329?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app | https://github.com/Hrithik450
 
 Experience
 
@@ -15,51 +15,50 @@ Founder & Lead Engineer
 Aug 2025 – Present
 Next.js And Django Developer | Neylon AI
 India
-- Led full-stack development for Neylon AI, an AI agency delivering scalable AI assistants and agent-based solutions, serving diverse clients with intelligent automation.
-- Developed robust backend systems for AI agents using LangGraph, LangChain, and vector databases, implementing a RAG pipeline capable of efficiently handling 20K+ data records.
-- Engineered the platform to process and query 10GB+ datasets seamlessly using Django backend and Next.js frontend, ensuring high-performance AI workflows.
+- Founded Neylon AI, an AI agency delivering scalable AI assistants and agent-based solutions, serving diverse clients with intelligent automation.
+- Developed AI agents using LangGraph, LangChain, and vector databases, implementing a RAG pipeline capable of handling 20K+ data records efficiently.
+- Engineered the platform to process and query 10GB+ datasets seamlessly using Django backend and Next.js frontend, ensuring high-performance AI workflows and interactive UIs.
 
 UVCE College
 Sep 2024 – Aug 2024
 React.js And Node.js Developer
 Bengaluru, India
-- Developed a unified college website by merging two existing platforms, significantly improving accessibility and user navigation.
-- Utilized React.js and Styled Components to create a modern, dynamic, and interactive frontend experience.
+- Developed a college website by merging two existing websites into a unified platform, improving accessibility and user navigation.
+- Utilized React.js and Styled Components for a modern and dynamic frontend experience, enhancing interactive UIs.
 
 Projects
 
-CloudMetrics Dashboard | Next.js, Express.js, AWS
-View Live | GitHub
-- Designed and developed a cloud monitoring dashboard using Next.js and Express.js, providing interactive data visualization.
-- Integrated AWS CloudWatch APIs for real-time performance metrics and data aggregation.
-- Deployed the application using Docker on AWS EC2, ensuring scalable and reliable operation.
-
-AI-Powered Market Sentiment Analyzer | Python, React.js, VPS
-View Live | GitHub
-- Developed an AI-driven sentiment analysis tool that gathers 100,000+ data points daily from crypto news, social media, and market trends.
+AI-Powered Market Sentiment Analyzer | Python , React.js, VPS
+https://analyzer.anox.store/ | https://github.com/Hrithik450/SentimentAnalyzer
+- Developed an AI-driven sentiment analysis tool that gathers 100,000+ data points daily from crypto news, social media posts, and market trends.
 - Integrated Natural Language Processing (NLP) using VADER, achieving 85%+ accuracy in sentiment classification (bullish / bearish).
 - Built a scalable backend with Flask, handling 500+ API requests per second while fetching data from RSS feeds, Twitter API’s and crypto forums.
 - Potential Impact: Help traders reduce decision-making time by 30%, improving trade success rates based on sentiment analysis.
 
 MERN Launcher – Automation for MERN Stack Setup | bash, node.js
-View Live | GitHub
+https://www.npmjs.com/package/mern-launcher | https://github.com/Hrithik450/mern-launcher
 - Developed an automation tool that streamlines the setup of a fully functional MERN (MongoDB, Express.js, React.js, Node.js) stack with a single command.
-- Automated the installation of critical frontend and backend dependencies, including React Router, Redux, Express, Mongoose, and secure authentication modules.
+- Automated the installation of frontend and backend dependencies, including React Router, Redux, Express, Mongoose, and authentication modules.
 - Potential impact: Reduces setup time from hours to minutes, enabling developers to kickstart MERN projects with minimal effort.
 
 Feature-Rich eCommerce Platform | React.js, Firebase, Express.js, node.js
-View Live | GitHub
+https://anox.store/ | https://github.com/Hrithik450/Ecommerce
 - Engineered a full-stack eCommerce website with modern UI/UX using React and Styled Components.
-- Implemented OAuth authentication (Google, Facebook) for seamless and secure user access.
-- Integrated Razorpay for secure payment processing and Firebase for dynamic product management and backend services.
+- Implemented OAuth authentication (Google, Facebook) for seamless user access and secure login.
+- Integrated Razorpay for secure payment processing and Firebase for dynamic product management.
+
+CloudMetrics Dashboard | Next.js, Express, Docker, AWS CloudWatch, AWS EC2
+- Designed and developed a cloud monitoring dashboard using Next.js for interactive UIs and Express for robust backend APIs.
+- Integrated AWS CloudWatch APIs for real-time data visualization and performance metrics.
+- Deployed the full-stack application using Docker on AWS EC2, ensuring scalability and reliability.
 
 Technical Skills
 
 Frontend: React.js, Next.js, Tailwind CSS.
 AI Frameworks: Langchain, Langgraph, Chroma DB, Open AI, Google Gemini.
-Backend: Django, FastAPI, Express.js, Node.js, Postman API, Websockets, REST API’s.
+Backend: Django, FastAPI , Express.js, Node.js, Postman API, Websockets, REST API’s.
 Databases: MongoDB, PostgreSQL.
-Cloud: Google Cloud Platform, Firebase, AWS.
+Cloud: Google Cloud Platform, Firebase, AWS (CloudWatch, EC2).
 Languages: Python, JavaScript, C++.
 Tools: Git, GitHub, Vercel, Render, VPS, Figma, Cloud Run, Docker.
 
