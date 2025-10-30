@@ -14,7 +14,7 @@ export function ConversationUI({
 }: {
   conversations?: NewMessage[];
 }) {
-  const { isAssistantTyping } = useAssistantStore();
+  const { assistantTyping } = useAssistantStore();
 
   // Auto Scroll to bottom on new message
   const scrollRef = React.useRef<HTMLDivElement>(null);
@@ -39,7 +39,7 @@ export function ConversationUI({
 
   React.useEffect(() => {
     if (!userScrolledUp) scrollToBottom(true);
-  }, [conversations, isAssistantTyping, userScrolledUp]);
+  }, [conversations, assistantTyping, userScrolledUp]);
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -152,8 +152,7 @@ export function ConversationUI({
           </div>
         ))}
 
-      <DynamicAssistantTyping isAssistantTyping={isAssistantTyping} />
-
+      {assistantTyping && <DynamicAssistantTyping />}
       {showScrollButton && (
         <div className="sticky bottom-3 z-199 w-full flex justify-center items-center px-2 pr-3">
           <button

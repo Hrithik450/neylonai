@@ -5,6 +5,7 @@ import {
   Message,
   NewMessage,
 } from "@/actions/thread_messages/thread_messages.types";
+import { messageSets } from "@/lib/constants";
 
 export enum TabType {
   Home = "Home",
@@ -95,8 +96,10 @@ interface InputStore {
 }
 
 interface AssistantStore {
-  isAssistantTyping: boolean;
-  setIsAssistantTyping: (value: boolean) => void;
+  assistantTyping: boolean;
+  thinkingPhase: keyof typeof messageSets;
+  setAssistantTyping: (value: boolean) => void;
+  setThinkingPhase: (value: keyof typeof messageSets) => void;
 }
 
 interface ErrorStore {
@@ -218,6 +221,8 @@ export const useUserStore = create<UserStore>((set) => ({
 }));
 
 export const useAssistantStore = create<AssistantStore>((set) => ({
-  isAssistantTyping: false,
-  setIsAssistantTyping: (value) => set({ isAssistantTyping: value }),
+  assistantTyping: false,
+  thinkingPhase: "default",
+  setThinkingPhase: (value) => set({ thinkingPhase: value }),
+  setAssistantTyping: (value) => set({ assistantTyping: value }),
 }));

@@ -1,35 +1,34 @@
+"use client";
+
 import React from "react";
 import { Brain } from "lucide-react";
 import { messageSets } from "@/lib/constants";
+import { useAssistantStore } from "@/store/store";
 
-export function DynamicAssistantTyping({
-  isAssistantTyping,
-  depth = 1,
-  speed = 3000,
-}: {
-  isAssistantTyping: boolean;
-  depth?: number;
-  speed?: number;
-}) {
+export function DynamicAssistantTyping({ speed = 2000 }: { speed?: number }) {
+  const { thinkingPhase, assistantTyping } = useAssistantStore();
+
+  const [thoughts, setThoughts] = React.useState<string[]>(messageSets.default);
   const [msgIndex, setMsgIndex] = React.useState<number>(0);
 
-  const level = Math.min(Math.max(depth, 1), 4) as keyof typeof messageSets;
-  const baseMessages = messageSets[level];
+  React.useEffect(() => {
+    const newThoughts =
+      messageSets[thinkingPhase as keyof typeof messageSets] ||
+      messageSets.default;
+
+    setThoughts(newThoughts);
+    setMsgIndex(0);
+  }, [thinkingPhase]);
 
   React.useEffect(() => {
-    if (isAssistantTyping) setMsgIndex(0);
-  }, [isAssistantTyping]);
-
-  React.useEffect(() => {
-    if (!isAssistantTyping) return;
+    if (!assistantTyping) return;
 
     const timer = setInterval(() => {
-      setMsgIndex((i) => (i + 1) % baseMessages.length);
+      setMsgIndex((i) => (i + 1) % thoughts.length);
     }, speed);
-    return () => clearInterval(timer);
-  }, [isAssistantTyping, baseMessages, speed]);
 
-  if (!isAssistantTyping) return null;
+    return () => clearInterval(timer);
+  }, [assistantTyping, thoughts]);
 
   return (
     <div
@@ -52,7 +51,7 @@ export function DynamicAssistantTyping({
 
         <div className="flex-1">
           <span className="text-sm md:text-base text-gray-800 font-medium">
-            {baseMessages[msgIndex]}
+            {thoughts[msgIndex]}
           </span>
         </div>
       </div>
