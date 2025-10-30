@@ -46,6 +46,7 @@ class GenerateResumeUtils:
     
     @staticmethod
     def extract_resume(file: File) -> Dict[str, List[str]]:
+        print(file)
         pdf_reader = PdfReader(BytesIO(file.read()))
         text = ""
         links = set()
@@ -58,7 +59,7 @@ class GenerateResumeUtils:
                     annot = annot_ref.get_object()
                     if annot.get("/A") and annot["/A"].get("/URI"):
                         links.add(annot["/A"]["/URI"])
-        return {"resume": text.strip(), "links": List(links)}
+        return {"resume": text.strip(), "links": list(links)}
 
 class GenerateResumeService:
 
@@ -116,9 +117,10 @@ class GenerateResumeView(APIView):
             classified_state = cls.resume_service.classification_node(state)
             user_input_message = next((msg for msg in reversed(state['messages']) if isinstance(msg, HumanMessage)), None)
             intent = classified_state['messages'][-1].content.strip().lower()
+            print(classified_state)
             
             if "adapt" in intent:
-                yield f"event: thinkingPhase\ndata: {json.dumps({"thinking": "true", "thinkingPhase": "resume_build"})}"
+                yield f"event: thinkingPhase<|EVENT_BREAK|>data: {json.dumps({"thinking": "true", "thinkingPhase": "resume_build"})}<|END_OF_EVENT|>"
                 resume_tool_message = next((msg for msg in state['messages'] if isinstance(msg, ToolMessage) and getattr(msg, "tool_call_id", "") == "uploaded_resume"), None)
                 if not resume_tool_message:
                     yield f"event: error\ndata: ⚠️ No uploaded resume found. Please upload a resume file to proceed."
@@ -137,7 +139,7 @@ class GenerateResumeView(APIView):
                 yield f"event: done<|EVENT_BREAK|>data: done<|END_OF_EVENT|>"
 
             elif "ats" in intent:
-                yield f"event: thinking<|EVENT_BREAK|>data: {json.dumps({"thinking": "true", "thinkingPhase": "ats_optimization"})}<|END_OF_EVENT|>"
+                yield f"event: thinkingPhase<|EVENT_BREAK|>data: {json.dumps({"thinking": "true", "thinkingPhase": "ats_optimization"})}<|END_OF_EVENT|>"
                 yield f"event: done<|EVENT_BREAK|>data: done<|END_OF_EVENT|>"
 
             else:
@@ -175,13 +177,15 @@ class GenerateResumeView(APIView):
                 
                 if not self.utils.is_resume(file, self.RESUME_KEYWORDS):
                     return Response({"success": False, "error": "Uploaded file does not appear to be a valid resume", "details": traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
-
+                
                 file_name = default_storage.save(f"resumes/{file.name}", ContentFile(file.read()))
                 file_path = os.path.join(default_storage.location, file_name)
                 abs_file_path = os.path.abspath(file_path)
+                file.seek(0)
 
                 resume_content = self.utils.extract_resume(file)
                 self.state["messages"].append(ToolMessage(tool_call_id="uploaded_resume", content=json.dumps(resume_content)))
+                print(self.state)
 
                 delete_time = timezone.now() + timedelta(days=2)
                 self.scheduler.add_job(self.utils.delete_file, 'date', run_date=delete_time, args=[abs_file_path])

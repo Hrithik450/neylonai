@@ -46,6 +46,7 @@ interface ThreadMessageStore {
 export const assistantEnum = [
   "internal_assistant",
   "customer_service_assistant",
+  "resume_assistant",
 ] as const;
 
 export const roleEnum = [
@@ -58,6 +59,7 @@ export const roleEnum = [
 export const AssistantDisplayMap: Record<AssistantKey, string> = {
   internal_assistant: "Internal Assistant",
   customer_service_assistant: "Customer Service Assistant",
+  resume_assistant: "Resume Assistant",
 };
 
 export const RoleDisplayMap: Record<RoleKey, string> = {
@@ -69,7 +71,7 @@ export const RoleDisplayMap: Record<RoleKey, string> = {
 
 export const RoleAssistantMap: Record<RoleKey, AssistantKey[]> = {
   business_owner: ["customer_service_assistant"],
-  student: ["internal_assistant"],
+  student: ["internal_assistant", "resume_assistant"],
   explorer: ["internal_assistant", "customer_service_assistant"],
   admin: ["internal_assistant"],
 };
@@ -89,9 +91,11 @@ interface UserStore {
 }
 
 interface InputStore {
+  file: File | null;
   input: string;
   setInput: (value: string) => void;
   disableInput: boolean;
+  setFile: (file: File | null) => void;
   setDisableInput: (value: boolean) => void;
 }
 
@@ -204,8 +208,10 @@ export const useErrorStore = create<ErrorStore>((set) => ({
 
 export const useInputStore = create<InputStore>((set) => ({
   input: "",
+  file: null,
   setInput: (value) => set({ input: value }),
   disableInput: false,
+  setFile: (file) => set({ file: file }),
   setDisableInput: (value) => set({ disableInput: value }),
 }));
 

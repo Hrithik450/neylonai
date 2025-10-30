@@ -105,6 +105,7 @@ export const roleEnum = pgEnum("role", [
 export const assistantEnum = pgEnum("assistant", [
   "internal_assistant",
   "customer_service_assistant",
+  "resume_assistant",
 ]);
 
 export const user = pgTable(

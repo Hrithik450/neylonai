@@ -95,8 +95,8 @@ class InternalAssistantView(APIView):
                         payload = json.dumps(thread_response.data.model_dump())
                         yield f"event: threadCreated<|EVENT_BREAK|>data: {payload}<|END_OF_EVENT|>"
             
-            # --- Stream assistant response by iterating agent events            
-            async for event in events_iter:                
+            # --- Stream assistant response by iterating agent events    
+            async for event in events_iter:
                 if event["event"] == "on_chat_model_stream" and event["name"] == "ChatGoogleGenerativeAI" and event["metadata"]["langgraph_node"] == "call_model":
                     print(event)
                     if "data" in event and "chunk" in event["data"]:

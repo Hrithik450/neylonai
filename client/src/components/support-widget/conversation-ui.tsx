@@ -4,8 +4,8 @@ import React from "react";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
 import ReactMarkdown from "react-markdown";
-import { useAssistantStore } from "@/store/store";
-import { ChevronsDown, Copy } from "lucide-react";
+import { useAssistantStore, useInputStore } from "@/store/store";
+import { ChevronsDown, Copy, FileText } from "lucide-react";
 import { NewMessage } from "@/actions/thread_messages/thread_messages.types";
 import { DynamicAssistantTyping } from "@/components/support-widget/assistant-typing";
 
@@ -15,6 +15,7 @@ export function ConversationUI({
   conversations?: NewMessage[];
 }) {
   const { assistantTyping } = useAssistantStore();
+  const { file } = useInputStore();
 
   // Auto Scroll to bottom on new message
   const scrollRef = React.useRef<HTMLDivElement>(null);
@@ -56,10 +57,10 @@ export function ConversationUI({
         conversations.map((conversation, index) => (
           <div
             key={index}
-            className={`p-3 md:p-4 text-sm md:text-base rounded-xl ${
+            className={`text-sm md:text-base rounded-xl ${
               conversation.role === "user"
-                ? "bg-zinc-200/90 ml-auto max-w-[80%] border border-black/40"
-                : "max-w-[90%] md:max-w-full"
+                ? "bg-zinc-200/90 p-3 ml-auto max-w-[80%] border border-black/40"
+                : "p-3 md:p-4 max-w-[90%] md:max-w-full"
             }`}
           >
             {conversation.role === "assistant" ? (
@@ -135,7 +136,37 @@ export function ConversationUI({
                 </ReactMarkdown>
               </div>
             ) : (
-              <p>{conversation.content}</p>
+              <div className="flex flex-col gap-1">
+                {file && (
+                  <div className="flex items-center gap-3 p-2 bg-white/40 border border-black/20 rounded-xl transition-all duration-200">
+                    <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-red-50">
+                      <FileText className="w-5 h-5 text-red-500" />
+                    </div>
+
+                    <div className="flex flex-col">
+                      <span className="text-sm font-semibold text-zinc-800 truncate max-w-max">
+                        {file.name}
+                      </span>
+                      <span className="text-xs text-zinc-500">
+                        PDF Document
+                      </span>
+                    </div>
+
+                    <a
+                      href={URL.createObjectURL(file)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="ml-auto text-sm font-medium text-blue-600 hover:underline"
+                    >
+                      View
+                    </a>
+                  </div>
+                )}
+
+                <p className="text-base leading-relaxed px-2">
+                  {conversation.content}
+                </p>
+              </div>
             )}
 
             {conversation.role === "assistant" && (

@@ -16,6 +16,9 @@ export function ChatInputTextarea({
 
   return (
     <PromptInputTextarea
+      className="px-2"
+      placeholder={placeholder}
+      disabled={disabled || disableInput}
       onKeyDown={(e) => {
         if (e.key === "Enter" && !e.shiftKey) {
           e.preventDefault();
@@ -24,8 +27,6 @@ export function ChatInputTextarea({
           }
         }
       }}
-      placeholder={placeholder}
-      disabled={disabled || disableInput}
     />
   );
 }

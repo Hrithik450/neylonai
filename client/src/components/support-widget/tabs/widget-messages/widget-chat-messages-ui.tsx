@@ -44,11 +44,12 @@ export function WidgetChatThreadUI({
   const [loading, setLoading] = React.useState<boolean>(false);
   const [limitReached, setLimitReached] = React.useState(false);
 
-  const { currentUserId, tokens, setTokens } = useUserStore();
+  const { currentUserId, tokens, setTokens, assistant } = useUserStore();
   const { currentThreadId, setCurrentThreadId, setThreads } = useThreadStore();
   const { messages, updateMessage, setMessages } = useThreadMessageStore();
   const { input, setInput, setDisableInput } = useInputStore();
   const { setAssistantTyping, setThinkingPhase } = useAssistantStore();
+  const { file } = useInputStore();
 
   React.useEffect(() => {
     const fetchThreadMessages = async () => {
@@ -114,32 +115,58 @@ export function WidgetChatThreadUI({
     setAssistantTyping(true);
 
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/internal-assistant/api/v1/text-generation/`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userMessage: input,
-            threadId: currentThreadId,
-            senderId: currentUserId,
-          }),
-        }
-      );
+      let response: Response | null = null;
 
-      // const response = await fetch(
-      //   `http://127.0.0.1:8000/resume-assistant/api/v1/generate-resume/`,
-      //   {
-      //     method: "POST",
-      //     headers: { "Content-Type": "application/json" },
-      //     body: JSON.stringify({
-      //       userMessage: input,
-      //     }),
-      //   }
-      // );
+      switch (assistant) {
+        case "customer_service_assistant":
+        case "internal_assistant":
+          response = await fetch(
+            `${process.env.NEXT_PUBLIC_BACKEND_URL}/internal-assistant/api/v1/text-generation/`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                userMessage: input,
+                threadId: currentThreadId,
+                senderId: currentUserId,
+              }),
+            }
+          );
+          break;
 
-      if (!response.ok || !response.body) throw new Error("No response stream");
+        case "resume_assistant":
+          const formData = new FormData();
+          formData.append("userMessage", input);
+          // formData.append("senderId", currentUserId);
+          // currentThreadId !== null
+          //   ? formData.append("threadId", currentThreadId)
+          //   : formData.append(
+          //       "threadId",
+          //       new Blob([JSON.stringify(null)], { type: "application/json" })
+          //     );
+          if (file) formData.append("file", file);
 
+          response = await fetch(
+            `${process.env.NEXT_PUBLIC_BACKEND_URL}/resume-assistant/api/v1/generate-resume/`,
+            {
+              method: "POST",
+              body: formData,
+            }
+          );
+          break;
+      }
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        setAssistantTyping(false);
+        setStatus("error");
+        setMessage(
+          errorData?.error || "An unexpected error occurred. Please try again."
+        );
+        return;
+      }
+
+      if (!response.body) throw new Error("No response stream");
       const reader = response.body.getReader();
       const decoder = new TextDecoder("utf-8");
       let accumulatedText = "";

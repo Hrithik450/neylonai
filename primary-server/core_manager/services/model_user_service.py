@@ -13,7 +13,7 @@ class UserFormat(BaseModel):
     image: Optional[str] = None
     daily_limit: int
     created_at: str
-    assistant: Literal["internal_assistant", "customer_service_assistant"] = "internal_assistant"
+    assistant: Literal["internal_assistant", "customer_service_assistant", "resume_assistant"] = "internal_assistant"
     role: Literal["business_owner", "student", "explorer", "admin"] = "explorer"
 
 class UserResponse(BaseModel):
