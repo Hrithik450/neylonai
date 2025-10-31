@@ -86,13 +86,13 @@ export function SuggestionBar() {
   }, [input]);
 
   return (
-    <div className="flex items-center w-full space-x-1 rounded-full px-1">
+    <div className="flex items-center w-full space-x-1 rounded-full">
       <div ref={scrollRef} className="flex-1 scrollbar-hide overflow-x-auto">
         <div className="flex space-x-1">
           {filterSuggestions.map((suggestion, idx) => (
             <button
               key={idx}
-              className="shrink-0 px-3 py-0.25 text-sm border border-gray-400 bg-gray-100 hover:bg-gray-100/80 text-black hover:cursor-pointer rounded-full shadow-sm transition-colors"
+              className="shrink-0 px-3 py-px text-sm border border-gray-400 bg-gray-100 hover:bg-gray-100/80 text-black hover:cursor-pointer rounded-full shadow-sm transition-colors"
               onClick={() => setInput(suggestion)}
             >
               {suggestion}

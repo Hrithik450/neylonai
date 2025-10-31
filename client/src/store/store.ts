@@ -5,6 +5,7 @@ import {
   Message,
   NewMessage,
 } from "@/actions/thread_messages/thread_messages.types";
+import { messageSets } from "@/lib/constants";
 
 export enum TabType {
   Home = "Home",
@@ -45,6 +46,7 @@ interface ThreadMessageStore {
 export const assistantEnum = [
   "internal_assistant",
   "customer_service_assistant",
+  "resume_assistant",
 ] as const;
 
 export const roleEnum = [
@@ -57,6 +59,7 @@ export const roleEnum = [
 export const AssistantDisplayMap: Record<AssistantKey, string> = {
   internal_assistant: "Internal Assistant",
   customer_service_assistant: "Customer Service Assistant",
+  resume_assistant: "Resume Assistant",
 };
 
 export const RoleDisplayMap: Record<RoleKey, string> = {
@@ -68,7 +71,7 @@ export const RoleDisplayMap: Record<RoleKey, string> = {
 
 export const RoleAssistantMap: Record<RoleKey, AssistantKey[]> = {
   business_owner: ["customer_service_assistant"],
-  student: ["internal_assistant"],
+  student: ["internal_assistant", "resume_assistant"],
   explorer: ["internal_assistant", "customer_service_assistant"],
   admin: ["internal_assistant"],
 };
@@ -88,15 +91,19 @@ interface UserStore {
 }
 
 interface InputStore {
+  file: File | null;
   input: string;
   setInput: (value: string) => void;
   disableInput: boolean;
+  setFile: (file: File | null) => void;
   setDisableInput: (value: boolean) => void;
 }
 
 interface AssistantStore {
-  isAssistantTyping: boolean;
-  setIsAssistantTyping: (value: boolean) => void;
+  assistantTyping: boolean;
+  thinkingPhase: keyof typeof messageSets;
+  setAssistantTyping: (value: boolean) => void;
+  setThinkingPhase: (value: keyof typeof messageSets) => void;
 }
 
 interface ErrorStore {
@@ -201,8 +208,10 @@ export const useErrorStore = create<ErrorStore>((set) => ({
 
 export const useInputStore = create<InputStore>((set) => ({
   input: "",
+  file: null,
   setInput: (value) => set({ input: value }),
   disableInput: false,
+  setFile: (file) => set({ file: file }),
   setDisableInput: (value) => set({ disableInput: value }),
 }));
 
@@ -218,6 +227,8 @@ export const useUserStore = create<UserStore>((set) => ({
 }));
 
 export const useAssistantStore = create<AssistantStore>((set) => ({
-  isAssistantTyping: false,
-  setIsAssistantTyping: (value) => set({ isAssistantTyping: value }),
+  assistantTyping: false,
+  thinkingPhase: "default",
+  setThinkingPhase: (value) => set({ thinkingPhase: value }),
+  setAssistantTyping: (value) => set({ assistantTyping: value }),
 }));

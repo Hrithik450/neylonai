@@ -19,6 +19,7 @@ import { MessagesResponse } from "@/actions/thread_messages/thread_messages.type
 import { Skeleton } from "@/components/ui/skeleton";
 import { Session } from "next-auth";
 import { ClassicLoader } from "@/components/classic-loader";
+import { messageSets } from "@/lib/constants";
 
 interface WidgetChatUIProps {
   id: string;
@@ -43,11 +44,12 @@ export function WidgetChatThreadUI({
   const [loading, setLoading] = React.useState<boolean>(false);
   const [limitReached, setLimitReached] = React.useState(false);
 
-  const { currentUserId, tokens, setTokens } = useUserStore();
+  const { currentUserId, tokens, setTokens, assistant } = useUserStore();
   const { currentThreadId, setCurrentThreadId, setThreads } = useThreadStore();
   const { messages, updateMessage, setMessages } = useThreadMessageStore();
   const { input, setInput, setDisableInput } = useInputStore();
-  const { setIsAssistantTyping } = useAssistantStore();
+  const { setAssistantTyping, setThinkingPhase } = useAssistantStore();
+  const { file } = useInputStore();
 
   React.useEffect(() => {
     const fetchThreadMessages = async () => {
@@ -110,107 +112,154 @@ export function WidgetChatThreadUI({
 
     setInput("");
     setDisableInput(true);
-    setIsAssistantTyping(true);
-
-    if (!process.env.NEXT_PUBLIC_BACKEND_URL) return;
+    setAssistantTyping(true);
 
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/internal-assistant/api/v1/text-generation/`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userMessage: input,
-            threadId: currentThreadId,
-            senderId: currentUserId,
-          }),
-        }
-      );
+      let response: Response | null = null;
 
-      if (!response.ok || !response.body) throw new Error("No response stream");
+      switch (assistant) {
+        case "customer_service_assistant":
+        case "internal_assistant":
+          response = await fetch(
+            `${process.env.NEXT_PUBLIC_BACKEND_URL}/internal-assistant/api/v1/text-generation/`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                userMessage: input,
+                threadId: currentThreadId,
+                senderId: currentUserId,
+              }),
+            }
+          );
+          break;
 
+        case "resume_assistant":
+          const formData = new FormData();
+          formData.append("userMessage", input);
+          // formData.append("senderId", currentUserId);
+          // currentThreadId !== null
+          //   ? formData.append("threadId", currentThreadId)
+          //   : formData.append(
+          //       "threadId",
+          //       new Blob([JSON.stringify(null)], { type: "application/json" })
+          //     );
+          if (file) formData.append("file", file);
+
+          response = await fetch(
+            `${process.env.NEXT_PUBLIC_BACKEND_URL}/resume-assistant/api/v1/generate-resume/`,
+            {
+              method: "POST",
+              body: formData,
+            }
+          );
+          break;
+      }
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        setAssistantTyping(false);
+        setStatus("error");
+        setMessage(
+          errorData?.error || "An unexpected error occurred. Please try again."
+        );
+        return;
+      }
+
+      if (!response.body) throw new Error("No response stream");
       const reader = response.body.getReader();
       const decoder = new TextDecoder("utf-8");
+      let accumulatedText = "";
+      let pendingBuffer = "";
 
-      let buffer = "";
       while (true) {
         const { value, done } = await reader.read();
         if (done) break;
 
-        buffer += decoder.decode(value, { stream: true });
-        const events = buffer.split("\n\n");
+        const buffer = decoder.decode(value, { stream: true });
+        const events = buffer.split("<|END_OF_EVENT|>");
 
-        for (const event of events) {
-          if (!event.trim()) continue;
+        if (events[0].startsWith("event: ")) {
+          const dataLines = events[0].split("<|EVENT_BREAK|>");
+          const eventType = dataLines[0].replace(/^event:\s?/, "");
+          const dataValue = dataLines[1].replace(/^data:\s?/, "");
 
-          if (event.startsWith("event: ")) {
-            const [eventLine, dataLine] = event.split("\n");
-            const eventType = eventLine.replace("event: ", "").trim();
-            const data = dataLine.replace("data: ", "").trim();
+          switch (eventType) {
+            case "threadCreated":
+              const thread: Thread = JSON.parse(dataValue);
+              if (thread) setThreads(thread);
+              if (thread.id) setCurrentThreadId(thread.id);
+              break;
 
-            switch (eventType) {
-              case "threadCreated":
-                const thread: Thread = JSON.parse(data);
-                if (thread) setThreads(thread);
-                if (thread.id) setCurrentThreadId(thread.id);
-                break;
+            case "tokensUpdated":
+              const user = JSON.parse(dataValue);
+              if (user) setTokens(user.daily_limit);
+              break;
 
-              case "tokensUpdated":
-                const user = JSON.parse(data);
-                if (user) setTokens(user.daily_limit);
-                break;
+            case "thinkingPhase":
+              const thinking: {
+                thinking: string;
+                thinkingPhase: keyof typeof messageSets;
+              } = JSON.parse(dataValue);
+              setAssistantTyping(thinking.thinking === "true");
+              setThinkingPhase(thinking.thinkingPhase);
+              break;
 
-              case "assistantTyping":
-                setIsAssistantTyping(data === "true" ? true : false);
-                break;
+            case "assistantResponse":
+              setAssistantTyping(false);
+              pendingBuffer += dataValue;
 
-              case "assistantResponseCompleted":
-                setIsAssistantTyping(false);
-                const { assistantResponse } = JSON.parse(data);
+              const doubleStarMatches = (pendingBuffer.match(/\*\*/g) || [])
+                .length;
+              const hasUnclosedBold = doubleStarMatches % 2 !== 0;
+
+              if (!hasUnclosedBold) {
+                accumulatedText += pendingBuffer;
+                pendingBuffer = "";
 
                 updateMessage((prev) => {
                   if (!prev || prev.length === 0)
                     return [
                       {
                         role: "assistant",
-                        content: assistantResponse,
-                        threadId: id,
+                        content: accumulatedText,
+                        threadId: currentThreadId as string,
                       },
+                    ];
+
+                  const last = prev[prev.length - 1];
+                  if (last.role === "assistant")
+                    return [
+                      ...prev.slice(0, -1),
+                      { ...last, content: accumulatedText },
                     ];
 
                   return [
                     ...prev,
                     {
                       role: "assistant",
-                      content: assistantResponse,
-                      threadId: id,
+                      content: accumulatedText,
+                      threadId: currentThreadId as string,
                     },
                   ];
                 });
-                break;
+              }
 
-              case "done":
-                setDisableInput(false);
-                break;
+            case "done":
+              setDisableInput(false);
+              break;
 
-              case "error":
-                console.error("SSE error", data);
-                setDisableInput(false);
-                break;
-            }
-          } else if (event.startsWith("data: ")) {
-            // setIsAssistantTyping(false);
-            // const chunk = event.replace(/^data:\s?/, "");
+            case "error":
+              console.error("SSE error", dataValue);
+              setDisableInput(false);
+              break;
           }
         }
-
-        buffer = "";
       }
     } catch (error) {
       console.error("Streaming fetch error", error);
       setDisableInput(false);
-      setIsAssistantTyping(false);
+      setAssistantTyping(false);
     }
   };
 
