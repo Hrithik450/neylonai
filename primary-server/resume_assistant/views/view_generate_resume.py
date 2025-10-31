@@ -1,4 +1,4 @@
-from ..lib.utils import RESUME_EXTRACTOR_PROMPT, RESUME_SYSTEM_PROMPT, GENERAL_SYSTEM_PROMPT
+from ..lib.utils import RESUME_EXTRACTOR_PROMPT, RESUME_SYSTEM_PROMPT, GENERAL_SYSTEM_PROMPT, parse_json, build_resume, test_resume_data
 from langchain_core.messages import ToolMessage, HumanMessage, SystemMessage, AIMessage
 from apscheduler.schedulers.background import BackgroundScheduler
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -20,6 +20,7 @@ from typing import List, Dict
 from PyPDF2 import PdfReader
 from io import BytesIO
 import traceback
+import tempfile
 import pytz
 import json
 import os
@@ -110,14 +111,13 @@ class GenerateResumeView(APIView):
 
     resume_service = GenerateResumeService()
     today_date = datetime.now(pytz.timezone("Asia/Kolkata")).strftime("%B %d, %Y")
-        
+
     @classmethod
     def stream_response(cls, state: MessagesState):
         try:
             classified_state = cls.resume_service.classification_node(state)
             user_input_message = next((msg for msg in reversed(state['messages']) if isinstance(msg, HumanMessage)), None)
             intent = classified_state['messages'][-1].content.strip().lower()
-            print(classified_state)
             
             if "adapt" in intent:
                 yield f"event: thinkingPhase<|EVENT_BREAK|>data: {json.dumps({"thinking": "true", "thinkingPhase": "resume_build"})}<|END_OF_EVENT|>"
@@ -140,7 +140,43 @@ class GenerateResumeView(APIView):
 
             elif "ats" in intent:
                 yield f"event: thinkingPhase<|EVENT_BREAK|>data: {json.dumps({"thinking": "true", "thinkingPhase": "ats_optimization"})}<|END_OF_EVENT|>"
-                yield f"event: done<|EVENT_BREAK|>data: done<|END_OF_EVENT|>"
+                resume_tool_message = next((msg for msg in state['messages'] if isinstance(msg, ToolMessage) and getattr(msg, "tool_call_id", "") == "uploaded_resume"), None)
+                if not resume_tool_message:
+                    yield f"event: error\ndata: ⚠️ No uploaded resume found. Please upload a resume file to proceed."
+                
+                resume_data = json.loads(resume_tool_message.content)
+                resume_text = resume_data.get("resume", "")
+                resume_links = resume_data.get("links", [])
+
+                messages = [
+                    SystemMessage(content=RESUME_EXTRACTOR_PROMPT),
+                    HumanMessage(content=f"Hyperlinks:{resume_links}\nResume Text:{resume_text}\nUser request:{user_input_message.content}")
+                ]
+                # openai_response = cls.resume_service.openai_model.invoke(input=messages)
+                # cls.resume_json = parse_json(openai_response.content)
+                
+                tmp_dir = tempfile.gettempdir()
+                os.makedirs(tmp_dir, exist_ok=True)
+
+                local_path = os.path.join(tmp_dir, cls.file_name)
+                abs_file_path = os.path.abspath(local_path) 
+
+                build_response = build_resume(test_resume_data, abs_file_path)
+                if build_response.get("success"):
+                    generated_resume_cloud_path = f"generated_resumes/{cls.file_name}"
+                    with open(local_path, "rb") as f:
+                        saved_path = default_storage.save(generated_resume_cloud_path, f)
+                        url = default_storage.url(saved_path)
+                        print("generated_url",url)
+                else:
+                    error_payload = {"error": build_response.get("error", None), "traceback": traceback.format_exc()}
+                    yield f"event: error<|EVENT_BREAK|>data: {json.dumps(error_payload)}<|END_OF_EVENT|>"
+                    return
+                
+                delete_time = timezone.now() + timedelta(minutes=5)
+                cls.scheduler.add_job(cls.utils.delete_file, 'date', run_date=delete_time, args=[abs_file_path])
+
+                yield f"event: done<|EVENT_BREAK|>data: end<|END_OF_EVENT|>"
 
             else:
                 messages = [
@@ -154,45 +190,46 @@ class GenerateResumeView(APIView):
 
         except Exception as e:
             error_payload = {"error": str(e), "traceback": traceback.format_exc()}
-            yield f"event: error<|EVENT_BREAK|>data: {json.dumps(error_payload)}"
+            yield f"event: error<|EVENT_BREAK|>data: {json.dumps(error_payload)}<|END_OF_EVENT|>"
             return
     
-    def post(self, request):
+    @classmethod
+    def post(cls, request):
         try:
-            self.state: MessagesState = MessagesState(messages=[])
+            cls.state: MessagesState = MessagesState(messages=[])
             user_prompt = request.data.get("userMessage")
 
             if not user_prompt:
                 return Response({"success": False, "error": "Body cannot be empty"}, status=status.HTTP_400_BAD_REQUEST)
-            self.state['messages'].append(HumanMessage(content=user_prompt))
+            cls.state['messages'].append(HumanMessage(content=user_prompt))
             
             file: File = request.FILES.get("file")
             if file:
                 ext = os.path.splitext(file.name)[1].lower()
-                if ext not in self.ALLOWED_EXTENSIONS:
+                if ext not in cls.ALLOWED_EXTENSIONS:
                     return Response({"success": False, "error": "Invalid file type. Only PDF files are allowed.", "details": traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
                 
-                if file.size > self.MAX_FILE_SIZE:
+                if file.size > cls.MAX_FILE_SIZE:
                     return Response({"success": False, "error": "File size exceeds the 2MB limit", "details": traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
                 
-                if not self.utils.is_resume(file, self.RESUME_KEYWORDS):
+                if not cls.utils.is_resume(file, cls.RESUME_KEYWORDS):
                     return Response({"success": False, "error": "Uploaded file does not appear to be a valid resume", "details": traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
                 
-                file_name = default_storage.save(f"resumes/{file.name}", ContentFile(file.read()))
-                file_path = os.path.join(default_storage.location, file_name)
-                abs_file_path = os.path.abspath(file_path)
+                cls.file_name = file.name
+                resume_cloud_path = f"resumes/{cls.file_name}"
+                saved_path = default_storage.save(resume_cloud_path, ContentFile(file.read()))
+                uploaded_url = default_storage.url(saved_path)
+                print("uploaded_url",uploaded_url)
+
                 file.seek(0)
 
-                resume_content = self.utils.extract_resume(file)
-                self.state["messages"].append(ToolMessage(tool_call_id="uploaded_resume", content=json.dumps(resume_content)))
-                print(self.state)
+                resume_content = cls.utils.extract_resume(file)
+                cls.state["messages"].append(ToolMessage(tool_call_id="uploaded_resume", content=json.dumps(resume_content)))
 
-                delete_time = timezone.now() + timedelta(days=2)
-                self.scheduler.add_job(self.utils.delete_file, 'date', run_date=delete_time, args=[abs_file_path])
+                # delete_time = timezone.now() + timedelta(days=2)
+                # cls.scheduler.add_job(cls.utils.delete_file, 'date', run_date=delete_time, args=[abs_file_path])
 
-                self.download_url = request.build_absolute_uri(f"{settings.MEDIA_URL}{file_name}")
-
-            return StreamingHttpResponse(self.stream_response(self.state), content_type="text/plain; charset=utf-8")
+            return StreamingHttpResponse(cls.stream_response(cls.state), content_type="text/plain; charset=utf-8")
         
         except Exception as e:
             return Response({"success": False, "error": str(e), "details": traceback.format_exc()}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

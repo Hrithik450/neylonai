@@ -10,21 +10,18 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+from google.oauth2 import service_account
 from dotenv import load_dotenv
 from pathlib import Path
 import dj_database_url
+import base64
+import json
 import os
 
 load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
-STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
-
-MEDIA_URL = "/media/"
-MEDIA_ROOT = BASE_DIR / "resume_assistant" / "media"
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -42,6 +39,7 @@ ALLOWED_HOSTS = ['ai-solutionz.onrender.com', 'ai-solutionz-sec.onrender.com', '
 # Application definition    
 
 INSTALLED_APPS = [
+    'storages',
     'corsheaders',
     'core_manager',
     'rest_framework',
@@ -91,6 +89,24 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'core.wsgi.application'
 
+# Storages
+STORAGES = {
+    "default": {
+        "BACKEND": "storages.backends.gcloud.GoogleCloudStorage",
+        "OPTIONS": {
+            "bucket_name": os.getenv("GS_BUCKET_NAME"),
+            "credentials": service_account.Credentials.from_service_account_info(
+                json.loads(base64.b64decode(os.getenv("GOOGLE_CREDENTIALS_BASE64")))
+            ),
+        },
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    }
+}
+
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
@@ -158,3 +174,20 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# For some time expiring urls 
+# from google.cloud import storage
+# from datetime import timedelta
+
+# def generate_signed_url(blob_name, expiration_minutes=15):
+#     client = storage.Client.from_service_account_json("your-project-service-account.json")
+#     bucket = client.bucket("your-bucket-name")
+#     blob = bucket.blob(blob_name)
+
+#     url = blob.generate_signed_url(
+#         version="v4",
+#         expiration=timedelta(minutes=expiration_minutes),
+#         method="GET",
+#     )
+#     return url
