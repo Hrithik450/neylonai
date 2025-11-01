@@ -11,6 +11,7 @@ class ChatMessage(BaseModel):
     id: str
     thread_id: str
     role: Literal["user", "assistant", "system"]
+    file_url: Optional[str] = None
     content: str
     created_at: str
 
@@ -18,6 +19,7 @@ class NewChatMessage(BaseModel):
     thread_id: str
     role: str
     content: str
+    file_url: Optional[str] = None
 
 # --- Response wrappers ---
 class ChatMessageResponse(BaseModel):
@@ -43,7 +45,7 @@ class ChatMessageService:
                 with connection.cursor() as cursor:
                     cursor.execute("""
                         INSERT INTO thread_messages     
-                        (thread_id, role, content, created_at)
+                        (thread_id, role, file_url, content, created_at)
                         VALUES (%s, %s, %s, %s)
                         RETURNING id, thread_id, role, content, created_at;
                     """, [str(validated_data.thread_id), str(validated_data.role), str(validated_data.content), timezone.now()])
@@ -58,7 +60,7 @@ class ChatMessageService:
             cache.delete(cache_key_1)
             cache.delete(cache_key_2)
 
-            thread_messages_response = ChatMessage(id=str(row[0]), thread_id=str(row[1]), role=str(row[2]), content=str(row[3]), created_at=str(row[4].isoformat()))
+            thread_messages_response = ChatMessage(id=str(row[0]), thread_id=str(row[1]), role=str(row[2]), file_url=row[3], content=str(row[4]), created_at=str(row[5].isoformat()))
             return ChatMessageResponse(success=True, data=thread_messages_response, error=None)
 
         except ValidationError as ve:
@@ -83,7 +85,7 @@ class ChatMessageService:
                 with connection.cursor() as cursor:
                     cursor.execute(
                         """
-                        SELECT id, thread_id, role, content, created_at
+                        SELECT id, thread_id, role, file_url, content, created_at
                         FROM thread_messages
                         WHERE thread_id = %s
                         ORDER BY created_at ASC
@@ -94,7 +96,7 @@ class ChatMessageService:
                     rows = cursor.fetchall()
 
             response_messages = [
-                ChatMessage(id=str(row[0]), thread_id=str(row[1]), role=str(row[2]), content=str(row[3]), created_at=str(row[4].isoformat())) for row in rows
+                ChatMessage(id=str(row[0]), thread_id=str(row[1]), role=str(row[2]), file_url=row[3], content=str(row[4]), created_at=str(row[5].isoformat())) for row in rows
             ]
 
             # Cache in Redis for 60 minutes
@@ -109,7 +111,6 @@ class ChatMessageService:
         """Retrieve last messages for a thread (with Redis cache)."""
         try:
             cache_key = f"thread:{thread_id}:thread_messages"
-            cache.delete(cache_key)
             cached_value = cache.get(cache_key)
             if cached_value:
                 # Deserialize cached data
@@ -122,7 +123,7 @@ class ChatMessageService:
                 with connection.cursor() as cursor:
                     cursor.execute(
                         """
-                        SELECT id, thread_id, role, content, created_at
+                        SELECT id, thread_id, role, file_url, content, created_at
                         FROM thread_messages
                         WHERE thread_id = %s
                         ORDER BY created_at ASC;
@@ -135,7 +136,7 @@ class ChatMessageService:
                 return ChatMessagesResponse(success=False, data=None, error=f"Thread messages with id:{thread_id} do not exist")
             
             response_messages = [
-                ChatMessage(id=str(row[0]), thread_id=str(row[1]), role=str(row[2]), content=str(row[3]), created_at=str(row[4].isoformat())) for row in rows
+                ChatMessage(id=str(row[0]), thread_id=str(row[1]), role=str(row[2]), file_url=row[3], content=str(row[4]), created_at=str(row[5].isoformat())) for row in rows
             ]
 
             cache.set(cache_key, json.dumps([tm.model_dump() for tm in response_messages]), timeout=3600)

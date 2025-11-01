@@ -47,7 +47,7 @@ export function WidgetChatThreadUI({
   const { currentUserId, tokens, setTokens, assistant } = useUserStore();
   const { currentThreadId, setCurrentThreadId, setThreads } = useThreadStore();
   const { messages, updateMessage, setMessages } = useThreadMessageStore();
-  const { input, setInput, setDisableInput } = useInputStore();
+  const { input, setInput, setDisableInput, setFile } = useInputStore();
   const { setAssistantTyping, setThinkingPhase } = useAssistantStore();
   const { file } = useInputStore();
 
@@ -205,6 +205,25 @@ export function WidgetChatThreadUI({
               setThinkingPhase(thinking.thinkingPhase);
               break;
 
+            case "fileUrls":
+              const data: { type: string; url: string } = JSON.parse(dataValue);
+              if (data.type === "generated") setAssistantTyping(false);
+
+              updateMessage((prev) => {
+                if (!prev?.length) return prev;
+                const last = prev[prev.length - 1];
+                return [
+                  ...prev.slice(0, -1),
+                  {
+                    ...last,
+                    fileUrl: data.url,
+                  },
+                ];
+              });
+
+              if (data.type === "original") setFile(null);
+              break;
+
             case "assistantResponse":
               setAssistantTyping(false);
               pendingBuffer += dataValue;
@@ -247,11 +266,23 @@ export function WidgetChatThreadUI({
 
             case "done":
               setDisableInput(false);
+              setAssistantTyping(false);
+              break;
+
+            case "humanError":
+              console.error(dataValue);
+              setDisableInput(false);
+              setAssistantTyping(false);
+              setStatus("error");
+              setMessage(dataValue);
               break;
 
             case "error":
-              console.error("SSE error", dataValue);
+              console.error(dataValue);
               setDisableInput(false);
+              setAssistantTyping(false);
+              setStatus("error");
+              setMessage(dataValue);
               break;
           }
         }

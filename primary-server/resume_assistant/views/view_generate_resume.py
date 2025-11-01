@@ -21,6 +21,7 @@ from PyPDF2 import PdfReader
 from io import BytesIO
 import traceback
 import tempfile
+import time
 import pytz
 import json
 import os
@@ -121,28 +122,74 @@ class GenerateResumeView(APIView):
             
             if "adapt" in intent:
                 yield f"event: thinkingPhase<|EVENT_BREAK|>data: {json.dumps({"thinking": "true", "thinkingPhase": "resume_build"})}<|END_OF_EVENT|>"
+                time.sleep(0.25)
                 resume_tool_message = next((msg for msg in state['messages'] if isinstance(msg, ToolMessage) and getattr(msg, "tool_call_id", "") == "uploaded_resume"), None)
                 if not resume_tool_message:
-                    yield f"event: error\ndata: ⚠️ No uploaded resume found. Please upload a resume file to proceed."
+                    yield f"event: humanError<|EVENT_BREAK|>data: ⚠️ No uploaded resume found. Please upload a resume file to proceed.<|END_OF_EVENT|>"
+                    return
+                yield f"event: fileUrls<|EVENT_BREAK|>data: {json.dumps({'type':'original', 'url': cls.uploaded_url})}<|END_OF_EVENT|>"
                 
                 resume_data = json.loads(resume_tool_message.content)
                 resume_text = resume_data.get("resume", "")
                 resume_links = resume_data.get("links", [])
                 
+                # messages = [
+                #     SystemMessage(content=RESUME_SYSTEM_PROMPT),
+                #     HumanMessage(content=f"Hyperlinks:{resume_links}\nResume Text:{resume_text}\nUser request:{user_input_message.content}")
+                # ]
+                # for chunk in cls.resume_service.gemini_model.stream(input=messages):
+                #     if hasattr(chunk, "content") and chunk.content:
+                #         yield f"event: assistantResponse<|EVENT_BREAK|>data: {chunk.content}<|END_OF_EVENT|>"
+            
                 messages = [
-                    SystemMessage(content=RESUME_SYSTEM_PROMPT),
-                    HumanMessage(content=f"Hyperlinks:{resume_links}\nResume Text:{resume_text}\nUser request:{user_input_message.content}")
+                    SystemMessage(content=GENERAL_SYSTEM_PROMPT.format(today_date=cls.today_date)),
+                    HumanMessage(content=user_input_message.content.strip().lower())
                 ]
+                full_response = ""
                 for chunk in cls.resume_service.gemini_model.stream(input=messages):
                     if hasattr(chunk, "content") and chunk.content:
+                        full_response += chunk.content
                         yield f"event: assistantResponse<|EVENT_BREAK|>data: {chunk.content}<|END_OF_EVENT|>"
-                yield f"event: done<|EVENT_BREAK|>data: done<|END_OF_EVENT|>"
 
+                yield f"event: thinkingPhase<|EVENT_BREAK|>data: {json.dumps({"thinking": "true", "thinkingPhase": "ats_optimization"})}<|END_OF_EVENT|>"
+                messages = [
+                    SystemMessage(content=RESUME_EXTRACTOR_PROMPT),
+                    HumanMessage(content=f"Hyperlinks:{resume_links}\nResume Text:{resume_text}\nUser request:{user_input_message.content}")
+                ]
+                # openai_response = cls.resume_service.openai_model.invoke(input=messages)
+                # cls.resume_json = parse_json(openai_response.content)
+
+                tmp_dir = tempfile.gettempdir()
+                os.makedirs(tmp_dir, exist_ok=True)
+
+                local_path = os.path.join(tmp_dir, cls.file_name)
+                abs_file_path = os.path.abspath(local_path) 
+
+                build_response = build_resume(test_resume_data, abs_file_path)
+                if build_response.get("success"):
+                    generated_resume_cloud_path = f"generated_resumes/{cls.file_name}"
+                    with open(local_path, "rb") as f:
+                        saved_path = default_storage.save(generated_resume_cloud_path, f)
+                        url = default_storage.url(saved_path)
+                        yield f"event: fileUrls<|EVENT_BREAK|>data: {json.dumps({'type':'generated', 'url': url})}<|END_OF_EVENT|>"
+                else:
+                    error_payload = {"error": build_response.get("error", None), "traceback": traceback.format_exc()}
+                    yield f"event: error<|EVENT_BREAK|>data: {json.dumps(error_payload)}<|END_OF_EVENT|>"
+                    return
+                
+                delete_time = timezone.now() + timedelta(minutes=5)
+                cls.scheduler.add_job(cls.utils.delete_file, 'date', run_date=delete_time, args=[abs_file_path])
+                yield f"event: done<|EVENT_BREAK|>data: end<|END_OF_EVENT|>"
+                return
+                
             elif "ats" in intent:
                 yield f"event: thinkingPhase<|EVENT_BREAK|>data: {json.dumps({"thinking": "true", "thinkingPhase": "ats_optimization"})}<|END_OF_EVENT|>"
+                time.sleep(0.25)
                 resume_tool_message = next((msg for msg in state['messages'] if isinstance(msg, ToolMessage) and getattr(msg, "tool_call_id", "") == "uploaded_resume"), None)
                 if not resume_tool_message:
-                    yield f"event: error\ndata: ⚠️ No uploaded resume found. Please upload a resume file to proceed."
+                    yield f"event: humanError<|EVENT_BREAK|>data: ⚠️ No uploaded resume found. Please upload a resume file to proceed.<|END_OF_EVENT|>"
+                    return
+                yield f"event: fileUrls<|EVENT_BREAK|>data: {json.dumps({'type':'original', 'url': cls.uploaded_url})}<|END_OF_EVENT|>"
                 
                 resume_data = json.loads(resume_tool_message.content)
                 resume_text = resume_data.get("resume", "")
@@ -167,7 +214,9 @@ class GenerateResumeView(APIView):
                     with open(local_path, "rb") as f:
                         saved_path = default_storage.save(generated_resume_cloud_path, f)
                         url = default_storage.url(saved_path)
-                        print("generated_url",url)
+                        yield f"event: assistantResponse<|EVENT_BREAK|>data: Here’s the enhanced version of your ATS-ready resume.<|END_OF_EVENT|>"
+                        time.sleep(0.25)
+                        yield f"event: fileUrls<|EVENT_BREAK|>data: {json.dumps({'type':'generated', 'url': url})}<|END_OF_EVENT|>"
                 else:
                     error_payload = {"error": build_response.get("error", None), "traceback": traceback.format_exc()}
                     yield f"event: error<|EVENT_BREAK|>data: {json.dumps(error_payload)}<|END_OF_EVENT|>"
@@ -175,8 +224,8 @@ class GenerateResumeView(APIView):
                 
                 delete_time = timezone.now() + timedelta(minutes=5)
                 cls.scheduler.add_job(cls.utils.delete_file, 'date', run_date=delete_time, args=[abs_file_path])
-
                 yield f"event: done<|EVENT_BREAK|>data: end<|END_OF_EVENT|>"
+                return
 
             else:
                 messages = [
@@ -187,6 +236,7 @@ class GenerateResumeView(APIView):
                     if hasattr(chunk, "content") and chunk.content:
                         yield f"event: assistantResponse<|EVENT_BREAK|>data: {chunk.content}<|END_OF_EVENT|>"
                 yield f"event: done<|EVENT_BREAK|>data: end<|END_OF_EVENT|>"
+                return
 
         except Exception as e:
             error_payload = {"error": str(e), "traceback": traceback.format_exc()}
@@ -218,11 +268,9 @@ class GenerateResumeView(APIView):
                 cls.file_name = file.name
                 resume_cloud_path = f"resumes/{cls.file_name}"
                 saved_path = default_storage.save(resume_cloud_path, ContentFile(file.read()))
-                uploaded_url = default_storage.url(saved_path)
-                print("uploaded_url",uploaded_url)
+                cls.uploaded_url = default_storage.url(saved_path)                
 
                 file.seek(0)
-
                 resume_content = cls.utils.extract_resume(file)
                 cls.state["messages"].append(ToolMessage(tool_call_id="uploaded_resume", content=json.dumps(resume_content)))
 

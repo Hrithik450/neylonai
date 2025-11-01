@@ -40,7 +40,7 @@ interface ThreadStore {
 interface ThreadMessageStore {
   messages: NewMessage[] | null;
   setMessages: (messages: Message[]) => void;
-  updateMessage: (updater: (prev: NewMessage[] | null) => NewMessage[]) => void;
+  updateMessage: (updater: (prev: NewMessage[]) => NewMessage[]) => void;
 }
 
 export const assistantEnum = [

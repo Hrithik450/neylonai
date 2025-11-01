@@ -91,15 +91,15 @@ export const messageSets = {
   ],
 
   ats_optimization: [
+    "Generating ATS-optimized resume draft...",
+    "Structuring content for optimal parsing...",
+    "Preparing downloadable optimized file...",
     "Scanning resume for keywords...",
     "Comparing against ATS patterns...",
     "Mapping sections to ATS schema...",
     "Optimizing phrasing for keyword density...",
     "Verifying compliance with best practices...",
     "Finalizing ATS-optimized version...",
-    "Validating structured data extraction...",
-    "Calibrating keyword-to-role ratio...",
-    "Ensuring metadata readability for parsing...",
     "Testing format against major ATS engines...",
     "Confirming alignment with modern ATS models...",
     "Completing optimization and export sequence...",

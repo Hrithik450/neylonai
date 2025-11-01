@@ -8,6 +8,7 @@ import { useAssistantStore, useInputStore } from "@/store/store";
 import { ChevronsDown, Copy, FileText } from "lucide-react";
 import { NewMessage } from "@/actions/thread_messages/thread_messages.types";
 import { DynamicAssistantTyping } from "@/components/support-widget/assistant-typing";
+import { cn } from "@/lib/utils";
 
 export function ConversationUI({
   conversations,
@@ -15,7 +16,6 @@ export function ConversationUI({
   conversations?: NewMessage[];
 }) {
   const { assistantTyping } = useAssistantStore();
-  const { file } = useInputStore();
 
   // Auto Scroll to bottom on new message
   const scrollRef = React.useRef<HTMLDivElement>(null);
@@ -57,95 +57,100 @@ export function ConversationUI({
         conversations.map((conversation, index) => (
           <div
             key={index}
-            className={`text-sm md:text-base rounded-xl ${
+            className={cn(
+              "text-sm md:text-base rounded-xl",
               conversation.role === "user"
-                ? "bg-zinc-200/90 p-3 ml-auto max-w-[80%] border border-black/40"
+                ? "ml-auto max-w-[75%]"
                 : "p-3 md:p-4 max-w-[90%] md:max-w-full"
-            }`}
+            )}
           >
             {conversation.role === "assistant" ? (
-              <div className="prose max-w-none text-sm md:text-base">
-                <ReactMarkdown
-                  remarkPlugins={[remarkGfm, remarkBreaks]}
-                  components={{
-                    h1({ ...props }) {
-                      return (
-                        <h1
-                          className="text-2xl md:text-3xl font-bold mb-4 mt-6"
-                          {...props}
-                        />
-                      );
-                    },
-                    h2({ ...props }) {
-                      return (
-                        <h2
-                          className="text-xl md:text-2xl font-semibold mb-3 mt-5"
-                          {...props}
-                        />
-                      );
-                    },
-                    h3({ ...props }) {
-                      return (
-                        <h3
-                          className="text-lg md:text-xl font-medium mb-2 mt-4"
-                          {...props}
-                        />
-                      );
-                    },
-                    h4({ ...props }) {
-                      return (
-                        <h4
-                          className="text-base md:text-lg font-medium mb-2 mt-3"
-                          {...props}
-                        />
-                      );
-                    },
-                    h5({ ...props }) {
-                      return (
-                        <h5
-                          className="text-sm md:text-base font-medium mb-1 mt-2"
-                          {...props}
-                        />
-                      );
-                    },
-                    h6({ ...props }) {
-                      return (
-                        <h6
-                          className="text-xs md:text-sm font-medium mb-1 mt-2"
-                          {...props}
-                        />
-                      );
-                    },
-                    li({ ...props }) {
-                      return <li className="ml-4 mb-1 list-disc" {...props} />;
-                    },
-                    p({ ...props }) {
-                      return <p className="mb-2 leading-relaxed" {...props} />;
-                    },
-                    a({ ...props }) {
-                      return (
-                        <a
-                          className="text-blue-600 hover:underline"
-                          {...props}
-                        />
-                      );
-                    },
-                  }}
-                >
-                  {conversation.content}
-                </ReactMarkdown>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-1">
-                {file && (
-                  <div className="flex items-center gap-3 p-2 bg-white/40 border border-black/20 rounded-xl transition-all duration-200">
+              <div className="flex flex-col">
+                <div className="prose max-w-none text-sm md:text-base">
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm, remarkBreaks]}
+                    components={{
+                      h1({ ...props }) {
+                        return (
+                          <h1
+                            className="text-2xl md:text-3xl font-bold mb-4 mt-6"
+                            {...props}
+                          />
+                        );
+                      },
+                      h2({ ...props }) {
+                        return (
+                          <h2
+                            className="text-xl md:text-2xl font-semibold mb-3 mt-5"
+                            {...props}
+                          />
+                        );
+                      },
+                      h3({ ...props }) {
+                        return (
+                          <h3
+                            className="text-lg md:text-xl font-medium mb-2 mt-4"
+                            {...props}
+                          />
+                        );
+                      },
+                      h4({ ...props }) {
+                        return (
+                          <h4
+                            className="text-base md:text-lg font-medium mb-2 mt-3"
+                            {...props}
+                          />
+                        );
+                      },
+                      h5({ ...props }) {
+                        return (
+                          <h5
+                            className="text-sm md:text-base font-medium mb-1 mt-2"
+                            {...props}
+                          />
+                        );
+                      },
+                      h6({ ...props }) {
+                        return (
+                          <h6
+                            className="text-xs md:text-sm font-medium mb-1 mt-2"
+                            {...props}
+                          />
+                        );
+                      },
+                      li({ ...props }) {
+                        return (
+                          <li className="ml-4 mb-1 list-disc" {...props} />
+                        );
+                      },
+                      p({ ...props }) {
+                        return (
+                          <p className="mb-2 leading-relaxed" {...props} />
+                        );
+                      },
+                      a({ ...props }) {
+                        return (
+                          <a
+                            className="text-blue-600 hover:underline"
+                            {...props}
+                          />
+                        );
+                      },
+                    }}
+                  >
+                    {conversation.content}
+                  </ReactMarkdown>
+                </div>
+
+                {conversation.fileUrl && (
+                  <div className="max-w-[85%] mr-auto flex items-center gap-3 p-2 bg-white/40 border border-black/20 rounded-xl transition-all duration-200">
                     <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-red-50">
                       <FileText className="w-5 h-5 text-red-500" />
                     </div>
 
                     <div className="flex flex-col">
                       <span className="text-sm font-semibold text-zinc-800 truncate max-w-max">
-                        {file.name}
+                        updated_resume.pdf
                       </span>
                       <span className="text-xs text-zinc-500">
                         PDF Document
@@ -153,7 +158,30 @@ export function ConversationUI({
                     </div>
 
                     <a
-                      href={URL.createObjectURL(file)}
+                      href={conversation.fileUrl as string}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="ml-auto text-sm font-medium text-blue-600 hover:underline"
+                    >
+                      View
+                    </a>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex flex-col gap-1">
+                {conversation.fileUrl && (
+                  <div className="ml-auto flex items-center gap-3 p-1 pr-2 bg-white/40 border border-black/30 rounded-xl transition-all duration-200">
+                    <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-red-50">
+                      <FileText className="w-5 h-5 text-red-500" />
+                    </div>
+
+                    <div className="flex flex-col">
+                      <span className="text-sm text-black">PDF Document</span>
+                    </div>
+
+                    <a
+                      href={conversation.fileUrl as string}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="ml-auto text-sm font-medium text-blue-600 hover:underline"
@@ -163,7 +191,7 @@ export function ConversationUI({
                   </div>
                 )}
 
-                <p className="text-base leading-relaxed px-2">
+                <p className="py-3 px-4 bg-zinc-200/90 border border-black/50 text-base leading-relaxed rounded-xl">
                   {conversation.content}
                 </p>
               </div>
@@ -184,6 +212,7 @@ export function ConversationUI({
         ))}
 
       {assistantTyping && <DynamicAssistantTyping />}
+
       {showScrollButton && (
         <div className="sticky bottom-3 z-199 w-full flex justify-center items-center px-2 pr-3">
           <button
