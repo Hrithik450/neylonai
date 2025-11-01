@@ -8,7 +8,7 @@ from core_manager.services.model_title_service import ChatTitleResponse
 from core_manager.services.model_user_service import UserService
 from rest_framework.response import Response
 from rest_framework import status
-from langchain.schema import AIMessage
+from langchain_core.messages import AIMessage
 from ..lib.load_agent import LoadInitialAgentConfig, MessageState, StateMessage
 from ..lib.utils import SYSTEM_PROMPT, safe_serialize
 from asgiref.sync import sync_to_async

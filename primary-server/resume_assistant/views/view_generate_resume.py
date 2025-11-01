@@ -139,7 +139,6 @@ class GenerateResumeView(APIView):
     def stream_response(cls, state: MessagesState):
         try:
             if not cls.current_thread_id and cls.sender_id:
-                # run both tasks concurrently
                 title_response:ChatTitleResponse = async_to_sync(cls.chat_title_service.create_title_for_threads)({"user_message": cls.user_message})
                 if not title_response.success:
                     err_payload = {"error": title_response.error}
