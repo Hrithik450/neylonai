@@ -61,7 +61,7 @@ export function ConversationUI({
               "text-sm md:text-base rounded-xl",
               conversation.role === "user"
                 ? "ml-auto max-w-[75%]"
-                : "p-3 md:p-4 max-w-[90%] md:max-w-full"
+                : "p-3 md:p-4 max-w-full"
             )}
           >
             {conversation.role === "assistant" ? (
