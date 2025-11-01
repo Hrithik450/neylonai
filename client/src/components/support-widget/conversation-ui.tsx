@@ -149,7 +149,7 @@ export function ConversationUI({
                     </div>
 
                     <div className="flex flex-col">
-                      <span className="text-sm font-semibold text-zinc-800 truncate max-w-max">
+                      <span className="text-sm text-zinc-800 truncate max-w-max">
                         updated_resume.pdf
                       </span>
                       <span className="text-xs text-zinc-500">

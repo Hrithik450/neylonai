@@ -69,7 +69,7 @@ class ChatMessageService:
             return ChatMessageResponse(success=False, error=str(e))
 
     @staticmethod
-    def list_recent_thread_messages(thread_id: str, limit: int = 10) -> ChatMessagesResponse:
+    def list_recent_thread_messages(thread_id: str, limit: int = 6) -> ChatMessagesResponse:
         """Retrieve last N messages for a thread (with Redis cache)."""
         try:
             cache_key = f"thread:{thread_id}:recent_thread_messages"

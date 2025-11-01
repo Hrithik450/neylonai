@@ -1,7 +1,7 @@
 # urls.py
 from django.urls import path
-from .views.view_generate_resume import GenerateResumeView
+from .views.resume_view import ResumeView
 
 urlpatterns = [
-    path("generate-resume/", GenerateResumeView.as_view(), name='generate-resume')
+    path("generate-resume/", ResumeView.as_view(), name='generate-resume')
 ]
