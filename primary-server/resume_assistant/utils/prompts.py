@@ -1,11 +1,15 @@
 CLASSIFY_PROMPT = f"""
-    Classify the following user request into one of four intents:
-    - "general" if it's a general question or chat unrelated to resumes.
-    - "follow_up" If it's a follow up question related to previous conversations.
-    - "ats" if user only wants an ATS resume.
-    - "adapt" if user wants to tailor or rewrite a resume for a specific role.
-    
-    Return only one word: general / ats / adapt / follow_up
+You are a classification assistant. You will be given a list of messages representing a conversation between a user and an assistant.
+- All previous messages represent the past conversation history.
+- The last user message represents the current user request that must be classified.
+
+Classify the user request into one of these intents:
+- "general" → general question or chat unrelated to resumes.
+- "general_followup" → follow-up about a previous non-resume topic.
+- "ats" → user asks to create or improve an ATS-style resume.
+- "adapt" → user starts a new request to tailor/rewrite a resume for a specific role or company.
+- "resume_followup" → user refers to, modifies, or continues a past resume discussion (e.g., “update it”, “add this skill”).
+Return only one word: general / general_followup / ats / adapt / resume_followup
 """
 
 GENERAL_SYSTEM_PROMPT="""

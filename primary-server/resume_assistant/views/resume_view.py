@@ -2,7 +2,7 @@ from core_manager.services.model_thread_service import ChatThreadResponse, ChatT
 from core_manager.services.model_title_service import ChatTitleResponse, ChatTitleService
 from ..utils.prompts import RESUME_EXTRACTOR_PROMPT, GENERAL_SYSTEM_PROMPT, test_resume_data
 from core_manager.services.model_message_service import ChatMessageService
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 from pydantic import BaseModel, ValidationError, field_validator
 from core_manager.services.model_user_service import UserService
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -81,7 +81,62 @@ class ResumeView(APIView):
                     yield f"event: threadCreated<|EVENT_BREAK|>data: {payload}<|END_OF_EVENT|>"
 
             intent = cls.resume_service.handle_classification_node(user_message=cls.user_message, history=cls.conversation_history)
-            if "adapt" in intent:
+            if "general_followup" in intent:
+                messages = [SystemMessage(content=GENERAL_SYSTEM_PROMPT)]
+                if cls.conversation_history:
+                    for msg in cls.conversation_history:
+                        role = msg.get("role")
+                        content = msg.get("content")
+                        if role == "user":
+                            messages.append(HumanMessage(content=content))
+                        elif role == "assistant":
+                            messages.append(AIMessage(content=content))
+                messages.append(HumanMessage(content=cls.user_message))
+                for chunk in cls.resume_service.gemini_model.stream(input=messages):
+                    if hasattr(chunk, "content") and chunk.content:
+                        cls.assistant_msg += chunk.content
+                        yield f"event: assistantResponse<|EVENT_BREAK|>data: {chunk.content}<|END_OF_EVENT|>"
+
+            elif "resume_followup" in intent:
+                messages = [SystemMessage(content=GENERAL_SYSTEM_PROMPT)]
+                messages.append(next((AIMessage(content=m["content"]) for m in reversed(cls.conversation_history) if m["role"] == "assistant"), None))
+                messages.append(next((HumanMessage(content=m["content"]) for m in reversed(cls.conversation_history) if m["role"] == "user"), None))
+                messages.append(HumanMessage(content=cls.user_message))
+
+                for chunk in cls.resume_service.gemini_model.stream(input=messages):
+                    if hasattr(chunk, "content") and chunk.content:
+                        cls.assistant_msg += chunk.content
+                        yield f"event: assistantResponse<|EVENT_BREAK|>data: {chunk.content}<|END_OF_EVENT|>"
+
+                yield f"event: thinkingPhase<|EVENT_BREAK|>data: {json.dumps({"thinking": "true", "thinkingPhase": "ats_optimization"})}<|END_OF_EVENT|>"
+                messages = [
+                    SystemMessage(content=RESUME_EXTRACTOR_PROMPT),
+                    HumanMessage(content=cls.assistant_msg)
+                ]
+                # openai_response = cls.resume_service.openai_model.invoke(input=messages)
+                # cls.resume_json = parse_json(openai_response.content)
+
+                tmp_dir = tempfile.gettempdir()
+                os.makedirs(tmp_dir, exist_ok=True)
+
+                local_path = os.path.join(tmp_dir, cls.sender_id)
+                abs_file_path = os.path.abspath(local_path)
+
+                build_response = ResumeUtils.build_resume(test_resume_data, abs_file_path)
+                if build_response.success:
+                    response = ResumeUtils.save_generated_resume(sender_id=cls.sender_id, abs_file_path=abs_file_path)
+                    if response.success:
+                        cls.generated_url = response.data
+                        yield f"event: fileUrls<|EVENT_BREAK|>data: {json.dumps({'type':'generated', 'url': cls.generated_url})}<|END_OF_EVENT|>"
+                else:
+                    error_payload = {"error": build_response.error, "traceback": traceback.format_exc()}
+                    yield f"event: error<|EVENT_BREAK|>data: {json.dumps(error_payload)}<|END_OF_EVENT|>"
+                    return
+                
+                delete_time = timezone.now() + timedelta(minutes=5)
+                cls.scheduler.add_job(ResumeUtils.delete_file, 'date', run_date=delete_time, args=[abs_file_path])
+                
+            elif "adapt" in intent:
                 yield f"event: thinkingPhase<|EVENT_BREAK|>data: {json.dumps({"thinking": "true", "thinkingPhase": "resume_build"})}<|END_OF_EVENT|>"
                 time.sleep(0.25)
                 if not cls.resume_content:

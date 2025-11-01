@@ -69,7 +69,7 @@ class ChatMessageService:
             return ChatMessageResponse(success=False, error=str(e))
 
     @staticmethod
-    def list_recent_thread_messages(thread_id: str, limit: int = 6) -> ChatMessagesResponse:
+    def list_recent_thread_messages(thread_id: str, limit: int = 8) -> ChatMessagesResponse:
         """Retrieve last N messages for a thread (with Redis cache)."""
         try:
             cache_key = f"thread:{thread_id}:recent_thread_messages"
@@ -88,7 +88,7 @@ class ChatMessageService:
                         SELECT id, thread_id, role, file_url, content, created_at
                         FROM thread_messages
                         WHERE thread_id = %s
-                        ORDER BY created_at ASC
+                        ORDER BY created_at DESC
                         LIMIT %s;
                         """,
                         [str(thread_id), limit],
@@ -97,7 +97,8 @@ class ChatMessageService:
 
             if not rows:
                 return ChatMessagesResponse(success=True, data=[], error=f"Thread messages with id:{thread_id} do not exist")
-
+            
+            rows.reverse()
             response_messages = [
                 ChatMessage(id=str(row[0]), thread_id=str(row[1]), role=str(row[2]), file_url=row[3], content=str(row[4]), created_at=str(row[5].isoformat())) for row in rows
             ]

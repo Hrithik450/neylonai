@@ -24,7 +24,7 @@ export function InputForm({
 
   const { assistantTyping } = useAssistantStore();
   const { updateMessage } = useThreadMessageStore();
-  const { input, setInput, disableInput, file, setFile } = useInputStore();
+  const { input, setInput, disableInput, setFile } = useInputStore();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const uploaded = e.target.files?.[0];
@@ -98,6 +98,7 @@ export function InputForm({
               });
               setFilePreviewUrl("");
               setFilePreviewName("");
+              if (fileInputRef.current) fileInputRef.current.value = "";
             }}
             disabled={assistantTyping}
           />
@@ -147,6 +148,7 @@ export function InputForm({
                 });
                 setFilePreviewUrl("");
                 setFilePreviewName("");
+                if (fileInputRef.current) fileInputRef.current.value = "";
               }}
             />
           </PromptInputActions>
