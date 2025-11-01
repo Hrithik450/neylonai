@@ -50,7 +50,7 @@ export function ConversationUI({
     <div
       ref={scrollRef}
       onScroll={handleScroll}
-      className="relative flex-1 w-full mx-auto overflow-y-auto scrollbar-hide pt-2 px-2 md:pt-4"
+      className="relative flex-1 w-full mx-auto overflow-y-auto scrollbar-hide px-0.5 pt-2 md:pt-4"
     >
       {conversations &&
         conversations.length > 0 &&
