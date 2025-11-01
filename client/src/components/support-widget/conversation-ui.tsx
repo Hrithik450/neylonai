@@ -143,7 +143,7 @@ export function ConversationUI({
                 </div>
 
                 {conversation.file_url && (
-                  <div className="max-w-[85%] mr-auto flex items-center gap-3 p-2 bg-white/40 border border-black/20 rounded-xl transition-all duration-200">
+                  <div className="max-w-max mr-auto flex items-center gap-3 p-2 bg-white/40 border border-black/20 rounded-xl transition-all duration-200">
                     <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-red-50">
                       <FileText className="w-5 h-5 text-red-500" />
                     </div>
