@@ -1,6 +1,6 @@
+from ..utils.prompts import RESUME_EXTRACTOR_PROMPT, GENERAL_SYSTEM_PROMPT, RESUME_SYSTEM_PROMPT
 from core_manager.services.model_thread_service import ChatThreadResponse, ChatThreadService
 from core_manager.services.model_title_service import ChatTitleResponse, ChatTitleService
-from ..utils.prompts import RESUME_EXTRACTOR_PROMPT, GENERAL_SYSTEM_PROMPT, test_resume_data
 from core_manager.services.model_message_service import ChatMessageService
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 from pydantic import BaseModel, ValidationError, field_validator
@@ -81,6 +81,7 @@ class ResumeView(APIView):
                     yield f"event: threadCreated<|EVENT_BREAK|>data: {payload}<|END_OF_EVENT|>"
 
             intent = cls.resume_service.handle_classification_node(user_message=cls.user_message, history=cls.conversation_history)
+            print(intent, "intent")
             if "general_followup" in intent:
                 messages = [SystemMessage(content=GENERAL_SYSTEM_PROMPT)]
                 if cls.conversation_history:
@@ -98,7 +99,7 @@ class ResumeView(APIView):
                         yield f"event: assistantResponse<|EVENT_BREAK|>data: {chunk.content}<|END_OF_EVENT|>"
 
             elif "resume_followup" in intent:
-                messages = [SystemMessage(content=GENERAL_SYSTEM_PROMPT)]
+                messages = [SystemMessage(content=RESUME_SYSTEM_PROMPT)]
                 messages.append(next((AIMessage(content=m["content"]) for m in reversed(cls.conversation_history) if m["role"] == "assistant"), None))
                 messages.append(next((HumanMessage(content=m["content"]) for m in reversed(cls.conversation_history) if m["role"] == "user"), None))
                 messages.append(HumanMessage(content=cls.user_message))
@@ -113,8 +114,8 @@ class ResumeView(APIView):
                     SystemMessage(content=RESUME_EXTRACTOR_PROMPT),
                     HumanMessage(content=cls.assistant_msg)
                 ]
-                # openai_response = cls.resume_service.openai_model.invoke(input=messages)
-                # cls.resume_json = parse_json(openai_response.content)
+                openai_response = cls.resume_service.openai_model.invoke(input=messages)
+                cls.resume_json = ResumeUtils.parse_json(openai_response.content)
 
                 tmp_dir = tempfile.gettempdir()
                 os.makedirs(tmp_dir, exist_ok=True)
@@ -122,7 +123,7 @@ class ResumeView(APIView):
                 local_path = os.path.join(tmp_dir, cls.sender_id)
                 abs_file_path = os.path.abspath(local_path)
 
-                build_response = ResumeUtils.build_resume(test_resume_data, abs_file_path)
+                build_response = ResumeUtils.build_resume(cls.resume_json, abs_file_path)
                 if build_response.success:
                     response = ResumeUtils.save_generated_resume(sender_id=cls.sender_id, abs_file_path=abs_file_path)
                     if response.success:
@@ -147,29 +148,22 @@ class ResumeView(APIView):
                 resume_text = cls.resume_content.get("resume", "")
                 resume_links = cls.resume_content.get("links", [])
                 
-                # messages = [
-                #     SystemMessage(content=RESUME_SYSTEM_PROMPT),
-                #     HumanMessage(content=f"Hyperlinks:{resume_links}\nResume Text:{resume_text}\nUser request:{user_input_message.content}")
-                # ]
-                # for chunk in cls.resume_service.gemini_model.stream(input=messages):
-                #     if hasattr(chunk, "content") and chunk.content:
-                #         yield f"event: assistantResponse<|EVENT_BREAK|>data: {chunk.content}<|END_OF_EVENT|>"
-            
                 messages = [
-                    SystemMessage(content=GENERAL_SYSTEM_PROMPT.format(today_date=cls.today_date)),
-                    HumanMessage(content=cls.user_message.strip().lower())
+                    SystemMessage(content=RESUME_SYSTEM_PROMPT),
+                    HumanMessage(content=f"Hyperlinks:{resume_links}\nResume Text:{resume_text}\nUser request:{cls.user_message}")
                 ]
                 for chunk in cls.resume_service.gemini_model.stream(input=messages):
                     if hasattr(chunk, "content") and chunk.content:
                         cls.assistant_msg += chunk.content
                         yield f"event: assistantResponse<|EVENT_BREAK|>data: {chunk.content}<|END_OF_EVENT|>"
+
                 yield f"event: thinkingPhase<|EVENT_BREAK|>data: {json.dumps({"thinking": "true", "thinkingPhase": "ats_optimization"})}<|END_OF_EVENT|>"
                 messages = [
                     SystemMessage(content=RESUME_EXTRACTOR_PROMPT),
-                    HumanMessage(content=f"Hyperlinks:{resume_links}\nResume Text:{resume_text}\nUser request:{cls.user_message}")
+                    HumanMessage(content=cls.assistant_msg)
                 ]
-                # openai_response = cls.resume_service.openai_model.invoke(input=messages)
-                # cls.resume_json = parse_json(openai_response.content)
+                openai_response = cls.resume_service.openai_model.invoke(input=messages)
+                cls.resume_json = ResumeUtils.parse_json(openai_response.content)
 
                 tmp_dir = tempfile.gettempdir()
                 os.makedirs(tmp_dir, exist_ok=True)
@@ -177,7 +171,7 @@ class ResumeView(APIView):
                 local_path = os.path.join(tmp_dir, cls.sender_id)
                 abs_file_path = os.path.abspath(local_path)
 
-                build_response = ResumeUtils.build_resume(test_resume_data, abs_file_path)
+                build_response = ResumeUtils.build_resume(cls.resume_json, abs_file_path)
                 if build_response.success:
                     response = ResumeUtils.save_generated_resume(sender_id=cls.sender_id, abs_file_path=abs_file_path)
                     if response.success:
@@ -206,8 +200,8 @@ class ResumeView(APIView):
                     SystemMessage(content=RESUME_EXTRACTOR_PROMPT),
                     HumanMessage(content=f"Hyperlinks:{resume_links}\nResume Text:{resume_text}\nUser request:{cls.user_message}")
                 ]
-                # openai_response = cls.resume_service.openai_model.invoke(input=messages)
-                # cls.resume_json = parse_json(openai_response.content)
+                openai_response = cls.resume_service.openai_model.invoke(input=messages)
+                cls.resume_json = ResumeUtils.parse_json(openai_response.content)
                 
                 tmp_dir = tempfile.gettempdir()
                 os.makedirs(tmp_dir, exist_ok=True)
@@ -215,7 +209,7 @@ class ResumeView(APIView):
                 local_path = os.path.join(tmp_dir, cls.sender_id)
                 abs_file_path = os.path.abspath(local_path)
 
-                build_response = ResumeUtils.build_resume(test_resume_data, abs_file_path)
+                build_response = ResumeUtils.build_resume(cls.resume_json, abs_file_path)
                 if build_response.success:
                     response = ResumeUtils.save_generated_resume(sender_id=cls.sender_id, abs_file_path=abs_file_path)
                     if response.success:

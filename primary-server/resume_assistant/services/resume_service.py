@@ -11,7 +11,7 @@ class ResumeService:
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
     GEMINI_API_KEY = os.getenv("GOOGLE_API_KEY")
 
-    openai_model = ChatOpenAI(model="gpt-4o", temperature=0.4, api_key=OPENAI_API_KEY)
+    openai_model = ChatOpenAI(model="gpt-4o-mini", temperature=0.4, api_key=OPENAI_API_KEY)
     gemini_model = ChatGoogleGenerativeAI(
         model='gemini-2.5-flash',
         temperature=0.4,
