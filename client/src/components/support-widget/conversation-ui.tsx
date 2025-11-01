@@ -4,7 +4,7 @@ import React from "react";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
 import ReactMarkdown from "react-markdown";
-import { useAssistantStore, useInputStore } from "@/store/store";
+import { useAssistantStore } from "@/store/store";
 import { ChevronsDown, Copy, FileText } from "lucide-react";
 import { NewMessage } from "@/actions/thread_messages/thread_messages.types";
 import { DynamicAssistantTyping } from "@/components/support-widget/assistant-typing";
@@ -73,7 +73,7 @@ export function ConversationUI({
                       h1({ ...props }) {
                         return (
                           <h1
-                            className="text-2xl md:text-3xl font-bold mb-4 mt-6"
+                            className="text-2xl md:text-3xl font-bold mb-4 mt-5"
                             {...props}
                           />
                         );
@@ -81,7 +81,7 @@ export function ConversationUI({
                       h2({ ...props }) {
                         return (
                           <h2
-                            className="text-xl md:text-2xl font-semibold mb-3 mt-5"
+                            className="text-xl md:text-2xl font-semibold mb-3 mt-4"
                             {...props}
                           />
                         );
@@ -89,7 +89,7 @@ export function ConversationUI({
                       h3({ ...props }) {
                         return (
                           <h3
-                            className="text-lg md:text-xl font-medium mb-2 mt-4"
+                            className="text-lg md:text-xl font-medium mb-2 mt-3"
                             {...props}
                           />
                         );
@@ -97,7 +97,7 @@ export function ConversationUI({
                       h4({ ...props }) {
                         return (
                           <h4
-                            className="text-base md:text-lg font-medium mb-2 mt-3"
+                            className="text-base md:text-lg font-medium mb-2 mt-2"
                             {...props}
                           />
                         );
@@ -105,7 +105,7 @@ export function ConversationUI({
                       h5({ ...props }) {
                         return (
                           <h5
-                            className="text-sm md:text-base font-medium mb-1 mt-2"
+                            className="text-sm md:text-base font-medium mb-1 mt-1"
                             {...props}
                           />
                         );
@@ -113,7 +113,7 @@ export function ConversationUI({
                       h6({ ...props }) {
                         return (
                           <h6
-                            className="text-xs md:text-sm font-medium mb-1 mt-2"
+                            className="text-xs md:text-sm font-medium mb-1 mt-1"
                             {...props}
                           />
                         );
@@ -142,7 +142,7 @@ export function ConversationUI({
                   </ReactMarkdown>
                 </div>
 
-                {conversation.fileUrl && (
+                {conversation.file_url && (
                   <div className="max-w-[85%] mr-auto flex items-center gap-3 p-2 bg-white/40 border border-black/20 rounded-xl transition-all duration-200">
                     <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-red-50">
                       <FileText className="w-5 h-5 text-red-500" />
@@ -158,7 +158,7 @@ export function ConversationUI({
                     </div>
 
                     <a
-                      href={conversation.fileUrl as string}
+                      href={conversation.file_url as string}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="ml-auto text-sm font-medium text-blue-600 hover:underline"
@@ -170,7 +170,7 @@ export function ConversationUI({
               </div>
             ) : (
               <div className="flex flex-col gap-1">
-                {conversation.fileUrl && (
+                {conversation.file_url && (
                   <div className="ml-auto flex items-center gap-3 p-1 pr-2 bg-white/40 border border-black/30 rounded-xl transition-all duration-200">
                     <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-red-50">
                       <FileText className="w-5 h-5 text-red-500" />
@@ -181,7 +181,7 @@ export function ConversationUI({
                     </div>
 
                     <a
-                      href={conversation.fileUrl as string}
+                      href={conversation.file_url as string}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="ml-auto text-sm font-medium text-blue-600 hover:underline"
@@ -198,7 +198,12 @@ export function ConversationUI({
             )}
 
             {conversation.role === "assistant" && (
-              <div className="flex justify-start mt-3 space-x-2">
+              <div
+                className={cn(
+                  "flex justify-start space-x-2",
+                  conversation.file_url ? "mt-2" : "mt-0"
+                )}
+              >
                 <button
                   onClick={() => copyToClipboard(conversation.content)}
                   className="text-gray-500 hover:text-gray-700 cursor-pointer"

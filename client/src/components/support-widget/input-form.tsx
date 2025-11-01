@@ -92,7 +92,7 @@ export function InputForm({
                 if (last.role === "user")
                   return [
                     ...prev.slice(0, -1),
-                    { ...last, fileUrl: filePreviewUrl },
+                    { ...last, file_url: filePreviewUrl },
                   ];
                 return prev;
               });
@@ -141,7 +141,7 @@ export function InputForm({
                   if (last.role === "user")
                     return [
                       ...prev.slice(0, -1),
-                      { ...last, fileUrl: filePreviewUrl },
+                      { ...last, file_url: filePreviewUrl },
                     ];
                   return prev;
                 });

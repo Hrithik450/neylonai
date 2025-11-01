@@ -64,7 +64,7 @@ export const threadMessages = pgTable(
     threadId: uuid("thread_id").notNull(),
     role: messageRole("role").notNull(),
     content: text("content").notNull(),
-    fileUrl: text("file_url"),
+    file_url: text("file_url"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),

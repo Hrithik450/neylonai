@@ -137,13 +137,8 @@ export function WidgetChatThreadUI({
         case "resume_assistant":
           const formData = new FormData();
           formData.append("userMessage", input);
-          // formData.append("senderId", currentUserId);
-          // currentThreadId !== null
-          //   ? formData.append("threadId", currentThreadId)
-          //   : formData.append(
-          //       "threadId",
-          //       new Blob([JSON.stringify(null)], { type: "application/json" })
-          //     );
+          formData.append("senderId", currentUserId);
+          if (currentThreadId) formData.append("threadId", currentThreadId);
           if (file) formData.append("file", file);
 
           response = await fetch(
@@ -163,6 +158,7 @@ export function WidgetChatThreadUI({
         setMessage(
           errorData?.error || "An unexpected error occurred. Please try again."
         );
+        console.error(errorData?.error);
         return;
       }
 
@@ -216,7 +212,7 @@ export function WidgetChatThreadUI({
                   ...prev.slice(0, -1),
                   {
                     ...last,
-                    fileUrl: data.url,
+                    file_url: data.url,
                   },
                 ];
               });

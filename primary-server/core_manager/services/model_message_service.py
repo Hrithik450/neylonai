@@ -46,9 +46,9 @@ class ChatMessageService:
                     cursor.execute("""
                         INSERT INTO thread_messages     
                         (thread_id, role, file_url, content, created_at)
-                        VALUES (%s, %s, %s, %s)
-                        RETURNING id, thread_id, role, content, created_at;
-                    """, [str(validated_data.thread_id), str(validated_data.role), str(validated_data.content), timezone.now()])
+                        VALUES (%s, %s, %s, %s, %s)
+                        RETURNING id, thread_id, role, file_url, content, created_at;
+                    """, [str(validated_data.thread_id), str(validated_data.role), validated_data.file_url, str(validated_data.content), timezone.now()])
                     row = cursor.fetchone()
             
             if not row:
@@ -67,7 +67,7 @@ class ChatMessageService:
             return ChatMessageResponse(success=False, error=f"Validation error: {ve.errors()}")
         except Exception as e:
             return ChatMessageResponse(success=False, error=str(e))
-        
+
     @staticmethod
     def list_recent_thread_messages(thread_id: str, limit: int = 10) -> ChatMessagesResponse:
         """Retrieve last N messages for a thread (with Redis cache)."""
@@ -94,6 +94,9 @@ class ChatMessageService:
                         [str(thread_id), limit],
                     )
                     rows = cursor.fetchall()
+
+            if not rows:
+                return ChatMessagesResponse(success=True, data=[], error=f"Thread messages with id:{thread_id} do not exist")
 
             response_messages = [
                 ChatMessage(id=str(row[0]), thread_id=str(row[1]), role=str(row[2]), file_url=row[3], content=str(row[4]), created_at=str(row[5].isoformat())) for row in rows
@@ -133,7 +136,7 @@ class ChatMessageService:
                     rows = cursor.fetchall()
             
             if not rows:
-                return ChatMessagesResponse(success=False, data=None, error=f"Thread messages with id:{thread_id} do not exist")
+                return ChatMessagesResponse(success=True, data=[], error=f"Thread messages with id:{thread_id} do not exist")
             
             response_messages = [
                 ChatMessage(id=str(row[0]), thread_id=str(row[1]), role=str(row[2]), file_url=row[3], content=str(row[4]), created_at=str(row[5].isoformat())) for row in rows
