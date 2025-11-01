@@ -1,7 +1,7 @@
 from ..lib.utils import AGENT_MODEL, EMBEDDING_MODEL_NAME
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_core.output_parsers import StrOutputParser
-from langchain.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 from ..lib.load_data import chroma_collection
 import concurrent.futures
 import traceback
