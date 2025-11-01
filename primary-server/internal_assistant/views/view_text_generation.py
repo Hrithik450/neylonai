@@ -102,8 +102,8 @@ class InternalAssistantView(APIView):
                     if "data" in event and "chunk" in event["data"]:
                         chunk = event["data"]["chunk"]
                         text = getattr(chunk, "content", None)
-                        if text:
-                            yield f"event: assistantResponse<|EVENT_BREAK|>data: {text}<|END_OF_EVENT|>"
+                        # if text:
+                        #     yield f"event: assistantResponse<|EVENT_BREAK|>data: {text}<|END_OF_EVENT|>"
 
                 elif event["event"] == "on_chain_end" and not event.get("parent_ids"):
                     messages = event["data"]["output"]["messages"]
@@ -112,6 +112,7 @@ class InternalAssistantView(APIView):
                         if isinstance(msg, AIMessage) and msg.content.strip():
                             assistant_msg = msg.content
                             break
+                    yield f"event: assistantResponse<|EVENT_BREAK|>data: {assistant_msg}<|END_OF_EVENT|>"
                     
                     # Persist messages into memory / DB
                     if cls.current_thread_id:

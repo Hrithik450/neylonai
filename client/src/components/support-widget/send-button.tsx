@@ -12,12 +12,12 @@ interface SendButtonProps {
 }
 
 export function SendButton({ isDisabled, handleSubmit }: SendButtonProps) {
-  const { isAssistantTyping } = useAssistantStore();
+  const { assistantTyping } = useAssistantStore();
 
   return (
     <PromptInputAction
       className="cursor-pointer"
-      tooltip={isAssistantTyping ? "Stop Generation" : "Send message"}
+      tooltip={assistantTyping ? "Stop Generation" : "Send message"}
     >
       <Button
         variant="default"
@@ -26,7 +26,7 @@ export function SendButton({ isDisabled, handleSubmit }: SendButtonProps) {
         onClick={handleSubmit}
         disabled={isDisabled}
       >
-        {isAssistantTyping ? (
+        {assistantTyping ? (
           <Square className="size-4 cursor-pointer" />
         ) : (
           <ArrowUp className="size-4 cursor-pointer" />
