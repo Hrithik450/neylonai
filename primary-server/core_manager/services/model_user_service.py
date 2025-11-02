@@ -12,6 +12,7 @@ class UserFormat(BaseModel):
     emailverified: Optional[str] = None
     image: Optional[str] = None
     daily_limit: int
+    resume_generation_limit: int
     created_at: str
     assistant: Literal["internal_assistant", "customer_service_assistant", "resume_assistant"] = "internal_assistant"
     role: Literal["business_owner", "student", "explorer", "admin"] = "explorer"
@@ -27,13 +28,13 @@ class UserService:
     """
 
     @staticmethod
-    def deduct_tokens(deduction_tokens: int, user_id: str) -> UserResponse:
+    def deduct_tokens(deduction_tokens: int, user_id: str, resume_gen: bool = False) -> UserResponse:
         try:
            with transaction.atomic():
                 with connection.cursor() as cursor:
                     # Fetch the user
                     cursor.execute("""
-                        SELECT id, name, email, "emailVerified", image, daily_limit, created_at, assistant, role
+                        SELECT id, name, email, "emailVerified", image, daily_limit, resume_generation_limit, created_at, assistant, role
                         FROM "user"
                         WHERE id = %s
                         LIMIT 1;
@@ -43,19 +44,27 @@ class UserService:
                     if not row:
                         return UserResponse(success=False, data=None, error=f"User {user_id} not found")
                     
-                    id_db, name, email, emailVerified, image, daily_limit, created_at, assistant, role = row
-                    new_daily_limit = max(0, daily_limit - deduction_tokens)
-
-                    cursor.execute("""
-                        UPDATE "user"
-                        SET daily_limit = %s
-                        WHERE id = %s
-                    """, [new_daily_limit, id_db])
+                    id_db, name, email, emailVerified, image, daily_limit, resume_generation_limit, created_at, assistant, role = row
+                    
+                    if resume_gen:
+                        new_resume_limit = max(0, (resume_generation_limit or 0) - 1)
+                        cursor.execute("""
+                            UPDATE "user"
+                            SET resume_generation_limit = %s
+                            WHERE id = %s
+                        """, [new_resume_limit, id_db])
+                    else:
+                        new_daily_limit = max(0, daily_limit - deduction_tokens)
+                        cursor.execute("""
+                            UPDATE "user"
+                            SET daily_limit = %s
+                            WHERE id = %s
+                        """, [new_daily_limit, id_db])
 
            cache_key = f"user:{user_id}"
            cache.delete(cache_key)
 
-           user_response = UserFormat(id=str(id_db), name=str(name), email=str(email), emailverified=str(emailVerified), image=str(image), daily_limit=int(new_daily_limit), created_at=str(created_at.isoformat()), assistant=str(assistant), role=str(role))
+           user_response = UserFormat(id=str(id_db), name=str(name), email=str(email), emailverified=str(emailVerified), image=str(image), daily_limit=int(new_daily_limit) if not resume_gen else int(daily_limit or 0), resume_generation_limit=int(new_resume_limit) if resume_gen else int(resume_generation_limit or 0), created_at=str(created_at.isoformat()), assistant=str(assistant), role=str(role))
            return UserResponse(success=True, data=user_response, error=None)
         
         except Exception as e:
@@ -82,7 +91,7 @@ class UserService:
                 UPDATE "user"
                 SET {', '.join(set_clauses)}
                 WHERE id = %s
-                RETURNING id, name, email, "emailVerified", image, daily_limit, created_at, assistant, role;
+                RETURNING id, name, email, "emailVerified", image, daily_limit, resume_generation_limit, created_at, assistant, role;
             """
 
             # Get the thread instance
@@ -99,7 +108,7 @@ class UserService:
             cache.delete(cache_key)
 
             # Return updated thread as Pydantic model
-            updated_user = UserFormat(id=str(row[0]), name=str(row[1]), email=str(row[2]), emailverified=row[3], image=str(row[4]), daily_limit=int(row[5]), created_at=str(row[6].isoformat()), assistant=str(row[7]), role=str(row[8]))
+            updated_user = UserFormat(id=str(row[0]), name=str(row[1]), email=str(row[2]), emailverified=row[3], image=str(row[4]), daily_limit=int(row[5]), resume_generation_limit=int(row[6]), created_at=str(row[7].isoformat()), assistant=str(row[8]), role=str(row[9]))
             return UserResponse(success=True, data=updated_user, error=None)
 
         except ValidationError as ve:
@@ -111,7 +120,6 @@ class UserService:
     def get_user_by_id(user_id: str) -> UserResponse:
         try:
             cache_key = f"user:{user_id}"
-            cache.delete(cache_key)
             cached_value = cache.get(cache_key)
             if cached_value:
                  # Deserialize cached data
@@ -124,7 +132,7 @@ class UserService:
                 with connection.cursor() as cursor:
                     # Fetch the user
                     cursor.execute("""
-                        SELECT id, name, email, "emailVerified", image, daily_limit, created_at, assistant, role
+                        SELECT id, name, email, "emailVerified", image, daily_limit, resume_generation_limit, created_at, assistant, role
                         FROM "user"
                         WHERE id = %s
                         LIMIT 1;
@@ -134,8 +142,7 @@ class UserService:
             if not row:
                 return UserResponse(success=False, data=None, error=f"User {user_id} not found")
 
-            user_response = UserFormat(id=str(row[0]), name=str(row[1]), email=str(row[2]), emailverified=str(row[3]), image=str(row[4]), daily_limit=int(row[5]), created_at=str(row[6].isoformat()), assistant=str(row[7]), role=str(row[8]))
-
+            user_response = UserFormat(id=str(row[0]), name=str(row[1]), email=str(row[2]), emailverified=str(row[3]), image=str(row[4]), daily_limit=int(row[5]), resume_generation_limit=int(row[6]), created_at=str(row[7].isoformat()), assistant=str(row[8]), role=str(row[9]))
             cache.set(cache_key, json.dumps(user_response.model_dump()), timeout=3600)
             return UserResponse(success=True, data=user_response, error=None)
 

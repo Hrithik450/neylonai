@@ -42,9 +42,10 @@ export function WidgetChatThreadUI({
   setStatus,
 }: WidgetChatUIProps) {
   const [loading, setLoading] = React.useState<boolean>(false);
-  const [limitReached, setLimitReached] = React.useState(false);
+  const [limitReached, setLimitReached] = React.useState<string | null>(null);
 
-  const { currentUserId, tokens, setTokens, assistant } = useUserStore();
+  const { currentUserId, tokens, resumeTokens, setTokens, assistant } =
+    useUserStore();
   const { currentThreadId, setCurrentThreadId, setThreads } = useThreadStore();
   const { messages, updateMessage, setMessages } = useThreadMessageStore();
   const { input, setInput, setDisableInput, setFile } = useInputStore();
@@ -84,8 +85,14 @@ export function WidgetChatThreadUI({
   }, [id]);
 
   React.useEffect(() => {
-    if (tokens <= 0) setLimitReached(true);
-  }, [tokens]);
+    if (["resume_assistant"].includes(assistant) && resumeTokens <= 0)
+      setLimitReached("You’ve hit today’s resume limit. Resets at 00:00.");
+
+    if (tokens <= 0)
+      setLimitReached(
+        "You've reached your daily usage limit. Access will reset at 00:00"
+      );
+  }, [tokens, resumeTokens]);
 
   const handleSendMessage = async () => {
     if (!currentUserId) {
@@ -93,6 +100,12 @@ export function WidgetChatThreadUI({
       setMessage(
         "Please sign in to continue the conversation with our assistant."
       );
+      return;
+    }
+
+    if (["resume_assistant"].includes(assistant) && resumeTokens <= 0) {
+      setStatus("error");
+      setMessage("You’ve hit today’s resume limit. Resets at 00:00.");
       return;
     }
 
@@ -189,7 +202,11 @@ export function WidgetChatThreadUI({
 
             case "tokensUpdated":
               const user = JSON.parse(dataValue);
-              if (user) setTokens(user.daily_limit);
+              const tokens = ["resume_assistant"].includes(assistant)
+                ? user.resume_generation_limit
+                : user.daily_limit;
+
+              setTokens(tokens);
               break;
 
             case "thinkingPhase":
@@ -360,10 +377,7 @@ export function WidgetChatThreadUI({
               : "opacity-0 translate-y-5"
           )}
         >
-          <p className="text-sm font-medium text-gray-700">
-            You&apos;ve reached your daily usage limit. Access will reset at
-            00:00
-          </p>
+          <p className="text-sm font-medium text-gray-700">{limitReached}</p>
         </div>
         <InputForm handleSendMessage={handleSendMessage} />
       </div>

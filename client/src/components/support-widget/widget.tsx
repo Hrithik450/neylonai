@@ -63,7 +63,8 @@ export function SupportWidget() {
   const [loading, setLoading] = React.useState<boolean>(false);
   const { setMessage, setStatus } = useErrorStore();
   const { isOpen, isCollapse } = useSupportWidgetToggleStore();
-  const { setTokens, setRole, setAssistant, currentUserId } = useUserStore();
+  const { setTokens, setRole, setAssistant, setResumeTokens, currentUserId } =
+    useUserStore();
   const {
     activeTab,
     tabStacks,
@@ -93,10 +94,11 @@ export function SupportWidget() {
         }
 
         if (data.data) {
+          setLoading(false);
           setRole(data.data.role);
           setTokens(data.data.daily_limit);
           setAssistant(data.data.assistant);
-          setLoading(false);
+          setResumeTokens(data.data.resume_generation_limit);
         }
       } catch (error) {
         console.error("Fetch error:", error);

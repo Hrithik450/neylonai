@@ -121,6 +121,9 @@ export const user = pgTable(
       .defaultNow()
       .notNull(),
     dailyLimit: integer("daily_limit").default(200).notNull(),
+    resumeGenerationLimit: integer("resume_generation_limit")
+      .default(2)
+      .notNull(),
     role: roleEnum("role").default("explorer").notNull(),
     assistant: assistantEnum("assistant")
       .default("internal_assistant")

@@ -81,10 +81,12 @@ export type RoleKey = (typeof roleEnum)[number];
 
 interface UserStore {
   tokens: number;
+  resumeTokens: number;
   role: RoleKey | null;
   assistant: AssistantKey;
   currentUserId: string | null;
   setTokens: (tokens: number) => void;
+  setResumeTokens: (tokens: number) => void;
   setRole: (role: RoleKey) => void;
   setAssistant: (assistant: AssistantKey) => void;
   setCurrentUserId: (id: string) => void;
@@ -218,12 +220,14 @@ export const useInputStore = create<InputStore>((set) => ({
 export const useUserStore = create<UserStore>((set) => ({
   tokens: 0,
   role: null,
+  resumeTokens: 0,
   currentUserId: null,
   assistant: "internal_assistant",
-  setTokens: (tokens) => set({ tokens: tokens }),
   setRole: (role) => set({ role: role }),
+  setTokens: (tokens) => set({ tokens: tokens }),
   setCurrentUserId: (id) => set({ currentUserId: id }),
   setAssistant: (assistant) => set({ assistant: assistant }),
+  setResumeTokens: (resumeTokens) => set({ resumeTokens: resumeTokens }),
 }));
 
 export const useAssistantStore = create<AssistantStore>((set) => ({

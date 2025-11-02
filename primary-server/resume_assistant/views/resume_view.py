@@ -255,7 +255,7 @@ class ResumeView(APIView):
                     yield f"event: error<|EVENT_BREAK|>data: {json.dumps(err_payload)}<|END_OF_EVENT|>"
                     return
                 
-                deduct_tokens_response = cls.user_service.deduct_tokens(deduction_tokens=20, user_id=cls.sender_id)
+                deduct_tokens_response = cls.user_service.deduct_tokens(deduction_tokens=0, user_id=cls.sender_id, resume_gen=True)
                 if not deduct_tokens_response.success:
                     err_payload = {"error": deduct_tokens_response.error}
                     yield f"event: error<|EVENT_BREAK|>data: {json.dumps(err_payload)}<|END_OF_EVENT|>"
