@@ -10,13 +10,13 @@ class CronJobResponse(BaseModel):
 class CrobJobService:
 
     @classmethod
-    def rest_daily_limit(cls):
+    def reset_daily_limit(cls):
         try:
             with transaction.atomic():
                 with connection.cursor() as cursor:
                     cursor.execute("""
                         UPDATE "user"
-                        SET daily_limit = 200
+                        SET daily_limit = 200, resume_generation_limit = 2
                     """)
                     updated_count = cursor.rowcount
 

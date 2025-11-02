@@ -6,7 +6,7 @@ import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
 import ReactMarkdown from "react-markdown";
 import { useAssistantStore } from "@/store/store";
-import { ChevronsDown, Copy, FileText } from "lucide-react";
+import { ChevronsDown, Copy, Download, FileText } from "lucide-react";
 import { NewMessage } from "@/actions/thread_messages/thread_messages.types";
 import { DynamicAssistantTyping } from "@/components/support-widget/assistant-typing";
 
@@ -143,7 +143,7 @@ export function ConversationUI({
                 </div>
 
                 {conversation.file_url && (
-                  <div className="max-w-max mr-auto flex items-center gap-3 p-2 bg-white/40 border border-black/20 rounded-xl transition-all duration-200">
+                  <div className="max-w-max mr-auto flex items-center gap-3 p-1 pr-3 bg-white/40 border border-black/20 rounded-xl transition-all duration-200">
                     <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-red-50">
                       <FileText className="w-5 h-5 text-red-500" />
                     </div>
@@ -158,12 +158,21 @@ export function ConversationUI({
                     </div>
 
                     <a
-                      href={conversation.file_url as string}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="ml-auto text-sm font-medium text-blue-600 hover:underline"
+                      onClick={() => {
+                        const url = conversation.file_url;
+                        if (!url) return;
+
+                        const link = document.createElement("a");
+                        link.href = url;
+                        link.download = "";
+                        document.body.append(link);
+                        link.click();
+                        document.body.removeChild(link);
+                      }}
+                      className="ml-auto text-sm font-medium text-gray-400 hover:text-gray-500 cursor-pointer flex items-center gap-1"
+                      title="Download PDF"
                     >
-                      View
+                      <Download className="w-5 h-5" />
                     </a>
                   </div>
                 )}
@@ -171,7 +180,7 @@ export function ConversationUI({
             ) : (
               <div className="flex flex-col gap-1">
                 {conversation.file_url && (
-                  <div className="ml-auto flex items-center gap-3 p-1 pr-2 bg-white/40 border border-black/30 rounded-xl transition-all duration-200">
+                  <div className="ml-auto flex items-center gap-3 p-1 pr-3 bg-white/40 border border-black/30 rounded-xl transition-all duration-200">
                     <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-red-50">
                       <FileText className="w-5 h-5 text-red-500" />
                     </div>
@@ -181,12 +190,21 @@ export function ConversationUI({
                     </div>
 
                     <a
-                      href={conversation.file_url as string}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="ml-auto text-sm font-medium text-blue-600 hover:underline"
+                      onClick={() => {
+                        const url = conversation.file_url;
+                        if (!url) return;
+
+                        const link = document.createElement("a");
+                        link.href = url;
+                        link.download = "";
+                        document.body.append(link);
+                        link.click();
+                        document.body.removeChild(link);
+                      }}
+                      className="ml-auto text-sm font-medium text-gray-400 hover:text-gray-500 cursor-pointer flex items-center gap-1"
+                      title="Download PDF"
                     >
-                      View
+                      <Download className="w-5 h-5" />
                     </a>
                   </div>
                 )}

@@ -18,7 +18,7 @@ class CronJobServiceView(APIView):
             return Response({"success": False, "error": "Unauthorized"}, status=status.HTTP_401_UNAUTHORIZED)
         
         try:
-            cron_job_response: CronJobResponse = CronJobServiceView.cron_job_service.rest_daily_limit()
+            cron_job_response: CronJobResponse = CronJobServiceView.cron_job_service.reset_daily_limit()
             if not cron_job_response.success:
                 return Response({"success": False, "error": f"Error occurred while executing cron job: {cron_job_response.error}", "traceback": traceback.format_exc()}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             return Response({"success": True, "message": "Cron job executed successfully"}, status=status.HTTP_200_OK)
