@@ -9,6 +9,7 @@ import {
   useErrorStore,
   useInputStore,
   useThreadMessageStore,
+  useUserStore,
 } from "@/store/store";
 import { FileText, Paperclip, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,7 @@ export function InputForm({
   const [filePreviewName, setFilePreviewName] = React.useState<string>("");
   const [filePreviewUrl, setFilePreviewUrl] = React.useState<string>("");
 
+  const { assistant } = useUserStore();
   const { assistantTyping } = useAssistantStore();
   const { updateMessage } = useThreadMessageStore();
   const { setStatus, setMessage } = useErrorStore();
@@ -119,26 +121,28 @@ export function InputForm({
             toggleRecording={toggleRecording}
           /> */}
 
-            <label title="Upload PDF" htmlFor="file-upload">
-              <input
-                type="file"
-                accept=".pdf"
-                id="file-upload"
-                className="hidden"
-                ref={fileInputRef}
-                onChange={handleFileChange}
-              />
-              <Button
-                asChild
-                type="button"
-                size="icon-sm"
-                variant="ghost"
-                title="Upload PDF"
-                className="rounded-full cursor-pointer hover:bg-muted transition"
-              >
-                <Paperclip className="w-5 h-5" />
-              </Button>
-            </label>
+            {["resume_assistant"].includes(assistant) && (
+              <label title="Upload PDF" htmlFor="file-upload">
+                <input
+                  type="file"
+                  accept=".pdf"
+                  id="file-upload"
+                  className="hidden"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                />
+                <Button
+                  asChild
+                  type="button"
+                  size="icon-sm"
+                  variant="ghost"
+                  title="Upload PDF"
+                  className="rounded-full cursor-pointer hover:bg-muted transition"
+                >
+                  <Paperclip className="w-5 h-5" />
+                </Button>
+              </label>
+            )}
 
             <SendButton
               isDisabled={!input.trim() || disableInput}
