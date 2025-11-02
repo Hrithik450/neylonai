@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { cn } from "@/lib/utils";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
 import ReactMarkdown from "react-markdown";
@@ -8,7 +9,6 @@ import { useAssistantStore } from "@/store/store";
 import { ChevronsDown, Copy, FileText } from "lucide-react";
 import { NewMessage } from "@/actions/thread_messages/thread_messages.types";
 import { DynamicAssistantTyping } from "@/components/support-widget/assistant-typing";
-import { cn } from "@/lib/utils";
 
 export function ConversationUI({
   conversations,
@@ -50,7 +50,7 @@ export function ConversationUI({
     <div
       ref={scrollRef}
       onScroll={handleScroll}
-      className="relative flex-1 w-full mx-auto overflow-y-auto scrollbar-hide px-0.5 pt-2 md:pt-4"
+      className="relative flex-1 w-full mx-auto overflow-y-auto scrollbar-hide px-0.5 pr-1 pt-2 md:pt-4"
     >
       {conversations &&
         conversations.length > 0 &&

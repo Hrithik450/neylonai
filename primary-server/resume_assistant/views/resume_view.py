@@ -3,7 +3,7 @@ from core_manager.services.model_thread_service import ChatThreadResponse, ChatT
 from core_manager.services.model_title_service import ChatTitleResponse, ChatTitleService
 from core_manager.services.model_message_service import ChatMessageService
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
-from pydantic import BaseModel, ValidationError, field_validator
+from pydantic import BaseModel, ValidationError, field_validator, Field
 from core_manager.services.model_user_service import UserService
 from apscheduler.schedulers.background import BackgroundScheduler
 from ..services.resume_service import ResumeService
@@ -26,8 +26,8 @@ import json
 import os
 
 class GenerateResumeSchema(BaseModel):
-    userMessage: str
-    senderId: str
+    userMessage: str = Field(..., min_length=1, max_length=1500, description="Your message is too long. Please shorten it to 1500 characters or fewer.")
+    senderId: str = Field(..., min_length=1, description="Please provide sender id.")
     threadId: Optional[str] = None
 
     @field_validator("*", mode='before')
@@ -284,9 +284,6 @@ class ResumeView(APIView):
             cls.sender_id: str = getattr(validatedData, "senderId", None)
             cls.user_message: str = getattr(validatedData, "userMessage", None)
             cls.current_thread_id: Optional[str] = getattr(validatedData, "threadId", None)
-
-            if not cls.user_message:
-                return Response({"success": False, "error": "Body cannot be empty"}, status=status.HTTP_400_BAD_REQUEST)
 
             if cls.current_thread_id:
                 response = ResumeUtils.get_conversation_history(thread_id=cls.current_thread_id)

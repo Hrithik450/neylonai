@@ -6,6 +6,7 @@ import { SuggestionBar } from "@/components/support-widget/suggestion-bar";
 import { SendButton } from "@/components/support-widget/send-button";
 import {
   useAssistantStore,
+  useErrorStore,
   useInputStore,
   useThreadMessageStore,
 } from "@/store/store";
@@ -24,6 +25,7 @@ export function InputForm({
 
   const { assistantTyping } = useAssistantStore();
   const { updateMessage } = useThreadMessageStore();
+  const { setStatus, setMessage } = useErrorStore();
   const { input, setInput, disableInput, setFile } = useInputStore();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -34,6 +36,29 @@ export function InputForm({
     setFile(uploaded);
     setFilePreviewUrl(fileUrl);
     setFilePreviewName(uploaded.name);
+  };
+
+  const handleSubmit = () => {
+    if (input.length >= 1500) {
+      const error =
+        "Your message is too long. Please shorten it to 1500 characters or fewer.";
+      setStatus("error");
+      setMessage(error);
+      return;
+    }
+
+    handleSendMessage();
+    updateMessage((prev) => {
+      if (!prev || prev.length === 0) return prev;
+
+      const last = prev[prev.length - 1];
+      if (last.role === "user")
+        return [...prev.slice(0, -1), { ...last, file_url: filePreviewUrl }];
+      return prev;
+    });
+    setFilePreviewUrl("");
+    setFilePreviewName("");
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   return (
@@ -83,23 +108,7 @@ export function InputForm({
 
           <ChatInputTextarea
             placeholder="Ask me anything..."
-            handleSubmit={() => {
-              handleSendMessage();
-              updateMessage((prev) => {
-                if (!prev || prev.length === 0) return prev;
-
-                const last = prev[prev.length - 1];
-                if (last.role === "user")
-                  return [
-                    ...prev.slice(0, -1),
-                    { ...last, file_url: filePreviewUrl },
-                  ];
-                return prev;
-              });
-              setFilePreviewUrl("");
-              setFilePreviewName("");
-              if (fileInputRef.current) fileInputRef.current.value = "";
-            }}
+            handleSubmit={handleSubmit}
             disabled={assistantTyping}
           />
 
@@ -133,23 +142,7 @@ export function InputForm({
 
             <SendButton
               isDisabled={!input.trim() || disableInput}
-              handleSubmit={() => {
-                handleSendMessage();
-                updateMessage((prev) => {
-                  if (!prev || prev.length === 0) return prev;
-
-                  const last = prev[prev.length - 1];
-                  if (last.role === "user")
-                    return [
-                      ...prev.slice(0, -1),
-                      { ...last, file_url: filePreviewUrl },
-                    ];
-                  return prev;
-                });
-                setFilePreviewUrl("");
-                setFilePreviewName("");
-                if (fileInputRef.current) fileInputRef.current.value = "";
-              }}
+              handleSubmit={handleSubmit}
             />
           </PromptInputActions>
         </div>

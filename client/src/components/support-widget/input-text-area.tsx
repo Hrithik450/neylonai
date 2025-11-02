@@ -17,14 +17,13 @@ export function ChatInputTextarea({
   return (
     <PromptInputTextarea
       className="px-2"
+      maxLength={1500}
       placeholder={placeholder}
       disabled={disabled || disableInput}
       onKeyDown={(e) => {
         if (e.key === "Enter" && !e.shiftKey) {
           e.preventDefault();
-          if (!disabled && !disableInput) {
-            handleSubmit();
-          }
+          if (!disabled && !disableInput) handleSubmit();
         }
       }}
     />
