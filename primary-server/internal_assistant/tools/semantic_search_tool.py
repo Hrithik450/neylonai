@@ -98,7 +98,7 @@ class SemanticSearchTool:
 
             top_docs = sorted(unique_results.items(), key=lambda x: x[1], reverse=False)
             results_for_llm = [doc for doc, _ in top_docs[:10]]
-
+            
             return "\n\n---\n\n".join(results_for_llm) if results_for_llm else "No relevant documents found."
         
         except Exception as e:

@@ -8,7 +8,7 @@ from core_manager.services.model_title_service import ChatTitleResponse
 from core_manager.services.model_user_service import UserService
 from rest_framework.response import Response
 from rest_framework import status
-from langchain_core.messages import AIMessage
+from langchain_core.messages import AIMessage, SystemMessage, HumanMessage
 from ..lib.load_agent import LoadInitialAgentConfig, MessageState, StateMessage
 from ..lib.utils import SYSTEM_PROMPT, safe_serialize
 from asgiref.sync import sync_to_async
@@ -98,7 +98,6 @@ class InternalAssistantView(APIView):
             # --- Stream assistant response by iterating agent events    
             async for event in events_iter:
                 if event["event"] == "on_chat_model_stream" and event["name"] == "ChatGoogleGenerativeAI" and event["metadata"]["langgraph_node"] == "call_model":
-                    print(event)
                     if "data" in event and "chunk" in event["data"]:
                         chunk = event["data"]["chunk"]
                         text = getattr(chunk, "content", None)
@@ -109,9 +108,15 @@ class InternalAssistantView(APIView):
                     messages = event["data"]["output"]["messages"]
                     assistant_msg = ""
                     for msg in reversed(messages):
-                        if isinstance(msg, AIMessage) and msg.content.strip():
-                            assistant_msg = msg.content
-                            break
+                        if isinstance(msg, AIMessage):
+                            content = msg.content
+                            if isinstance(content, list):
+                                text_parts = [part.get("text", "") for part in content if isinstance(part, dict) and "text" in part]
+                                assistant_msg = " ".join(text_parts).strip()
+                            elif isinstance(content, str):
+                                assistant_msg = content.strip()
+                            else:
+                                assistant_msg = ""
                     yield f"event: assistantResponse<|EVENT_BREAK|>data: {assistant_msg}<|END_OF_EVENT|>"
                     
                     # Persist messages into memory / DB
@@ -171,28 +176,16 @@ class InternalAssistantView(APIView):
                     return Response({"success": False, "error": f"Error occured while retreieving the recent messages {thread_messages_response.error}"}, status=status.HTTP_400_BAD_REQUEST)
                 last_msgs = [msg.model_dump() for msg in thread_messages_response.data]
 
-            # reframe/optimize user query
-            # try:
-            #     reframed = async_to_sync(cls.agent_graph.reframe_user_query)(user_input=cls.user_message, last_messages=last_msgs)
-            # except Exception:
-            #     # fallback to raw user message if reframing fails
-            #     reframed = {"optimized_query": cls.user_message, "selected_tools": []}
-
-            # internal_message = {
-            #     "query": reframed["optimized_query"],
-            #     "selected_tools": reframed.get("selected_tools", []),
-            # }
-            # print(cls.user_message, "query")
-
             messages_state: MessageState = {
-                "messages": [
-                    {"role": "system", "content": SYSTEM_PROMPT.format(today_date=cls.today_date)},
-                    *last_msgs[-5:],
-                    {"role": "user", "content": cls.user_message},
-                ]
+                "messages": (
+                    [SystemMessage(content=SYSTEM_PROMPT.format(today_date=cls.today_date))] +
+                    [HumanMessage(content=m['content']) if m["role"] == "user" else AIMessage(m["content"]) for m in (last_msgs or []) if m.get("content")] +
+                    [HumanMessage(content=cls.user_message)]
+                )
             }
+
             events_iter = cls.agent_graph.agent_graph.astream_events(input=messages_state, version='v2')
-            return StreamingHttpResponse(cls.utils.async_to_sync_generator(cls.event_generator(events_iter)), content_type="text/plain; charset=utf-8")
+            return StreamingHttpResponse(cls.utils.async_to_sync_generator(cls.event_generator(events_iter)), content_type="text/event-stream")
     
         except ValidationError as ve:
             return Response({"success": False, "error": f"Invalid request data: {str(ve.errors())}", "traceback": traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
