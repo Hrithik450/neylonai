@@ -191,7 +191,7 @@ export function ConversationUI({
                   </div>
                 )}
 
-                <p className="py-3 px-4 bg-zinc-200/90 border border-black/50 text-base leading-relaxed rounded-xl">
+                <p className="py-3 px-4 bg-zinc-200/90 border border-black/50 text-sm md:text-base leading-relaxed rounded-xl">
                   {conversation.content}
                 </p>
               </div>
