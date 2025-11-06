@@ -66,3 +66,14 @@ class ThreadMessages(models.Model):
     class Meta:
         managed = False
         db_table = 'thread_messages'
+
+class Feedback(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, models.DO_NOTHING, db_column="user_id")
+    user_name = models.TextField()
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        managed = False
+        db_table = 'feedback'
