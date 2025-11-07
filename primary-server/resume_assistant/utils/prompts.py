@@ -10,7 +10,7 @@ Classify the user request into one of these intents:
 - "general_followup" → follow-up about a previous non-resume/non-job topic.
 - "ats" → user requests an ATS-formatted resume or improvement for ATS systems.
 - "adapt" → user provides a job role, job description, or project details to tailor or rewrite a resume for that role/company (even if not explicitly mentioning “resume”).
-- "resume_followup" → user refers to, modifies, or continues a past resume discussion (e.g., “add this skill”).
+- "resume_followup" → user refers to, modifies, or continues a past resume discussion (e.g., “add this skill”), except dont consider if the last conversation was an ATS optimization task.
 
 If the message provides job-related context (role, projects, keywords) to influence a resume, classify as "adapt".
 Return exactly one word: general / general_followup / ats / adapt / resume_followup

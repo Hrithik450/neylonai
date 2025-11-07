@@ -1,7 +1,7 @@
 import json
 from typing import Dict, Union
 from langchain_openai import ChatOpenAI
-from ..lib.utils import TITLE_SYSTEM_PROMPT
+from ..utils.prompts import TITLE_SYSTEM_PROMPT
 from pydantic import BaseModel, ValidationError
 from langchain_core.prompts import ChatPromptTemplate
 
@@ -51,11 +51,11 @@ class ChatTitleService:
                 raise ValueError("Server is busy, try again later!")
             
             try:
-                parsed = json.loads(final_result)
+                parsed_json = json.loads(final_result)
             except json.JSONDecodeError:
                 raise ValueError("LLM did not return valid JSON")
             
-            return ChatTitleResponse(success=True, data=parsed)
+            return ChatTitleResponse(success=True, data=parsed_json)
 
         except ValidationError as ve:
             return ChatTitleResponse(success=False, error=f"Validation error: {ve.errors()}")

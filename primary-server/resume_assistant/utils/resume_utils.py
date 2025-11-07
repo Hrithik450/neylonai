@@ -67,7 +67,7 @@ class ResumeUtils:
             return ResumeUtilsResponse(success=True, data={"resume": text.strip(), "links": list(links)})
         except Exception as e:
             return ResumeUtilsResponse(success=False, error=f"{str(e), {traceback.format_exc()}}")
-    
+
     @staticmethod
     def is_resume(file: File, resume_words: List[str]) -> ResumeUtilsResponse:
         try:
@@ -101,7 +101,7 @@ class ResumeUtils:
             return ResumeUtilsResponse(success=True, data=default_storage.url(saved_path))
         except Exception as e:
             return ResumeUtilsResponse(success=False, error=f"{str(e), {traceback.format_exc()}}")
-    
+
     @staticmethod
     def get_conversation_history(thread_id: str) -> ResumeUtilsResponse:
         try:
@@ -112,7 +112,7 @@ class ResumeUtils:
             return ResumeUtilsResponse(success=True, data=conversation_history)
         except Exception as e:
             return ResumeUtilsResponse(success=False, error=f"{str(e), {traceback.format_exc()}}")
-        
+
     @staticmethod
     def build_resume(resume_data: dict, resume_path: str) -> ResumeUtilsResponse:
         try:

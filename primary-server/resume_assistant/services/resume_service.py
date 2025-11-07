@@ -6,8 +6,9 @@ from typing import List, Dict, Any, Optional
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage, SystemMessage
 
+load_dotenv()
+
 class ResumeService:
-    load_dotenv()
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
     GEMINI_API_KEY = os.getenv("GOOGLE_API_KEY")
 
@@ -21,14 +22,11 @@ class ResumeService:
 
     @classmethod
     def handle_classification_node(cls, user_message: str, history: Optional[List[Dict[str, Any]]] = None) -> str:
+        """Handles the classification node by preparing messages and invoking the model."""
+
         messages = [SystemMessage(content=CLASSIFY_PROMPT)]
         if history:
-            for msg in history:
-                role = msg.get("role")
-                content = msg.get("content")
-                if role == "user":
-                    messages.append(HumanMessage(content=content))
-
+            messages.extend(HumanMessage(content=msg['content']) for msg in history if msg.get("role") == 'user' and msg.get('content'))
         messages.append(HumanMessage(content=user_message))
         response = cls.openai_model.invoke(input=messages)
         return response.content.strip().lower()
