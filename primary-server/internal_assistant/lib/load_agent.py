@@ -4,6 +4,7 @@ import pytz
 from datetime import datetime
 from dotenv import load_dotenv
 from rich.console import Console
+from dataclasses import dataclass
 from typing import List, Literal, TypedDict, Dict, Optional
 
 # --- LangChain / LangGraph imports ---
@@ -23,11 +24,12 @@ from core_manager.services.model_message_service import ChatMessageService
 from core_manager.services.model_thread_service import ChatThreadService
 from core_manager.services.model_title_service import ChatTitleService
 
-# --- Schemas ---
+@dataclass
 class StateMessage(TypedDict):
     role: Literal["system", "user", "assistant"]
     content: str
 
+@dataclass
 class MessageState(TypedDict):
     messages: List[StateMessage]
 

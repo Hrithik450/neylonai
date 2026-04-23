@@ -6,10 +6,21 @@ from functools import lru_cache
 from dotenv import load_dotenv
 from pathlib import Path
 import polars as pl
-
+import gdown 
 import os
 
 load_dotenv()
+
+class DataService {
+    
+    @classmethod
+    def get_data_path():
+        """
+        Ensure the email JSONL data file exists locally.
+        Downloads it once via ensure_jsonl_file() if missing.
+        """
+        if 
+}
 
 # --- Environment Check ---
 def get_data_path() -> Path:

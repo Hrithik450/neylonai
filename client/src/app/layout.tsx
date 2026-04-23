@@ -1,11 +1,14 @@
 import "./globals.css";
+
 import React from "react";
 import type { Metadata } from "next";
-import { auth } from "@/lib/auth/auth";
-import { Navbar } from "@/components/navbar";
+import { Navbar } from "@/components/navigation/navbar";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
-import { LayoutWrapper } from "@/app/layout-wrapper";
 import { AIChat } from "@/components/support-widget/widget-toggle";
+import { GoogleOAuthProvider } from "@/providers/google-oauth-provider";
+import { GoogleOneTap } from "@/components/auth/google-one-tap";
+import { LayoutWrapper } from "./layout-wrapper";
+import { GoogleButtonsRefProvider } from "@/providers/google-buttons-ref-provider";
 
 export const metadata: Metadata = {
   title: "Neylon AI",
@@ -21,17 +24,20 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = React.use(auth());
-
   return (
     <html lang="en">
       <body cz-shortcut-listen="false">
         <NuqsAdapter>
-          <LayoutWrapper session={session}>
-            <Navbar />
-            {children}
-            <AIChat />
-          </LayoutWrapper>
+          <GoogleOAuthProvider clientId="976812420059-j2qgun2qptvjo4nbard7ll800hj79604.apps.googleusercontent.com">
+            <GoogleButtonsRefProvider>
+              <LayoutWrapper>
+                <GoogleOneTap />
+                <Navbar />
+                {children}
+                <AIChat />
+              </LayoutWrapper>
+            </GoogleButtonsRefProvider>
+          </GoogleOAuthProvider>
         </NuqsAdapter>
       </body>
     </html>

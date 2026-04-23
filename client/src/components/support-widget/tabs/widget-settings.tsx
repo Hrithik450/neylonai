@@ -5,7 +5,6 @@ import { ClassicLoader } from "@/components/classic-loader";
 import { FiArrowRight } from "react-icons/fi";
 import Image from "next/image";
 import React from "react";
-import { Session } from "next-auth";
 import {
   AssistantDisplayMap,
   RoleDisplayMap,
@@ -16,17 +15,17 @@ import {
 import { Edit } from "lucide-react";
 import { signOutAccount } from "@/actions/auth/sign-out";
 import { WidgetUpdateSettings } from "./widget-screens/widget-update-settings";
+import { useSessionStore } from "@/store/session-store";
 
 export function WidgetSettings({
   pushScreen,
-  session,
 }: {
   pushScreen: (tab: TabType, screen: Screen) => void;
-  session: Session | null;
 }) {
   const { tokens, assistant, role } = useUserStore();
+  const { user, isAuthenticated } = useSessionStore();
 
-  if (!session?.user?.image)
+  if (!user?.profile_image)
     return (
       <div className="h-full w-full">
         <WidgetHeader header="Profile" />
@@ -49,17 +48,13 @@ export function WidgetSettings({
               width={20}
               height={20}
               alt="Profile"
-              src={session.user.image}
+              src={user.profile_image}
               className="w-14 h-14 md:w-17 md:h-17 rounded-full border"
             />
 
             <div className="space-y-0.5">
-              <h3 className="text-lg md:text-xl font-semibold">
-                {session.user.name}
-              </h3>
-              <p className="text-sm md:text-md text-black/80">
-                {session.user.email}
-              </p>
+              <h3 className="text-lg md:text-xl font-semibold">{user.name}</h3>
+              <p className="text-sm md:text-md text-black/80">{user.email}</p>
             </div>
           </div>
 

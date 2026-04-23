@@ -7,7 +7,6 @@ import { ArrowDownRight, BadgeCheck, Cpu, Play } from "lucide-react";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import IphoneFrameImage from "@/assets/images/iphone-frame.png";
 import HeroImage from "@/assets/images/hero_background_3.jpg";
-import { SessionContext } from "@/app/layout-wrapper";
 import { Link as ScrollLink } from "react-scroll";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
@@ -19,8 +18,6 @@ import {
 import React from "react";
 
 export function Hero2() {
-  const session = React.useContext(SessionContext);
-
   const { setIsOpen } = useSupportWidgetToggleStore();
   const { switchTab } = useNavigationStore();
 
@@ -29,7 +26,7 @@ export function Hero2() {
       id="home"
       className={cn(
         guminertRegular.className,
-        "py-4 px-3 md:px-5 h-max md:h-[1240px] xl:h-[1160px] overflow-hidden"
+        "py-4 px-3 md:px-5 h-max md:h-[1240px] xl:h-[1160px] overflow-hidden",
       )}
     >
       <div className="relative rounded-2xl overflow-hidden px-3 md:px-6 pt-26 md:pt-34">
@@ -53,7 +50,7 @@ export function Hero2() {
         <h1
           className={cn(
             guminertMedium.className,
-            "relative text-[1.5rem] md:text-5xl lg:text-6xl xl:text-7xl max-w-5xl 2xl:max-w-360 text-left md:text-center mx-auto my-4 leading-tight md:leading-16 lg:leading-18 xl:leading-20 bg-linear-to-r from-[#050c0a] via-[#0d3129] to-[#007a63] bg-clip-text text-transparent"
+            "relative text-[1.5rem] md:text-5xl lg:text-6xl xl:text-7xl max-w-5xl 2xl:max-w-360 text-left md:text-center mx-auto my-4 leading-tight md:leading-16 lg:leading-18 xl:leading-20 bg-linear-to-r from-[#050c0a] via-[#0d3129] to-[#007a63] bg-clip-text text-transparent",
           )}
         >
           Neylon AI, Engineered for Unmatched{" "}
@@ -113,7 +110,7 @@ export function Hero2() {
             {/* Frame Content */}
             <div className="absolute w-full h-full z-10">
               <div className="px-3 md:px-6 pt-12 md:pt-16 bg-[linear-gradient(to_bottom,rgb(230,250,217)_0%,rgb(255,255,255)_100%)] pointer-events-none w-[95%] aspect-789/1650 mx-auto object-cover rounded-[2.75rem] lg:rounded-[3rem] xl:rounded-[3.70rem] 2xl:rounded-[4.5rem] overflow-hidden">
-                <WidgetHome session={session} />
+                <WidgetHome />
               </div>
             </div>
           </div>

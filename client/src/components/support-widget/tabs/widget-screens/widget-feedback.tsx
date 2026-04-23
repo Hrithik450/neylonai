@@ -22,7 +22,7 @@ import {
   FeedbackResponse,
   feedbackSchema,
 } from "@/actions/feedback/feedback.types";
-import { Session } from "next-auth";
+import { useSessionStore } from "@/store/session-store";
 
 const suggestions = [
   "What did you like about this widget?",
@@ -34,40 +34,39 @@ const suggestions = [
 
 export function WidgetFeedback({
   popScreen,
-  session,
   setMessage,
   setStatus,
 }: {
   popScreen: () => void;
-  session: Session | null;
   setMessage: React.Dispatch<React.SetStateAction<string | null>>;
   setStatus: React.Dispatch<
     React.SetStateAction<"error" | "saving" | "saved" | null>
   >;
 }) {
   const [loading, setLoading] = React.useState(false);
-
   const [current, setCurrent] = React.useState(0);
   const [isChanging, setIsChanging] = React.useState(false);
+
+  const { user, isAuthenticated } = useSessionStore();
 
   const form = useForm<FeedbackFormData>({
     resolver: zodResolver(feedbackSchema),
     defaultValues: {
       content: "",
-      user_id: session?.user?.id,
-      user_name: session?.user?.name as string,
+      user_id: user?.id,
+      user_name: user?.name as string,
     },
   });
 
   React.useEffect(() => {
-    if (session) {
+    if (isAuthenticated && user) {
       form.reset({
         content: "",
-        user_id: session.user.id,
-        user_name: session.user.name as string,
+        user_id: user.id,
+        user_name: user.name,
       });
     }
-  }, [session]);
+  }, [isAuthenticated]);
 
   React.useEffect(() => {
     const interval = setInterval(() => {

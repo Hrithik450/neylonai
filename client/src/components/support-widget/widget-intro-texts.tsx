@@ -2,10 +2,10 @@
 
 import React from "react";
 import { cn } from "@/lib/utils";
-import { Session } from "next-auth";
 import { guminertBold } from "@/assets/fonts";
 import { useTypingAnimation } from "@/hooks/use-animation-hook";
 import { useNavigationStore, useSupportWidgetToggleStore } from "@/store/store";
+import { useSessionStore } from "@/store/session-store";
 
 const texts = [
   "How can I assist you today?",
@@ -15,16 +15,13 @@ const texts = [
   "Your growth partner in intelligent automation.",
 ];
 
-export function WidgetIntroText({ session }: { session?: Session | null }) {
+export function WidgetIntroText() {
   const { activeTab } = useNavigationStore();
   const { isOpen } = useSupportWidgetToggleStore();
+  const { user, isAuthenticated } = useSessionStore();
   const { introText, displayText, startAnimation } = useTypingAnimation(
     texts,
-    `Hi ${
-      !session || !session.user || !session?.user?.name
-        ? "there"
-        : session.user.name.split(" ")[0]
-    }👋`
+    `Hi ${!isAuthenticated ? "there" : user && user.name.split(" ")[0]}👋`,
   );
 
   React.useEffect(() => {

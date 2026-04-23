@@ -12,7 +12,6 @@ import {
 import React from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
-import { Session } from "next-auth";
 import { guminertBold } from "@/assets/fonts";
 import NeylonAI from "@/assets/images/neylon.jpg";
 import {
@@ -31,6 +30,7 @@ import { WidgetLogin } from "@/components/support-widget/tabs/widget-screens/wid
 import { WidgetFeedback } from "@/components/support-widget/tabs/widget-screens/widget-feedback";
 import CustomerServiceAssistantImage from "@/assets/images/articles/customer-service-assistant.png";
 import { useRouter } from "next/navigation";
+import { useSessionStore } from "@/store/session-store";
 
 const blogs = [
   {
@@ -48,20 +48,16 @@ const blogs = [
 export interface WidgetHomeProps {
   pushScreen?: (tab: TabType, screen: Screen) => void;
   switchTab?: (tab: TabType) => void;
-  session?: Session | null;
 }
 
-export function WidgetHome({
-  session,
-  pushScreen,
-  switchTab,
-}: WidgetHomeProps) {
+export function WidgetHome({ pushScreen, switchTab }: WidgetHomeProps) {
   const router = useRouter();
   const { role, assistant } = useUserStore();
   const { setCurrentThreadId } = useThreadStore();
   const { setMessage, setStatus } = useErrorStore();
   const { isOpen, isCollapse, setIsOpen, setCollapse } =
     useSupportWidgetToggleStore();
+  const { isAuthenticated } = useSessionStore();
 
   return (
     <section className="px-2 lg:px-3">
@@ -105,7 +101,7 @@ export function WidgetHome({
         </div>
 
         {/* Introduction texts */}
-        <WidgetIntroText session={session} />
+        <WidgetIntroText />
       </div>
 
       <div className="pb-4 px-2 space-y-6 flex-1">
@@ -113,7 +109,7 @@ export function WidgetHome({
         <div className="flex flex-col gap-2.5">
           <button
             onClick={() => {
-              if (session) {
+              if (isAuthenticated) {
                 setCurrentThreadId(null);
                 if (pushScreen)
                   pushScreen(TabType.Messages, {
@@ -164,7 +160,7 @@ export function WidgetHome({
 
           <button
             onClick={() => {
-              if (session) {
+              if (isAuthenticated) {
                 if (pushScreen) {
                   pushScreen(TabType.Home, {
                     component: WidgetFeedback,
@@ -199,7 +195,7 @@ export function WidgetHome({
           <h3
             className={cn(
               guminertBold.className,
-              "mb-2 px-1 text-2xl text-[#0E3228]"
+              "mb-2 px-1 text-2xl text-[#0E3228]",
             )}
           >
             Latest Insights
@@ -239,19 +235,19 @@ export function WidgetHome({
                   {/* CTA Button */}
                   <button
                     onClick={() => {
-                      if (session) {
+                      if (isAuthenticated) {
                         if (!role) return;
                         const allowedAssistants = RoleAssistantMap[role] ?? [];
 
                         // If role doesn't permit this assistant
                         if (
                           !allowedAssistants.includes(
-                            blog.assistant as AssistantKey
+                            blog.assistant as AssistantKey,
                           )
                         ) {
                           setStatus("error");
                           setMessage(
-                            "Please change your role to Business Owner to access this article."
+                            "Please change your role to Business Owner to access this article.",
                           );
                           if (switchTab) switchTab(TabType.Settings);
                           return;
@@ -261,7 +257,7 @@ export function WidgetHome({
                         if (assistant !== blog.assistant) {
                           setStatus("error");
                           setMessage(
-                            "Please select the Customer Service Assistant to access this article."
+                            "Please select the Customer Service Assistant to access this article.",
                           );
                           if (switchTab) switchTab(TabType.Settings);
                           return;

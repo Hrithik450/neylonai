@@ -5,7 +5,7 @@ export type Feedback = typeof feedback.$inferSelect;
 export type NewFeedback = typeof feedback.$inferInsert;
 
 export const feedbackSchema = z.object({
-  user_id: z.string().uuid("Invalid user ID format."),
+  user_id: z.number().min(1, "Invalid user ID format."),
   user_name: z.string().min(1, "User name is required."),
   content: z
     .string()

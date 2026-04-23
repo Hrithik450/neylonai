@@ -17,16 +17,15 @@ import { Thread } from "@/actions/threads/threads.types";
 import { WidgetHeader } from "@/components/support-widget/widget-header";
 import { MessagesResponse } from "@/actions/thread_messages/thread_messages.types";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Session } from "next-auth";
 import { ClassicLoader } from "@/components/classic-loader";
 import { messageSets } from "@/lib/constants";
+import { useSessionStore } from "@/store/session-store";
 
 interface WidgetChatUIProps {
   id: string;
   title: string;
   popScreen: () => void;
   pushScreen: (tab: TabType, screen: Screen) => void;
-  session: Session | null;
   setMessage: React.Dispatch<React.SetStateAction<string | null>>;
   setStatus: React.Dispatch<
     React.SetStateAction<"error" | "saving" | "saved" | null>
@@ -36,7 +35,6 @@ interface WidgetChatUIProps {
 export function WidgetChatThreadUI({
   id,
   title,
-  session,
   popScreen,
   setMessage,
   setStatus,
@@ -52,12 +50,14 @@ export function WidgetChatThreadUI({
   const { setAssistantTyping, setThinkingPhase } = useAssistantStore();
   const { file } = useInputStore();
 
+  const { user, isAuthenticated } = useSessionStore();
+
   React.useEffect(() => {
     const fetchThreadMessages = async () => {
       try {
         setLoading(true);
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/core-manager/api/v1/thread_messages/${id}/`
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/core-manager/api/v1/thread_messages/${id}/`,
         );
         const data: MessagesResponse = await res.json();
 
@@ -90,7 +90,7 @@ export function WidgetChatThreadUI({
 
     if (tokens <= 0)
       setLimitReached(
-        "You've reached your daily usage limit. Access will reset at 00:00"
+        "You've reached your daily usage limit. Access will reset at 00:00",
       );
   }, [tokens, resumeTokens]);
 
@@ -98,7 +98,7 @@ export function WidgetChatThreadUI({
     if (!currentUserId) {
       setStatus("error");
       setMessage(
-        "Please sign in to continue the conversation with our assistant."
+        "Please sign in to continue the conversation with our assistant.",
       );
       return;
     }
@@ -112,7 +112,7 @@ export function WidgetChatThreadUI({
     if (tokens <= 0) {
       setStatus("error");
       setMessage(
-        "You've reached your daily usage limit. Access will reset at 00:00"
+        "You've reached your daily usage limit. Access will reset at 00:00",
       );
       return;
     }
@@ -143,7 +143,7 @@ export function WidgetChatThreadUI({
                 threadId: currentThreadId,
                 senderId: currentUserId,
               }),
-            }
+            },
           );
           break;
 
@@ -159,7 +159,7 @@ export function WidgetChatThreadUI({
             {
               method: "POST",
               body: formData,
-            }
+            },
           );
           break;
       }
@@ -169,7 +169,7 @@ export function WidgetChatThreadUI({
         setAssistantTyping(false);
         setStatus("error");
         setMessage(
-          errorData?.error || "An unexpected error occurred. Please try again."
+          errorData?.error || "An unexpected error occurred. Please try again.",
         );
         console.error(errorData?.error);
         return;
@@ -307,7 +307,7 @@ export function WidgetChatThreadUI({
     }
   };
 
-  if (!session) {
+  if (!isAuthenticated) {
     return (
       <div className={cn("flex flex-col justify-center items-center h-full")}>
         <ClassicLoader />
@@ -374,7 +374,7 @@ export function WidgetChatThreadUI({
             "flex justify-center items-start absolute bottom-26 md:bottom-23 left-0 right-0 w-[87%] mx-auto rounded-t-xl border border-red-300 bg-linear-to-r from-red-50 to-red-100 px-3 py-2 pb-3 text-sm text-center shadow-md backdrop-blur-md transition-all duration-500 ease-out",
             limitReached
               ? "opacity-100 translate-y-0"
-              : "opacity-0 translate-y-5"
+              : "opacity-0 translate-y-5",
           )}
         >
           <p className="text-sm font-medium text-gray-700">{limitReached}</p>

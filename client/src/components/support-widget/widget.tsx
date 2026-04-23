@@ -19,8 +19,8 @@ import { WigetContact } from "@/components/support-widget/tabs/widget-contact";
 import { WidgetAssistant } from "@/components/support-widget/tabs/widget-messages";
 import { WidgetLogin } from "@/components/support-widget/tabs/widget-screens/widget-login";
 import { WidgetSettings } from "@/components/support-widget/tabs/widget-settings";
-import { SessionContext } from "@/app/layout-wrapper";
 import { useSearchParams } from "next/navigation";
+import { useSessionStore } from "@/store/session-store";
 
 export interface TabConfig {
   label: TabType;
@@ -55,10 +55,9 @@ const TAB_CONFIG: Record<TabType, TabConfig> = {
 /*                              Main Component                                */
 /* -------------------------------------------------------------------------- */
 export function SupportWidget() {
-  const session = React.useContext(SessionContext);
-
   const searchParams = useSearchParams();
   const loggedIn = searchParams.get("auth");
+  const { user, isAuthenticated } = useSessionStore();
 
   const [loading, setLoading] = React.useState<boolean>(false);
   const { setMessage, setStatus } = useErrorStore();
@@ -76,48 +75,50 @@ export function SupportWidget() {
 
   const isRootLevel = tabStacks[activeTab]?.stack.length <= 1;
   const [visited, setVisited] = React.useState<Set<TabType>>(
-    new Set<TabType>([TabType.Home])
+    new Set<TabType>([TabType.Home]),
   );
 
-  React.useEffect(() => {
-    const fetchUser = async (id: string) => {
-      try {
-        setLoading(true);
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/core-manager/api/v1/user/${id}/`
-        );
-        const data = await response.json();
+  // React.useEffect(() => {
+  //   const fetchUser = async (id: number) => {
+  //     try {
+  //       setLoading(true);
+  //       const response = await fetch(
+  //         `${process.env.NEXT_PUBLIC_BACKEND_URL}/core-manager/api/v1/user/${id}/`,
+  //       );
+  //       const data = await response.json();
 
-        if (!data.success) {
-          console.error("Error fetching user details:", data.error);
-          return;
-        }
+  //       if (!data.success) {
+  //         console.error("Error fetching user details:", data.error);
+  //         return;
+  //       }
 
-        if (data.data) {
-          setLoading(false);
-          setRole(data.data.role);
-          setTokens(data.data.daily_limit);
-          setAssistant(data.data.assistant);
-          setResumeTokens(data.data.resume_generation_limit);
-        }
-      } catch (error) {
-        console.error("Fetch error:", error);
-        setLoading(false);
-      }
-    };
+  //       if (data.data) {
+  //         setLoading(false);
+  //         setRole(data.data.role);
+  //         setTokens(data.data.daily_limit);
+  //         setAssistant(data.data.assistant);
+  //         setResumeTokens(data.data.resume_generation_limit);
+  //       }
+  //     } catch (error) {
+  //       console.error("Fetch error:", error);
+  //       setLoading(false);
+  //     }
+  //   };
 
-    if (session && session.user && session.user.id && !currentUserId)
-      fetchUser(session.user.id);
-  }, [session]);
+  //   if (user && !currentUserId) fetchUser(user.id);
+  // }, [isAuthenticated]);
 
   // Initialize default screens
   React.useEffect(() => {
     const initialStacks: Record<TabType, TabState> = Object.values(
-      TAB_CONFIG
-    ).reduce((acc, tab) => {
-      acc[tab.label] = { stack: [{ component: tab.component }] };
-      return acc;
-    }, {} as Record<TabType, TabState>);
+      TAB_CONFIG,
+    ).reduce(
+      (acc, tab) => {
+        acc[tab.label] = { stack: [{ component: tab.component }] };
+        return acc;
+      },
+      {} as Record<TabType, TabState>,
+    );
 
     setTabStacks(initialStacks);
   }, [setTabStacks]);
@@ -129,7 +130,10 @@ export function SupportWidget() {
 
   const handleTabChange = React.useCallback(
     (tab: TabType) => {
-      if ((tab === TabType.Messages || tab === TabType.Settings) && !session) {
+      if (
+        (tab === TabType.Messages || tab === TabType.Settings) &&
+        !isAuthenticated
+      ) {
         pushScreen(TabType.Home, { component: WidgetLogin });
         return;
       }
@@ -137,7 +141,7 @@ export function SupportWidget() {
       switchTab(tab);
       setVisited((prev) => new Set(prev).add(tab));
     },
-    [switchTab, session]
+    [switchTab, isAuthenticated],
   );
 
   if (loading) {
@@ -158,7 +162,7 @@ export function SupportWidget() {
             : "opacity-0 scale-0 pointer-events-none",
           isCollapse
             ? "w-full md:min-w-md md:max-w-md"
-            : "w-full md:min-w-2xl md:max-w-2xl"
+            : "w-full md:min-w-2xl md:max-w-2xl",
         )}
       >
         <ClassicLoader />
@@ -182,7 +186,7 @@ export function SupportWidget() {
           : "opacity-0 scale-0 pointer-events-none",
         isCollapse
           ? "w-full md:min-w-md md:max-w-md"
-          : "w-full md:min-w-2xl md:max-w-2xl"
+          : "w-full md:min-w-2xl md:max-w-2xl",
       )}
     >
       {/* Active Screen */}
@@ -205,7 +209,6 @@ export function SupportWidget() {
               switchTab,
               setMessage,
               setStatus,
-              session,
             };
 
             return (
@@ -216,7 +219,7 @@ export function SupportWidget() {
                 <ActiveScreen {...screenProps} />
               </div>
             );
-          }
+          },
         )}
       </div>
 
@@ -232,13 +235,13 @@ export function SupportWidget() {
                   "flex-1 flex flex-col items-center cursor-pointer",
                   tab === activeTab
                     ? "text-purple-600"
-                    : "text-gray-500 hover:text-purple-400"
+                    : "text-gray-500 hover:text-purple-400",
                 )}
               >
                 {config.icon}
                 <span className="text-sm">{config.label}</span>
               </button>
-            )
+            ),
           )}
         </nav>
       )}

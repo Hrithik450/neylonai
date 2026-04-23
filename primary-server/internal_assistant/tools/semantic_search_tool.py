@@ -3,105 +3,135 @@ from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from ..lib.load_data import chroma_collection
+from typing import Optional, List, Any
+from dataclasses import dataclass
+from functools import lru_cache
 import concurrent.futures
-import traceback
 import threading
 import datetime
-import json
+import logging
+import atexit
 import os
+
+logging.basicConfig(level=logging.INFO)
+
+@dataclass
+class Response:
+    success: bool
+    data: Optional[List[Any]]
+    error: Optional[str]
+
+class ThreadPoolService:
+    _executor = None
+    _lock = threading.Lock()
+
+    @classmethod
+    def get_executor(cls):
+        if cls._executor is None:
+            with cls._lock:
+                if cls._executor is None:
+                    cls._executor = concurrent.futures.ThreadPoolExecutor(max_workers=16)
+                    atexit.register(cls.shutdown_executor)
+        return cls._executor
+    
+    @classmethod
+    def shutdown_executor(cls):
+        with cls._lock:
+            if cls._executor:
+                cls._executor.shutdown()
+                cls._executor = None
+
+class Utility:
+    @staticmethod
+    @lru_cache(maxsize=1)
+    def get_embedding_model():
+        return OpenAIEmbeddings(model=EMBEDDING_MODEL_NAME, api_key=os.getenv("OPENAI_API_KEY"))
+    
+    @staticmethod
+    @lru_cache(maxsize=1)
+    def get_query_expansion_chain():
+        query_expansion_prompt = """You are an AI language model assistant. Your task is to generate 3 
+        different versions of the given user question to retrieve relevant documents from a vector 
+        database. By generating multiple perspectives on the user question, your goal is to help
+        the user overcome some of the limitations of the distance-based similarity search. 
+        Provide these alternative questions separated by newlines. Original question: {question}"""
+
+        prompt_perspectives = ChatPromptTemplate.from_template(query_expansion_prompt)
+
+        return (
+            prompt_perspectives
+            | ChatOpenAI(model=AGENT_MODEL, temperature=0.4)
+            | StrOutputParser()
+            | (lambda x: x.split("\n"))
+        )
 
 class SemanticSearchTool:
     """
-    Semantic search tool using BM25 + Dense Embeddings + Cross-Encoder Reranking.
+    Semantic search tool.
     This class reuses a global thread pool and shared model resources efficiently.
     """
-    thread_pool_excecutor = concurrent.futures.ThreadPoolExecutor(max_workers=16)
-    encoder_api_url = os.getenv("ENCODER_API_URL")
-
-    def __init__(self):
-        """Initialize all heavy resources only once."""
-        try:
-            print("Initializing semantic search tool...")
-            # 1. Embedding function with batching ---
-            self.embedding_model = OpenAIEmbeddings(model=EMBEDDING_MODEL_NAME, api_key=os.getenv("OPENAI_API_KEY"))
-            
-            # 2. Query expansion pipeline
-            template = """You are an AI language model assistant. Your task is to generate 2 
-            different versions of the given user question to retrieve relevant documents from a vector 
-            database. By generating multiple perspectives on the user question, your goal is to help
-            the user overcome some of the limitations of the distance-based similarity search. 
-            Provide these alternative questions separated by newlines. Original question: {question}"""
-            self.prompt_perspectives = ChatPromptTemplate.from_template(template)
-
-            self.generate_queries = (
-                self.prompt_perspectives 
-                | ChatOpenAI(model=AGENT_MODEL, temperature=0) 
-                | StrOutputParser() 
-                | (lambda x: x.split("\n"))
-            )
-            print("Initialized semantic search tool.")
-
-        except Exception as e:
-            err_payload = {"success": False, "error": str(e), "traceback": traceback.format_exc()}
-            print(f"\033[91m{err_payload}\033[0m")
-            return err_payload
-
-    def process_query(self, q: str, batch_no: int):
-        """Process one query using BM25 and dense embeddings."""
+    @staticmethod
+    def process_single_query(q: str, batch_no: int):
         try:
             thread_name = threading.current_thread().name
-            print(f"{datetime.datetime.now()} - Start batch {batch_no} on {thread_name}")
+            logging.info(f"{datetime.datetime.now()} - Start batch {batch_no} on {thread_name}")
 
-            embedding = self.embedding_model.embed_query(q)
+            embedding_model = Utility.get_embedding_model()
+            embedding = embedding_model.embed_query(q)
 
             results = chroma_collection.query(query_embeddings=[embedding])
-            sem_docs = results["documents"][0]
-            sem_scores = results["distances"][0]
-            data = []
-            
-            for doc, score in zip(sem_docs, sem_scores):
-                data.append((doc, float(score)))
 
-            print(f"{datetime.datetime.now()} - End batch {batch_no} on {thread_name}")
-            return {"success": True, "data": data}
+            logging.info(f"{datetime.datetime.now()} - End batch {batch_no} on {thread_name}")
+            return Response(success=True, data=results)
         
         except Exception as e:
-            err_payload = {"success": False, "error": str(e), "traceback": traceback.format_exc()}
-            print(f"\033[91m{err_payload}\033[0m")
-            return err_payload
+            logging.exception("Error in process_query")
+            return Response(success=False, error=f"Error in process_query: {e}")
 
-    def run_tool(self, query: str):
+    @staticmethod
+    def semantic_search(query: str):
         try:
-            print(f'semantic_search_tool is being called with {query}')
+            logging.info(f'semantic_search_tool is being called with {query}')
         
             if chroma_collection is None:
+                logging.error("ChromaDB connection is not available")
                 return "Error: ChromaDB connection is not available."
 
-            # 1. Expand into multiple queries
-            expanded_queries = self.generate_queries.invoke(input={"question": query})[:2]
+            generator = Utility.get_query_expansion_chain()
+            executor = ThreadPoolService.get_executor()
 
-            all_results = []
-            # 2. For each expanded query, embed and fetch document
-            for response in concurrent.futures.as_completed({SemanticSearchTool.thread_pool_excecutor.submit(self.process_query, q, i): i for i, q in enumerate(expanded_queries, start=0)}):
-                result = response.result(timeout=10)
-                if not result.get("success"):
-                    err_payload = result.get("error")
-                    print(f"\033[91m{err_payload}\033[0m")
-                    return "\n\n---".join(json.dumps(err_payload))
-                all_results.extend(result['data'])
+            expanded_queries = generator.invoke({"question": query})[:3]
+            logging.info(f"Expanded queries: {expanded_queries}")
 
-            # 3. Deduplicate (get_unique_union effect)
-            unique_results = {}
-            for doc, score in all_results:
-                if doc not in unique_results or score > unique_results[doc]:
-                    unique_results[doc] = score
+            futures = {
+                executor.submit(SemanticSearchTool.process_single_query, q, i) : i for i, q in enumerate(expanded_queries)
+            }
 
-            top_docs = sorted(unique_results.items(), key=lambda x: x[1], reverse=False)
-            results_for_llm = [doc for doc, _ in top_docs[:10]]
+            results = []
+
+            for future in concurrent.futures.as_completed(futures):
+                batch_no = futures[future]
+
+                try:
+                    response = future.result(timeout=10)
+
+                    if not response.success:
+                        logging.warning(f"Batch {batch_no} failed: {response.error}")
+                        continue
+
+                    results.extend(response.data)
+
+                except Exception:
+                    logging.exception(f"Future excecution failed for batch {batch_no}")
+
+            if not results:
+                logging.info("No relavant documents found")
+                return "No relevant documents found"
             
-            return "\n\n---\n\n".join(results_for_llm) if results_for_llm else "No relevant documents found."
+            logging.info(f"Returning {len(results)} results.")
+
+            return "\n\n---\n\n".join(results)
         
         except Exception as e:
-            err_payload = {"error": str(e), "traceback": traceback.format_exc()}
-            print(f"\033[91m{err_payload}\033[0m")
-            return "\n\n---".join(json.dumps(err_payload))
+            logging.exception(f"semantic_search failed: {e}")
+            return "Internal server error"
