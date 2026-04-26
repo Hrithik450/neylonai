@@ -4,25 +4,25 @@
 version: 2
 updates:
   # Update GitHub actions in workflows
-  - package-ecosystem: 'github-actions'
-    directory: '/'
+  - package-ecosystem: "github-actions"
+    directory: "/"
     # Every weekday
     schedule:
-      interval: 'daily'
+      interval: "daily"
     groups:
       github-actions:
         patterns:
-          - '*'
+          - "*"
 
   # Enable version updates for Python/uv
-  - package-ecosystem: 'uv'
+  - package-ecosystem: "uv"
     # Look for a `pyproject.toml` in the `root` directory
-    directory: '/'
+    directory: "/"
     # Every weekday
     schedule:
-      interval: 'daily'
+      interval: "daily"
     groups:
       python:
         update-types:
-          - 'minor'
-          - 'patch'
+          - "minor"
+          - "patch"
