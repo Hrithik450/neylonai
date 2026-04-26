@@ -1,3 +1,5 @@
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.mixins import ListModelMixin
@@ -7,8 +9,6 @@ from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
 from server.users.models import User
-from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import ensure_csrf_cookie
 
 from .serializers import UserSerializer
 
@@ -39,7 +39,7 @@ class UserViewSet(RetrieveModelMixin, ListModelMixin, UpdateModelMixin, GenericV
                 status=status.HTTP_200_OK,
             )
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return Response(
                 {"success": False, "data": None, "error": str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,

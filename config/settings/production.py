@@ -118,8 +118,8 @@ ADMIN_URL = env("DJANGO_ADMIN_URL", default="secure_admin/")
 # https://anymail.readthedocs.io/en/stable/esps/sendgrid/
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 # ANYMAIL = {
-#     "SENDGRID_API_KEY": env("SENDGRID_API_KEY", default=None),
-#     "SENDGRID_API_URL": env("SENDGRID_API_URL", default="https://api.sendgrid.com/v3/"),
+#     "SENDGRID_API_KEY": env("SENDGRID_API_KEY"),
+#     "SENDGRID_API_URL": "https://api.sendgrid.com/v3/",
 # }
 
 # LOGGING

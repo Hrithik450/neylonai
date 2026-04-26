@@ -1,7 +1,7 @@
+from allauth.socialaccount.models import SocialAccount
 from rest_framework import serializers
 
 from server.users.models import User
-from allauth.socialaccount.models import SocialAccount
 
 
 class UserSerializer(serializers.ModelSerializer[User]):

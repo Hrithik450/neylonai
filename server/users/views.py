@@ -43,7 +43,8 @@ class UserUpdateView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):
     def get_success_url(self) -> str:
         # assert ensures condition must be true.
         assert self.request.user.is_authenticated  # type guard
-        # get_absolute_url() is a user defined method on the User model that returns profile URL
+        # get_absolute_url() is a user defined method on the User model.
+        # It returns the profile URL for the current user.
         return self.request.user.get_absolute_url()
 
     # gets the object of the user to be updated.
@@ -61,7 +62,8 @@ class UserRedirectView(LoginRequiredMixin, RedirectView):
 
     def get_redirect_url(self) -> str:
         # pk stands for primary key.
-        # kwargs stands keyword args, dictionary of named arguments used to pass values into func.
+        # kwargs stands keyword args, dictionary of named arguments
+        # used to pass values into func.
         return reverse("users:detail", kwargs={"pk": self.request.user.pk})
 
 

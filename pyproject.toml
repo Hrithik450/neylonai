@@ -31,13 +31,14 @@ dependencies = [
   "gunicorn==25.3.0",
   "hiredis==3.3.1",
   "pillow==12.2.0",
+  "pre-commit>=4.5.1",
   "psycopg[c]==3.3.3",
   "pyjwt>=2.12.1",
   "python-slugify==8.0.4",
   "redis==7.4.0",
   "sentry-sdk==2.57.0",
-  "uvicorn-worker==0.4.0",
   "uvicorn[standard]==0.44.0",
+  "uvicorn-worker==0.4.0",
   "whitenoise==6.12.0",
 ]
 
@@ -71,7 +72,6 @@ extend-exclude = [
   "*/migrations/*.py",
   "staticfiles/*",
 ]
-
 lint.select = [
   "A",
   "ASYNC",
@@ -123,37 +123,22 @@ lint.select = [
   "YTT",
 ]
 lint.ignore = [
+  "COM812",
   "RUF012", # Mutable class attributes should be annotated with `typing.ClassVar`
   "S101",   # Use of assert detected https://docs.astral.sh/ruff/rules/assert/
-  "SIM102", # sometimes it's better to nest
-  # of types for comparison.
+  "SIM102", # sometimes it's better to nest of types for comparison.
   # Deactivated because it can make the code slow:
   # https://github.com/astral-sh/ruff/issues/7871
 ]
+lint.per-file-ignores."config/settings/base.py" = [ "ERA001" ]
+lint.per-file-ignores."config/settings/local.py" = [ "ERA001" ]
+lint.per-file-ignores."config/settings/production.py" = [ "ERA001" ]
 lint.isort.force-single-line = true
 
 [tool.pyproject-fmt]
 keep_full_version = true
 
-# ==== pytest ====
-
-[tool.pytest.ini_options]
-minversion = "6.0"
-addopts = "--ds=config.settings.test --reuse-db --import-mode=importlib"
-python_files = [
-  "tests.py",
-  "test_*.py",
-]
-
-# ==== Coverage ====
-
-[tool.coverage.run]
-include = [ "server/**" ]
-omit = [ "*/migrations/*", "*/tests/*" ]
-plugins = [ "django_coverage_plugin" ]
-
 # ==== mypy ====
-
 [tool.mypy]
 python_version = "3.14"
 check_untyped_defs = true
@@ -165,17 +150,30 @@ plugins = [
   "mypy_django_plugin.main",
   "mypy_drf_plugin.main",
 ]
-
-[[tool.mypy.overrides]]
-# Django migrations should not produce any errors:
-module = "*.migrations.*"
-ignore_errors = true
+overrides = [
+  # Django migrations should not produce any errors:
+  { module = "*.migrations.*", ignore_errors = true },
+]
 
 [tool.django-stubs]
 django_settings_module = "config.settings.test"
 
-# ==== djLint ====
+[tool.pytest]
+# ==== pytest ====
+ini_options.minversion = "6.0"
+ini_options.addopts = "--ds=config.settings.test --reuse-db --import-mode=importlib"
+ini_options.python_files = [
+  "tests.py",
+  "test_*.py",
+]
 
+[tool.coverage]
+# ==== Coverage ====
+run.include = [ "server/**" ]
+run.omit = [ "*/migrations/*", "*/tests/*" ]
+run.plugins = [ "django_coverage_plugin" ]
+
+# ==== djLint ====
 [tool.djlint]
 blank_line_after_tag = "load,extends"
 close_void_tags = true
@@ -187,9 +185,5 @@ include = "H017,H035"
 indent = 2
 max_line_length = 119
 profile = "django"
-
-[tool.djlint.css]
-indent_size = 2
-
-[tool.djlint.js]
-indent_size = 2
+css.indent_size = 2
+js.indent_size = 2
