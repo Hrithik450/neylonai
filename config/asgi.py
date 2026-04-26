@@ -23,7 +23,6 @@ BASE_DIR = Path(__file__).resolve(strict=True).parent.parent
 sys.path.append(str(BASE_DIR / "server"))
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.local")
-print("DJANGO_SETTINGS_MODULE AFTER:", os.environ.get("DJANGO_SETTINGS_MODULE"))
 
 application = ProtocolTypeRouter(
     {

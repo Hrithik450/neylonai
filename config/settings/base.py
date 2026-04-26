@@ -14,7 +14,7 @@ APPS_DIR = BASE_DIR / "server"
 # creates an env object that helps to read environment variable easily.
 env = environ.Env()
 
-environ.Env.read_env(BASE_DIR / ".env")
+environ.Env.read_env(env.str("ENV_FILE", default=BASE_DIR / ".env.local"))
 
 # GENERAL
 # ------------------------------------------------------------------------------
@@ -133,7 +133,7 @@ AUTHENTICATION_BACKENDS = [
 # https://docs.djangoproject.com/en/dev/ref/settings/#auth-user-model
 AUTH_USER_MODEL = "users.User"
 # https://docs.djangoproject.com/en/dev/ref/settings/#login-redirect-url
-LOGIN_REDIRECT_URL = "http://localhost:3000/dashboard"
+LOGIN_REDIRECT_URL = "users:redirect"
 # https://docs.djangoproject.com/en/dev/ref/settings/#login-url
 # account_login will be provided by django-allauth
 LOGIN_URL = "account_login"
@@ -181,7 +181,7 @@ MIDDLEWARE = [
 # https://docs.djangoproject.com/en/dev/ref/settings/#static-root
 # django will collect all static files in this dir for production.
 # python manage.py collectstatic (use with this command to copy all static files into here for production usage).
-STATIC_ROOT = str(BASE_DIR / "staticfiles")
+STATIC_ROOT = str(BASE_DIR / "public_collected/")
 # https://docs.djangoproject.com/en/dev/ref/settings/#static-url
 # url prefix to access static files. i,e: <link href="/static/css/style.css">
 STATIC_URL = "/static/"
@@ -373,8 +373,6 @@ SOCIALACCOUNT_LOGIN_ON_GET = True
 SOCIALACCOUNT_EMAIL_VERIFICATION = "none"
 
 SOCIALACCOUNT_EMAIL_AUTHENTICATION = True
-
-HEADLESS_ONLY = True
 
 # django-rest-framework
 # -------------------------------------------------------------------------------
