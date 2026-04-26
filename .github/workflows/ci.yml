@@ -5,8 +5,6 @@ on:
     branches: ["main"]
 
 env:
-  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-  REGION: ${{ secrets.GCP_REGION }}
   SERVICE: ${{ secrets.GCP_SERVICE_NAME }}
   IMAGE: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_REPOSITORY }}/${{ secrets.IMAGE_NAME }}
 
@@ -31,7 +29,7 @@ jobs:
         uses: google-github-actions/setup-gcloud@v2
 
       - name: Configure Docker
-        run: gcloud auth configure-docker $REGION-docker.pkg.dev
+        run: gcloud auth configure-docker ${{ secrets.GCP_REGION }}-docker.pkg.dev
 
       - name: Build Image
         run: |
@@ -41,6 +39,28 @@ jobs:
         run: |
           docker push "$IMAGE:${{ github.sha }}"
           docker push "$IMAGE:latest"
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SERVICE_CREDENTIALS }}
+
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy "$SERVICE" \
+            --image "$IMAGE:${{ github.sha }}" \
+            --region "${{ secrets.GCP_REGION }}" \
+            --platform managed \
+            --allow-unauthenticated \
+            --service-account="${{ secrets.GCP_SERVICE_ACCOUNT }}"
 
   # linter:
   #   runs-on: ubuntu-latest
