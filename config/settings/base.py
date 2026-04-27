@@ -1,10 +1,14 @@
 # ruff: noqa: E501
 """Base settings to build other settings files upon."""
 
+import logging
+import os
 import ssl
 from pathlib import Path
 
 import environ
+
+logger = logging.getLogger(__name__)
 
 # returns the base directory: root dir.
 BASE_DIR = Path(__file__).resolve(strict=True).parent.parent.parent
@@ -18,6 +22,9 @@ env_file = BASE_DIR / ".env.local"
 
 if env_file.exists():
     environ.Env.read_env(env_file)
+
+for key, value in os.environ.items():
+    logger.warning("%s = %s", key, value)
 
 # GENERAL
 # ------------------------------------------------------------------------------
