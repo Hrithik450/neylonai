@@ -3,8 +3,25 @@ from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.db import DatabaseError
 from django.db import connection
+from django.http import HttpResponse
 from django.http import JsonResponse
 from rest_framework import status
+
+
+def favicon(request):
+
+    return HttpResponse(status=204)
+
+
+def home(request):
+
+    return JsonResponse(
+        {
+            "status": "ok",
+            "service": "neylonai",
+            "version": "1.0.0",
+        }
+    )
 
 
 def health_check(request):

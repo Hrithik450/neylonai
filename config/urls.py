@@ -9,7 +9,6 @@ from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.urls import include
 from django.urls import path
 from django.views import defaults as default_views
-from django.views.generic import TemplateView
 from drf_spectacular.views import SpectacularAPIView
 from drf_spectacular.views import SpectacularSwaggerView
 from rest_framework.authtoken.views import obtain_auth_token
@@ -17,7 +16,9 @@ from rest_framework.authtoken.views import obtain_auth_token
 from server.users.api.google.views import LogoutView
 from server.users.api.google.views import google_onetap_login
 
+from .health import favicon
 from .health import health_check
+from .health import home
 
 # urlpatterns -> list contains all the routes of your server
 # (read more about url patterns: https://docs.djangoproject.com/en/6.0/topics/http/urls/).
@@ -29,12 +30,10 @@ from .health import health_check
 
 # handles web-pages/templates stuff...
 urlpatterns = [
-    path("", TemplateView.as_view(template_name="pages/home.html"), name="home"),
-    path(
-        "about/",
-        TemplateView.as_view(template_name="pages/about.html"),
-        name="about",
-    ),
+    # root
+    path("", home),
+    # favicon
+    path("favicon.ico", favicon),
     # Health
     path("health/", health_check),
     # Django Admin,
