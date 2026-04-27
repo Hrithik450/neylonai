@@ -10,6 +10,7 @@ from .models import User
 class UserAdminChangeForm(admin_forms.UserChangeForm):
     class Meta(admin_forms.UserChangeForm.Meta):
         model = User
+        fields = "__all__"
         field_classes = {"email": EmailField}
 
 

@@ -24,12 +24,74 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  linter:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code Repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version-file: ".python-version"
+
+      - name: Run pre-commit
+        uses: pre-commit/action@v3.0.1
+
+  test:
+    runs-on: ubuntu-latest
+    needs: linter
+
+    services:
+      redis:
+        image: redis:7.2
+        ports:
+          - 6379:6379
+      postgres:
+        image: postgres:17
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_PASSWORD: postgres
+
+    env:
+      REDIS_URL: "redis://localhost:6379/0"
+      # postgres://user:password@host:port/database
+      DATABASE_URL: "postgres://postgres:postgres@localhost:5432/postgres"
+
+    steps:
+      - name: Checkout Code Repository
+        uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: "true"
+
+      - name: Set up Python
+        uses: actions/setup-python@v6.2.0
+        with:
+          python-version-file: ".python-version"
+
+      - name: Install dependencies
+        run: uv sync --locked
+
+      - name: Check DB Migrations
+        run: uv run python manage.py makemigrations --check
+
+      - name: Run DB Migrations
+        run: uv run python manage.py migrate
+
+      - name: Test with pytest
+        run: uv run pytest
+
   build:
     runs-on: ubuntu-latest
+    needs: test
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
@@ -72,64 +134,3 @@ jobs:
             --platform managed \
             --allow-unauthenticated \
             --service-account="${{ secrets.GCP_SERVICE_ACCOUNT }}"
-
-  linter:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code Repository
-        uses: actions/checkout@v6
-
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version-file: ".python-version"
-
-      - name: Run pre-commit
-        uses: pre-commit/action@v3.0.1
-
-  # With no caching at all the entire ci process takes 3m to complete!
-  # pytest:
-  #   runs-on: ubuntu-latest
-
-  #   services:
-  #     redis:
-  #       image: redis:7.2
-  #       ports:
-  #         - 6379:6379
-  #     postgres:
-  #       image: postgres:17
-  #       ports:
-  #         - 5432:5432
-  #       env:
-  #         POSTGRES_PASSWORD: postgres
-
-  #   env:
-  #     REDIS_URL: "redis://localhost:6379/0"
-  #     # postgres://user:password@host:port/database
-  #     DATABASE_URL: "postgres://postgres:postgres@localhost:5432/postgres"
-
-  #   steps:
-  #     - name: Checkout Code Repository
-  #       uses: actions/checkout@v6
-
-  #     - name: Install uv
-  #       uses: astral-sh/setup-uv@v8.1.0
-  #       with:
-  #         enable-cache: "true"
-
-  #     - name: Set up Python
-  #       uses: actions/setup-python@v6.2.0
-  #       with:
-  #         python-version-file: ".python-version"
-
-  #     - name: Install dependencies
-  #       run: uv sync --locked
-
-  #     - name: Check DB Migrations
-  #       run: uv run python manage.py makemigrations --check
-
-  #     - name: Run DB Migrations
-  #       run: uv run python manage.py migrate
-
-  #     - name: Test with pytest
-  #       run: uv run pytest
