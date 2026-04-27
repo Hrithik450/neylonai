@@ -168,8 +168,8 @@ AUTH_PASSWORD_VALIDATORS = [
 # https://docs.djangoproject.com/en/dev/ref/settings/#middleware
 # functions that run before and after every request.
 MIDDLEWARE = [
-    "django.middleware.security.SecurityMiddleware",  # https redirects, security headers.
     "corsheaders.middleware.CorsMiddleware",  # cors policy.
+    "django.middleware.security.SecurityMiddleware",  # https redirects, security headers.
     "whitenoise.middleware.WhiteNoiseMiddleware",  # handles static files in production.
     "django.contrib.sessions.middleware.SessionMiddleware",  # handles sessions.
     "django.middleware.locale.LocaleMiddleware",  # language selection.
