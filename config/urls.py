@@ -9,6 +9,7 @@ from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.urls import include
 from django.urls import path
 from django.views import defaults as default_views
+from django.views.generic import TemplateView
 from drf_spectacular.views import SpectacularAPIView
 from drf_spectacular.views import SpectacularSwaggerView
 from rest_framework.authtoken.views import obtain_auth_token
@@ -30,12 +31,15 @@ from .health import home
 
 # handles web-pages/templates stuff...
 urlpatterns = [
-    # root
-    path("", home),
-    # favicon
+    path("", home, name="home"),
+    path(
+        "about/",
+        TemplateView.as_view(template_name="pages/about.html"),
+        name="about",
+    ),
     path("favicon.ico", favicon),
     # Health
-    path("health/", health_check),
+    path("health/", health_check, name="health"),
     # Django Admin,
     # routing path will be provided by ADMIN_URL variable in settings
     # (read more about settings: https://docs.djangoproject.com/en/6.0/ref/settings/)
