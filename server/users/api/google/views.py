@@ -138,9 +138,7 @@ google_onetap_login = csrf_exempt(GoogleOneTapLoginView.as_view())
 
 class LogoutView(View):
     def post(self, request):
-
         logout(request)
-
         return JsonResponse(
             {
                 "success": True,
