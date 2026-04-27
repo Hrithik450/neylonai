@@ -387,7 +387,9 @@ REST_FRAMEWORK = {
 
 # django-cors-headers - https://github.com/adamchainz/django-cors-headers#setup
 CORS_URLS_REGEX = r"^/(api|accounts)/.*$"
-CORS_ALLOWED_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:5500"]
+CORS_ALLOWED_ORIGINS = env.list(
+    "CORS_ALLOWED_ORIGINS", default=["http://localhost:3000", "http://127.0.0.1:5500"]
+)
 CORS_ALLOW_CREDENTIALS = True
 
 # By Default swagger ui is available only to admin user(s). You can change permission classes to change that
