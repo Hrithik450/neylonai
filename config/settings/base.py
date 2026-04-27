@@ -14,7 +14,10 @@ APPS_DIR = BASE_DIR / "server"
 # creates an env object that helps to read environment variable easily.
 env = environ.Env()
 
-environ.Env.read_env(env.str("ENV_FILE", default=BASE_DIR / ".env.local"))
+env_file = BASE_DIR / ".env.local"
+
+if env_file.exists():
+    environ.Env.read_env(env_file)
 
 # GENERAL
 # ------------------------------------------------------------------------------
@@ -391,6 +394,10 @@ CORS_ALLOWED_ORIGINS = env.list(
     "CORS_ALLOWED_ORIGINS", default=["http://localhost:3000", "http://127.0.0.1:5500"]
 )
 CORS_ALLOW_CREDENTIALS = True
+
+CSRF_TRUSTED_ORIGINS = env.list(
+    "CSRF_TRUSTED_ORIGINS", default=["http://localhost:3000", "http://127.0.0.1:5500"]
+)
 
 # By Default swagger ui is available only to admin user(s). You can change permission classes to change that
 # See more configuration options at https://drf-spectacular.readthedocs.io/en/latest/settings.html#settings

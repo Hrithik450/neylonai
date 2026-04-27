@@ -38,10 +38,6 @@ CSRF_COOKIE_HTTPONLY = False
 
 CSRF_COOKIE_SAMESITE = "Lax"
 
-CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:3000",
-]
-
 # CACHES
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#caches
