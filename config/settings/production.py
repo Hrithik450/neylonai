@@ -1,8 +1,5 @@
 # ruff: noqa: E501
 
-import logging
-
-from django.conf import settings
 
 from .base import *  # noqa: F403
 from .base import DATABASES
@@ -203,14 +200,3 @@ SPECTACULAR_SETTINGS["SERVERS"] = [
 ]
 # Your stuff...
 # ------------------------------------------------------------------------------
-
-logger = logging.getLogger(__name__)
-
-logger.warning("===== FINAL DJANGO SETTINGS (MERGED) =====")
-
-for key in dir(settings):
-    if key.isupper():  # only real settings
-        value = getattr(settings, key)
-        logger.warning("%s = %s", key, value)
-
-logger.warning("===== END SETTINGS =====")

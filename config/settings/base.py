@@ -1,13 +1,10 @@
 # ruff: noqa: E501
 """Base settings to build other settings files upon."""
 
-import logging
 import ssl
 from pathlib import Path
 
 import environ
-
-logger = logging.getLogger(__name__)
 
 # returns the base directory: root dir.
 BASE_DIR = Path(__file__).resolve(strict=True).parent.parent.parent
@@ -168,8 +165,8 @@ AUTH_PASSWORD_VALIDATORS = [
 # https://docs.djangoproject.com/en/dev/ref/settings/#middleware
 # functions that run before and after every request.
 MIDDLEWARE = [
-    "corsheaders.middleware.CorsMiddleware",  # cors policy.
     "django.middleware.security.SecurityMiddleware",  # https redirects, security headers.
+    "corsheaders.middleware.CorsMiddleware",  # cors policy.
     "whitenoise.middleware.WhiteNoiseMiddleware",  # handles static files in production.
     "django.contrib.sessions.middleware.SessionMiddleware",  # handles sessions.
     "django.middleware.locale.LocaleMiddleware",  # language selection.

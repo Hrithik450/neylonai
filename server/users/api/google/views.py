@@ -136,6 +136,7 @@ class GoogleOneTapLoginView(View):
 google_onetap_login = csrf_exempt(GoogleOneTapLoginView.as_view())
 
 
+@method_decorator(csrf_exempt, name="dispatch")
 class LogoutView(View):
     def post(self, request):
         logout(request)
