@@ -78,6 +78,10 @@ RUN if [ "${DJANGO_DEBUG}" = "false" ]; then \
   SECRET_KEY=dummyvalue python3 manage.py collectstatic --no-input; \
   else mkdir -p /app/public_collected; fi
 
+RUN chmod 0755 bin/*
+
+ENTRYPOINT [ "/app/bin/entrypoint.sh" ]
+
 EXPOSE ${PORT:-8000}
 
-CMD ["sh", "-c", "uvicorn config.asgi:application --host 0.0.0.0 --port ${PORT:-8000}"]
+CMD ["gunicorn"]

@@ -1,3 +1,4 @@
+from django.core.cache import cache
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework import status
@@ -25,22 +26,24 @@ class UserViewSet(RetrieveModelMixin, ListModelMixin, UpdateModelMixin, GenericV
     @action(detail=False, methods=["get"])
     @method_decorator(ensure_csrf_cookie)
     def me(self, request):
-        try:
-            if not request.user.is_authenticated:
-                return Response(
-                    {"success": False, "data": None, "error": "User not authenticated"},
-                    status=status.HTTP_200_OK,
-                )
-
-            serializer = UserSerializer(request.user, context={"request": request})
-
+        if not request.user.is_authenticated:
             return Response(
-                {"success": True, "data": {"user": serializer.data}, "error": None},
+                {"success": False, "data": None, "error": "User not authenticated"},
                 status=status.HTTP_200_OK,
             )
-
-        except Exception as e:  # noqa: BLE001
+        cache_key = f"user_me_{request.user.id}"
+        cached_data = cache.get(cache_key)
+        if cached_data:
             return Response(
-                {"success": False, "data": None, "error": str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                {"success": True, "data": {"user": cached_data}, "error": None}
             )
+
+        serializer = UserSerializer(request.user, context={"request": request})
+        data = serializer.data
+
+        cache.set(cache_key, data, timeout=3600)
+
+        return Response(
+            {"success": True, "data": {"user": data}, "error": None},
+            status=status.HTTP_200_OK,
+        )

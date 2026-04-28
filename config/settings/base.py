@@ -78,7 +78,7 @@ ROOT_URLCONF = "config.urls"
 
 # https://docs.djangoproject.com/en/dev/ref/settings/#asgi-application
 # ensures entry point for the web server.
-ASGI_APPLICATION = "config.asgi.application"
+ASGI_APPLICATION = "config.wsgi.application"
 
 # APPS
 # ------------------------------------------------------------------------------
