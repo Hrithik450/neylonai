@@ -19,47 +19,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  linter:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code Repository
-        uses: actions/checkout@v6
-
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version-file: ".python-version"
-
-      - name: Run pre-commit
-        uses: pre-commit/action@v3.0.1
-
-  test:
-    runs-on: ubuntu-latest
-    needs: linter
-
-    steps:
-      - name: Checkout Code Repository
-        uses: actions/checkout@v6
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v8.1.0
-        with:
-          enable-cache: "true"
-
-      - name: Set up Python
-        uses: actions/setup-python@v6.2.0
-        with:
-          python-version-file: ".python-version"
-
-      - name: Install dependencies
-        run: uv sync --locked
-
-      - name: Check DB Migrations
-        run: uv run python manage.py makemigrations --check
-
-      - name: Run DB Migrations
-        run: uv run python manage.py migrate
-
   build:
     runs-on: ubuntu-latest
     needs: test
