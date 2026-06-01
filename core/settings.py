@@ -24,31 +24,28 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-7j%u1bj2$9_xcim06-5*mc_(arnnu8)^+2i*0gcvy28r!h0-%e"
+SECRET_KEY = os.getenv("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv("DEBUG", "False").lower() == "true"
 
 USE_X_FORWARDED_HOST = True
+
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-ALLOWED_HOSTS = [
-    "localhost",
-    "127.0.0.1",
-]
+
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",")
 
 AUTH_USER_MODEL = "api.User"
 
-SESSION_COOKIE_SECURE = False
+SESSION_COOKIE_SECURE = not DEBUG
 
-SESSION_COOKIE_SAMESITE = "Lax"
+SESSION_COOKIE_SAMESITE = "None" if not DEBUG else "Lax"
 
-CSRF_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = not DEBUG
 
-CSRF_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SAMESITE = "None" if not DEBUG else "Lax"
 
-CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:3000",
-]
+CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_ORIGINS", "").split(",")
 
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 
@@ -93,7 +90,7 @@ CORS_ALLOW_HEADERS = [
     "cache-control",
     "x-requested-with",
 ]
-CORS_ALLOWED_ORIGINS = ["https://neylonai.vercel.app", "http://localhost:3000"]
+CORS_ALLOWED_ORIGINS = os.getenv("CORS_ORIGINS", "").split(",")
 CORS_ALLOW_CREDENTIALS = True
 
 ROOT_URLCONF = "core.urls"
