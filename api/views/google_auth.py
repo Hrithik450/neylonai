@@ -85,6 +85,9 @@ class GoogleOneTapLoginView(APIView):
 
 
 class LogoutView(APIView):
+    authentication_classes = []
+    permission_classes = []
+
     def post(self, request):
         logout(request)
 
