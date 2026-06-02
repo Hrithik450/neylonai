@@ -53,9 +53,9 @@ GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 
 INSTALLED_APPS = [
     "api",
-    "assistant",
     "storages",
     "corsheaders",
+    "orchestration",
     "rest_framework",
     "drf_spectacular",
     "django.contrib.admin",

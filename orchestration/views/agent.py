@@ -3,7 +3,7 @@ from django.http import StreamingHttpResponse
 from typing import Optional
 
 from api.services.thread_message import ThreadMessageService
-from assistant.services.streaming import AgentStreamService
+from orchestration.services.streaming import AgentStreamService
 
 from rest_framework import status
 from rest_framework.views import APIView
@@ -12,7 +12,7 @@ from rest_framework.response import Response
 from ..lib.utils import system_prompt, async_to_sync_generator
 from langchain_core.messages import AIMessage, SystemMessage, HumanMessage
 
-from assistant.agents.agent import agent_graph
+from orchestration.agents.agent import agent_graph
 from datetime import datetime
 import pytz
 
