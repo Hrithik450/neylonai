@@ -60,10 +60,13 @@ class AgentView(APIView):
                 thread_messages_response = (
                     ThreadMessageService.list_recent_thread_messages(thread_id)
                 )
+
+                print("thread messages response: ", thread_messages_response)
                 if thread_messages_response["success"]:
                     conversation_history = thread_messages_response["data"]
 
             agent_state = self.build_agent_state(user_input, conversation_history)
+
             events_iter = agent_graph.astream_events(
                 input=agent_state,
                 version="v2",
