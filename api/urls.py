@@ -2,18 +2,19 @@
 from django.urls import path
 from django.views.decorators.csrf import csrf_exempt
 
-from .views.thread_messages import (
-    ThreadMessageServiceView,
-    ThreadMessagesServiceView,
+from .views.thread_message import (
+    CreateThreadMessageView,
+    RecentThreadMessagesView,
+    ThreadMessagesView,
 )
-from .views.threads import ListThreadServiceView, ThreadServiceView
+from .views.thread import CreateThreadView, ThreadDetailView, ThreadsView
 from .views.cron_job import CronJobServiceView
 
-from .views.user import UserServiceView
-from .views.user import ProfileView
+from .views.user import UserProfileView
 
 from .views.server_health import HealthCheck
 from .views.google_auth import GoogleOneTapLoginView
+from .views.google_auth import LogoutView
 
 urlpatterns = [
     path(
@@ -21,25 +22,38 @@ urlpatterns = [
         csrf_exempt(GoogleOneTapLoginView.as_view()),
         name="google-login",
     ),
-    path("threads/", ThreadServiceView.as_view(), name="thread-create"),
+    path("logout/", LogoutView.as_view(), name="logout"),
     path(
-        "threads/<uuid:thread_id>/", ThreadServiceView.as_view(), name="thread-detail"
+        "threads/",
+        CreateThreadView.as_view(),
+        name="thread-create",
+    ),
+    path(
+        "threads/<uuid:thread_id>/",
+        ThreadDetailView.as_view(),
+        name="thread-detail",
     ),
     path(
         "threads/user/<uuid:user_id>/",
-        ListThreadServiceView.as_view(),
+        ThreadsView.as_view(),
         name="thread-list",
     ),
-    path("thread_messages/", ThreadMessageServiceView.as_view(), name="thread-message"),
+    path(
+        "thread_messages/",
+        CreateThreadMessageView.as_view(),
+        name="thread-message-create",
+    ),
+    path(
+        "thread_messages/recent/<uuid:thread_id>/",
+        RecentThreadMessagesView.as_view(),
+        name="thread-message-recent",
+    ),
     path(
         "thread_messages/<uuid:thread_id>/",
-        ThreadMessagesServiceView.as_view(),
+        ThreadMessagesView.as_view(),
         name="thread-message-list",
     ),
+    path("me/", UserProfileView.as_view(), name="profile"),
     path("reset-tokens/", CronJobServiceView.as_view(), name="reset-tokens"),
-    path(
-        "user/<uuid:user_id>/", UserServiceView.as_view(), name="user-detail"
-    ),  # GET/PUT
-    path("me/", ProfileView.as_view(), name="profile"),
     path("health-check/", HealthCheck.as_view(), name="health-check"),
 ]

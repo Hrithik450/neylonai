@@ -3,18 +3,23 @@ from google.auth.transport import requests
 
 from django.conf import settings
 from django.contrib.auth import login
+from django.contrib.auth import logout
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 
 from api.models import User
+from api.serializers.user import UserResponseSerializer
+
+from drf_spectacular.utils import extend_schema
 
 
 class GoogleOneTapLoginView(APIView):
     authentication_classes = []
     permission_classes = []
 
+    @extend_schema(responses=UserResponseSerializer)
     def post(self, request):
         credential = request.data.get("credential")
         if not credential:
@@ -64,7 +69,7 @@ class GoogleOneTapLoginView(APIView):
                 {
                     "success": True,
                     "user": {
-                        "id": str(user.id),
+                        "id": user.id,
                         "email": user.email,
                         "name": user.first_name,
                         "role": user.role,
@@ -74,4 +79,15 @@ class GoogleOneTapLoginView(APIView):
                 }
             )
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"success": False, "error": str(e)}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+
+class LogoutView(APIView):
+    def post(self, request):
+        logout(request)
+
+        return Response(
+            {"success": True, "data": None, "error": None}, status=status.HTTP_200_OK
+        )

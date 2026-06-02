@@ -1,0 +1,562 @@
+openapi: 3.0.3
+info:
+  title: ''
+  version: 0.0.0
+paths:
+  /api/v1/google-login/:
+    post:
+      operationId: api_v1_google_login_create
+      tags:
+      - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+          description: ''
+  /api/v1/health-check/:
+    get:
+      operationId: api_v1_health_check_retrieve
+      description: API endpoint for Cloud Run health checks or Cloud Scheduler tasks
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v1/logout/:
+    post:
+      operationId: api_v1_logout_create
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v1/me/:
+    get:
+      operationId: api_v1_me_retrieve
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+          description: ''
+  /api/v1/reset-tokens/:
+    post:
+      operationId: api_v1_reset_tokens_create
+      description: API endpoint for Cloud Scheduler to trigger daily tasks
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v1/schema/:
+    get:
+      operationId: api_v1_schema_retrieve
+      description: |-
+        OpenApi3 schema for this API. Format can be selected via content negotiation.
+
+        - YAML: application/vnd.oai.openapi
+        - JSON: application/vnd.oai.openapi+json
+      parameters:
+      - in: query
+        name: format
+        schema:
+          type: string
+          enum:
+          - json
+          - yaml
+      - in: query
+        name: lang
+        schema:
+          type: string
+          enum:
+          - af
+          - ar
+          - ar-dz
+          - ast
+          - az
+          - be
+          - bg
+          - bn
+          - br
+          - bs
+          - ca
+          - ckb
+          - cs
+          - cy
+          - da
+          - de
+          - dsb
+          - el
+          - en
+          - en-au
+          - en-gb
+          - eo
+          - es
+          - es-ar
+          - es-co
+          - es-mx
+          - es-ni
+          - es-ve
+          - et
+          - eu
+          - fa
+          - fi
+          - fr
+          - fy
+          - ga
+          - gd
+          - gl
+          - he
+          - hi
+          - hr
+          - hsb
+          - ht
+          - hu
+          - hy
+          - ia
+          - id
+          - ig
+          - io
+          - is
+          - it
+          - ja
+          - ka
+          - kab
+          - kk
+          - km
+          - kn
+          - ko
+          - ky
+          - lb
+          - lt
+          - lv
+          - mk
+          - ml
+          - mn
+          - mr
+          - ms
+          - my
+          - nb
+          - ne
+          - nl
+          - nn
+          - os
+          - pa
+          - pl
+          - pt
+          - pt-br
+          - ro
+          - ru
+          - sk
+          - sl
+          - sq
+          - sr
+          - sr-latn
+          - sv
+          - sw
+          - ta
+          - te
+          - tg
+          - th
+          - tk
+          - tr
+          - tt
+          - udm
+          - ug
+          - uk
+          - ur
+          - uz
+          - vi
+          - zh-hans
+          - zh-hant
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.oai.openapi:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/yaml:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/vnd.oai.openapi+json:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/thread_messages/:
+    post:
+      operationId: create_thread_message
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ThreadMessageRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ThreadMessageRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ThreadMessageRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ThreadMessageResponse'
+          description: ''
+  /api/v1/thread_messages/{thread_id}/:
+    get:
+      operationId: list_thread_messages
+      description: Get all threads of a particular user
+      parameters:
+      - in: path
+        name: thread_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ThreadMessagesResponse'
+          description: ''
+  /api/v1/thread_messages/recent/{thread_id}/:
+    get:
+      operationId: list_recent_thread_messages
+      description: Get all threads of a particular user
+      parameters:
+      - in: path
+        name: thread_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ThreadMessageResponse'
+          description: ''
+  /api/v1/threads/:
+    post:
+      operationId: create_thread
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ThreadRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ThreadRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ThreadRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ThreadResponse'
+          description: ''
+  /api/v1/threads/{thread_id}/:
+    get:
+      operationId: get_thread
+      description: Get a single thread details
+      parameters:
+      - in: path
+        name: thread_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ThreadResponse'
+          description: ''
+  /api/v1/threads/user/{user_id}/:
+    get:
+      operationId: list_threads
+      description: Get all threads of a particular user
+      parameters:
+      - in: path
+        name: user_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ThreadsResponse'
+          description: ''
+  /assistant/api/v1/chat/:
+    post:
+      operationId: assistant_api_v1_chat_create
+      tags:
+      - assistant
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+components:
+  schemas:
+    Thread:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        title:
+          type: string
+          maxLength: 255
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        user:
+          type: string
+          format: uuid
+      required:
+      - created_at
+      - id
+      - title
+      - user
+    ThreadMessage:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        role:
+          type: string
+        content:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        thread:
+          type: string
+          format: uuid
+      required:
+      - content
+      - created_at
+      - id
+      - role
+      - thread
+    ThreadMessageRequest:
+      type: object
+      properties:
+        thread_id:
+          type: string
+          format: uuid
+        role:
+          type: string
+          maxLength: 50
+        content:
+          type: string
+        file_url:
+          type: string
+          nullable: true
+      required:
+      - content
+      - role
+      - thread_id
+    ThreadMessageResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          allOf:
+          - $ref: '#/components/schemas/ThreadMessage'
+          nullable: true
+        error:
+          type: string
+          nullable: true
+      required:
+      - success
+    ThreadMessagesResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ThreadMessage'
+          nullable: true
+        error:
+          type: string
+          nullable: true
+      required:
+      - success
+    ThreadRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        user_id:
+          type: string
+          format: uuid
+      required:
+      - title
+      - user_id
+    ThreadResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          allOf:
+          - $ref: '#/components/schemas/Thread'
+          nullable: true
+        error:
+          type: string
+          nullable: true
+      required:
+      - success
+    ThreadsResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Thread'
+          nullable: true
+        error:
+          type: string
+          nullable: true
+      required:
+      - success
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        email:
+          type: string
+          format: email
+          title: Email address
+          maxLength: 254
+        name:
+          type: string
+        role:
+          type: string
+          maxLength: 20
+        profile_image:
+          type: string
+          nullable: true
+      required:
+      - id
+      - name
+    UserResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        user:
+          allOf:
+          - $ref: '#/components/schemas/User'
+          nullable: true
+        error:
+          type: string
+          nullable: true
+      required:
+      - success
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid

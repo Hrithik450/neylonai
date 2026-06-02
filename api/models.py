@@ -25,7 +25,7 @@ class Thread(models.Model):
         db_table = "thread"
 
 
-class ThreadMessages(models.Model):
+class ThreadMessage(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     thread = models.ForeignKey(Thread, models.DO_NOTHING, db_column="thread_id")
     role = models.TextField()  # This field type is a guess.

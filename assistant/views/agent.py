@@ -2,7 +2,7 @@ from pydantic import BaseModel, ValidationError
 from django.http import StreamingHttpResponse
 from typing import Optional
 
-from api.services.message_service import ThreadMessagesResponse, ThreadMessageService
+from api.services.thread_message import ThreadMessageService
 from assistant.services.streaming import AgentStreamService
 
 from rest_framework import status
@@ -57,13 +57,11 @@ class AgentView(APIView):
 
             conversation_history = []
             if sender_id and thread_id:
-                thread_messages_response: ThreadMessagesResponse = (
+                thread_messages_response = (
                     ThreadMessageService.list_recent_thread_messages(thread_id)
                 )
-                if thread_messages_response.success and thread_messages_response.data:
-                    conversation_history = [
-                        msg.model_dump() for msg in thread_messages_response.data
-                    ]
+                if thread_messages_response["success"]:
+                    conversation_history = thread_messages_response["data"]
 
             agent_state = self.build_agent_state(user_input, conversation_history)
             events_iter = agent_graph.astream_events(

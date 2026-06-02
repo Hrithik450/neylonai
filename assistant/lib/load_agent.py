@@ -20,9 +20,9 @@ load_dotenv()
 from ..tools.semantic_search_tool import SemanticSearchTool
 from ..tools.email_filtering_tool import EmailFilteringTool
 from .utils import AGENT_MODEL, MEMORY_LAYER_PROMPT, parse_json
-from api.services.message_service import ChatMessageService
-from api.services.thread_service import ChatThreadService
-from api.services.title_service import ChatTitleService
+from api.services.thread_message import ChatMessageService
+from api.services.thread import ChatThreadService
+from api.services.thread_title import ChatTitleService
 
 
 @dataclass

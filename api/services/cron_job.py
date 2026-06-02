@@ -3,9 +3,11 @@ from typing import Optional
 from pydantic import BaseModel
 from django.db import transaction, connection
 
+
 class CronJobResponse(BaseModel):
     success: bool
     error: Optional[str] = None
+
 
 class CrobJobService:
 
@@ -22,6 +24,9 @@ class CrobJobService:
 
             print(f"Token reset successful for {updated_count} users")
             return CronJobResponse(success=True, error=None)
-        
+
         except Exception as e:
-            return CronJobResponse(success=False, error=f'Error occured: {str(e)}, details: {traceback.format_exc()}')
+            return CronJobResponse(
+                success=False,
+                error=f"Error occured: {str(e)}, details: {traceback.format_exc()}",
+            )

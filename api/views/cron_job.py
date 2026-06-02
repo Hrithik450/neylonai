@@ -3,7 +3,7 @@ import traceback
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from ..services.cron_job_service import CrobJobService, CronJobResponse
+from ..services.cron_job import CrobJobService, CronJobResponse
 
 
 class CronJobServiceView(APIView):

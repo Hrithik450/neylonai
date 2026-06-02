@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     "storages",
     "corsheaders",
     "rest_framework",
+    "drf_spectacular",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -92,6 +93,10 @@ CORS_ALLOW_HEADERS = [
 ]
 CORS_ALLOWED_ORIGINS = os.getenv("CORS_ORIGINS", "").split(",")
 CORS_ALLOW_CREDENTIALS = True
+
+REST_FRAMEWORK = {
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
 
 ROOT_URLCONF = "core.urls"
 

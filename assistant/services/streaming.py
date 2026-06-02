@@ -2,9 +2,9 @@ import json
 from asgiref.sync import sync_to_async
 from pydantic import ValidationError
 
-from api.services.title_service import ThreadTitleResponse, ThreadTitleService
-from api.services.thread_service import ThreadsResponse, ThreadService
-from api.services.message_service import ThreadMessageService, ThreadMessageResponse
+from api.services.thread_title import ThreadTitleResponse, ThreadTitleService
+from api.services.thread import ThreadService
+from api.services.thread_message import ThreadMessageService
 from langchain_core.messages import AIMessage
 
 
@@ -22,13 +22,15 @@ class AgentStreamService:
         if title_response.success and title_response.data:
             title = title_response.data.get("title", "New Chat")
 
-        thread_response: ThreadsResponse = await sync_to_async(
-            ThreadService.create_chat_thread
-        )({"user_id": sender_id, "title": title})
+        thread_response = await sync_to_async(ThreadService.create_chat_thread)(
+            {"user_id": sender_id, "title": title}
+        )
 
-        if not thread_response.success:
+        if not thread_response["success"]:
             return None, None
-        return thread_response.data.id, thread_response.data
+
+        thread = thread_response["data"]
+        return thread["id"], thread
 
     @staticmethod
     async def event_generator(events_iter, user_input, thread_id, sender_id):
@@ -41,7 +43,7 @@ class AgentStreamService:
                     yield json.dumps(
                         {
                             "event": "threadCreated",
-                            "data": thread_data.model_dump(),
+                            "data": thread_data,
                         }
                     )
 
