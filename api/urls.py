@@ -22,7 +22,7 @@ urlpatterns = [
         csrf_exempt(GoogleOneTapLoginView.as_view()),
         name="google-login",
     ),
-    path("logout/", LogoutView.as_view(), name="logout"),
+    path("logout/", csrf_exempt(LogoutView.as_view()), name="logout"),
     path(
         "threads/",
         CreateThreadView.as_view(),
