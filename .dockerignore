@@ -1,0 +1,24 @@
+# Keep build context small and secrets out of the image.
+node_modules
+**/node_modules
+.next
+**/.next
+.turbo
+**/.turbo
+.git
+.github
+.vercel
+.cursor
+**/agent-transcripts
+out
+dist
+coverage
+*.md
+!README.md
+.env
+.env.*
+!.env.example
+apps/web/videos
+apps/web/public/_next-video
+**/*.tsbuildinfo
+.DS_Store
