@@ -1,0 +1,11 @@
+{
+  "name": "@neylonai/typescript-config",
+  "version": "0.0.0",
+  "private": true,
+  "license": "MIT",
+  "files": ["base.json", "nextjs.json", "react-library.json"],
+  "scripts": {
+    "build": "node -e \"process.exit(0)\"",
+    "check-types": "node -e \"process.exit(0)\""
+  }
+}
