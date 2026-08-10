@@ -1,0 +1,6 @@
+{
+  "[markdown]": {
+    "files.autoSave": "afterDelay",
+    "files.autoSaveDelay": 500
+  }
+}

@@ -1,124 +1,315 @@
-# Neylon AI — Intelligent Conversational Widget
+# Neylon AI — Proactive AI customer engagement
 
-Neylon AI is a production-ready, embeddable AI chat widget built with **Next.js 15**, **LangGraph**, and **Google Gemini**. Drop it into any website to give your visitors a smart, context-aware assistant that can answer questions, capture leads, book demos, and search the web in real time.
+Neylon AI is a **proactive AI customer-engagement platform**, not only a website chatbot. It combines website-aware knowledge, conversation memory, proactive suggestions, specialized agents, CRM/integrations, and an embeddable chatbot SDK — with a multi-tenant SaaS layer (subscriptions, entitlements, usage metering, payments).
+
+Built as a **pnpm + Turborepo modular monolith**: Next.js in `apps/web`, business logic in `packages/*`.
+
+---
+
+## Product stack
+
+```
+apps/web  →  @neylonai/sdk (chatbot UI)  →  Neylon AI API
+                                       →  @neylonai/agent
+                                       →  @neylonai/domain
+                                       →  @neylonai/integrations
+                                       →  @neylonai/database
+```
+
+- **Chatbot UI lives only in `@neylonai/sdk`** (browser-safe, publishable). It must not depend on Next.js server APIs, Drizzle, Redis, `@neylonai/agent`, `@neylonai/domain`, `@neylonai/database`, or payment secrets.
+- **First-party app UI** stays in `@neylonai/ui` (private to this monorepo — not an SDK dependency).
+- **Private backend** (`domain`, `database`, `agent`, …) is reached by the SDK only through **public HTTP APIs**.
+- **Business rules** (billing, entitlements, usage) live in `@neylonai/domain`, not presentation components.
 
 ---
 
 ## Features
 
-- **AI-Powered Chat** — LangGraph agent with Google Gemini (flash-lite) and OpenAI models
-- **Semantic Search** — ChromaDB Cloud vector search with OpenAI Embeddings and query expansion
-- **Live Web Search** — Tavily API integration for up-to-date answers
-- **Lead Capture** — Automatic lead extraction and PostgreSQL persistence
-- **Demo Booking** — Configurable meeting/demo booking flow
-- **Team Notifications** — Webhook-based team alerting when high-intent leads are detected
-- **Google One-Tap Login** — Frictionless authentication with JWT session management
-- **Thread History** — Persistent conversation threads per user
-- **Real-time Streaming** — Server-Sent Events (SSE) for live AI responses
-- **Redis Caching** — Fast response times via ioredis caching layer
-- **Responsive UI** — Beautiful landing page + embeddable widget built with Shadcn UI
+### Engagement
+- Streaming AI chat (LangGraph + Google Gemini)
+- Website knowledge via Postgres/pgvector
+- Proactive suggestion bubbles + optional sound
+- Conversation threads and memory
+- Specialized agents (plan-gated)
+- CRM / notification integrations (plan-gated)
+- Lead capture, demo booking, team webhooks
+
+### SaaS platform
+- Organizations → subscriptions → plans → entitlements → usage → API keys
+- Plans: **Free**, **Starter**, **Pro ($49)**, **Business ($149)** — limits in `packages/domain/src/billing/plans.ts`
+- Server-authoritative entitlements (`canUseAgent`, `canConsumeConversation`, etc.)
+- Client API keys for SDK embeds (`nk_live_…`) with optional origin allowlists
+- Usage metering (conversations, tokens, estimated cost)
+- Payments: **Stripe** (international) + **Razorpay** (India), provider abstraction for PayPal later
+- Product analytics via **Evently** (custom; adapter under `@neylonai/integrations/evently` — fire-and-forget)
+
+### Surfaces
+- Marketing site + embeddable widget
+- Customer dashboard (`/dashboard/*`)
+- Platform admin (`/admin/*`, `role === admin`)
 
 ---
 
-## Tech Stack
+## Monorepo layout
 
-| Layer | Technology |
-|---|---|
-| Framework | Next.js 15 (App Router) |
-| Language | TypeScript |
-| Database | PostgreSQL via Drizzle ORM |
-| Cache | Redis (ioredis) |
-| Auth | Google One-Tap + JWT (jose) |
-| AI Agent | LangGraph + LangChain |
-| LLM | Google Gemini, OpenAI GPT-4.1 |
-| Vector DB | ChromaDB Cloud |
-| Web Search | Tavily API |
-| UI | Shadcn UI, Tailwind CSS |
-| State | Zustand |
-| Package Manager | pnpm |
+```
+apps/
+  web/                     # Next.js 15 — site, dashboard, admin, API routes
+packages/
+  sdk/                     # @neylonai/sdk — chatbot UI + browser API client
+  agent/                   # @neylonai/agent — LangGraph agent runtime
+  auth/                    # @neylonai/auth — JWT sessions
+  database/                # @neylonai/database — Drizzle, Redis, pgvector
+  domain/                  # @neylonai/domain — users, chat, leads, billing
+  integrations/            # @neylonai/integrations — Gemini, web-search, Evently, etc.
+  ui/                      # @neylonai/ui — shared primitives
+  eslint-config/
+  typescript-config/
+```
+
+See [ARCHITECTURE.md](./ARCHITECTURE.md) for dependency boundaries.
 
 ---
 
-## Getting Started
+## Getting started
 
 ### Prerequisites
 
 - Node.js 20+
-- pnpm 9+
-- PostgreSQL database (Supabase recommended)
-- Redis instance
+- pnpm 10+
+- PostgreSQL **with `vector` (pgvector)**
+- Redis
 
-### Installation
+### Install
 
 ```bash
-git clone https://github.com/Hrithik450/neylonai.git
-cd neylonai
 pnpm install
-```
-
-### Environment Variables
-
-Copy `.env.example` to `.env.local` and fill in your values:
-
-```bash
 cp .env.example .env.local
 ```
 
-### Database Setup
+**One env file:** edit **repo root** `.env.local` only.  
+`apps/web/.env.local` is a symlink to the root file (Next.js loads env from the app directory).
+
+### Database
 
 ```bash
-pnpm drizzle-kit generate
-pnpm drizzle-kit migrate
+pnpm db:migrate
 ```
 
-### Development
+Optional: Postgres + Redis only in Docker while using `pnpm dev` on the host:
+
+```bash
+docker compose up postgres redis -d
+# .env.local → DATABASE_URL=postgresql://neylonai:neylonai@localhost:5432/neylonai
+#            REDIS_URL=redis://localhost:6379  DATABASE_SSL=false
+```
+
+### Run
 
 ```bash
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to view the app.
+Open [http://localhost:3000](http://localhost:3000).
+
+| Surface | URL |
+|--------|-----|
+| Landing + widget | http://localhost:3000 |
+| Customer dashboard | http://localhost:3000/dashboard |
+| Admin | http://localhost:3000/admin |
+
+1. Sign in with Google (creates org + **Free** plan + API key).
+2. Dashboard requires a session; admin requires `user.role = 'admin'`.
+
+### Promote an admin
+
+New users are `role = user`. After first login:
+
+```sql
+UPDATE "user" SET role = 'admin' WHERE email = 'you@example.com';
+```
+
+Sign out and sign back in so the JWT session refreshes.
+
+### Platform landing widget
+
+The site layout auto-provisions a **publishable** client API key (`nk_live_…`)
+for the admin user’s organization (or `PLATFORM_ADMIN_EMAIL` /
+`KNOWLEDGE_ORGANIZATION_SLUG` fallback). No seed script required.
+
+Optional override in `.env.local`:
+
+```bash
+NEXT_PUBLIC_NEYLONAI_API_KEY=nk_live_…
+# or NEYLONAI_SITE_API_KEY=nk_live_…
+```
+
+Client keys are browser-visible by design. Never put `AUTH_SECRET`, database
+URLs, Gemini keys, or payment secrets in `NEXT_PUBLIC_*`.
 
 ---
 
-## Project Structure
+## Dashboard & admin routes
 
-```
-src/
-├── app/
-│   ├── api/v1/           # REST API routes (auth, threads, messages, cron)
-│   ├── orchestration/    # AI chat streaming endpoint
-│   ├── globals.css
-│   ├── layout.tsx
-│   └── page.tsx
-├── actions/              # Server-side data access (Drizzle + Redis)
-│   ├── users/
-│   ├── threads/
-│   ├── thread-messages/
-│   └── cron/
-├── components/
-│   ├── landing-page/     # Marketing page sections
-│   ├── navigation/
-│   ├── ui/               # Shadcn UI primitives + charts
-│   └── widget/           # Embeddable chat widget
-├── hooks/                # React custom hooks
-├── lib/
-│   ├── agent/            # LangGraph agent, tools, memory
-│   ├── auth/             # JWT session management
-│   ├── db/               # Drizzle database connection
-│   ├── drizzle/          # Schema + migrations
-│   ├── redis/            # ioredis client
-│   ├── services/         # Client-side API services
-│   └── types/            # TypeScript type definitions
-├── store/                # Zustand state stores
-└── middleware.ts          # Route protection
-```
+### Customer (`/dashboard`)
+
+| Route | Purpose |
+|-------|---------|
+| `/dashboard` | Overview |
+| `/dashboard/widget` | Appearance, proactive settings |
+| `/dashboard/knowledge` | Knowledge documents |
+| `/dashboard/conversations` | Threads |
+| `/dashboard/agents` | Enable/disable agents (plan-gated) |
+| `/dashboard/integrations` | CRM / integrations |
+| `/dashboard/usage` | Quotas and metering |
+| `/dashboard/billing` | Plan, checkout, cancel |
+| `/dashboard/developer` | API keys, origins, SDK install |
+| `/dashboard/settings` | Account / org |
+
+### Admin (`/admin`)
+
+| Route | Purpose |
+|-------|---------|
+| `/admin` | Platform KPIs (orgs, MRR/ARR, AI cost) |
+| `/admin/organizations` | Tenants |
+| `/admin/users` | Accounts |
+| `/admin/subscriptions` | Plan / status |
+| `/admin/usage` | Usage & estimated cost |
+| `/admin/api-keys` | Key inventory (prefix only) |
+| `/admin/agents` | Agent catalog usage |
+| `/admin/integrations` | Integration usage |
+| `/admin/knowledge` | Knowledge overview |
+| `/admin/conversations` | Thread volume |
+| `/admin/system` | System |
+
+Dashboard type uses **Banda Nova Book** (`apps/web/public/fonts/BandaNova-Book.woff2`) — medium weight for titles, no Palo.
 
 ---
 
-## Environment Variables Reference
+## Billing & entitlements
 
-See `.env.example` for the full list of required and optional variables.
+- Entitlement catalog: `packages/domain/src/billing/plans.ts` (change limits here, not in routes).
+- Eligible subscription statuses for chatbot API: `trialing`, `active`.
+- Checkout: `POST /api/v1/billing` (dashboard). Paid plans activate only after **webhooks**.
+- Webhooks:
+  - `POST /api/v1/billing/webhooks/stripe`
+  - `POST /api/v1/billing/webhooks/razorpay`
+
+Useful env vars (optional until you take payments / analytics):
+
+```bash
+# Stripe
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+STRIPE_PRICE_STARTER=
+STRIPE_PRICE_PRO=
+STRIPE_PRICE_BUSINESS=
+
+# Razorpay
+RAZORPAY_KEY_ID=
+RAZORPAY_KEY_SECRET=
+RAZORPAY_WEBHOOK_SECRET=
+RAZORPAY_PLAN_STARTER=
+RAZORPAY_PLAN_PRO=
+RAZORPAY_PLAN_BUSINESS=
+
+# Evently (custom analytics — fire-and-forget)
+EVENTLY_API_URL=
+EVENTLY_SECRET=
+EVENTLY_PAT=
+EVENTLY_PROJECT=neylon
+```
+
+Never put payment or Evently secrets in the SDK / browser. The SDK only uses the **client API key**.
+
+---
+
+## Embed the chatbot (SDK)
+
+Anonymous visitors work with only a publishable API key. Widget branding and
+behavior are managed in the Neylon dashboard and loaded by the SDK automatically
+— do not configure colors, fonts, logo, or theme in client code. The SDK owns
+the backend URL.
+
+```tsx
+import { SupportWidget } from "@neylonai/sdk/react";
+
+<SupportWidget
+  config={{
+    apiKey: "nk_live_…", // from Settings → Security
+  }}
+/>
+```
+
+Optional: pass `pagePath`, and when your app already has a signed-in user, map
+`user: { id, name, email, profile_image? }` from **existing** auth — do not
+create a Neylon-specific login.
+
+| Mode | Pass | Result |
+| ---- | ---- | ------ |
+| Anonymous | `apiKey` | Chat works; dashboard branding applied |
+| Authenticated | `apiKey` + `user` from existing session | Personalized |
+
+See [`skill.md`](./skill.md).
+
+---
+
+## Knowledge base (pgvector)
+
+Chunks are `halfvec(3072)` (Gemini `gemini-embedding-001`) with HNSW cosine, scoped by organization + knowledge base.
+
+```bash
+# Re-embed knowledge chunks with Gemini (after changing embedding model / dims)
+DATABASE_URL=... DATABASE_SSL=false GOOGLE_API_KEYS=... \
+  pnpm --filter @neylonai/agent run reembed:knowledge
+```
+
+Defaults for **local/dev scripts only**: `KNOWLEDGE_ORGANIZATION_SLUG=neylonai`, `KNOWLEDGE_BASE_SLUG=organization_data`.
+Production widget/API requests resolve the organization from the authenticated API key, then the org-owned knowledge base — never from these env slugs.
+
+---
+
+## Docker
+
+### Full local stack (bundled Postgres + Redis)
+
+```bash
+# .env.local (compose network hostnames):
+# DATABASE_URL=postgresql://neylonai:neylonai@postgres:5432/neylonai
+# REDIS_URL=redis://redis:6379
+# DATABASE_SSL=false
+
+pnpm docker:up
+pnpm db:migrate   # from host against localhost:5432
+```
+
+### Cloud DB + Redis
+
+```bash
+# .env.local → Supabase transaction pooler as DATABASE_URL (:6543),
+#             Direct as DATABASE_DIRECT_URL (:5432), REDIS_URL, DATABASE_SSL=true
+pnpm db:migrate   # uses DATABASE_DIRECT_URL
+pnpm docker:cloud
+```
+
+### Vercel
+
+Deploy `apps/web`. Set `DATABASE_URL` to Supabase **transaction** pooler (`:6543`) and `DATABASE_DIRECT_URL` to **Direct** (`:5432`). Run `pnpm db:migrate` once against the direct URL (never against `:6543`).
+
+---
+
+## Scripts
+
+```bash
+pnpm dev           # Next.js on :3000
+pnpm build         # production build
+pnpm start         # serve production build
+pnpm check-types
+pnpm lint
+pnpm db:migrate
+pnpm db:generate
+pnpm db:studio
+```
 
 ---
 
