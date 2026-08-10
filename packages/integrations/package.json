@@ -1,0 +1,39 @@
+{
+  "name": "@neylonai/integrations",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./catalog": "./src/catalog/index.ts",
+    "./gemini": "./src/internal/gemini/index.ts",
+    "./scrape": "./src/internal/scrape/index.ts",
+    "./evently": "./src/evently/index.ts",
+    "./website": "./src/website/index.ts",
+    "./pdf": "./src/pdf/index.ts",
+    "./database": "./src/database/index.ts",
+    "./database/constants": "./src/database/constants.ts",
+    "./database/manifest": "./src/database/manifest.ts",
+    "./database/setup": "./src/database/setup/index.ts",
+    "./website/manifest": "./src/website/manifest.ts",
+    "./pdf/manifest": "./src/pdf/manifest.ts"
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit",
+    "build": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "@langchain/core": "^1.2.5",
+    "@langchain/google-genai": "^2.2.0",
+    "pdf-parse": "^2.4.5",
+    "pg": "^8.20.0"
+  },
+  "devDependencies": {
+    "@neylonai/typescript-config": "workspace:*",
+    "@types/node": "^20",
+    "@types/pdf-parse": "^1.1.5",
+    "@types/pg": "^8.20.0",
+    "typescript": "^5"
+  }
+}
