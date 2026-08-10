@@ -1,0 +1,23 @@
+import { pgTable, uuid, varchar, text, timestamp } from "drizzle-orm/pg-core";
+
+export const users = pgTable("user", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  google_id: varchar("google_id", { length: 255 }).unique(),
+  username: varchar("username", { length: 150 }).notNull(),
+  email: varchar("email", { length: 254 }).notNull(),
+  first_name: varchar("first_name", { length: 150 }).notNull().default(""),
+  profile_image: text("profile_image"),
+  role: varchar("role", { length: 20 }).notNull().default("user"),
+  updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+  created_at: timestamp("created_at", { withTimezone: true }).defaultNow(),
+});
+
+export const feedback = pgTable("feedback", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  user_id: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  user_name: text("user_name").notNull(),
+  content: text("content").notNull(),
+  created_at: timestamp("created_at", { withTimezone: true }).defaultNow(),
+});
