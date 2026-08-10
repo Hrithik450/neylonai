@@ -1,0 +1,21 @@
+{
+  "name": "@neylonai/eslint-config",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./base": "./base.mjs",
+    "./next": "./next.mjs"
+  },
+  "scripts": {
+    "build": "node -e \"process.exit(0)\"",
+    "check-types": "node -e \"process.exit(0)\""
+  },
+  "dependencies": {
+    "@eslint/eslintrc": "^3",
+    "eslint-config-next": "15.4.6"
+  },
+  "devDependencies": {
+    "eslint": "^9"
+  }
+}
