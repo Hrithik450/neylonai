@@ -1,0 +1,24 @@
+{
+  "name": "@neylonai/auth",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./session": "./src/session.ts",
+    "./identity": "./src/identity/index.ts"
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit",
+    "build": "tsc --noEmit"
+  },
+  "dependencies": {
+    "google-auth-library": "^11.0.0",
+    "jose": "^6.2.8"
+  },
+  "devDependencies": {
+    "@neylonai/typescript-config": "workspace:*",
+    "@types/node": "^20",
+    "typescript": "^5"
+  }
+}
