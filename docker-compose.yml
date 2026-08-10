@@ -1,0 +1,73 @@
+# Full local / self-hosted VPS stack (Postgres + Redis + app).
+#
+# 1. Copy env:  cp .env.example .env.local
+# 2. For host `pnpm dev` / `pnpm db:migrate`, set in .env.local:
+#      DATABASE_URL=postgresql://neylonai:neylonai@localhost:5432/neylonai
+#      REDIS_URL=redis://localhost:6379
+#      DATABASE_SSL=false
+# 3. docker compose up postgres redis -d
+# 4. pnpm db:migrate
+# 5. pnpm dev
+#
+# Full app in Docker:
+#   docker compose up --build -d
+
+name: neylonai
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: neylonai
+      POSTGRES_PASSWORD: neylonai
+      POSTGRES_DB: neylonai
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U neylonai -d neylonai"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runner
+    env_file:
+      - .env.local
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      HOSTNAME: 0.0.0.0
+      DATABASE_URL: postgresql://neylonai:neylonai@postgres:5432/neylonai
+      DATABASE_SSL: "false"
+      REDIS_URL: redis://redis:6379
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
