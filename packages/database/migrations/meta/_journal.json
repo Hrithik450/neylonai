@@ -1,0 +1,230 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1786174213033,
+      "tag": "0000_dusty_titania",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1786220000000,
+      "tag": "0001_pgvector_knowledge",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1786700000000,
+      "tag": "0002_saas_platform",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1786800000000,
+      "tag": "0003_lead_handoff",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1786900000000,
+      "tag": "0004_tickets",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1787000000000,
+      "tag": "0005_workspace_settings",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1787100000000,
+      "tag": "0006_knowledge_sources",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1786274657909,
+      "tag": "0007_common_genesis",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1787200000000,
+      "tag": "0008_drop_conversation_lead_id",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1787300000000,
+      "tag": "0009_lead_settings_to_agents",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1787400000000,
+      "tag": "0010_drop_user_legacy_limits",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1787500000000,
+      "tag": "0011_resource_usage_metering",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1787600000000,
+      "tag": "0012_organization_fonts",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1787700000000,
+      "tag": "0013_organization_fonts_public_url",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1787800000000,
+      "tag": "0014_solo_founder_org",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1787900000000,
+      "tag": "0015_organization_logos",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1788000000000,
+      "tag": "0016_thread_message_provenance",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1788100000000,
+      "tag": "0017_drop_knowledge_bases",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1788200000000,
+      "tag": "0018_slim_knowledge_sources",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1788300000000,
+      "tag": "0019_org_integration_type_knowledge_sources",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1788400000000,
+      "tag": "0020_drop_org_integration_status",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1788500000000,
+      "tag": "0021_org_integration_type_rename",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1788600000000,
+      "tag": "0022_knowledge_sources_org_integration",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1788700000000,
+      "tag": "0023_knowledge_documents_chunks_reshape",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1788800000000,
+      "tag": "0024_drop_knowledge_documents_metadata",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1788900000000,
+      "tag": "0025_knowledge_documents_title_to_name",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1789000000000,
+      "tag": "0026_knowledge_sources_source_type",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1789100000000,
+      "tag": "0027_one_source_per_org_integration",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1789200000000,
+      "tag": "0028_integration_secrets",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1789300000000,
+      "tag": "0029_drop_tickets",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1789400000000,
+      "tag": "0030_slim_conversation_states",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1789500000000,
+      "tag": "0031_thread_message_agent_id",
+      "breakpoints": true
+    }
+  ]
+}
