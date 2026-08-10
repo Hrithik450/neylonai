@@ -1,12 +1,8 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# local development artifacts
-bin/
-server/
-
 # dependencies
-/node_modules
-/.pnp
+node_modules
+.pnp
 .pnp.*
 .yarn/*
 !.yarn/patches
@@ -15,14 +11,18 @@ server/
 !.yarn/versions
 
 # testing
-/coverage
+coverage
 
 # next.js
-/.next/
-/out/
+.next/
+out/
+
+# turbo
+.turbo
 
 # production
-/build
+build
+dist
 
 # misc
 .DS_Store
@@ -38,6 +38,10 @@ yarn-error.log*
 .env*
 !.env.example
 
+# local scratch / temp exports
+.tmp/
+data/
+
 # vercel
 .vercel
 
@@ -46,6 +50,11 @@ yarn-error.log*
 next-env.d.ts
 
 # next-video
+apps/web/videos/*
+!apps/web/videos/*.json
+!apps/web/videos/*.js
+!apps/web/videos/*.ts
+apps/web/public/_next-video
 videos/*
 !videos/*.json
 !videos/*.js
