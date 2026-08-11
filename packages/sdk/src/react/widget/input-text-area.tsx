@@ -1,0 +1,31 @@
+import { PromptInputTextarea } from "../../ui";
+import { useInputStore } from "../store/input-store";
+
+interface ChatInputTextareaProps {
+  placeholder: string;
+  disabled: boolean;
+  handleSubmit: () => void;
+}
+
+export function ChatInputTextarea({
+  handleSubmit,
+  placeholder,
+  disabled,
+}: ChatInputTextareaProps) {
+  const { disableInput } = useInputStore();
+
+  return (
+    <PromptInputTextarea
+      className="min-w-0 flex-1 px-2"
+      maxLength={1500}
+      placeholder={placeholder}
+      disabled={disabled || disableInput}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          if (!disabled && !disableInput) handleSubmit();
+        }
+      }}
+    />
+  );
+}
