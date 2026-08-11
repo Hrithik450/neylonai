@@ -1,0 +1,610 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/* Scan shared UI package for Tailwind class names (v4 does not auto-scan outside the app). */
+@source "../../../../packages/ui/src";
+@source "../../../../packages/sdk/src";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  /* Fallbacks matter: if --font-geist-* is unset, an empty var() invalidates
+     entire font-family stacks that include it (including "Banda Nova"). */
+  --font-sans: var(--font-geist-sans, ui-sans-serif, system-ui, sans-serif);
+  --font-mono: var(--font-geist-mono, ui-monospace, monospace);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  --radius: 0.625rem;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.141 0.005 285.823);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.141 0.005 285.823);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.141 0.005 285.823);
+  --primary: oklch(0.21 0.006 285.885);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.967 0.001 286.375);
+  --secondary-foreground: oklch(0.21 0.006 285.885);
+  --muted: oklch(0.967 0.001 286.375);
+  --muted-foreground: oklch(0.552 0.016 285.938);
+  --accent: oklch(0.967 0.001 286.375);
+  --accent-foreground: oklch(0.21 0.006 285.885);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.92 0.004 286.32);
+  --input: oklch(0.92 0.004 286.32);
+  --ring: oklch(0.705 0.015 286.067);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.141 0.005 285.823);
+  --sidebar-primary: oklch(0.21 0.006 285.885);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.967 0.001 286.375);
+  --sidebar-accent-foreground: oklch(0.21 0.006 285.885);
+  --sidebar-border: oklch(0.92 0.004 286.32);
+  --sidebar-ring: oklch(0.705 0.015 286.067);
+}
+
+.dark {
+  --background: oklch(0.141 0.005 285.823);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.21 0.006 285.885);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.21 0.006 285.885);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.92 0.004 286.32);
+  --primary-foreground: oklch(0.21 0.006 285.885);
+  --secondary: oklch(0.274 0.006 286.033);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.274 0.006 286.033);
+  --muted-foreground: oklch(0.705 0.015 286.067);
+  --accent: oklch(0.274 0.006 286.033);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.552 0.016 285.938);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.21 0.006 285.885);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.274 0.006 286.033);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.552 0.016 285.938);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+html,
+body {
+  width: 100%;
+  background: var(--background);
+  color: var(--foreground);
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+  user-select: text;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.screen-max-width {
+  margin-inline-start: auto;
+  margin-inline-end: auto;
+  position: relative;
+  max-width: 1200px;
+}
+
+@utility flex-center {
+  @apply flex justify-center items-center;
+}
+
+/* background: linear-gradient(135deg, #f0fdfa, #ccfbf1, #99f6e4); */
+/* background: linear-gradient(135deg, #f0f2f5, #d9e2ec, #bcccdc); */
+/* background: linear-gradient(135deg, #faf5ff, #ede9fe, #ddd6fe); */
+/* background: linear-gradient(135deg, #f7fbff, #e3f2fd, #bbdefb); */
+/* background: linear-gradient(135deg, #fff5f0, #ffe4e0, #ffc9b9); */
+
+@utility card-1 {
+  background: linear-gradient(135deg, #fff7f0, #ffe8d9, #ffd7ba);
+}
+
+@utility card-2 {
+  background: linear-gradient(135deg, #f7fbff, #e3f2fd, #bbdefb);
+}
+
+@utility card-3 {
+  background: linear-gradient(135deg, #faf5ff, #ede9fe, #ddd6fe);
+}
+
+@utility card-4 {
+  background: linear-gradient(135deg, #f0f2f5, #d9e2ec, #bcccdc);
+}
+
+@keyframes scrollY {
+  0% {
+    transform: translateY(0%);
+  }
+  100% {
+    transform: translateY(-50%);
+  }
+}
+
+.animate-y-scroll {
+  animation: scrollY 15s linear infinite;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.fade-in {
+  display: inline-block;
+  opacity: 0;
+  animation: fade 0.3s forwards;
+}
+
+@keyframes fade {
+  to {
+    opacity: 1;
+  }
+}
+
+.spinner-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: sans-serif;
+}
+
+.classic-spinner {
+  width: 20px;
+  height: 20px;
+  border: 3px solid #ccc;
+  border-top-color: #000;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---- Dashboard fonts (Banda Nova Book only) ----
+ *
+ * Single face for paper + admin. No Palo. Book at 400 for body; medium (500)
+ * for titles/headlines. Never faux-bold — Book has one real weight.
+ */
+
+@font-face {
+  font-family: "Banda Nova";
+  src: url("/fonts/BandaNova-Book.woff2") format("woff2");
+  /* Same Book file for 400–500 so `font-medium` does not synthesize bold. */
+  font-weight: 400 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+.paper {
+  --cream: #f9f3ee;
+  --ink: #14120e;
+  --muted: #636363;
+  --blue: #2f4fe0;
+  --green: #1e9e5a;
+  --red: #e8442c;
+  /* Decorative only: this yellow fails contrast as a data colour, so it appears
+     exclusively as a fill behind black text. */
+  --yellow: #f2c318;
+  --sky: #a8d5f2;
+
+  --font-heading: "Banda Nova", ui-sans-serif, system-ui, sans-serif;
+  --font-caption: "Banda Nova", ui-sans-serif, system-ui, sans-serif;
+
+  background-color: #ffffff;
+  color: var(--ink);
+  font-family: "Banda Nova", ui-sans-serif, system-ui, sans-serif;
+  font-weight: 400;
+}
+
+/* Anchor links glide instead of jumping. Set on <html> because the scrolling
+   element is the document, not .paper. Suppressed under reduced motion, where a
+   long smooth scroll is a common migraine trigger. */
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* Anchor targets stop below the nav rather than under it. Without this the
+   heading of every section lands behind the header the link came from. */
+.paper section[id] {
+  scroll-margin-top: 5.5rem;
+}
+
+/* The graph-paper sheet belongs to the hero alone — it fades out down the
+   block, so tiling it behind the whole page would repeat that fade as a band at
+   every section boundary. Drawn in CSS rather than shipped as a PNG: two
+   hairline gradients crossed, masked by a third that fades them to nothing. */
+/* The grid lives on a pseudo-element so its fade-out mask applies to the grid
+   alone. Masking .hero-grid itself would fade every child with it — headline,
+   buttons and card included. */
+.paper .hero-grid::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    linear-gradient(to bottom, rgba(20, 18, 14, 0.11) 1px, transparent 1px),
+    linear-gradient(to right, rgba(20, 18, 14, 0.11) 1px, transparent 1px);
+  background-size: 26px 26px;
+  background-position: top center;
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, transparent 78%);
+  mask-image: linear-gradient(to bottom, #000 0%, transparent 78%);
+}
+
+/* Fades the card's lower edge so it reads as continuing past the fold rather
+   than stopping. Starts at 55% because the last list row sits around there —
+   fading earlier would wash out a legible row. */
+.paper .fade-out-bottom {
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    #000 55%,
+    rgba(0, 0, 0, 0.35) 82%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    #000 55%,
+    rgba(0, 0, 0, 0.35) 82%,
+    transparent 100%
+  );
+}
+
+.paper .mono {
+  font-family: var(--font-mono), ui-monospace, monospace;
+}
+
+/* Titles / headlines: Banda Nova at medium. No condensed Palo tracking hacks.
+   In @layer base so a `leading-*` utility can still win. */
+@layer base {
+  .paper h1,
+  .paper h2,
+  .paper h3 {
+    font-family: var(--font-heading);
+    font-weight: 500;
+    letter-spacing: 0;
+    line-height: 1.15;
+    word-spacing: normal;
+  }
+}
+
+/* Captions, sub-heads and body copy all sit in the same grey rather than a tint
+   of the ink, which reads flatter and more printed. */
+.paper .caption {
+  font-family: var(--font-caption);
+  font-weight: 400;
+  color: var(--muted);
+}
+
+/* Logo / display line — same face, medium weight. */
+.paper .display {
+  font-family: var(--font-heading);
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+/* Banda Nova Book must not be faux-bolded by Tailwind weight utilities. */
+.paper .font-bold,
+.paper .font-semibold,
+.paper .font-extrabold,
+.paper .font-black,
+.paper strong,
+.paper b {
+  font-weight: 500;
+}
+
+.paper .font-medium {
+  font-weight: 500;
+}
+
+.paper .font-normal {
+  font-weight: 400;
+}
+
+/* The card: black keyline, generous radius, hard offset shadow. No blur
+   anywhere — the shadow is a flat stamped duplicate, which is what makes the
+   page read as printed rather than as a soft UI.
+
+   The offset falls to the LEFT and down. Every shadow on the page shares that
+   direction — a single light source high on the right — so the negative x here
+   is repeated on .ink-lift, .btn-ink and focus rings. Keyline and stamp depth
+   are both ~half the original weight so the treatment stays crisp without
+   feeling heavy. */
+.paper .ink-card {
+  border: 1px solid var(--ink);
+  border-radius: 1.25rem;
+  background: #ffffff;
+  box-shadow: -1.5px 1.5px 0 0 var(--ink);
+}
+
+.paper .ink-lift {
+  transition:
+    transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Lifts away from its shadow — up and to the right, since the shadow sits
+   bottom-left. */
+.paper .ink-lift:hover {
+  transform: translate(1px, -1px);
+  box-shadow: -2.5px 2.5px 0 0 var(--ink);
+}
+
+/* The sticker: a small rotated pill, always black text on a bright fill. */
+.paper .sticker {
+  display: inline-block;
+  border: 1px solid var(--ink);
+  border-radius: 999px;
+  padding: 0.25rem 0.7rem;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+/* Opt out of sticker uppercase (e.g. agents status chips). */
+.paper .sticker.sticker-lowercase {
+  text-transform: lowercase;
+  letter-spacing: 0.04em;
+  font-weight: 500;
+}
+
+/* The oval: a sticker squashed into an ellipse rather than a pill, for the
+   scattered labels around the closing CTA. The 50% radius is what makes the
+   corners curve continuously instead of flattening into straight sides, so the
+   generous padding is doing shape work here, not just spacing. */
+.paper .sticker-oval {
+  border-radius: 50%;
+  padding: 0.85rem 1.5rem;
+  line-height: 1.15;
+  text-align: center;
+}
+
+/* The oval's text treatment: the caption face at a readable size instead of the
+   small tracked-out mono the base sticker uses. Banda Nova is a Book weight, so
+   uppercase at wide tracking renders too fine to hold its own against the fill —
+   sentence case at 700 is what keeps it legible. */
+.paper .sticker-label {
+  font-family: var(--font-caption);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-transform: none;
+}
+
+.paper .btn-ink {
+  border: 1px solid var(--ink);
+  border-radius: 999px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: -1px 1px 0 0 var(--ink);
+  transition:
+    transform 160ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 160ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.paper .btn-ink:hover {
+  transform: translate(1px, -1px);
+  box-shadow: -2px 2px 0 0 var(--ink);
+}
+
+/* Pressed: sinks toward the shadow's corner, so the offset all but closes. */
+.paper .btn-ink:active {
+  transform: translate(-1px, 1px);
+  box-shadow: -0.5px 0.5px 0 0 var(--ink);
+}
+
+.paper .btn-ink:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: -1px 1px 0 0 var(--ink);
+}
+
+/* The nav is a cream slab pinned to the top of the white page, rounded only on
+   its bottom corners so it reads as a sheet laid over the sheet below. The
+   keyline is on the bottom edge alone; with no side borders to meet, it tapers
+   out as it follows the two corner curves. */
+.paper .nav-pill {
+  background: var(--cream);
+  border-bottom: 1px solid var(--ink);
+  border-bottom-left-radius: 2rem;
+  border-bottom-right-radius: 2rem;
+}
+
+/* Form fields inherit the keyline treatment rather than shadcn's soft border,
+   otherwise inputs are the one place the printed illusion breaks. */
+.paper .ink-input {
+  border: 1px solid var(--ink);
+  border-radius: 0.85rem;
+  background: #ffffff;
+  padding: 0.7rem 0.95rem;
+  font-family: var(--font-caption);
+  width: 100%;
+  outline: none;
+  transition: box-shadow 140ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.paper .ink-input:focus {
+  box-shadow: -1.5px 1.5px 0 0 var(--blue);
+}
+
+.paper .ink-input::placeholder {
+  color: rgba(99, 99, 99, 0.7);
+}
+
+/* A select gets the same keyline box as an input, minus the OS chrome, plus a
+   drawn chevron. Without appearance:none the native control keeps its own
+   border and rounding on Safari and the field stops matching the ones above
+   and below it. Right padding leaves room for the arrow. */
+.paper .ink-select {
+  appearance: none;
+  padding-right: 2.4rem;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8' fill='none' stroke='%231a1a1a' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.95rem center;
+  background-size: 0.75rem;
+}
+
+/* The placeholder option. A select has no ::placeholder, so "nothing chosen
+   yet" is styled by value instead — set by the component when it is empty. */
+.paper .ink-select[data-empty="true"] {
+  color: rgba(99, 99, 99, 0.7);
+}
+
+/* FAQ accordion. Built on <details>/<summary> so it opens with no client JS —
+   the landing page ships no interactive bundle for this. */
+
+.admin-shell,
+[data-slot="dialog-content"] {
+  font-family: "Banda Nova", ui-sans-serif, system-ui, sans-serif;
+  font-weight: 400;
+}
+
+.admin-shell h1,
+.admin-shell h2,
+.admin-shell h3 {
+  font-family: "Banda Nova", ui-sans-serif, system-ui, sans-serif;
+  font-weight: 500;
+}
+
+.admin-shell .font-bold,
+.admin-shell .font-semibold,
+.admin-shell .font-extrabold,
+.admin-shell .font-black,
+.admin-shell strong,
+.admin-shell b,
+[data-slot="dialog-content"] .font-bold,
+[data-slot="dialog-content"] .font-semibold {
+  font-weight: 500;
+}
+
+/* The dialog carries `text-sm` on itself, not on a child, so the descendant
+   rules below never reach it — this is what sizes any text in a dialog that
+   has no size class of its own. */
+[data-slot="dialog-content"] {
+  font-size: 1rem;
+  line-height: 1.5rem;
+}
+
+/* Each step up one rung: xs→sm, sm→base, base→lg, lg→xl. Line heights move
+   with them, otherwise larger text sits in a box sized for the old value and
+   rows feel cramped. */
+:is(.admin-shell, [data-slot="dialog-content"]) .text-xs {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+:is(.admin-shell, [data-slot="dialog-content"]) .text-sm {
+  font-size: 1rem;
+  line-height: 1.5rem;
+}
+
+:is(.admin-shell, [data-slot="dialog-content"]) .text-base {
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+}
+
+:is(.admin-shell, [data-slot="dialog-content"]) .text-lg {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+}
+
+/* Headings move less than body copy — a full rung on a 3xl page title
+   overflows the narrow viewports these pages are already tight on. */
+:is(.admin-shell, [data-slot="dialog-content"]) .text-xl {
+  font-size: 1.375rem;
+  line-height: 1.875rem;
+}
+
+:is(.admin-shell, [data-slot="dialog-content"]) .text-2xl {
+  font-size: 1.625rem;
+  line-height: 2.125rem;
+}
+
+:is(.admin-shell, [data-slot="dialog-content"]) .text-3xl {
+  font-size: 2rem;
+  line-height: 2.375rem;
+}
+
+/* Keep Book / medium only — do not bump emphasis to 600 (faux-bold). */
+:is(.admin-shell, [data-slot="dialog-content"]) .font-medium {
+  font-weight: 500;
+}
+
