@@ -1,0 +1,48 @@
+{
+  "name": "web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@neylonai/agent": "workspace:*",
+    "@neylonai/auth": "workspace:*",
+    "@neylonai/database": "workspace:*",
+    "@neylonai/domain": "workspace:*",
+    "@neylonai/integrations": "workspace:*",
+    "@neylonai/sdk": "workspace:*",
+    "@neylonai/ui": "workspace:*",
+    "@react-oauth/google": "^0.13.5",
+    "@vercel/blob": "^2.7.0",
+    "drizzle-orm": "^0.44.5",
+    "framer-motion": "^12.42.2",
+    "lucide-react": "^0.539.0",
+    "next": "15.5.23",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "react-markdown": "^10.1.0",
+    "react-scroll": "^1.9.3",
+    "remark-breaks": "^4.0.0",
+    "remark-gfm": "^4.0.1",
+    "zustand": "^5.0.8"
+  },
+  "devDependencies": {
+    "@neylonai/eslint-config": "workspace:*",
+    "@neylonai/typescript-config": "workspace:*",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@types/react-scroll": "^1.8.10",
+    "eslint": "^9",
+    "eslint-config-next": "15.4.6",
+    "tailwindcss": "^4",
+    "tw-animate-css": "^1.3.6",
+    "typescript": "^5"
+  }
+}
