@@ -1,0 +1,61 @@
+{
+  "name": "@neylonai/sdk",
+  "version": "0.0.0",
+  "private": false,
+  "description": "Neylon AI public browser SDK — SupportWidget + API client",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./react": {
+      "types": "./dist/react/index.d.ts",
+      "import": "./dist/react/index.js",
+      "default": "./dist/react/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "check-types": "tsc --noEmit -p tsconfig.json",
+    "build": "rm -rf dist-tmp tsconfig.build.tsbuildinfo && tsc -p tsconfig.build.json --outDir dist-tmp && rm -rf dist && mv dist-tmp dist",
+    "prepare": "pnpm run build",
+    "prepublishOnly": "pnpm run build && pnpm run check-boundary",
+    "check-boundary": "node -e \"const fs=require('fs');const path=require('path');function walk(d,acc=[]){for(const e of fs.readdirSync(d,{withFileTypes:true})){const p=path.join(d,e.name);if(e.isDirectory())walk(p,acc);else if(/\\.(ts|tsx|js|d\\.ts)$/.test(e.name))acc.push(p);}return acc;}const roots=['src','dist'].filter((r)=>fs.existsSync(r));const bad=[];for(const root of roots){for(const f of walk(root)){const t=fs.readFileSync(f,'utf8');if(/from\\s+['\\\"]@neylonai\\/(?!sdk)/.test(t)||/require\\(\\s*['\\\"]@neylonai\\/(?!sdk)/.test(t))bad.push(f);}}if(bad.length){console.error('SDK boundary violation — private @neylonai/* import in:\\n'+bad.join('\\n'));process.exit(1);}console.log('SDK boundary OK (no private @neylonai/* imports)');\""
+  },
+  "dependencies": {
+    "@radix-ui/react-slot": "^1.2.3",
+    "@radix-ui/react-tooltip": "^1.2.8",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
+    "lucide-react": "^0.539.0",
+    "luxon": "^3.7.2",
+    "react-markdown": "^10.1.0",
+    "remark-breaks": "^4.0.0",
+    "remark-gfm": "^4.0.1",
+    "tailwind-merge": "^3.3.1",
+    "zustand": "^5.0.8"
+  },
+  "peerDependencies": {
+    "react": "^19",
+    "react-dom": "^19"
+  },
+  "devDependencies": {
+    "@neylonai/typescript-config": "workspace:*",
+    "@types/luxon": "^3.7.1",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "typescript": "^5"
+  }
+}
