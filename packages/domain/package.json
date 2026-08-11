@@ -1,0 +1,36 @@
+{
+  "name": "@neylonai/domain",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./users": "./src/users/index.ts",
+    "./chat": "./src/chat/index.ts",
+    "./billing": "./src/billing/index.ts",
+    "./conversations": "./src/conversations/index.ts",
+    "./workspace": "./src/workspace/index.ts",
+    "./workspace/types": "./src/workspace/types.ts",
+    "./knowledge": "./src/knowledge/index.ts",
+    "./integrations": "./src/integrations/index.ts"
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit",
+    "build": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "@langchain/core": "^1.2.5",
+    "@langchain/google-genai": "^2.2.0",
+    "@neylonai/database": "workspace:*",
+    "@neylonai/integrations": "workspace:*",
+    "drizzle-orm": "^0.44.5"
+  },
+  "devDependencies": {
+    "@neylonai/typescript-config": "workspace:*",
+    "@types/node": "^20",
+    "typescript": "^5",
+    "vitest": "^3.2.4"
+  }
+}

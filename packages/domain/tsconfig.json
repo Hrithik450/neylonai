@@ -1,0 +1,9 @@
+{
+  "extends": "@neylonai/typescript-config/base.json",
+  "compilerOptions": {
+    "lib": ["ES2017"],
+    "types": ["node"]
+  },
+  "include": ["src"],
+  "exclude": ["src/**/*.test.ts"]
+}
