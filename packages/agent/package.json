@@ -1,0 +1,33 @@
+{
+  "name": "@neylonai/agent",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit",
+    "reembed:knowledge": "tsx scripts/reembed-knowledge.ts",
+    "build": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "@langchain/core": "^1.2.5",
+    "@langchain/google-genai": "^2.2.0",
+    "@langchain/langgraph": "^1.4.9",
+    "@neylonai/database": "workspace:*",
+    "@neylonai/domain": "workspace:*",
+    "@neylonai/integrations": "workspace:*",
+    "drizzle-orm": "^0.44.5",
+    "pg": "^8.20.0",
+    "zod": "^4.1.11"
+  },
+  "devDependencies": {
+    "@neylonai/typescript-config": "workspace:*",
+    "@types/node": "^20",
+    "@types/pg": "^8.20.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5"
+  }
+}
