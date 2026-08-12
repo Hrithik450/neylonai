@@ -12,6 +12,7 @@ import {
   jsonb,
 } from "drizzle-orm/pg-core";
 import { organizations } from "./organizations";
+import { threads } from "./threads";
 
 /**
  * Subscription / entitlement for an organization.
@@ -89,11 +90,28 @@ export const apiKeys = pgTable(
 );
 
 /**
+ * Historical pre-metering COGS rows. Preserved for audit; not queried by the app.
+ * Mapped here so drizzle-kit does not propose dropping the live table.
+ */
+export const usageEventsLegacy = pgTable("usage_events_legacy", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  organization_id: uuid("organization_id").notNull(),
+  api_key_id: uuid("api_key_id"),
+  kind: varchar("kind", { length: 64 }),
+  model: varchar("model", { length: 120 }),
+  input_tokens: integer("input_tokens"),
+  output_tokens: integer("output_tokens"),
+  estimated_cost_micros: bigint("estimated_cost_micros", { mode: "number" }),
+  agent_id: varchar("agent_id", { length: 64 }),
+  integration_id: varchar("integration_id", { length: 64 }),
+  thread_id: uuid("thread_id"),
+  metadata: jsonb("metadata").$type<Record<string, unknown>>(),
+  created_at: timestamp("created_at", { withTimezone: true }).defaultNow(),
+});
+
+/**
  * Provider COGS metering — one row per model or external tool resource consumed.
  * Not product entitlements; not Evently analytics; not pgvector infra.
- *
- * Historical pre-metering rows (if any) live in DB table usage_events_legacy
- * and are not mapped here — incomplete for COGS and not used by the app.
  */
 export const usageEvents = pgTable(
   "usage_events",
@@ -107,7 +125,9 @@ export const usageEvents = pgTable(
     }),
     /** Correlates all resources in one chat/suggestions request. */
     request_id: varchar("request_id", { length: 64 }).notNull(),
-    thread_id: uuid("thread_id"),
+    thread_id: uuid("thread_id").references(() => threads.id, {
+      onDelete: "set null",
+    }),
     agent_id: varchar("agent_id", { length: 64 }),
     /** model | tool */
     resource_type: varchar("resource_type", { length: 16 }).notNull(),
@@ -160,7 +180,9 @@ export const productUsageEvents = pgTable(
     }),
     metric: varchar("metric", { length: 64 }).notNull(),
     request_id: varchar("request_id", { length: 64 }),
-    thread_id: uuid("thread_id"),
+    thread_id: uuid("thread_id").references(() => threads.id, {
+      onDelete: "set null",
+    }),
     metadata: jsonb("metadata").$type<Record<string, unknown>>().default({}),
     created_at: timestamp("created_at", { withTimezone: true }).defaultNow(),
   },

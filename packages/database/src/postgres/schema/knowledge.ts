@@ -50,7 +50,7 @@ export const knowledgeSources = pgTable(
     organization_integration_id: uuid("organization_integration_id")
       .notNull()
       .references(() => organizationIntegrations.id, { onDelete: "cascade" }),
-    /** Denormalized from organization_integrations.integration_type */
+    /** Denormalized from organization_integrations.integration_type (kept in sync via DB trigger). */
     source_type: varchar("source_type", { length: 64 }).notNull(),
     /** Number of knowledge_documents under this source. */
     document_count: integer("document_count").notNull().default(0),
@@ -93,7 +93,7 @@ export const knowledgeDocuments = pgTable(
     /** Number of knowledge_chunks under this document. */
     chunks_count: integer("chunks_count").notNull().default(0),
     /** Object storage key for uploaded files (e.g. PDF). */
-    storage_key: varchar("storage_key", { length: 512 }),
+    storage_key: text("storage_key"),
     created_at: timestamp("created_at", { withTimezone: true }).defaultNow(),
     updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   },
@@ -134,6 +134,7 @@ export const knowledgeChunks = pgTable(
     ),
     index("knowledge_chunks_organization_id_idx").on(t.organization_id),
     index("knowledge_chunks_document_id_idx").on(t.document_id),
+    /** Single global HNSW index — revisit per-tenant partitioning only if insert latency or recall issues appear at scale. */
     index("knowledge_chunks_embedding_hnsw_idx")
       .using("hnsw", t.embedding.op("halfvec_cosine_ops"))
       .with({ m: 16, ef_construction: 64 }),

@@ -7,7 +7,7 @@ const { threads } = schema;
 function rowToThread(row: typeof threads.$inferSelect): Thread {
   return {
     id: row.id,
-    user: row.user_id,
+    user: row.visitor_id ?? "",
     title: row.title,
     created_at: row.created_at!.toISOString(),
   };
@@ -17,7 +17,7 @@ export class ThreadsRepository {
   static async createThread(data: CreateThreadInput): Promise<Thread> {
     const [row] = await db
       .insert(threads)
-      .values({ user_id: data.user_id, title: data.title })
+      .values({ visitor_id: data.user_id, title: data.title })
       .returning();
     return rowToThread(row);
   }
@@ -35,13 +35,13 @@ export class ThreadsRepository {
     const rows = await db
       .select()
       .from(threads)
-      .where(eq(threads.user_id, userId))
+      .where(eq(threads.visitor_id, userId))
       .orderBy(desc(threads.created_at));
     return rows.map(rowToThread);
   }
 
   /**
-   * Threads for a user that belong to the API key's organization
+   * Threads for a visitor that belong to the API key's organization
    * (via conversation_states.organization_id). Never returns cross-tenant rows.
    */
   static async listThreadsByUserForOrg(
@@ -51,7 +51,7 @@ export class ThreadsRepository {
     const rows = await db
       .select({
         id: threads.id,
-        user_id: threads.user_id,
+        visitor_id: threads.visitor_id,
         title: threads.title,
         created_at: threads.created_at,
       })
@@ -62,7 +62,7 @@ export class ThreadsRepository {
       )
       .where(
         and(
-          eq(threads.user_id, userId),
+          eq(threads.visitor_id, userId),
           eq(conversationStates.organization_id, organizationId),
         ),
       )
@@ -71,7 +71,7 @@ export class ThreadsRepository {
     return rows.map((row) =>
       rowToThread({
         id: row.id,
-        user_id: row.user_id,
+        visitor_id: row.visitor_id,
         title: row.title,
         created_at: row.created_at,
       }),

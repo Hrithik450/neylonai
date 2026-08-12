@@ -8,6 +8,7 @@ import {
   index,
 } from "drizzle-orm/pg-core";
 import { organizations } from "./organizations";
+import { threads } from "./threads";
 
 /**
  * Org-scoped conversation status for a thread.
@@ -20,7 +21,9 @@ export const conversationStates = pgTable(
     organization_id: uuid("organization_id")
       .notNull()
       .references(() => organizations.id, { onDelete: "cascade" }),
-    thread_id: uuid("thread_id").notNull(),
+    thread_id: uuid("thread_id")
+      .notNull()
+      .references(() => threads.id, { onDelete: "cascade" }),
     /** open | escalated | resolved */
     status: varchar("status", { length: 32 }).notNull().default("open"),
     /** Last agent that authored a turn (not exclusive thread owner). */

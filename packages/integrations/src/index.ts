@@ -125,7 +125,7 @@ export {
 } from "./database/setup";
 
 export {
-  webSearchIntegration,
-  webSearchManifest,
-} from "./web-search";
+  calcomIntegration,
+  calcomManifest,
+} from "./calcom";
 

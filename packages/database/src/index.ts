@@ -53,6 +53,7 @@ export {
   subscriptions,
   apiKeys,
   usageEvents,
+  usageEventsLegacy,
   productUsageEvents,
   billingEvents,
 } from "./postgres/schema/billing";
@@ -66,4 +67,11 @@ export {
 } from "./postgres/schema/tickets";
 export { leads } from "./postgres/schema/leads";
 export { threads, threadMessages } from "./postgres/schema/threads";
-export { users, feedback } from "./postgres/schema/users";
+export { users } from "./postgres/schema/users";
+export { visitors } from "./postgres/schema/visitors";
+export {
+  applyRetentionForAllOrganizations,
+  applyRetentionForOrganization,
+  type RetentionRunResult,
+  type RetentionTableResult,
+} from "./retention";

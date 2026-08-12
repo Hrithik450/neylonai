@@ -276,7 +276,7 @@ export function IntegrationsPanel() {
       if (url) setWebsiteUrl(url);
     }
     if (row.ingestKind === "upload") setPdfFile(null);
-    if (row.id === "calendly") {
+    if (row.id === "calcom") {
       const url =
         (typeof row.config.bookingUrl === "string" && row.config.bookingUrl) ||
         (typeof row.config.url === "string" && row.config.url) ||
@@ -847,27 +847,26 @@ export function IntegrationsPanel() {
             selected.connectable &&
             selected.implemented ? (
               <div className="space-y-3 border-t border-[var(--ink)]/10 pt-3">
-                {selected.id === "calendly" ? (
+                {selected.id === "calcom" ? (
                   <label className="block space-y-1 text-sm">
                     <span className="font-medium">Scheduling link</span>
                     <input
                       type="url"
                       className="ink-input w-full py-2 text-sm"
-                      placeholder="https://calendly.com/you/30min"
+                      placeholder="https://cal.com/you/30min"
                       value={bookingUrl}
                       onChange={(e) => setBookingUrl(e.target.value)}
                       disabled={busyId === selected.id}
                     />
                     <span className="caption text-xs">
-                      Public Calendly or Cal.com event URL used by the Booking
-                      Agent.
+                      Public Cal.com event URL used by the Booking Agent.
                     </span>
                   </label>
                 ) : null}
                 <div className="flex flex-wrap gap-2">
                   {selected.enabled ? (
                     <>
-                      {selected.id === "calendly" ? (
+                      {selected.id === "calcom" ? (
                         <button
                           type="button"
                           className="btn-ink bg-[var(--ink)] text-white text-sm px-4 py-2"
@@ -898,13 +897,13 @@ export function IntegrationsPanel() {
                       className="btn-ink bg-[var(--ink)] text-white text-sm px-4 py-2"
                       disabled={
                         busyId === selected.id ||
-                        (selected.id === "calendly" && !bookingUrl.trim())
+                        (selected.id === "calcom" && !bookingUrl.trim())
                       }
                       onClick={() =>
                         void setEnabled(
                           selected.id,
                           true,
-                          selected.id === "calendly"
+                          selected.id === "calcom"
                             ? { bookingUrl: bookingUrl.trim() }
                             : undefined,
                         )

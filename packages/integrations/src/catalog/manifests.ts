@@ -15,6 +15,7 @@ import { slackManifest } from "../slack";
 import { whatsappManifest } from "../whatsapp";
 import { webhooksManifest } from "../webhooks";
 import { calendlyManifest } from "../calendly";
+import { calcomManifest } from "../calcom";
 import { eventlyManifest } from "../evently";
 import { webSearchManifest } from "../web-search";
 
@@ -30,6 +31,7 @@ export const INTEGRATION_MANIFESTS: readonly IntegrationManifest[] = [
   slackManifest,
   whatsappManifest,
   webhooksManifest,
+  calcomManifest,
   calendlyManifest,
   eventlyManifest,
 ] as const;

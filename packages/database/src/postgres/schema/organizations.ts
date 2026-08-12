@@ -223,7 +223,6 @@ export const organizationFonts = pgTable(
   },
   (t) => [
     index("organization_fonts_org_idx").on(t.organization_id),
-    uniqueIndex("organization_fonts_org_id_uidx").on(t.organization_id, t.id),
   ],
 );
 

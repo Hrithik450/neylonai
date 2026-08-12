@@ -8,19 +8,19 @@ import {
   jsonb,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
-import { users } from "./users";
+import { visitors } from "./visitors";
 
 export const threads = pgTable(
-  "thread",
+  "threads",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    user_id: uuid("user_id")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
+    visitor_id: uuid("visitor_id").references(() => visitors.id, {
+      onDelete: "set null",
+    }),
     title: varchar("title", { length: 255 }).notNull(),
     created_at: timestamp("created_at", { withTimezone: true }).defaultNow(),
   },
-  (t) => [index("thread_user_id_idx").on(t.user_id)],
+  (t) => [index("threads_visitor_id_idx").on(t.visitor_id)],
 );
 
 export const threadMessages = pgTable(
@@ -46,12 +46,19 @@ export const threadMessages = pgTable(
   },
   (t) => [
     index("thread_messages_thread_id_idx").on(t.thread_id),
+    index("thread_messages_thread_id_created_at_idx").on(
+      t.thread_id,
+      t.created_at,
+    ),
     index("thread_messages_agent_id_idx").on(t.agent_id),
   ],
 );
 
 export const threadRelations = relations(threads, ({ one, many }) => ({
-  user: one(users, { fields: [threads.user_id], references: [users.id] }),
+  visitor: one(visitors, {
+    fields: [threads.visitor_id],
+    references: [visitors.id],
+  }),
   messages: many(threadMessages),
 }));
 

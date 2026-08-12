@@ -11,14 +11,14 @@ export const bookingAgent: AgentDefinition = {
   name: "Booking Agent",
   purpose: "Schedules demos and meetings",
   description:
-    "Collects booking intent and shares your Calendly or Cal.com link so visitors can pick a time. Requires the Calendly integration with a booking URL.",
+    "Collects booking intent and shares your Cal.com scheduling link so visitors can pick a time. Connect Cal.com under Integrations and set your event URL.",
   builtIn: false,
   defaultActive: false,
   runnable: true,
   tier: "advanced",
   outcomeMetric: { key: "meetings_booked", label: "Meetings booked" },
-  integrationIds: ["calendly", "slack", "webhooks"],
-  requiredIntegrationIds: ["calendly"],
+  integrationIds: ["calcom"],
+  requiredIntegrationIds: ["calcom"],
   activityKinds: ["booked_meeting"],
   configSchema: [
     {

@@ -12,7 +12,8 @@
     "./workspace": "./src/workspace/index.ts",
     "./workspace/types": "./src/workspace/types.ts",
     "./knowledge": "./src/knowledge/index.ts",
-    "./integrations": "./src/integrations/index.ts"
+    "./integrations": "./src/integrations/index.ts",
+    "./visitors": "./src/visitors/index.ts"
   },
   "scripts": {
     "check-types": "tsc --noEmit",

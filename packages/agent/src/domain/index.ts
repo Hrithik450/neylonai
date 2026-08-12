@@ -23,3 +23,7 @@ export {
   setDefaultAgent,
 } from "./registry";
 export { getMissingRequiredIntegrations } from "./integration-requirements";
+export {
+  AGENT_DISPLAY_ORDER,
+  sortAgentsForDisplay,
+} from "./display-order";

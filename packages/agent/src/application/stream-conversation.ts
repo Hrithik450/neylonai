@@ -8,7 +8,7 @@ import {
   ThreadsService,
   ThreadMessagesService,
 } from "@neylonai/domain/chat";
-import { UsersService } from "@neylonai/domain/users";
+import { VisitorsService } from "@neylonai/domain/visitors";
 import { generateThreadTitle } from "../lib/generate-thread-title";
 import {
   canAiRespond,
@@ -255,9 +255,9 @@ function buildAgentState(
 }
 
 async function createThread(senderId: string, userInput: string) {
-  const ensured = await UsersService.ensureAnonymousUser(senderId);
+  const ensured = await VisitorsService.ensureVisitor(senderId);
   if (!ensured.success) {
-    console.error("[streamConversation] cannot resolve sender user", {
+    console.error("[streamConversation] cannot resolve visitor", {
       senderId,
       error: ensured.error,
     });
@@ -498,8 +498,8 @@ async function* streamConversationTurn(
 
         if (bookingPhase === "confirmed") {
           const bookingEnabled = caps.enabledAgentIds.has("booking");
-          const calendlyEnabled = caps.enabledIntegrationIds.has("calendly");
-          if (!bookingEnabled || !calendlyEnabled) {
+          const calcomEnabled = caps.enabledIntegrationIds.has("calcom");
+          if (!bookingEnabled || !calcomEnabled) {
             await persistAssistantMessage({
               threadId: currentThreadId,
               assistantMessage: BOOKING_UNAVAILABLE_MESSAGE,

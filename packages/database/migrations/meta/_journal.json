@@ -220,10 +220,10 @@
       "breakpoints": true
     },
     {
-      "idx": 31,
+      "idx": 32,
       "version": "7",
-      "when": 1789500000000,
-      "tag": "0031_thread_message_agent_id",
+      "when": 1789600000000,
+      "tag": "0032_schema_hardening",
       "breakpoints": true
     }
   ]

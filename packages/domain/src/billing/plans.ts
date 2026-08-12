@@ -189,6 +189,15 @@ export const AGENT_CATALOG = [
     defaultEnabled: true,
   },
   {
+    id: "booking",
+    name: "Booking Agent",
+    description: "Collects availability and helps book demos or meetings.",
+    purpose: "Schedules demos and meetings",
+    tier: "advanced" as const,
+    builtIn: false,
+    defaultEnabled: false,
+  },
+  {
     id: "lead",
     name: "Lead Agent",
     description:
@@ -203,15 +212,6 @@ export const AGENT_CATALOG = [
     name: "Sales Agent",
     description: "Qualifies prospects and surfaces buying signals.",
     purpose: "Qualifies prospects",
-    tier: "advanced" as const,
-    builtIn: false,
-    defaultEnabled: false,
-  },
-  {
-    id: "booking",
-    name: "Booking Agent",
-    description: "Collects availability and helps book demos or meetings.",
-    purpose: "Schedules demos and meetings",
     tier: "advanced" as const,
     builtIn: false,
     defaultEnabled: false,

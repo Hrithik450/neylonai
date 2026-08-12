@@ -248,7 +248,6 @@ export function useWidgetMessageHandler() {
             }
 
             case "conversationEscalated":
-            case "ticketCreated":
               // Escalation reference is already in the assistant message.
               break;
 

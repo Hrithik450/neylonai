@@ -1,8 +1,8 @@
 // Ensure agents + providers are registered on import.
 import "./agents/default";
+import "./agents/booking";
 import "./agents/lead";
 import "./agents/sales";
-import "./agents/booking";
 import "./infrastructure/knowledge-search";
 import "@neylonai/integrations";
 
@@ -18,6 +18,7 @@ export {
   setDefaultAgent,
   toAgentManifest,
   getMissingRequiredIntegrations,
+  sortAgentsForDisplay,
 } from "./domain";
 export type {
   AgentDefinition,

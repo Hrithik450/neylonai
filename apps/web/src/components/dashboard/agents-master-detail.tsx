@@ -26,6 +26,7 @@ type AgentRow = {
   tier: "basic" | "advanced";
   available: boolean;
   isDefault?: boolean;
+  missingRequiredIntegrations?: string[];
 };
 
 type AgentDetail = AgentRow & {
@@ -70,6 +71,23 @@ type UpgradePromptData = {
 };
 
 const SEARCH_THRESHOLD = 6;
+
+/** Sidebar order: Support → Booking → Lead → Sales. */
+const AGENT_LIST_ORDER = [
+  "neylonai-chatbot",
+  "booking",
+  "lead",
+  "sales",
+] as const;
+
+function sortAgentRows<T extends { id: string }>(rows: T[]): T[] {
+  const rank = new Map<string, number>(
+    AGENT_LIST_ORDER.map((id, i) => [id, i]),
+  );
+  return [...rows].sort(
+    (a, b) => (rank.get(a.id) ?? 99) - (rank.get(b.id) ?? 99),
+  );
+}
 
 function SectionLabel({ children }: { children: ReactNode }) {
   return (
@@ -192,7 +210,7 @@ export function AgentsMasterDetail() {
       error?: string;
     };
     if (json.success && json.data) {
-      setAgents(json.data.agents);
+      setAgents(sortAgentRows(json.data.agents));
       setPlan(json.data.plan);
       setUpgradePrompt(json.data.upgradePrompt);
       setListMessage(null);
@@ -317,12 +335,17 @@ export function AgentsMasterDetail() {
   }, [selectedId, loadDetail]);
 
   const filtered = useMemo(() => {
+    const sorted = sortAgentRows(agents);
     const q = query.trim().toLowerCase();
-    if (!q) return agents;
-    return agents.filter((a) =>
+    if (!q) return sorted;
+    return sorted.filter((a) =>
       [a.name, a.purpose, a.description].join(" ").toLowerCase().includes(q),
     );
   }, [agents, query]);
+
+  const missingRequiredIntegrations =
+    detail?.missingRequiredIntegrations ?? [];
+  const hasMissingIntegrations = missingRequiredIntegrations.length > 0;
 
   const showSearch = agents.length >= SEARCH_THRESHOLD;
 
@@ -377,9 +400,9 @@ export function AgentsMasterDetail() {
       return;
     }
     const next = !detail.active;
-    if (next && (detail.missingRequiredIntegrations?.length ?? 0) > 0) {
+    if (next && hasMissingIntegrations) {
       setDetailMessage(
-        `Enable required integrations first: ${detail.missingRequiredIntegrations!.join(", ")}.`,
+        `Connect ${missingRequiredIntegrations.join(", ")} under Integrations before enabling this agent.`,
       );
       return;
     }
@@ -650,9 +673,7 @@ export function AgentsMasterDetail() {
                         disabled={
                           busy ||
                           (!detail.active &&
-                            (!detail.available ||
-                              (detail.missingRequiredIntegrations?.length ??
-                                0) > 0))
+                            (!detail.available || hasMissingIntegrations))
                         }
                         onClick={() => void toggleActive()}
                       >
@@ -726,7 +747,7 @@ export function AgentsMasterDetail() {
                     </div>
 
                     <div className="space-y-2">
-                      <div className="flex items-center justify-between gap-3">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
                         <SectionLabel>Integrations</SectionLabel>
                         <Link
                           href="/dashboard/integrations"
@@ -735,34 +756,20 @@ export function AgentsMasterDetail() {
                           Manage integrations
                         </Link>
                       </div>
-                      {(detail.requiredIntegrationIds?.length ?? 0) > 0 ? (
-                        <p className="caption text-sm">
-                          Integrations required before enabling:{" "}
-                          {(detail.requiredIntegrationIds ?? []).join(", ")}.
-                          {(detail.missingRequiredIntegrations?.length ?? 0) >
-                          0 ? (
-                            <>
-                              {" "}
-                              Missing:{" "}
-                              {detail.missingRequiredIntegrations!.join(
-                                ", ",
-                              )}.{" "}
-                              <Link
-                                href="/dashboard/integrations"
-                                className="underline"
-                              >
-                                Enable them
-                              </Link>
-                              .
-                            </>
-                          ) : null}
+                      {hasMissingIntegrations ? (
+                        <p
+                          className="text-sm rounded-lg border border-[var(--red)]/35 bg-[var(--red)]/10 px-3 py-2 text-[var(--red)]"
+                          role="status"
+                        >
+                          Connect{" "}
+                          <strong className="font-medium">
+                            {missingRequiredIntegrations.join(", ")}
+                          </strong>{" "}
+                          under Integrations before enabling this agent.
                         </p>
                       ) : (
                         <p className="caption text-sm">
-                          Integrations recommended for better use
-                          {(detail.integrationIds ?? []).length > 0
-                            ? `: ${(detail.integrationIds ?? []).join(", ").replace(/, ([^,]*)$/, " & $1")}.`
-                            : "."}
+                          Integrations recommended for better use.
                         </p>
                       )}
                       {integrations.length === 0 ? (
@@ -771,38 +778,27 @@ export function AgentsMasterDetail() {
                         </p>
                       ) : (
                         <ul className="space-y-2">
-                          {integrations.map((i) => {
-                            const required = (
-                              detail.requiredIntegrationIds ?? []
-                            ).includes(i.id);
-                            return (
-                              <li
-                                key={i.id}
-                                className="flex flex-wrap items-baseline justify-between gap-2 text-sm"
+                          {integrations.map((i) => (
+                            <li
+                              key={i.id}
+                              className="flex flex-wrap items-baseline justify-between gap-2 text-sm"
+                            >
+                              <span className="caption text-sm lowercase">
+                                {i.id}
+                              </span>
+                              <span
+                                className="sticker sticker-lowercase text-[0.55rem]"
+                                style={{
+                                  background: i.enabled
+                                    ? "var(--green)"
+                                    : "var(--cream)",
+                                  color: i.enabled ? "#fff" : "var(--ink)",
+                                }}
                               >
-                                <span className="caption text-sm lowercase">
-                                  {i.id}
-                                  {required ? (
-                                    <span className="opacity-60">
-                                      {" "}
-                                      · required
-                                    </span>
-                                  ) : null}
-                                </span>
-                                <span
-                                  className="sticker sticker-lowercase text-[0.55rem]"
-                                  style={{
-                                    background: i.enabled
-                                      ? "var(--green)"
-                                      : "var(--cream)",
-                                    color: i.enabled ? "#fff" : "var(--ink)",
-                                  }}
-                                >
-                                  {i.enabled ? "enabled" : "off"}
-                                </span>
-                              </li>
-                            );
-                          })}
+                                {i.enabled ? "enabled" : "off"}
+                              </span>
+                            </li>
+                          ))}
                         </ul>
                       )}
                     </div>

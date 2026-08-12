@@ -16,6 +16,7 @@ import {
   getAgentManifest,
   getMissingRequiredIntegrations,
   isDefaultAgent,
+  sortAgentsForDisplay,
 } from "@neylonai/agent";
 import {
   getAgentPerformance,
@@ -255,7 +256,7 @@ export async function GET(req: NextRequest) {
       success: true,
       data: {
         plan,
-        agents,
+        agents: sortAgentsForDisplay(agents),
         upgradePrompt,
       },
     });

@@ -15,17 +15,9 @@ function normalizeStatus(raw: string): ConversationStatus {
   return "open";
 }
 
-function userLabel(input: {
-  firstName?: string | null;
-  username?: string | null;
-  email?: string | null;
-}): string {
-  const name = input.firstName?.trim();
-  if (name) return name;
-  const username = input.username?.trim();
-  if (username) return username;
-  const email = input.email?.trim();
-  if (email) return email;
+function visitorLabel(displayName?: string | null): string {
+  const name = displayName?.trim();
+  if (name && name !== "Guest") return name;
   return "anonymous visitor";
 }
 
@@ -75,29 +67,27 @@ export async function loadConversationsInbox(
       .select({
         id: schema.threads.id,
         title: schema.threads.title,
-        userId: schema.threads.user_id,
+        visitorId: schema.threads.visitor_id,
         created_at: schema.threads.created_at,
       })
       .from(schema.threads)
       .where(inArray(schema.threads.id, threadIds));
     const threadById = new Map(threadRows.map((t) => [t.id, t] as const));
 
-    const userIds = [
-      ...new Set(threadRows.map((t) => t.userId).filter(Boolean)),
-    ];
-    const userRows =
-      userIds.length > 0
+    const visitorIds = [
+      ...new Set(threadRows.map((t) => t.visitorId).filter(Boolean)),
+    ] as string[];
+    const visitorRows =
+      visitorIds.length > 0
         ? await db
             .select({
-              id: schema.users.id,
-              email: schema.users.email,
-              firstName: schema.users.first_name,
-              username: schema.users.username,
+              id: schema.visitors.id,
+              displayName: schema.visitors.display_name,
             })
-            .from(schema.users)
-            .where(inArray(schema.users.id, userIds))
+            .from(schema.visitors)
+            .where(inArray(schema.visitors.id, visitorIds))
         : [];
-    const userById = new Map(userRows.map((u) => [u.id, u] as const));
+    const visitorById = new Map(visitorRows.map((v) => [v.id, v] as const));
 
     type PreviewRow = {
       thread_id: string;
@@ -141,6 +131,7 @@ export async function loadConversationsInbox(
       const thread = threadById.get(state.threadId);
       if (!thread) continue;
 
+      const visitorId = thread.visitorId ?? "";
       const preview = previewByThread.get(state.threadId);
       const createdAt = (
         thread.created_at ??
@@ -154,7 +145,7 @@ export async function loadConversationsInbox(
 
       threads.push({
         id: state.threadId,
-        userId: thread.userId,
+        userId: visitorId,
         title: thread.title || "Conversation",
         status: normalizeStatus(state.status),
         escalationReason: state.escalationReason,
@@ -167,28 +158,25 @@ export async function loadConversationsInbox(
       });
     }
 
-    const byUser = new Map<string, InboxThread[]>();
+    const byVisitor = new Map<string, InboxThread[]>();
     for (const t of threads) {
-      const list = byUser.get(t.userId) ?? [];
+      if (!t.userId) continue;
+      const list = byVisitor.get(t.userId) ?? [];
       list.push(t);
-      byUser.set(t.userId, list);
+      byVisitor.set(t.userId, list);
     }
 
-    const users: InboxUser[] = [...byUser.entries()]
+    const users: InboxUser[] = [...byVisitor.entries()]
       .map(([userId, userThreads]) => {
-        const u = userById.get(userId);
+        const v = visitorById.get(userId);
         const latestAt = userThreads.reduce(
           (max, t) => (t.latestAt > max ? t.latestAt : max),
           userThreads[0]?.latestAt ?? new Date(0).toISOString(),
         );
         return {
           id: userId,
-          label: userLabel({
-            firstName: u?.firstName,
-            username: u?.username,
-            email: u?.email,
-          }),
-          email: u?.email?.trim() || null,
+          label: visitorLabel(v?.displayName),
+          email: null,
           threadCount: userThreads.length,
           escalatedCount: userThreads.filter((t) => t.status === "escalated")
             .length,

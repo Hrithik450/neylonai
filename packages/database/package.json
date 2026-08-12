@@ -15,6 +15,7 @@
     "studio": "drizzle-kit studio",
     "drop": "drizzle-kit drop",
     "bench:vector-search": "tsx scripts/benchmark-vector-search.ts",
+    "retention": "tsx src/retention-run.ts",
     "build": "tsc --noEmit"
   },
   "dependencies": {

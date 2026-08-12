@@ -6,6 +6,7 @@ export interface Thread {
 }
 
 export interface CreateThreadInput {
+  /** Widget visitor id (stored as threads.visitor_id). */
   user_id: string;
   title: string;
 }

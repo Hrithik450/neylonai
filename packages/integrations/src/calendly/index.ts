@@ -4,13 +4,10 @@ import type { IntegrationModule } from "../catalog/module";
 export const calendlyManifest = {
   id: "calendly",
   name: "Calendly",
-  description:
-    "Let the Booking Agent share your Calendly (or Cal.com) scheduling link so visitors can pick a time.",
+  description: "Optional Calendly connect integration (not used by Booking Agent).",
   dataMode: "connect",
   connectable: true,
   planBadge: "free",
-  stubNote:
-    "Set bookingUrl in the integration config to your public Calendly or Cal.com event link.",
 } as const satisfies IntegrationManifest;
 
 export const calendlyIntegration = {

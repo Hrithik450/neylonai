@@ -1,6 +1,7 @@
 import { pgTable, uuid, varchar, text, timestamp } from "drizzle-orm/pg-core";
 
-export const users = pgTable("user", {
+/** Dashboard accounts (Google OAuth). Widget visitors live in `visitors`. */
+export const users = pgTable("users", {
   id: uuid("id").defaultRandom().primaryKey(),
   google_id: varchar("google_id", { length: 255 }).unique(),
   username: varchar("username", { length: 150 }).notNull(),
@@ -9,15 +10,5 @@ export const users = pgTable("user", {
   profile_image: text("profile_image"),
   role: varchar("role", { length: 20 }).notNull().default("user"),
   updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow(),
-  created_at: timestamp("created_at", { withTimezone: true }).defaultNow(),
-});
-
-export const feedback = pgTable("feedback", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  user_id: uuid("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  user_name: text("user_name").notNull(),
-  content: text("content").notNull(),
   created_at: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });

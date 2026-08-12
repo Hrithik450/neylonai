@@ -17,8 +17,8 @@ import type { AgentDefinition } from "../domain/types";
 export const TOOL_INTEGRATION_GATES: Record<string, string> = {
   web_search: "web_search",
   relational_query: "database",
-  provide_booking_link: "calendly",
-  book_meeting: "calendly",
+  provide_booking_link: "calcom",
+  book_meeting: "calcom",
 };
 
 export type OrgCapabilitySnapshot = {

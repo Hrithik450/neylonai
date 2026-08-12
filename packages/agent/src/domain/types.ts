@@ -78,7 +78,7 @@ export interface AgentManifest {
   /**
    * Integrations that must be enabled before this agent can be turned on.
    * Empty for the default Support Agent (and any agent that only needs internal tools).
-   * Example: Booking Agent → `["calendly"]`.
+   * Example: Sales Agent → `["hubspot"]`.
    */
   requiredIntegrationIds: string[];
   activityKinds: AgentActivityKind[];
@@ -121,10 +121,6 @@ export type AgentEvent =
   | {
       event: "conversationEscalated";
       data: { reference: string; status: string };
-    }
-  | {
-      event: "ticketCreated";
-      data: { ticketId: string; reference: string; status: string };
     }
   | { event: "done"; data: "end" }
   | { event: "error"; data: { error: string } };

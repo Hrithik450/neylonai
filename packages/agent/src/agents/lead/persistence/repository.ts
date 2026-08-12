@@ -29,6 +29,12 @@ export class LeadsRepository {
     input: LeadInput,
     threadId?: string,
   ): Promise<{ id: string; created: boolean }> {
+    const rawOrgId = input.organization_id;
+    if (!rawOrgId?.trim()) {
+      throw new Error("organization_id is required to capture a lead");
+    }
+    const organizationId = rawOrgId.trim();
+
     const effectiveThreadId = input.thread_id ?? threadId ?? null;
 
     const hasIdentifier = input.email || effectiveThreadId;
@@ -36,7 +42,7 @@ export class LeadsRepository {
       const [row] = await db
         .insert(leads)
         .values({
-          organization_id: input.organization_id ?? null,
+          organization_id: organizationId,
           name: input.name ?? null,
           email: input.email ?? null,
           phone: input.phone ?? null,
@@ -85,7 +91,7 @@ export class LeadsRepository {
     const [row] = await db
       .insert(leads)
       .values({
-        organization_id: input.organization_id ?? null,
+        organization_id: organizationId,
         name: input.name ?? null,
         email: input.email ?? null,
         phone: input.phone ?? null,

@@ -1,5 +1,6 @@
 import { relations } from "drizzle-orm";
-import { users, feedback } from "./users";
+import { users } from "./users";
+import { visitors } from "./visitors";
 import { threads } from "./threads";
 import {
   organizations,
@@ -23,12 +24,16 @@ import {
   subscriptions,
   apiKeys,
   usageEvents,
+  usageEventsLegacy,
   productUsageEvents,
   billingEvents,
 } from "./billing";
 import { conversationStates } from "./tickets";
+import { leads } from "./leads";
+import { threadMessages } from "./threads";
 
-export { users, feedback } from "./users";
+export { users } from "./users";
+export { visitors } from "./visitors";
 export {
   threads,
   threadMessages,
@@ -68,18 +73,18 @@ export {
   subscriptions,
   apiKeys,
   usageEvents,
+  usageEventsLegacy,
   productUsageEvents,
   billingEvents,
 } from "./billing";
 export { conversationStates } from "./tickets";
 
 export const userRelations = relations(users, ({ many }) => ({
-  threads: many(threads),
-  feedback: many(feedback),
+  memberships: many(organizationMembers),
 }));
 
-export const feedbackRelations = relations(feedback, ({ one }) => ({
-  user: one(users, { fields: [feedback.user_id], references: [users.id] }),
+export const visitorRelations = relations(visitors, ({ many }) => ({
+  threads: many(threads),
 }));
 
 export const organizationRelations = relations(organizations, ({ many }) => ({
@@ -206,3 +211,28 @@ export const organizationIntegrationSecretRelations = relations(
     }),
   }),
 );
+
+export const conversationStateRelations = relations(
+  conversationStates,
+  ({ one }) => ({
+    organization: one(organizations, {
+      fields: [conversationStates.organization_id],
+      references: [organizations.id],
+    }),
+    thread: one(threads, {
+      fields: [conversationStates.thread_id],
+      references: [threads.id],
+    }),
+  }),
+);
+
+export const leadRelations = relations(leads, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [leads.organization_id],
+    references: [organizations.id],
+  }),
+  thread: one(threads, {
+    fields: [leads.thread_id],
+    references: [threads.id],
+  }),
+}));
