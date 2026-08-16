@@ -24,8 +24,8 @@ widget.unmount();
 
 ## Typed section keys
 
-After a website crawl, generate path-scoped TypeScript literals so section
-tracking only accepts keys that exist for that page:
+Generate path-scoped TypeScript literals so section tracking only accepts
+keys that exist for that page:
 
 ```bash
 npx neylonai-generate-sections \
@@ -51,8 +51,7 @@ useEffect(() => {
 }, []);
 ```
 
-Re-run the command whenever a crawl changes sections. The generated file is
-deterministic: identical manifests produce identical TypeScript.
+The generated file is deterministic: identical manifests produce identical TypeScript.
 
 The embed bundles and isolates its React implementation and widget styles in
 Shadow DOM. Host applications do not configure React or Tailwind.
