@@ -67,6 +67,24 @@ EXPOSE 3000
 
 CMD ["node", "apps/web/server.js"]
 
+# ─── Migrator (drizzle-kit, runs once then exits) ─────────────────────────────
+FROM base AS migrator-pruner
+WORKDIR /app
+COPY . .
+RUN pnpm dlx turbo@2.5.4 prune @neylonai/database --docker
+
+FROM base AS migrator
+WORKDIR /app
+COPY --from=migrator-pruner /app/out/json/ .
+COPY --from=migrator-pruner /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
+COPY --from=migrator-pruner /app/out/pnpm-workspace.yaml ./pnpm-workspace.yaml
+RUN pnpm install --frozen-lockfile --ignore-scripts
+COPY --from=migrator-pruner /app/out/full/ .
+# Use a push wrapper that bypasses the interactive TTY requirement
+COPY scripts/db-push.cjs /app/db-push.cjs
+WORKDIR /app/packages/database
+CMD ["node", "--require", "/app/db-push.cjs", "/app/node_modules/.pnpm/drizzle-kit@0.31.10/node_modules/drizzle-kit/bin.cjs", "push", "--config", "/app/packages/database/drizzle.config.ts"]
+
 # ─── Crawler worker (BullMQ) ──────────────────────────────────────────────────
 FROM base AS crawler-pruner
 WORKDIR /app

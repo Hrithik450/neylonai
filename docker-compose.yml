@@ -1,16 +1,12 @@
-# Full local / self-hosted VPS stack (Postgres + Redis + app).
+# Full self-hosted stack — Postgres + Redis + app, all built and run on the server.
+# No external registries (ECR/Docker Hub) are used; images are built from source.
 #
-# 1. Copy env:  cp .env.example .env.local
-# 2. For host `pnpm dev` / `pnpm db:migrate`, set in .env.local:
-#      DATABASE_URL=postgresql://neylonai:neylonai@localhost:5432/neylonai
-#      REDIS_URL=redis://localhost:6379
-#      DATABASE_SSL=false
-# 3. docker compose up postgres redis -d
-# 4. pnpm db:migrate
-# 5. pnpm dev
+# First-time server setup:  bash scripts/setup-server.sh
+# Deploy / update:          bash scripts/deploy.sh
 #
-# Full app in Docker:
-#   docker compose up --build -d
+# Manual steps:
+#   1. cp .env.example .env.local  (fill in real secrets)
+#   2. docker compose up --build -d
 
 name: neylonai
 
@@ -23,7 +19,7 @@ services:
       POSTGRES_PASSWORD: neylonai
       POSTGRES_DB: neylonai
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -35,8 +31,9 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
+    command: redis-server --save 60 1 --loglevel warning
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -45,8 +42,30 @@ services:
       timeout: 3s
       retries: 10
 
+  migrator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: migrator
+    env_file:
+      - path: .env.local
+        required: false
+    environment:
+      DATABASE_URL: postgresql://neylonai:neylonai@postgres:5432/neylonai
+      DATABASE_SSL: "false"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    # Runs once and exits — not a long-lived service
+    profiles:
+      - migration
+    restart: "no"
+
   web:
-    image: 812047027893.dkr.ecr.ap-south-1.amazonaws.com/neylonai-web:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runner
     env_file:
       - path: .env.local
         required: false
@@ -58,7 +77,7 @@ services:
       DATABASE_SSL: "false"
       REDIS_URL: redis://redis:6379
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -67,7 +86,10 @@ services:
     restart: unless-stopped
 
   crawler:
-    image: 812047027893.dkr.ecr.ap-south-1.amazonaws.com/neylonai-crawler:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: crawler
     env_file:
       - path: .env.local
         required: false
