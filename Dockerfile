@@ -78,7 +78,7 @@ WORKDIR /app
 COPY --from=crawler-pruner /app/out/json/ .
 COPY --from=crawler-pruner /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
 COPY --from=crawler-pruner /app/out/pnpm-workspace.yaml ./pnpm-workspace.yaml
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --ignore-scripts
 COPY --from=crawler-pruner /app/out/full/ .
 ENV NODE_ENV=production
 CMD ["pnpm", "--filter", "crawler", "start"]
