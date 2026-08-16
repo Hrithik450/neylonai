@@ -60,13 +60,26 @@ jobs:
             --document-name "AWS-RunShellScript" \
             --parameters 'commands=[
               "set -e",
+              "echo \"Setting up application directory...\"",
+              "sudo mkdir -p /srv/neylonai",
+              "if [ ! -d /srv/neylonai/app ]; then",
+              "  echo \"Cloning repository...\"",
+              "  sudo git clone https://github.com/Hrithik450/neylonai.git /srv/neylonai/app",
+              "  sudo chown -R $(whoami):$(whoami) /srv/neylonai/app",
+              "fi",
               "cd /srv/neylonai/app",
+              "echo \"Updating repository...\"",
               "git fetch origin main",
               "git reset --hard origin/main",
-              "aws ecr get-login-password --region '${AWS_REGION}' | docker login --username AWS --password-stdin '${ECR_REGISTRY}'",
+              "echo \"Logging into ECR...\"",
+              "aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}",
+              "echo \"Pulling latest images...\"",
               "docker compose -f docker-compose.yml pull",
+              "echo \"Starting services...\"",
               "docker compose -f docker-compose.yml up -d",
-              "docker image prune -f"
+              "echo \"Cleaning up old images...\"",
+              "docker image prune -f",
+              "echo \"Deployment completed successfully!\""
             ]' \
             --query "Command.CommandId" \
             --output text)
@@ -95,3 +108,5 @@ jobs:
             echo "$INVOCATION" | jq -r '.StandardErrorContent'
             exit 1
           fi
+          
+          echo "Deployment completed successfully!"
