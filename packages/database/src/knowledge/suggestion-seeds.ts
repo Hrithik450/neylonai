@@ -69,7 +69,7 @@ export async function listKnowledgeSuggestionSeeds(
   const docs = await db
     .select({
       id: knowledgeDocuments.id,
-      title: knowledgeDocuments.name,
+      title: knowledgeDocuments.canonical_path,
     })
     .from(knowledgeDocuments)
     .where(tenantDoc)

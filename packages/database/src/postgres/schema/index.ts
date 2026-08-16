@@ -1,20 +1,25 @@
 import { relations } from "drizzle-orm";
 import { users } from "./users";
-import { visitors } from "./visitors";
+import { organizationParticipants } from "./participants";
 import { threads } from "./threads";
 import {
   organizations,
-  organizationMembers,
-  organizationWorkspaceSettings,
-  organizationEngagementSettings,
+  organizationAccounts,
+  organizationSettings,
   widgetConfigs,
 } from "./organizations";
 import {
   knowledgeDocuments,
   knowledgeChunks,
+  knowledgePageSections,
   knowledgeSources,
   knowledgeSourceAgents,
 } from "./knowledge";
+import {
+  websiteCrawlJobs,
+  websiteCrawlPages,
+  websiteCrawlBudgetMonths,
+} from "./crawls";
 import { organizationAgents } from "./agents";
 import {
   organizationIntegrations,
@@ -24,47 +29,62 @@ import {
   subscriptions,
   apiKeys,
   usageEvents,
-  usageEventsLegacy,
   productUsageEvents,
   billingEvents,
+  usageRequestRollups,
+  creditLedger,
+  usageClassPeriodCounters,
+  usageRequestReservations,
 } from "./billing";
-import { conversationStates } from "./tickets";
-import { leads } from "./leads";
-import { threadMessages } from "./threads";
 
 export { users } from "./users";
-export { visitors } from "./visitors";
+export { organizationParticipants } from "./participants";
 export {
   threads,
   threadMessages,
+  threadEscalations,
+  messageFeedback,
+  CONVERSATION_STATUSES,
   threadRelations,
   threadMessageRelations,
+  threadEscalationRelations,
 } from "./threads";
-export { leads } from "./leads";
+export type { ConversationStatus } from "./threads";
 export {
   organizations,
-  organizationMembers,
-  organizationWorkspaceSettings,
-  organizationEngagementSettings,
+  organizationAccounts,
+  organizationSettings,
   widgetConfigs,
   organizationFonts,
   organizationLogos,
 } from "./organizations";
-export type {
-  WorkspaceNotificationPrefs,
-  WorkspacePrivacyPrefs,
-  WorkspaceSsoPrep,
-} from "./organizations";
+export type { OrganizationPrivacyPrefs } from "./organizations";
 export {
   knowledgeDocuments,
   knowledgeChunks,
+  knowledgePageSections,
   knowledgeSources,
   knowledgeSourceAgents,
   KNOWLEDGE_EMBEDDING_DIMENSIONS,
   KNOWLEDGE_EMBEDDING_MODEL,
   toHalfvecLiteral,
 } from "./knowledge";
-export { organizationAgents } from "./agents";
+export {
+  websiteCrawlJobs,
+  websiteCrawlPages,
+  websiteCrawlBudgetMonths,
+  WEBSITE_CRAWL_JOB_STATUSES,
+  WEBSITE_CRAWL_JOB_MODES,
+  WEBSITE_CRAWL_PAGE_STATUSES,
+} from "./crawls";
+export type {
+  WebsiteCrawlJobStatus,
+  WebsiteCrawlJobMode,
+  WebsiteCrawlPageStatus,
+} from "./crawls";
+export {
+  organizationAgents,
+} from "./agents";
 export {
   organizationIntegrations,
   organizationIntegrationSecrets,
@@ -73,45 +93,64 @@ export {
   subscriptions,
   apiKeys,
   usageEvents,
-  usageEventsLegacy,
   productUsageEvents,
   billingEvents,
+  usageRequestRollups,
+  creditLedger,
+  usageClassPeriodCounters,
+  usageRequestReservations,
 } from "./billing";
-export { conversationStates } from "./tickets";
+export {
+  KNOWLEDGE_GAP_TYPES,
+  PROACTIVE_TRIGGER_TYPES,
+  PROACTIVE_TRIGGER_EVENT_TYPES,
+} from "./engagement";
+export type {
+  KnowledgeGapType,
+  ProactiveTriggerType,
+  ProactiveTriggerEventType,
+} from "./engagement";
 
 export const userRelations = relations(users, ({ many }) => ({
-  memberships: many(organizationMembers),
+  organizationAccounts: many(organizationAccounts),
 }));
 
-export const visitorRelations = relations(visitors, ({ many }) => ({
-  threads: many(threads),
-}));
+export const organizationParticipantRelations = relations(
+  organizationParticipants,
+  ({ one, many }) => ({
+    organization: one(organizations, {
+      fields: [organizationParticipants.organization_id],
+      references: [organizations.id],
+    }),
+    threads: many(threads),
+  }),
+);
 
 export const organizationRelations = relations(organizations, ({ many }) => ({
   knowledgeSources: many(knowledgeSources),
-  members: many(organizationMembers),
+  accounts: many(organizationAccounts),
+  participants: many(organizationParticipants),
+  threads: many(threads),
   subscriptions: many(subscriptions),
   apiKeys: many(apiKeys),
   widgetConfigs: many(widgetConfigs),
   usageEvents: many(usageEvents),
-  agents: many(organizationAgents),
+  organizationAgents: many(organizationAgents),
   integrations: many(organizationIntegrations),
-  integrationSecrets: many(organizationIntegrationSecrets),
   billingEvents: many(billingEvents),
-  conversationStates: many(conversationStates),
-  engagementSettings: many(organizationEngagementSettings),
-  workspaceSettings: many(organizationWorkspaceSettings),
+  settings: many(organizationSettings),
+  websiteCrawlJobs: many(websiteCrawlJobs),
 }));
 
-export const organizationMemberRelations = relations(
-  organizationMembers,
+export const organizationAccountRelations = relations(
+  organizationAccounts,
   ({ one }) => ({
     organization: one(organizations, {
-      fields: [organizationMembers.organization_id],
+      fields: [organizationAccounts.organization_id],
       references: [organizations.id],
     }),
     user: one(users, {
-      fields: [organizationMembers.user_id],
+      fields: [organizationAccounts.user_id],
       references: [users.id],
     }),
   }),
@@ -201,10 +240,6 @@ export const organizationIntegrationRelations = relations(
 export const organizationIntegrationSecretRelations = relations(
   organizationIntegrationSecrets,
   ({ one }) => ({
-    organization: one(organizations, {
-      fields: [organizationIntegrationSecrets.organization_id],
-      references: [organizations.id],
-    }),
     integration: one(organizationIntegrations, {
       fields: [organizationIntegrationSecrets.organization_integration_id],
       references: [organizationIntegrations.id],
@@ -212,27 +247,55 @@ export const organizationIntegrationSecretRelations = relations(
   }),
 );
 
-export const conversationStateRelations = relations(
-  conversationStates,
+export const organizationAgentRelations = relations(
+  organizationAgents,
   ({ one }) => ({
     organization: one(organizations, {
-      fields: [conversationStates.organization_id],
+      fields: [organizationAgents.organization_id],
       references: [organizations.id],
-    }),
-    thread: one(threads, {
-      fields: [conversationStates.thread_id],
-      references: [threads.id],
     }),
   }),
 );
 
-export const leadRelations = relations(leads, ({ one }) => ({
-  organization: one(organizations, {
-    fields: [leads.organization_id],
-    references: [organizations.id],
+export const websiteCrawlJobRelations = relations(
+  websiteCrawlJobs,
+  ({ one, many }) => ({
+    organization: one(organizations, {
+      fields: [websiteCrawlJobs.organization_id],
+      references: [organizations.id],
+    }),
+    integration: one(organizationIntegrations, {
+      fields: [websiteCrawlJobs.organization_integration_id],
+      references: [organizationIntegrations.id],
+    }),
+    source: one(knowledgeSources, {
+      fields: [websiteCrawlJobs.knowledge_source_id],
+      references: [knowledgeSources.id],
+    }),
+    pages: many(websiteCrawlPages),
   }),
-  thread: one(threads, {
-    fields: [leads.thread_id],
-    references: [threads.id],
+);
+
+export const websiteCrawlPageRelations = relations(
+  websiteCrawlPages,
+  ({ one }) => ({
+    job: one(websiteCrawlJobs, {
+      fields: [websiteCrawlPages.job_id],
+      references: [websiteCrawlJobs.id],
+    }),
+    organization: one(organizations, {
+      fields: [websiteCrawlPages.organization_id],
+      references: [organizations.id],
+    }),
   }),
-}));
+);
+
+export const websiteCrawlBudgetMonthRelations = relations(
+  websiteCrawlBudgetMonths,
+  ({ one }) => ({
+    organization: one(organizations, {
+      fields: [websiteCrawlBudgetMonths.organization_id],
+      references: [organizations.id],
+    }),
+  }),
+);

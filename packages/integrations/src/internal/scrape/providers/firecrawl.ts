@@ -18,6 +18,7 @@ export function getFirecrawlApiKey(): string | null {
 
 export async function scrapeWithFirecrawl(
   urlInput: string,
+  options?: { signal?: AbortSignal },
 ): Promise<ScrapeResult> {
   const apiKey = getFirecrawlApiKey();
   if (!apiKey) {
@@ -27,6 +28,8 @@ export async function scrapeWithFirecrawl(
   const target = urlInput.trim();
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), FIRECRAWL_TIMEOUT_MS);
+  const stop = () => controller.abort();
+  options?.signal?.addEventListener("abort", stop, { once: true });
 
   try {
     const res = await fetch(FIRECRAWL_API, {
@@ -60,9 +63,7 @@ export async function scrapeWithFirecrawl(
     };
 
     if (!res.ok || json.success === false) {
-      throw new Error(
-        json.error || `Firecrawl scrape failed (${res.status}).`,
-      );
+      throw new Error(json.error || `Firecrawl scrape failed (${res.status}).`);
     }
 
     const markdown = (json.data?.markdown ?? "").trim();
@@ -74,9 +75,7 @@ export async function scrapeWithFirecrawl(
       (json.data?.metadata?.title ?? "Untitled page").trim().slice(0, 300) ||
       "Untitled page";
     const finalUrl =
-      json.data?.metadata?.sourceURL ||
-      json.data?.metadata?.url ||
-      target;
+      json.data?.metadata?.sourceURL || json.data?.metadata?.url || target;
 
     return {
       url: target,
@@ -90,10 +89,12 @@ export async function scrapeWithFirecrawl(
     };
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") {
+      if (options?.signal?.aborted) throw new Error("Scrape stopped.");
       throw new Error("Timed out fetching via Firecrawl.");
     }
     throw error;
   } finally {
     clearTimeout(timer);
+    options?.signal?.removeEventListener("abort", stop);
   }
 }

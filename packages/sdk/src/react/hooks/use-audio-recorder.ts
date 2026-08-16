@@ -2,20 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-/** Prefer opus webm; Safari often only supports mp4/aac. */
-function pickRecorderMimeType(): string {
+const pickRecorderMimeType = () => {
   if (typeof MediaRecorder === "undefined") return "";
-  const candidates = [
-    "audio/webm;codecs=opus",
-    "audio/webm",
-    "audio/mp4",
-    "audio/ogg;codecs=opus",
-  ];
-  for (const type of candidates) {
-    if (MediaRecorder.isTypeSupported(type)) return type;
-  }
-  return "";
-}
+  const candidates = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg;codecs=opus"];
+  return candidates.find(type => MediaRecorder.isTypeSupported(type)) || "";
+};
 
 export const VOICE_MAX_DURATION_MS = 60_000;
 

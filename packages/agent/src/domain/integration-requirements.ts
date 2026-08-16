@@ -1,6 +1,6 @@
 /**
  * Resolve which required integrations are not yet enabled for an agent.
- * Support Agent (and any agent with an empty list) returns [].
+ * An agent with no required integrations returns [].
  */
 export function getMissingRequiredIntegrations(
   requiredIntegrationIds: readonly string[] | undefined,

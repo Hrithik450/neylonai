@@ -11,8 +11,12 @@ function forPublicClient(messages: ThreadMessage[]): ThreadMessage[] {
   return messages.map((m) => ({
     id: m.id,
     thread_id: m.thread_id,
+    // Preserve `human` so the widget can style team replies without rating them as AI.
     role: m.role,
     content: m.content,
+    in_reply_to_message_id: m.in_reply_to_message_id,
+    page_path: m.page_path,
+    page_query: m.page_query,
     created_at: m.created_at,
   }));
 }
@@ -44,18 +48,13 @@ export class ThreadMessagesService {
     }
   }
 
-  /**
-   * Full messages including provenance metadata — dashboard / internal only.
-   */
   static async listMessages(threadId: string): Promise<ThreadMessagesResponse> {
     try {
       const cacheKey = `thread:${threadId}:thread_messages:dash`;
       const cached = await cacheGet(cacheKey);
       if (cached) return { success: true, data: JSON.parse(cached) };
 
-      const messages = await ThreadMessagesRepository.listMessages(threadId, {
-        includeMetadata: true,
-      });
+      const messages = await ThreadMessagesRepository.listMessages(threadId);
       await cacheSet(cacheKey, JSON.stringify(messages));
       return { success: true, data: messages };
     } catch (error) {
@@ -67,7 +66,7 @@ export class ThreadMessagesService {
   }
 
   /**
-   * Public/widget listing — content only, never provenance or private source ids.
+   * Public/widget listing — preserves human replies as a distinct team role.
    */
   static async listMessagesPublic(
     threadId: string,
@@ -78,9 +77,7 @@ export class ThreadMessagesService {
       if (cached) return { success: true, data: JSON.parse(cached) };
 
       const messages = forPublicClient(
-        await ThreadMessagesRepository.listMessages(threadId, {
-          includeMetadata: false,
-        }),
+        await ThreadMessagesRepository.listMessages(threadId),
       );
       await cacheSet(cacheKey, JSON.stringify(messages));
       return { success: true, data: messages };
@@ -102,9 +99,7 @@ export class ThreadMessagesService {
       if (cached) return { success: true, data: JSON.parse(cached) };
 
       const messages = forPublicClient(
-        await ThreadMessagesRepository.listRecentMessages(threadId, limit, {
-          includeMetadata: false,
-        }),
+        await ThreadMessagesRepository.listRecentMessages(threadId, limit),
       );
       await cacheSet(cacheKey, JSON.stringify(messages));
       return { success: true, data: messages };

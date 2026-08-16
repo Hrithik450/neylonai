@@ -68,6 +68,25 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  crawler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: crawler
+    env_file:
+      - .env.local
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://neylonai:neylonai@postgres:5432/neylonai
+      DATABASE_SSL: "false"
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
 volumes:
   postgres_data:
   redis_data:

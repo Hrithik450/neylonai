@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import { db } from "../postgres/client";
-import { organizationWorkspaceSettings } from "../postgres/schema/organizations";
+import { organizationSettings } from "../postgres/schema/organizations";
 
 export type RetentionTableResult = {
   tableName: string;
@@ -106,10 +106,10 @@ export async function applyRetentionForAllOrganizations(): Promise<
 > {
   const rows = await db
     .select({
-      organization_id: organizationWorkspaceSettings.organization_id,
-      privacy: organizationWorkspaceSettings.privacy,
+      organization_id: organizationSettings.organization_id,
+      privacy: organizationSettings.privacy,
     })
-    .from(organizationWorkspaceSettings);
+    .from(organizationSettings);
 
   const results: RetentionRunResult[] = [];
 

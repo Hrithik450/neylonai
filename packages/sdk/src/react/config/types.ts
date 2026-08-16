@@ -12,7 +12,6 @@ export {
 export interface WidgetBranding {
   name?: string;
   logoUrl?: string;
-  primaryColor?: string;
   /** Heading / emphasis text on the panel and cards. */
   primaryTextColor?: string;
   /** Body / muted text on the panel and cards. */
@@ -21,7 +20,6 @@ export interface WidgetBranding {
   accentColor?: string;
   /** Selected tab color. */
   tabActiveColor?: string;
-  headerTint?: string;
   gradientFrom?: string;
   gradientTo?: string;
   /** Ask-a-question CTA (and launcher) fill. */
@@ -97,10 +95,7 @@ export interface WidgetWebsiteConfig {
   autoOpenPathPrefixes?: string[];
 }
 
-/**
- * Public client config. Appearance (branding, layout, copy, proactive, path rules)
- * loads from the Neylon dashboard via the API key — do not set it in code.
- */
+/** Public client config. Dashboard values load first; code customization wins. */
 export interface SupportWidgetConfig {
   /**
    * Publishable API key (`nk_live_…`). Required for API calls.
@@ -115,6 +110,11 @@ export interface SupportWidgetConfig {
   pagePath?: string | null;
   /** Optional. Open the panel on mount (e.g. after an auth redirect). */
   defaultOpen?: boolean;
+  /**
+   * Optional code-owned customization. Use `defineWidgetCustomization` from
+   * `@neylonai/sdk` for type checking. These values override dashboard config.
+   */
+  customization?: StoredWidgetConfig;
 }
 
 /** Resolved runtime + appearance after remote fetch. */

@@ -8,12 +8,12 @@ import {
   organizations,
 } from "@neylonai/database";
 import { assertPublicHttpUrl as assertPublicHttpUrlParsed } from "@neylonai/integrations/scrape";
-import {
-  DEFAULT_CHATBOT_AGENT_ID,
-  type CreateIntegrationSourceInput,
-  type CreateWebsiteSourceInput,
-  type KnowledgeSourceRecord,
-  type UpdateKnowledgeSourceInput,
+import { MAIN_AGENT_KEY, KNOWN_AGENT_KEYS } from "../agents/org-agents.types";
+import type {
+  CreateIntegrationSourceInput,
+  CreateWebsiteSourceInput,
+  KnowledgeSourceRecord,
+  UpdateKnowledgeSourceInput,
 } from "./types";
 
 function assertPublicHttpUrl(raw: string): string {
@@ -29,21 +29,41 @@ function configUrl(
 
 function mapSource(
   row: typeof knowledgeSources.$inferSelect,
+  sourceType: string,
+  documentCount: number,
   agentIds: string[],
   websiteUrl: string | null = null,
 ): KnowledgeSourceRecord {
   return {
     id: row.id,
     organizationId: row.organization_id,
-    sourceType: row.source_type,
+    sourceType,
     organizationIntegrationId: row.organization_integration_id,
     websiteUrl,
-    documentCount: row.document_count,
+    documentCount,
     lastSyncedAt: row.last_synced_at?.toISOString() ?? null,
     agentIds,
     createdAt: row.created_at?.toISOString() ?? null,
-    updatedAt: row.updated_at?.toISOString() ?? null,
   };
+}
+
+const KNOWN_AGENT_KEY_SET = new Set<string>(KNOWN_AGENT_KEYS);
+
+/** Resolve code-registry agent keys (e.g. `main-agent`). */
+export async function resolveAgentKeys(refs: string[]): Promise<string[]> {
+  const unique = [...new Set(refs.map((r) => r.trim()).filter(Boolean))];
+  if (unique.length === 0) return [];
+
+  for (const ref of unique) {
+    if (!KNOWN_AGENT_KEY_SET.has(ref)) {
+      throw new Error(`Unknown agent: ${ref}`);
+    }
+  }
+  return unique;
+}
+
+function defaultKnowledgeAgentKeys(): string[] {
+  return [MAIN_AGENT_KEY];
 }
 
 async function websiteUrlsForIntegrations(
@@ -84,9 +104,9 @@ export function getOrgEmbeddingDefaults(): {
 export async function setSourceAgents(
   organizationId: string,
   sourceId: string,
-  agentIds: string[],
+  agentKeys: string[],
 ): Promise<void> {
-  const unique = [...new Set(agentIds.map((a) => a.trim()).filter(Boolean))];
+  const resolved = await resolveAgentKeys(agentKeys);
   await db
     .delete(knowledgeSourceAgents)
     .where(
@@ -95,12 +115,12 @@ export async function setSourceAgents(
         eq(knowledgeSourceAgents.source_id, sourceId),
       ),
     );
-  if (unique.length === 0) return;
+  if (resolved.length === 0) return;
   await db.insert(knowledgeSourceAgents).values(
-    unique.map((agent_id) => ({
+    resolved.map((agent_key) => ({
       organization_id: organizationId,
       source_id: sourceId,
-      agent_id,
+      agent_key,
     })),
   );
 }
@@ -114,7 +134,7 @@ async function agentsForSources(
   const rows = await db
     .select({
       sourceId: knowledgeSourceAgents.source_id,
-      agentId: knowledgeSourceAgents.agent_id,
+      agentKey: knowledgeSourceAgents.agent_key,
     })
     .from(knowledgeSourceAgents)
     .where(
@@ -125,7 +145,7 @@ async function agentsForSources(
     );
   for (const r of rows) {
     const list = map.get(r.sourceId) ?? [];
-    list.push(r.agentId);
+    list.push(r.agentKey);
     map.set(r.sourceId, list);
   }
   return map;
@@ -145,15 +165,6 @@ export async function refreshSourceDocumentCount(
       ),
     );
   const n = Number(row?.n ?? 0);
-  await db
-    .update(knowledgeSources)
-    .set({ document_count: n, updated_at: new Date() })
-    .where(
-      and(
-        eq(knowledgeSources.id, sourceId),
-        eq(knowledgeSources.organization_id, organizationId),
-      ),
-    );
   return n;
 }
 
@@ -173,10 +184,7 @@ export async function ensureOrganizationIntegrationRow(input: {
     .where(
       and(
         eq(organizationIntegrations.organization_id, input.organizationId),
-        eq(
-          organizationIntegrations.integration_type,
-          input.catalogIntegrationId,
-        ),
+        eq(organizationIntegrations.integration_id, input.catalogIntegrationId),
       ),
     )
     .limit(1);
@@ -206,7 +214,7 @@ export async function ensureOrganizationIntegrationRow(input: {
     .insert(organizationIntegrations)
     .values({
       organization_id: input.organizationId,
-      integration_type: input.catalogIntegrationId,
+      integration_id: input.catalogIntegrationId,
       enabled: input.enabled ?? true,
       config: input.config ?? {},
     })
@@ -218,23 +226,46 @@ export async function listKnowledgeSources(
   organizationId: string,
 ): Promise<KnowledgeSourceRecord[]> {
   const rows = await db
-    .select()
+    .select({
+      source: knowledgeSources,
+      sourceType: organizationIntegrations.integration_id,
+    })
     .from(knowledgeSources)
+    .innerJoin(
+      organizationIntegrations,
+      eq(
+        organizationIntegrations.id,
+        knowledgeSources.organization_integration_id,
+      ),
+    )
     .where(eq(knowledgeSources.organization_id, organizationId))
-    .orderBy(desc(knowledgeSources.updated_at));
+    .orderBy(desc(knowledgeSources.created_at));
   const agents = await agentsForSources(
     organizationId,
-    rows.map((r) => r.id),
+    rows.map((r) => r.source.id),
   );
   const urls = await websiteUrlsForIntegrations(
     organizationId,
-    rows.map((r) => r.organization_integration_id),
+    rows.map((r) => r.source.organization_integration_id),
+  );
+  const counts = await db
+    .select({
+      sourceId: knowledgeDocuments.source_id,
+      n: count(),
+    })
+    .from(knowledgeDocuments)
+    .where(eq(knowledgeDocuments.organization_id, organizationId))
+    .groupBy(knowledgeDocuments.source_id);
+  const countsBySource = new Map(
+    counts.map((row) => [row.sourceId, Number(row.n)]),
   );
   return rows.map((r) =>
     mapSource(
-      r,
-      agents.get(r.id) ?? [],
-      urls.get(r.organization_integration_id) ?? null,
+      r.source,
+      r.sourceType,
+      countsBySource.get(r.source.id) ?? 0,
+      agents.get(r.source.id) ?? [],
+      urls.get(r.source.organization_integration_id) ?? null,
     ),
   );
 }
@@ -244,8 +275,18 @@ export async function getKnowledgeSource(
   sourceId: string,
 ): Promise<KnowledgeSourceRecord | null> {
   const [row] = await db
-    .select()
+    .select({
+      source: knowledgeSources,
+      sourceType: organizationIntegrations.integration_id,
+    })
     .from(knowledgeSources)
+    .innerJoin(
+      organizationIntegrations,
+      eq(
+        organizationIntegrations.id,
+        knowledgeSources.organization_integration_id,
+      ),
+    )
     .where(
       and(
         eq(knowledgeSources.id, sourceId),
@@ -254,14 +295,20 @@ export async function getKnowledgeSource(
     )
     .limit(1);
   if (!row) return null;
-  const agents = await agentsForSources(organizationId, [row.id]);
+  const agents = await agentsForSources(organizationId, [row.source.id]);
   const urls = await websiteUrlsForIntegrations(organizationId, [
-    row.organization_integration_id,
+    row.source.organization_integration_id,
   ]);
+  const documentCount = await refreshSourceDocumentCount(
+    organizationId,
+    row.source.id,
+  );
   return mapSource(
-    row,
-    agents.get(row.id) ?? [],
-    urls.get(row.organization_integration_id) ?? null,
+    row.source,
+    row.sourceType,
+    documentCount,
+    agents.get(row.source.id) ?? [],
+    urls.get(row.source.organization_integration_id) ?? null,
   );
 }
 
@@ -293,7 +340,6 @@ export async function createWebsiteSource(
     .where(
       and(
         eq(knowledgeSources.organization_id, input.organizationId),
-        eq(knowledgeSources.source_type, "website"),
         eq(
           knowledgeSources.organization_integration_id,
           organizationIntegrationId,
@@ -303,8 +349,7 @@ export async function createWebsiteSource(
     .limit(1);
 
   if (existing) {
-    const agents = await agentsForSources(input.organizationId, [existing.id]);
-    return mapSource(existing, agents.get(existing.id) ?? [], websiteUrl);
+    return (await getKnowledgeSource(input.organizationId, existing.id))!;
   }
 
   const [row] = await db
@@ -312,15 +357,13 @@ export async function createWebsiteSource(
     .values({
       organization_id: input.organizationId,
       organization_integration_id: organizationIntegrationId,
-      source_type: "website",
-      document_count: 0,
     })
     .returning();
 
   const agentIds =
     input.agentIds && input.agentIds.length > 0
       ? input.agentIds
-      : [DEFAULT_CHATBOT_AGENT_ID];
+      : defaultKnowledgeAgentKeys();
   await setSourceAgents(input.organizationId, row!.id, agentIds);
   return (await getKnowledgeSource(input.organizationId, row!.id))!;
 }
@@ -356,12 +399,7 @@ export async function createIntegrationSource(
     .limit(1);
 
   if (existing) {
-    const agents = await agentsForSources(input.organizationId, [existing.id]);
-    return mapSource(
-      existing,
-      agents.get(existing.id) ?? [],
-      configUrl(oi.config as Record<string, unknown>),
-    );
+    return (await getKnowledgeSource(input.organizationId, existing.id))!;
   }
 
   const [row] = await db
@@ -369,15 +407,13 @@ export async function createIntegrationSource(
     .values({
       organization_id: input.organizationId,
       organization_integration_id: input.organizationIntegrationId,
-      source_type: oi.integration_type,
-      document_count: 0,
     })
     .returning();
 
   const agentIds =
     input.agentIds && input.agentIds.length > 0
       ? input.agentIds
-      : [DEFAULT_CHATBOT_AGENT_ID];
+      : defaultKnowledgeAgentKeys();
   await setSourceAgents(input.organizationId, row!.id, agentIds);
   return (await getKnowledgeSource(input.organizationId, row!.id))!;
 }
@@ -394,13 +430,9 @@ export async function updateKnowledgeSource(
   await db
     .update(knowledgeSources)
     .set({
-      ...(input.documentCount !== undefined
-        ? { document_count: input.documentCount }
-        : {}),
       ...(input.lastSyncedAt !== undefined
         ? { last_synced_at: input.lastSyncedAt }
         : {}),
-      updated_at: new Date(),
     })
     .where(
       and(
@@ -424,26 +456,9 @@ export async function updateKnowledgeSource(
 export async function deleteKnowledgeSource(
   organizationId: string,
   sourceId: string,
-): Promise<{ storageKeys: string[] }> {
+): Promise<void> {
   const existing = await getKnowledgeSource(organizationId, sourceId);
   if (!existing) throw new Error("Knowledge source not found");
-
-  const docs = await db
-    .select({ storageKey: knowledgeDocuments.storage_key })
-    .from(knowledgeDocuments)
-    .where(
-      and(
-        eq(knowledgeDocuments.organization_id, organizationId),
-        eq(knowledgeDocuments.source_id, sourceId),
-      ),
-    );
-
-  const storageKeys: string[] = [];
-  for (const d of docs) {
-    if (typeof d.storageKey === "string" && d.storageKey.trim()) {
-      storageKeys.push(d.storageKey);
-    }
-  }
 
   // Documents (and chunks) cascade via knowledge_documents.source_id FK.
   await db
@@ -454,20 +469,17 @@ export async function deleteKnowledgeSource(
         eq(knowledgeSources.organization_id, organizationId),
       ),
     );
-
-  return { storageKeys };
 }
 
-/** Remove one document instance (e.g. a single PDF) under a source. */
+/** Remove one document instance under a source. */
 export async function deleteKnowledgeDocument(
   organizationId: string,
   documentId: string,
-): Promise<{ storageKey: string | null; sourceId: string }> {
+): Promise<{ sourceId: string }> {
   const [doc] = await db
     .select({
       id: knowledgeDocuments.id,
       sourceId: knowledgeDocuments.source_id,
-      storageKey: knowledgeDocuments.storage_key,
     })
     .from(knowledgeDocuments)
     .where(
@@ -490,17 +502,14 @@ export async function deleteKnowledgeDocument(
 
   await refreshSourceDocumentCount(organizationId, doc.sourceId);
 
-  return {
-    storageKey: doc.storageKey?.trim() || null,
-    sourceId: doc.sourceId,
-  };
+  return { sourceId: doc.sourceId };
 }
 
 /** Delete all sources/docs/chunks for an org integration row. */
 export async function purgeKnowledgeForOrganizationIntegration(
   organizationId: string,
   organizationIntegrationId: string,
-): Promise<{ storageKeys: string[] }> {
+): Promise<number> {
   const sources = await db
     .select({ id: knowledgeSources.id })
     .from(knowledgeSources)
@@ -514,31 +523,40 @@ export async function purgeKnowledgeForOrganizationIntegration(
       ),
     );
 
-  const storageKeys: string[] = [];
+  let deletedDocuments = 0;
   for (const s of sources) {
-    const result = await deleteKnowledgeSource(organizationId, s.id);
-    storageKeys.push(...result.storageKeys);
+    const [counted] = await db
+      .select({ n: count() })
+      .from(knowledgeDocuments)
+      .where(
+        and(
+          eq(knowledgeDocuments.organization_id, organizationId),
+          eq(knowledgeDocuments.source_id, s.id),
+        ),
+      );
+    deletedDocuments += Number(counted?.n ?? 0);
+    await deleteKnowledgeSource(organizationId, s.id);
   }
-  return { storageKeys };
+  return deletedDocuments;
 }
 
 /** Resolve catalog id → org integration row, then purge its knowledge. */
 export async function purgeKnowledgeForCatalogIntegration(
   organizationId: string,
   catalogIntegrationId: string,
-): Promise<{ storageKeys: string[] }> {
+): Promise<number> {
   const [oi] = await db
     .select({ id: organizationIntegrations.id })
     .from(organizationIntegrations)
     .where(
       and(
         eq(organizationIntegrations.organization_id, organizationId),
-        eq(organizationIntegrations.integration_type, catalogIntegrationId),
+        eq(organizationIntegrations.integration_id, catalogIntegrationId),
       ),
     )
     .limit(1);
-  if (!oi) return { storageKeys: [] };
-  return purgeKnowledgeForOrganizationIntegration(organizationId, oi.id);
+  if (!oi) return 0;
+  return await purgeKnowledgeForOrganizationIntegration(organizationId, oi.id);
 }
 
 export async function syncKnowledgeSource(
@@ -593,7 +611,7 @@ export async function assertSourceBelongsToOrg(
   return Boolean(row);
 }
 
-/** Catalog type for a source (website, pdf, …). */
+/** Catalog integration id for a source. */
 export async function catalogIntegrationIdForSource(
   organizationId: string,
   sourceId: string,
@@ -608,20 +626,4 @@ export async function listSourcesForCatalogIntegration(
 ): Promise<KnowledgeSourceRecord[]> {
   const all = await listKnowledgeSources(organizationId);
   return all.filter((s) => s.sourceType === catalogIntegrationId);
-}
-
-/** Used by diagnostics — touch updated_at. */
-export async function touchKnowledgeSource(
-  organizationId: string,
-  sourceId: string,
-): Promise<void> {
-  await db
-    .update(knowledgeSources)
-    .set({ updated_at: new Date() })
-    .where(
-      and(
-        eq(knowledgeSources.id, sourceId),
-        eq(knowledgeSources.organization_id, organizationId),
-      ),
-    );
 }

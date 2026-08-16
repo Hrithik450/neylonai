@@ -22,3 +22,14 @@ services:
     ports:
       - "3000:3000"
     restart: unless-stopped
+
+  crawler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: crawler
+    env_file:
+      - .env.local
+    environment:
+      NODE_ENV: production
+    restart: unless-stopped

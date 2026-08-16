@@ -14,7 +14,7 @@ import { useThreadMessageStore, useThreadStore } from "../../store/thread-store"
 import { useWidgetMessageHandler } from "../../hooks/use-message-handler";
 import { useWidgetHost } from "../../context/widget-host";
 import { useProactivePendingStore } from "../../proactive";
-import { listMessages } from "../../..";
+import { getOrCreateVisitorId, listMessages } from "../../..";
 
 interface WidgetMessagesProps {
   threadId?: string;
@@ -25,8 +25,8 @@ export function WidgetMessages({ threadId, title }: WidgetMessagesProps) {
   const [loading, setLoading] = React.useState(Boolean(threadId));
 
   const { messages, setMessages } = useThreadMessageStore();
-  const { setCurrentThreadId } = useThreadStore();
-  const { config } = useWidgetHost();
+  const { threads, setCurrentThreadId } = useThreadStore();
+  const { config, user } = useWidgetHost();
 
   const { back } = useWidgetNavigation();
   const { sendMessage, stopStreaming } = useWidgetMessageHandler();
@@ -46,6 +46,14 @@ export function WidgetMessages({ threadId, title }: WidgetMessagesProps) {
   const showEmpty =
     !showLoader && (!messages || messages.length === 0);
   const showConversation = !showLoader && Boolean(messages?.length);
+  const activeThread = threads?.find(
+    (thread) => thread.id === (threadId ?? useThreadStore.getState().currentThreadId),
+  );
+  const humanOwned =
+    activeThread?.escalated === true ||
+    activeThread?.conversation_status === "awaiting_contact" ||
+    activeThread?.conversation_status === "human_pending" ||
+    activeThread?.conversation_status === "human_active";
 
   // Home / proactive click-through → auto-send once the messages screen is ready.
   React.useEffect(() => {
@@ -87,7 +95,10 @@ export function WidgetMessages({ threadId, title }: WidgetMessagesProps) {
 
     const fetchThreadMessages = async (opts?: { silent?: boolean }) => {
       try {
-        const data = await listMessages(threadId);
+        const data = await listMessages(
+          threadId,
+          user?.id?.trim() || getOrCreateVisitorId(),
+        );
         if (cancelled) return;
 
         if (!data.success) {
@@ -121,17 +132,17 @@ export function WidgetMessages({ threadId, title }: WidgetMessagesProps) {
       window.clearInterval(pollId);
       stopStreamingRef.current();
     };
-  }, [threadId, setCurrentThreadId, setMessages, config.staticDemo]);
+  }, [threadId, setCurrentThreadId, setMessages, config.staticDemo, user?.id]);
 
   return (
-    <div className={cn("flex flex-col h-full min-h-0")}>
+    <div className={cn("flex flex-col h-full min-h-0 min-w-0")}>
       <WidgetHeader
         className="sticky top-0 shrink-0"
         header={title || "New Chat"}
         action={() => back()}
       />
 
-      <div className="relative flex-1 min-h-0 flex flex-col overflow-hidden">
+      <div className="relative flex-1 min-h-0 min-w-0 flex flex-col overflow-hidden">
         {showLoader ? (
           <WidgetLoader color={accent} label="Loading conversation" />
         ) : null}
@@ -189,8 +200,14 @@ export function WidgetMessages({ threadId, title }: WidgetMessagesProps) {
         ) : null}
       </div>
 
-      <div className="relative shrink-0">
-        <InputForm sendMessage={sendMessage} stopStreaming={stopStreaming} />
+      <div className="relative min-w-0 shrink-0">
+        {humanOwned ? (
+          <div className="border-t border-black/10 px-4 py-3 text-center text-xs text-zinc-500">
+            This conversation is with the support team. AI replies are paused.
+          </div>
+        ) : (
+          <InputForm sendMessage={sendMessage} stopStreaming={stopStreaming} />
+        )}
       </div>
     </div>
   );

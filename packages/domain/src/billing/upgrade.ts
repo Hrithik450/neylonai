@@ -7,16 +7,11 @@ import {
 } from "./plans";
 
 export type UpgradeFeature =
-  | "basic_agents"
-  | "advanced_agents"
-  | "crm"
   | "advanced_proactive"
-  | "full_widget_customization"
-  | "priority_support"
   | "more_conversations"
   | "more_integrations"
   | "more_websites"
-  | "team_seats";
+  | "more_website_pages";
 
 export interface UpgradePromptContent {
   /** Short headline. */
@@ -52,26 +47,16 @@ function planSatisfiesFeature(
   feature: UpgradeFeature,
 ): boolean {
   switch (feature) {
-    case "basic_agents":
-      return e.basicAgents;
-    case "advanced_agents":
-      return e.advancedAgents;
-    case "crm":
-      return e.crmIntegrations;
     case "advanced_proactive":
       return e.advancedProactive;
-    case "full_widget_customization":
-      return e.fullWidgetCustomization;
-    case "priority_support":
-      return e.prioritySupport;
     case "more_conversations":
-      return e.conversationsPerMonth > PLAN_CATALOG.free.conversationsPerMonth;
+      return e.aiCreditsPerMonth > PLAN_CATALOG.free.aiCreditsPerMonth;
     case "more_integrations":
       return e.integrationsLimit > PLAN_CATALOG.free.integrationsLimit;
     case "more_websites":
       return e.websites > 1;
-    case "team_seats":
-      return e.teamSeats > 2;
+    case "more_website_pages":
+      return e.websitePagesPerSync > PLAN_CATALOG.free.websitePagesPerSync;
     default:
       return false;
   }
@@ -109,7 +94,7 @@ export function recommendUpgradePlan(
 export function formatPlanPrice(planId: PlanId): string {
   const price = PLAN_CATALOG[planId].priceUsdMonthly;
   if (price === 0) return "$0";
-  return `$${price}/mo`;
+  return `$${price}/mon`;
 }
 
 export function buildFeatureUpgradePrompt(
@@ -171,11 +156,11 @@ export function buildUsageUpgradePrompt(
   if (!target) return null;
   const targetEnt = PLAN_CATALOG[target];
   const pct = Math.round(ratio * 100);
-  const metric = input.metricLabel ?? "monthly conversations";
+  const metric = input.metricLabel ?? "included AI credits";
 
   return {
     title: `You’re using ${pct}% of your ${metric}`,
-    detail: `Upgrade to ${targetEnt.name} for higher limits (${targetEnt.conversationsPerMonth.toLocaleString()} conversations / month).`,
+    detail: `Upgrade to ${targetEnt.name} for a larger shared AI credit pool (${targetEnt.aiCreditsPerMonth.toLocaleString()} / month).`,
     targetPlanId: target,
     targetPlanName: targetEnt.name,
     targetPriceUsdMonthly: targetEnt.priceUsdMonthly,
@@ -203,26 +188,16 @@ export function shouldShowUpgradeCta(
 
 function featureLabel(feature: UpgradeFeature): string {
   switch (feature) {
-    case "basic_agents":
-      return "Agents";
-    case "advanced_agents":
-      return "Advanced agents";
-    case "crm":
-      return "CRM integrations";
     case "advanced_proactive":
       return "Advanced proactive engagement";
-    case "full_widget_customization":
-      return "Full chatbot customization";
-    case "priority_support":
-      return "Priority support";
     case "more_conversations":
-      return "Higher conversation limits";
+      return "More included AI credits";
     case "more_integrations":
       return "More integrations";
     case "more_websites":
       return "More websites";
-    case "team_seats":
-      return "Team seats";
+    case "more_website_pages":
+      return "More website pages";
     default:
       return "This feature";
   }
@@ -233,12 +208,6 @@ function featureDetail(
   target: PlanEntitlements,
 ): string {
   switch (feature) {
-    case "advanced_agents":
-      return `Advanced Agents are available on ${target.name}. Upgrade to unlock them.`;
-    case "basic_agents":
-      return `Agents are available starting on ${target.name}. Upgrade to enable them.`;
-    case "crm":
-      return `CRM connections (HubSpot, Salesforce) are included on ${target.name}.`;
     case "advanced_proactive":
       return `${target.name} includes advanced proactive engagement controls.`;
     default:

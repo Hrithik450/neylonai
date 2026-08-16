@@ -25,34 +25,21 @@ export interface WidgetAudioManagerOptions {
 const DEFAULT_ENABLED_KEY = "neylonai.widgetSound.enabled";
 const MAX_PLAYED_IDS = 64;
 
-function prefersReducedMotion(): boolean {
-  if (typeof window === "undefined" || !window.matchMedia) return false;
-  try {
-    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  } catch {
-    return false;
-  }
-}
+const prefersReducedMotion = () =>
+  typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
-function readEnabledFlag(key: string): boolean {
+const readEnabledFlag = (key: string) => {
   if (typeof window === "undefined") return true;
   try {
     const raw = localStorage.getItem(key);
-    if (raw === null) return true;
-    return raw !== "0" && raw !== "false";
-  } catch {
-    return true;
-  }
-}
+    return raw === null || (raw !== "0" && raw !== "false");
+  } catch { return true; }
+};
 
-function writeEnabledFlag(key: string, enabled: boolean): void {
+const writeEnabledFlag = (key: string, enabled: boolean) => {
   if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(key, enabled ? "1" : "0");
-  } catch {
-    // ignore quota / private mode
-  }
-}
+  try { localStorage.setItem(key, enabled ? "1" : "0"); } catch {}
+};
 
 export class WidgetAudioManager {
   private ctx: AudioContext | null = null;

@@ -9,6 +9,7 @@ import {
   knowledgeSources,
   organizationIntegrations,
 } from "@neylonai/database";
+import { resolveAgentKeys } from "./service";
 
 export const SOURCE_VISIBILITY = ["public", "private"] as const;
 export type SourceVisibility = (typeof SOURCE_VISIBILITY)[number];
@@ -78,6 +79,15 @@ export async function listAllowedSourceIds(
   const agent = agentId.trim();
   if (!org || !agent) return [];
 
+  let resolvedAgentKey: string;
+  try {
+    const [id] = await resolveAgentKeys([agent]);
+    if (!id) return [];
+    resolvedAgentKey = id;
+  } catch {
+    return [];
+  }
+
   const rows = await db
     .select({ sourceId: knowledgeSourceAgents.source_id })
     .from(knowledgeSourceAgents)
@@ -107,7 +117,7 @@ export async function listAllowedSourceIds(
     .where(
       and(
         eq(knowledgeSourceAgents.organization_id, org),
-        eq(knowledgeSourceAgents.agent_id, agent),
+        eq(knowledgeSourceAgents.agent_key, resolvedAgentKey),
         eq(organizationIntegrations.enabled, true),
       ),
     );
@@ -126,10 +136,23 @@ async function loadSourcesByIds(
   const rows = await db
     .select({
       id: knowledgeSources.id,
-      sourceType: knowledgeSources.source_type,
-      organizationIntegrationId: knowledgeSources.organization_integration_id,
+      sourceType: organizationIntegrations.integration_id,
+      config: organizationIntegrations.config,
     })
     .from(knowledgeSources)
+    .innerJoin(
+      organizationIntegrations,
+      and(
+        eq(
+          organizationIntegrations.id,
+          knowledgeSources.organization_integration_id,
+        ),
+        eq(
+          organizationIntegrations.organization_id,
+          knowledgeSources.organization_id,
+        ),
+      ),
+    )
     .where(
       and(
         eq(knowledgeSources.organization_id, organizationId),
@@ -137,28 +160,8 @@ async function loadSourcesByIds(
       ),
     );
 
-  const oiIds = rows.map((r) => r.organizationIntegrationId);
-  const oiRows =
-    oiIds.length === 0
-      ? []
-      : await db
-          .select({
-            id: organizationIntegrations.id,
-            config: organizationIntegrations.config,
-          })
-          .from(organizationIntegrations)
-          .where(
-            and(
-              eq(organizationIntegrations.organization_id, organizationId),
-              inArray(organizationIntegrations.id, oiIds),
-            ),
-          );
-  const oiConfig = new Map(
-    oiRows.map((r) => [r.id, (r.config ?? {}) as Record<string, unknown>]),
-  );
-
   for (const row of rows) {
-    const cfg = oiConfig.get(row.organizationIntegrationId) ?? {};
+    const cfg = (row.config ?? {}) as Record<string, unknown>;
     const websiteUrl =
       typeof cfg.url === "string" && cfg.url.trim() ? cfg.url.trim() : null;
     const visibility: SourceVisibility =
@@ -166,9 +169,7 @@ async function loadSourcesByIds(
     const name =
       row.sourceType === "website"
         ? websiteUrl || "Website"
-        : row.sourceType === "pdf"
-          ? "PDF"
-          : "Integration knowledge";
+        : "Integration knowledge";
     map.set(row.id, {
       id: row.id,
       type: row.sourceType,

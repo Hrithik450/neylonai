@@ -21,7 +21,7 @@ apps/web                    (private first-party app)
   └── @neylonai/database
 
 @neylonai/integrations      (private)
-  └── (external adapters only: Gemini, Tavily, Evently, …)
+  └── (external adapters only: Gemini, Tavily, scraping, notifications)
 
 @neylonai/sdk               PUBLIC — zero @neylonai/* workspace deps
   └── public npm only (react peers, lucide, zustand, radix, …)
@@ -68,9 +68,9 @@ Rules:
 | `@neylonai/ui` | Private app UI primitives (dashboard/admin/landing) — **not** an SDK dependency |
 | `@neylonai/database` | Postgres (Drizzle) + Redis + **knowledge (pgvector + FTS)** |
 | `@neylonai/auth` | Session JWT + IdP token verification (Google today; no Next.js imports) |
-| `@neylonai/integrations` | Customer integration modules (Website, PDF, Slack, …) + **internal** shared tools (scrape, Gemini, web-search, notifications, CRM adapter protocol). Catalog registry drives UI + billing. |
+| `@neylonai/integrations` | Customer integration modules (Website, Database, Web Search, WhatsApp, Cal.com) + **internal** shared tools (scrape, Gemini, web-search, notifications). Catalog registry drives UI + billing. |
 | `@neylonai/domain` | Users, chat, conversation lifecycle / handoff, tickets, billing, knowledge sources |
-| `@neylonai/agent` | Agent registry + streaming orchestrator (Support, Lead Agent, **first-party knowledge search**, escalation) |
+| `@neylonai/agent` | Agent registry + streaming orchestrator (Main Agent + tools, model router, escalation) |
 | `@neylonai/sdk` | **Public** browser SDK: SupportWidget + API client (zero `@neylonai/*` runtime deps) |
 | `apps/web` | Next.js routes, landing, cookie glue, dashboards (uses SDK for widget; private packages for APIs) |
 
@@ -85,15 +85,15 @@ First-party Postgres storage for org knowledge (no external vector DB).
 - Distance: **cosine** (`<=>` / `halfvec_cosine_ops`) — correct for normalized text embeddings.
 - Index: **global HNSW** (`m=16`, `ef_construction=64`) on `knowledge_chunks.embedding`.
 - Queries run inside a **single DB transaction** that sets `hnsw.ef_search` (default 100), `hnsw.iterative_scan=relaxed_order`, and `hnsw.max_scan_tuples` (default 20_000) so tenant filters still fill `LIMIT`.
-- Chat model **router** (complexity → tier): low `gemini-3.1-flash-lite`, medium `gemini-3.5-flash`, high/max `gemini-3.6-flash`. Classification prefers zero-latency heuristics; otherwise `gemini-3.1-flash-lite` JSON classify (`ROUTER_CLASSIFIER_MODEL`). Utility `gemini-3.5-flash-lite` (expansion / reframe / titles). No OpenAI.
+- Chat model **router** (complexity → tier): low `gemini-3.1-flash-lite`, medium `gemini-3.5-flash-lite`, high/max `gemini-3.6-flash`. Classification prefers zero-latency heuristics; otherwise `gemini-3.1-flash-lite` JSON classify (`ROUTER_CLASSIFIER_MODEL`). Utility `gemini-3.5-flash-lite` (expansion / reframe / titles). No OpenAI.
 - **Model IDs** — `packages/agent/src/lib/models.ts` (defaults + remaps retired IDs like `gemini-2.5-flash-lite` → `gemini-3.1-flash-lite` at runtime).
-- **Google API key pool** (`@neylonai/integrations/gemini`): `GOOGLE_API_KEYS` (or `GOOGLE_API_KEY_1…N` / legacy `GOOGLE_API_KEY`). Round-robin across keys; on 429/quota the key cools down (`GOOGLE_API_KEY_COOLDOWN_MS`) and calls retry on the next key via `withGoogleApiRetry`.
+- **Gemini API key pool** (`@neylonai/integrations/gemini`): `GEMINI_API_KEYS` or `GEMINI_API_KEY_1…N`. Round-robin across keys; on 429/quota the key cools down (`GEMINI_API_KEY_COOLDOWN_MS`) and calls retry on the next key via `withGoogleApiRetry`.
 
 **Multi-tenant schema**
 
 `organizations` → `organization_integrations` (`type` + `config`) → `knowledge_sources` (`type` + `integration_id` FK) → `knowledge_documents` → `knowledge_chunks`  
 
-A source answers: which catalog integration it belongs to (`type`), and which org connection row holds credentials (`integration_id`). Connector catalog (Website, PDF, Drive, CRM, …) lives in `@neylonai/integrations` manifests.
+A source answers: which catalog integration it belongs to (`type`), and which org connection row holds credentials (`integration_id`). The focused connector catalog lives in `@neylonai/integrations` manifests.
 
 **Modular APIs in `@neylonai/database`**
 
@@ -149,8 +149,8 @@ Only `@neylonai/agent` uses explicit domain / application / infrastructure layer
 - `domain/` — `AgentDefinition` contract + registry
 - `application/` — model router, thinking tips, graph builder, query reframe, stream orchestrator
 - **Proactive suggestions (first-party engagement — not an external integration):**
-  - Build: `packages/agent/src/agents/default/proactive-suggestions/` (`buildProactiveSuggestions`, owned by Support / default chatbot)
-  - Flow: org/KB `listKnowledgeSuggestionSeeds` (candidates) → visitor/page/session ranking → 3–5 suggestions; Evently records impressions only
+  - Build: `packages/agent/src/agents/main-agent/proactive-suggestions/` (`buildProactiveSuggestions`, owned by Main Agent)
+  - Flow: org/KB `listKnowledgeSuggestionSeeds` (candidates) → visitor/page/session ranking → 3–5 suggestions
   - API: `apps/web/src/app/orchestration/api/v1/suggestions` (thin route → `@neylonai/agent`)
   - Widget UI: `packages/sdk/src/react/proactive/` (bubbles, idle/cooldown, sound; anonymous visitor/session ids)
   - May call Gemini via `@neylonai/integrations/gemini`
@@ -161,81 +161,99 @@ Only `@neylonai/agent` uses explicit domain / application / infrastructure layer
   - May call Gemini via `@neylonai/integrations` for embeddings + query expansion
 - **Prompts / model IDs** — single source in `packages/agent/src/lib/` (`prompts.ts`, `models.ts`). Gemini key pooling stays in `@neylonai/integrations/gemini`.
 - `infrastructure/tools/` — LangChain tools (thin wrappers over agent knowledge-search / integrations / domain)
-- `agents/default/` — Support chatbot (answers + escalate_to_human; **no lead capture**) + proactive suggestion builder
-- `agents/lead/` — dedicated Lead Agent (`capture_lead` + `persistence/` for lead upsert/list)
+- `agents/main-agent/` — **Main Agent** (primary conversational entry): knowledge, meeting-link sharing, escalate_to_human, etc.
+- `agents/support|sales|technical/` — specialized **blueprints** (demo only; not runnable in the MVP)
+- `infrastructure/tools/provide-meeting-link.tool.ts` — returns the configured meeting URL; it does not book meetings
+- `application/model-router.ts` — routing / model selection (separate from agents)
 - `application/escalation.ts` — deterministic handoff detection (no chain-of-thought)
-- `application/lead-capture-bridge.ts` — orchestrator bridge when Lead Agent is enabled
 
 Other packages stay flat and readable (repository + service + types).
 
-## Lead Agent → conversation → lead
+## MVP agent architecture
+
+```
+Visitor
+  → Routing / model selection (model-router)
+  → Main Agent
+  → Tools / capabilities (knowledge, meeting-link sharing, escalation, …)
+  → Backend systems
+```
+
+### Org agents (`organization_agents`)
+
+- No separate `agents` catalog table — definitions live in the **code registry** (`@neylonai/agent`).
+- Org state only: `agent_key` (`main-agent`), `enabled`, `extra` jsonb, `created_at`.
+- Unique `(organization_id, agent_key)`.
+- Main Agent row is always ensured on onboarding (`agent_key=main-agent`).
+- Specialized rows exist only while connected (disable deletes the row).
+- Main vs specialized is from the **code registry** (`role`), not a DB column.
+- Knowledge links use `knowledge_source_agents.agent_key` (varchar, no FK) — default `main-agent`.
+- Runtime tools stay on the Main Agent code definition — not in DB `extra`.
+
+Specialized agents (Support / Sales / Technical) are **code blueprints**. They are not a multi-agent runtime. Do not create an agent for every action — simple actions stay tools on the Main Agent.
+
+## Conversations & escalation
+
+- Conversation escalation is a boolean on `threads.escalated` (no separate state table).
+- CRM sync adapters can be added later when contact capture is reintroduced.
+
+## AI credits (shared wallet)
+
+Authoritative policy lives in `packages/domain/src/billing/workload-policy.ts`.
+
+- **One included balance** per subscription period (Free 500 · Starter 2,000 · Pro 5,000 · Business 15,000).
+- **Post-delivery charge**: Simple 1 · Standard 2 · Complex 8 (social turns 0), capped by the effective runtime class.
+- **Class-limit routing** before tools run: Simple may borrow remaining Standard/Complex capacity; Standard may borrow Complex; Complex cannot borrow downward. When allowed capacity or credits are insufficient, the route uses Simple model/RAG/tool limits.
+- **Free** blocks when available credits (balance − reserved) hit zero. **Paid** plans with on-demand billing keep the requested class as provider-metered overage.
+- Class counters are hard period query limits: Free 100/50/20, Starter 400/200/70, Pro 1,000/500/150, Business 3,000/1,500/500.
+- Reservations (`usage_request_reservations` + `ai_credits_reserved`) hold cost for the effective class until settle or release.
+
+## AI Agent → escalation → human handoff (MVP)
 
 ```
 Visitor message
-  → streamConversation (org-scoped)
-  → Lead Agent enabled? maybeCaptureLeadFromUserMessage / capture_lead tool
-  → @neylonai/agent agents/lead/persistence (upsert into `leads`, keyed by org + thread_id)
-```
-
-- Lead capture **and** lead persistence live only on the **Lead Agent** feature (+ thin orchestrator bridge).
-- Lead enablement + `leadFields` are stored on `organization_agents` (`agent_id = lead`) and edited under **Agents → Lead Agent** — not Settings / engagement.
-- Support / chatbot agent must **not** call lead tools or own lead storage.
-- Conversation lifecycle (`conversation_states`) does **not** store `lead_id` — join via `leads.thread_id` when the inbox needs lead context.
-- Leads are workspace-scoped and independently enable/disableable via `organization_agents` (`lead`).
-- CRM sync is adapter-based later — status stays `not_configured` until then.
-
-## AI Agent → escalation → async support ticket
-
-```
-Visitor message
-  → detectEscalation (explicit human / frustration / unhelpful / …)
+  → detectEscalation (explicit human / frustration / unhelpful)
   → OR chatbot tool escalate_to_human
   → @neylonai/domain escalateConversation
-  → createTicketFromEscalation (transcript + reason + timestamp in context_snapshot)
-  → status: escalated, ai_paused = true
-  → notify TEAM_WEBHOOK_URL / workspace webhook (best-effort)
-  → customer message: ticket submitted for follow-up + Reference: XXXXXXXX
+  → threads.escalated = true
+  → insert thread_escalations row (reason)
+  → notify default notification provider (best-effort)
+  → one assistant message: fixed handoff copy
      (never claims a human is online or chatting live)
 ```
 
-This is **not** live agent chat. Dashboard Conversations shows the linked ticket status; teammates assign/resolve tickets offline.
+This is **not** live agent chat and **not** a ticketing system. Subsequent visitor messages are persisted but do not trigger AI replies while `threads.escalated` is true.
 
-Conversation lifecycle statuses: `ai_active` → `escalated` (ticket open) → `human_active` (teammate working ticket) → `resolved` (or `returnToAi` → `ai_active`).
-
-## Human Agent → resolution
+## Human reply (escalated only)
 
 ```
-Dashboard / API assignConversation | markHumanReplied
-  → status human_active, ai_paused stays true
-  → resolveConversation → resolved
+Dashboard Conversations composer (shown only when escalated)
+  → POST /api/v1/conversations/actions { action: "reply" }
+  → postHumanReply → thread_messages role=human
+  → widget polls / loads messages (human → assistant for display)
 ```
-
-When a human sends a message, AI remains paused until `returnToAi`.
 
 ## How to add a new agent
 
-1. Create `packages/agent/src/agents/<name>/definition.ts` implementing `AgentDefinition`.
-2. Register it in that folder's `index.ts` via `registerAgent(...)`.
-3. Import the new agent module from `packages/agent/src/index.ts` (side-effect import).
-4. Call `streamConversation({ agentId: "<id>", ... })` from a route — or set it as default with `setDefaultAgent`.
+Prefer a **tool on the Main Agent** for simple actions. Only add a specialized agent when it needs its own domain instructions, reasoning, and multiple tools.
 
-No changes to the orchestrator or graph builder are required.
+1. Register an `AgentDefinition` under `packages/agent/src/agents/<name>/`.
+2. Import the module from `packages/agent/src/index.ts`.
+3. Orgs connect it via `organization_agents` (`agent_key` = definition `id`); dashboard navigates by that key.
 
-## How to add a new integration (e.g. HubSpot CRM)
+Live chat still defaults to the Main Agent. No agent-to-agent orchestration in the MVP.
 
-1. Pick the right contract under `packages/integrations/src/`:
-   - `web-search` — open internet search (Tavily)
-   - `notifications` — outbound alerts (Slack today; CRM plugins fit here)
-   - `crm` — lead sync adapters (`registerCrmAdapter`) for HubSpot/Salesforce later
-   - `gemini` / `evently` — vendor clients
-2. Add `providers/<vendor>.ts` implementing the interface.
-3. Register it with the category registry (`notificationProviders.register(...)`).
-4. Optionally `setDefault(...)` if it should replace the current default.
+## How to add a new integration
+
+1. Add a folder under `packages/integrations/src/` with its manifest and server logic.
+2. Register the manifest in the focused catalog.
+3. Add its dedicated dashboard route and API flow.
+4. Add plan checks and secret storage when the connector needs credentials.
 
 First-party knowledge retrieval is **not** an integration — add providers under `packages/agent/src/infrastructure/knowledge-search/`.
 Dashboard / widget sign-in IdPs are **not** integrations — add them under `packages/auth/src/identity/`.
 
-Consumers (agent tools, API routes) call `*.getDefault()` / `*.get(name)` and never import vendor SDKs directly.
+Shared provider consumers call `*.getDefault()` / `*.get(name)` and never import vendor SDKs directly.
 
 ## Framework vs business logic
 

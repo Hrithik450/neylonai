@@ -27,12 +27,6 @@ export type StoredWidgetConfig = {
   branding?: {
     name?: string;
     logoUrl?: string;
-    /**
-     * Brand color (legacy). Prefer primaryTextColor (heading) and
-     * primaryTextBackground (Ask button fill).
-     * @deprecated
-     */
-    primaryColor?: string;
     /** Heading / emphasis text on the panel and cards. */
     primaryTextColor?: string;
     /** Body / muted text on the panel and cards. */
@@ -46,11 +40,6 @@ export type StoredWidgetConfig = {
      * Missing or stale → migrate color fields to current defaults on load.
      */
     colorsVersion?: number;
-    /**
-     * Top stop of the panel background gradient.
-     * @deprecated Prefer gradientFrom.
-     */
-    headerTint?: string;
     /** Top color of `linear-gradient(to bottom, …)`. */
     gradientFrom?: string;
     /** Bottom color of the same gradient (structure unchanged). */
@@ -114,9 +103,38 @@ export type StoredWidgetConfig = {
     rotateGapMs?: number;
     postChatDelayMs?: number;
     poolLimit?: number;
+    behavioralTriggers?: {
+      scrollDepth?: {
+        enabled?: boolean;
+        /** 0–100, default 60 */
+        thresholdPercent?: number;
+        cooldownMs?: number;
+      };
+      dwell?: {
+        enabled?: boolean;
+        /** Default 45s */
+        thresholdMs?: number;
+        cooldownMs?: number;
+      };
+      exitIntent?: {
+        enabled?: boolean;
+        cooldownMs?: number;
+      };
+    };
   };
   defaultOpen?: boolean;
 };
+
+/**
+ * Define code-owned widget customization with full type checking.
+ * Values passed through `SupportWidget.config.customization` override dashboard
+ * values, which lets an integration match the host site's existing theme.
+ */
+export function defineWidgetCustomization(
+  customization: StoredWidgetConfig,
+): StoredWidgetConfig {
+  return customization;
+}
 
 /** Defaults shared by remote config + React widget. */
 export const DEFAULT_WIDGET_MESSAGES = {
@@ -135,7 +153,7 @@ export const DEFAULT_WIDGET_MESSAGES = {
   ],
   askTitle: "Ask a question",
   askSubtitle: "Instant answers from our knowledge",
-  /** Home “Talk to the team” card (legacy keys: feedbackTitle / feedbackSubtitle). */
+  /** Home “Talk to the team” card. */
   feedbackTitle: "Talk to the team",
   feedbackSubtitle:
     "We escalate with full context when AI can't resolve it",
@@ -178,54 +196,52 @@ export const DEFAULT_WIDGET_FEATURES = {
   voiceInput: true,
 };
 
-export const DEFAULT_WIDGET_CONFIG: StoredWidgetConfig = {
-  branding: {
-    name: "",
-    logoUrl: "",
-    primaryColor: "#0E3228",
-    primaryTextColor: "#0E3228",
-    secondaryTextColor: "rgba(0, 0, 0, 0.7)",
-    accentColor: "#71717a",
-    tabActiveColor: "#0E3228",
-    headerTint: "rgb(144, 238, 144)",
-    gradientFrom: "rgb(144, 238, 144)",
-    gradientTo: "#ffffff",
-    primaryTextBackground: "#0E3228",
-    askButtonTextColor: "#ffffff",
-    secondaryTextBackground: "#ffffff",
-    aiMessageBackground: "transparent",
-    humanMessageBackground: "#e4e4e7",
-    tagline: "AI assistants for modern businesses",
-    font: { ...DEFAULT_WIDGET_FONT },
+const DEFAULT_BRANDING = {
+  name: "",
+  logoUrl: "",
+  primaryTextColor: "#0E3228",
+  secondaryTextColor: "rgba(0, 0, 0, 0.7)",
+  accentColor: "#71717a",
+  tabActiveColor: "#0E3228",
+  gradientFrom: "rgb(144, 238, 144)",
+  gradientTo: "#ffffff",
+  primaryTextBackground: "#0E3228",
+  askButtonTextColor: "#ffffff",
+  secondaryTextBackground: "#ffffff",
+  aiMessageBackground: "transparent",
+  humanMessageBackground: "#e4e4e7",
+  tagline: "AI assistants for modern businesses",
+  font: { ...DEFAULT_WIDGET_FONT },
+};
+
+const DEFAULT_PROACTIVE = {
+  enabled: true,
+  soundEnabled: true,
+  volume: 0.22,
+  initialIdleMs: 2_200,
+  displayMs: 6_500,
+  rotateGapMs: 4_500,
+  postChatDelayMs: 2_000,
+  poolLimit: 5,
+  behavioralTriggers: {
+    scrollDepth: { enabled: true, thresholdPercent: 60, cooldownMs: 1_800_000 },
+    dwell: { enabled: true, thresholdMs: 45_000, cooldownMs: 1_800_000 },
+    exitIntent: { enabled: true, cooldownMs: 1_800_000 },
   },
+};
+
+export const DEFAULT_WIDGET_CONFIG: StoredWidgetConfig = {
+  branding: DEFAULT_BRANDING,
   layout: { ...DEFAULT_WIDGET_LAYOUT },
   messages: {
-    welcomeGreeting: DEFAULT_WIDGET_MESSAGES.welcomeGreeting,
+    ...DEFAULT_WIDGET_MESSAGES,
     introMessages: [...DEFAULT_WIDGET_MESSAGES.introMessages],
-    inputPlaceholder: DEFAULT_WIDGET_MESSAGES.inputPlaceholder,
     suggestedQuestions: [...DEFAULT_WIDGET_MESSAGES.suggestedQuestions],
-    askTitle: DEFAULT_WIDGET_MESSAGES.askTitle,
-    askSubtitle: DEFAULT_WIDGET_MESSAGES.askSubtitle,
-    feedbackTitle: DEFAULT_WIDGET_MESSAGES.feedbackTitle,
-    feedbackSubtitle: DEFAULT_WIDGET_MESSAGES.feedbackSubtitle,
     faqs: [...DEFAULT_WIDGET_MESSAGES.faqs],
   },
   features: { ...DEFAULT_WIDGET_FEATURES },
-  website: {
-    visiblePathPrefixes: [],
-    hiddenPathPrefixes: [],
-    autoOpenPathPrefixes: [],
-  },
-  proactive: {
-    enabled: true,
-    soundEnabled: true,
-    volume: 0.22,
-    initialIdleMs: 2_200,
-    displayMs: 6_500,
-    rotateGapMs: 4_500,
-    postChatDelayMs: 2_000,
-    poolLimit: 5,
-  },
+  website: { visiblePathPrefixes: [], hiddenPathPrefixes: [], autoOpenPathPrefixes: [] },
+  proactive: DEFAULT_PROACTIVE,
   defaultOpen: false,
 };
 
@@ -245,12 +261,10 @@ export function withPlatformBrandingColors(
     ...config,
     branding: {
       ...b,
-      primaryColor: d.primaryColor,
       primaryTextColor: d.primaryTextColor,
       secondaryTextColor: d.secondaryTextColor,
       accentColor: d.accentColor,
       tabActiveColor: d.tabActiveColor,
-      headerTint: d.headerTint,
       gradientFrom: d.gradientFrom,
       gradientTo: d.gradientTo,
       primaryTextBackground: d.primaryTextBackground,
@@ -270,136 +284,66 @@ export function brandingColorsNeedMigration(
 }
 
 /** Deep-merge stored config onto defaults (org row may be partial). */
-export function mergeWidgetConfig(
-  stored?: StoredWidgetConfig | null,
-): StoredWidgetConfig {
-  const s = stored ?? {};
-  // Drop legacy socialLinks from older stored rows (no longer part of branding).
-  const {
-    socialLinks: _legacySocialLinks,
-    ...storedBranding
-  } = (s.branding ?? {}) as NonNullable<StoredWidgetConfig["branding"]> & {
-    socialLinks?: unknown;
-  };
+const trimOr = (val: string | undefined, fallback: string) => val?.trim() || fallback;
+
+const mergeBranding = (stored: any) => {
+  const def = DEFAULT_WIDGET_CONFIG.branding!;
   return {
-    ...DEFAULT_WIDGET_CONFIG,
+    ...def,
+    ...stored,
+    font: { ...DEFAULT_WIDGET_FONT, ...def.font, ...stored.font },
+    primaryTextColor: trimOr(stored.primaryTextColor, def.primaryTextColor!),
+    secondaryTextColor: trimOr(stored.secondaryTextColor, def.secondaryTextColor!),
+    tabActiveColor: trimOr(stored.tabActiveColor, def.tabActiveColor!),
+    accentColor: trimOr(stored.accentColor, def.accentColor!),
+    gradientFrom: trimOr(stored.gradientFrom, def.gradientFrom!),
+    gradientTo: trimOr(stored.gradientTo, def.gradientTo!),
+    primaryTextBackground: trimOr(stored.primaryTextBackground, stored.primaryTextColor) || def.primaryTextBackground,
+    askButtonTextColor: trimOr(stored.askButtonTextColor, def.askButtonTextColor!),
+    secondaryTextBackground: trimOr(stored.secondaryTextBackground, def.secondaryTextBackground!),
+    aiMessageBackground: trimOr(stored.aiMessageBackground, def.aiMessageBackground!),
+    humanMessageBackground: trimOr(stored.humanMessageBackground, def.humanMessageBackground!),
+    colorsVersion: stored.colorsVersion,
+  };
+};
+
+const cleanFaqs = (faqs: any) => {
+  const raw = Array.isArray(faqs) ? faqs : [];
+  const cleaned = raw
+    .map(f => ({ question: f?.question?.trim() || "", answer: f?.answer?.trim() || "" }))
+    .filter(f => f.question && f.answer)
+    .slice(0, 4);
+  return cleaned.length ? cleaned : [...DEFAULT_WIDGET_CONFIG.messages!.faqs!];
+};
+
+export function mergeWidgetConfig(stored?: StoredWidgetConfig | null): StoredWidgetConfig {
+  const s = stored ?? {};
+  const sb = s.branding ?? {};
+  const sm = s.messages ?? {};
+  const def = DEFAULT_WIDGET_CONFIG;
+
+  const feedbackTitle = sm.feedbackTitle?.trim();
+  const feedbackSubtitle = sm.feedbackSubtitle?.trim();
+
+  return {
+    ...def,
     ...s,
-    branding: {
-      ...DEFAULT_WIDGET_CONFIG.branding,
-      ...storedBranding,
-      font: {
-        ...DEFAULT_WIDGET_FONT,
-        ...DEFAULT_WIDGET_CONFIG.branding?.font,
-        ...storedBranding.font,
-      },
-      // Normalize new color fields from legacy keys when missing.
-      primaryTextColor:
-        storedBranding.primaryTextColor?.trim() ||
-        storedBranding.primaryColor?.trim() ||
-        DEFAULT_WIDGET_CONFIG.branding?.primaryTextColor,
-      secondaryTextColor:
-        storedBranding.secondaryTextColor?.trim() ||
-        DEFAULT_WIDGET_CONFIG.branding?.secondaryTextColor,
-      tabActiveColor:
-        storedBranding.tabActiveColor?.trim() ||
-        DEFAULT_WIDGET_CONFIG.branding?.tabActiveColor,
-      accentColor:
-        storedBranding.accentColor?.trim() ||
-        DEFAULT_WIDGET_CONFIG.branding?.accentColor,
-      gradientFrom:
-        storedBranding.gradientFrom?.trim() ||
-        storedBranding.headerTint?.trim() ||
-        DEFAULT_WIDGET_CONFIG.branding?.gradientFrom,
-      gradientTo:
-        storedBranding.gradientTo?.trim() ||
-        DEFAULT_WIDGET_CONFIG.branding?.gradientTo,
-      // Ask CTA fill — fall back to brand text/primary so older configs stay dark.
-      primaryTextBackground:
-        storedBranding.primaryTextBackground?.trim() ||
-        storedBranding.primaryTextColor?.trim() ||
-        storedBranding.primaryColor?.trim() ||
-        DEFAULT_WIDGET_CONFIG.branding?.primaryTextBackground,
-      askButtonTextColor:
-        storedBranding.askButtonTextColor?.trim() ||
-        DEFAULT_WIDGET_CONFIG.branding?.askButtonTextColor,
-      secondaryTextBackground:
-        storedBranding.secondaryTextBackground?.trim() ||
-        DEFAULT_WIDGET_CONFIG.branding?.secondaryTextBackground,
-      aiMessageBackground:
-        storedBranding.aiMessageBackground?.trim() ||
-        DEFAULT_WIDGET_CONFIG.branding?.aiMessageBackground,
-      humanMessageBackground:
-        storedBranding.humanMessageBackground?.trim() ||
-        DEFAULT_WIDGET_CONFIG.branding?.humanMessageBackground,
-      // Keep legacy mirrors in sync for older readers.
-      primaryColor:
-        storedBranding.primaryTextColor?.trim() ||
-        storedBranding.primaryColor?.trim() ||
-        DEFAULT_WIDGET_CONFIG.branding?.primaryColor,
-      headerTint:
-        storedBranding.gradientFrom?.trim() ||
-        storedBranding.headerTint?.trim() ||
-        DEFAULT_WIDGET_CONFIG.branding?.headerTint,
-      // Only stamp from storage — never inherit a default version or migration
-      // would be skipped after a partial merge/persist.
-      colorsVersion: storedBranding.colorsVersion,
-    },
-    layout: { ...DEFAULT_WIDGET_CONFIG.layout, ...s.layout },
+    branding: mergeBranding(sb),
+    layout: { ...def.layout, ...s.layout },
     messages: {
-      ...DEFAULT_WIDGET_CONFIG.messages,
-      ...s.messages,
-      introMessages: s.messages?.introMessages?.length
-        ? s.messages.introMessages
-        : DEFAULT_WIDGET_CONFIG.messages?.introMessages,
-      suggestedQuestions: s.messages?.suggestedQuestions?.length
-        ? s.messages.suggestedQuestions
-        : DEFAULT_WIDGET_CONFIG.messages?.suggestedQuestions,
-      faqs: (() => {
-        const raw = Array.isArray(s.messages?.faqs) ? s.messages.faqs : null;
-        const cleaned = (raw ?? [])
-          .map((f) => ({
-            question: typeof f?.question === "string" ? f.question.trim() : "",
-            answer: typeof f?.answer === "string" ? f.answer.trim() : "",
-          }))
-          .filter((f) => f.question && f.answer)
-          .slice(0, 4);
-        return cleaned.length > 0
-          ? cleaned
-          : [...(DEFAULT_WIDGET_CONFIG.messages?.faqs ?? [])];
-      })(),
-      faqsInitialized: s.messages?.faqsInitialized === true,
-      // Prefer new contact copy; fall back to defaults (migrate old feedback wording).
-      feedbackTitle: (() => {
-        const t = s.messages?.feedbackTitle?.trim() || "";
-        if (!t || t === "Share Your Feedback") {
-          return DEFAULT_WIDGET_CONFIG.messages?.feedbackTitle;
-        }
-        return t;
-      })(),
-      feedbackSubtitle: (() => {
-        const t = s.messages?.feedbackSubtitle?.trim() || "";
-        if (!t || t === "Help us improve with your feedback.") {
-          return DEFAULT_WIDGET_CONFIG.messages?.feedbackSubtitle;
-        }
-        return t;
-      })(),
+      ...def.messages,
+      ...sm,
+      introMessages: sm.introMessages?.length ? sm.introMessages : def.messages?.introMessages,
+      suggestedQuestions: sm.suggestedQuestions?.length ? sm.suggestedQuestions : def.messages?.suggestedQuestions,
+      faqs: cleanFaqs(sm.faqs),
+      faqsInitialized: sm.faqsInitialized === true,
+      feedbackTitle: !feedbackTitle || feedbackTitle === "Share Your Feedback" ? def.messages?.feedbackTitle : feedbackTitle,
+      feedbackSubtitle: !feedbackSubtitle || feedbackSubtitle === "Help us improve with your feedback." ? def.messages?.feedbackSubtitle : feedbackSubtitle,
     },
-    features: { ...DEFAULT_WIDGET_CONFIG.features, ...s.features },
-    website: {
-      ...DEFAULT_WIDGET_CONFIG.website,
-      ...s.website,
-      visiblePathPrefixes:
-        s.website?.visiblePathPrefixes ??
-        DEFAULT_WIDGET_CONFIG.website?.visiblePathPrefixes,
-      hiddenPathPrefixes:
-        s.website?.hiddenPathPrefixes ??
-        DEFAULT_WIDGET_CONFIG.website?.hiddenPathPrefixes,
-      autoOpenPathPrefixes:
-        s.website?.autoOpenPathPrefixes ??
-        DEFAULT_WIDGET_CONFIG.website?.autoOpenPathPrefixes,
-    },
-    proactive: { ...DEFAULT_WIDGET_CONFIG.proactive, ...s.proactive },
-    defaultOpen: s.defaultOpen ?? DEFAULT_WIDGET_CONFIG.defaultOpen,
+    features: { ...def.features, ...s.features },
+    website: { ...def.website, ...s.website },
+    proactive: { ...def.proactive, ...s.proactive },
+    defaultOpen: s.defaultOpen ?? def.defaultOpen,
   };
 }
 
@@ -445,7 +389,6 @@ export async function fetchWidgetConfig(options?: {
     ? {
         headers: {
           Authorization: `Bearer ${key}`,
-          "X-Neylonai-Api-Key": key,
         },
       }
     : tryGetAuthHeaders();

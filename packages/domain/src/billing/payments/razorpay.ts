@@ -1,11 +1,18 @@
 import { createHmac, timingSafeEqual } from "crypto";
 import { PLAN_CATALOG, type PlanId, normalizePlanId } from "../plans";
+import { planPriceInCurrency } from "../currency";
 import type {
   CreateCheckoutInput,
   CreateCheckoutResult,
   PaymentProvider,
   ProviderWebhookEvent,
 } from "./types";
+
+function unixDate(value: unknown): Date | undefined {
+  const n = Number(value);
+  if (!Number.isFinite(n) || n <= 0) return undefined;
+  return new Date(n * 1000);
+}
 
 function env(name: string): string | undefined {
   return process.env[name]?.trim() || undefined;
@@ -35,9 +42,8 @@ export function createRazorpayProvider(): PaymentProvider {
 
       // Prefer hosted payment links when plan ids are not configured yet.
       if (!planId) {
-        const amountPaise = Math.round(
-          PLAN_CATALOG[input.planId].priceUsdMonthly * 83 * 100,
-        ); // rough USD→INR display for bootstrap; replace with fixed INR prices in env when ready
+        const amountPaise =
+          planPriceInCurrency(input.planId, "INR") * 100;
         const auth = Buffer.from(`${keyId}:${keySecret}`).toString("base64");
         const res = await fetch("https://api.razorpay.com/v1/payment_links", {
           method: "POST",
@@ -164,9 +170,13 @@ export function createRazorpayProvider(): PaymentProvider {
             status: "active",
             externalCustomerId: (entity.customer_id as string) ?? null,
             externalSubscriptionId: (entity.id as string) ?? null,
-            externalEventId: payload.event,
+            externalEventId: `${payload.event}:${String(entity.id ?? "unknown")}:${String(entity.created_at ?? entity.createdAt ?? "")}`,
             amountCents: entity.amount ? Number(entity.amount) : null,
             currency: (entity.currency as string) ?? "inr",
+            periodStart:
+              unixDate(entity.current_start) ?? unixDate(entity.current_start_at),
+            periodEnd:
+              unixDate(entity.current_end) ?? unixDate(entity.current_end_at),
             rawType: payload.event,
           };
         case "subscription.cancelled":
@@ -177,7 +187,7 @@ export function createRazorpayProvider(): PaymentProvider {
             organizationId,
             status: "cancelled",
             externalSubscriptionId: (entity.id as string) ?? null,
-            externalEventId: payload.event,
+            externalEventId: `${payload.event}:${String(entity.id ?? "unknown")}:${String(entity.created_at ?? entity.createdAt ?? "")}`,
             rawType: payload.event,
           };
         case "subscription.pending":
@@ -188,7 +198,7 @@ export function createRazorpayProvider(): PaymentProvider {
             organizationId,
             status: "past_due",
             externalSubscriptionId: (entity.id as string) ?? null,
-            externalEventId: payload.event,
+            externalEventId: `${payload.event}:${String(entity.id ?? "unknown")}:${String(entity.created_at ?? entity.createdAt ?? "")}`,
             rawType: payload.event,
           };
         default:

@@ -5,13 +5,25 @@ import {
 } from "./client";
 import { apiUrl } from "./network";
 import type { AgentStreamEvent } from "./types";
+import type { TrackedPageSection } from "./page-context";
+
+/** Participant sent on each chat turn (host user or anonymous widget visitor). */
+export type StreamChatUser = {
+  id: string;
+  name?: string | null;
+  email?: string | null;
+  profile_image?: string | null;
+  anonymous?: boolean;
+};
 
 export interface StreamChatInput {
   input: string;
-  senderId?: string;
+  user: StreamChatUser;
   threadId?: string | null;
-  /** Prior turns already on screen — used if server history is empty. */
-  conversationHistory?: Array<{ role: string; content: string }>;
+  /** Current page metadata only; page body content is never sent. */
+  pagePath?: string | null;
+  pageQuery?: Record<string, string>;
+  pageSection?: TrackedPageSection | null;
   /** When aborted, fetch and stream parsing stop; callers should treat as cancel, not error. */
   signal?: AbortSignal;
 }
@@ -41,9 +53,11 @@ export async function* streamChat(
       headers: auth.headers,
       body: JSON.stringify({
         input: payload.input,
-        senderId: payload.senderId,
+        user: payload.user,
         threadId: payload.threadId,
-        conversationHistory: payload.conversationHistory,
+        pagePath: payload.pagePath,
+        pageQuery: payload.pageQuery,
+        pageSection: payload.pageSection,
       }),
       signal: payload.signal,
     });
@@ -52,29 +66,79 @@ export async function* streamChat(
     yield {
       event: "error",
       data: {
-        error: "An unexpected error occurred. Please try again.",
+        error: error instanceof Error ? error.message : "Network error",
       },
     };
     return;
   }
 
-  if (!response.ok || !response.body) {
-    const errorData = (await response.json().catch(() => ({}))) as {
-      error?: string;
-      code?: string;
-    };
+  if (!response.ok) {
+    let message = `Chat request failed (${response.status})`;
+    let code: string | undefined;
+    let blocked: string | undefined;
+    let upgrade:
+      | {
+          title?: string;
+          detail?: string;
+          ctaLabel?: string;
+          href?: string;
+          targetPlanId?: string;
+        }
+      | undefined;
+    try {
+      const json = (await response.json()) as {
+        error?: string;
+        code?: string;
+        blocked?: string;
+        upgrade?: {
+          title?: string;
+          detail?: string;
+          ctaLabel?: string;
+          href?: string;
+          targetPlanId?: string;
+        };
+        details?: {
+          blocked?: string;
+          upgrade?: {
+            title?: string;
+            detail?: string;
+            ctaLabel?: string;
+            href?: string;
+            targetPlanId?: string;
+          };
+        };
+      };
+      if (json.error) message = json.error;
+      code = json.code;
+      blocked = json.blocked ?? json.details?.blocked;
+      upgrade = json.upgrade ?? json.details?.upgrade;
+      if (response.status === 402 && !code) {
+        code = "usage_exceeded";
+      }
+      if (response.status === 402 && !blocked) {
+        blocked = "credits";
+      }
+    } catch {
+      // ignore
+    }
     yield {
       event: "error",
       data: {
-        error:
-          errorData.error ??
-          (response.status === 402
-            ? "Subscription inactive. Chatbot is unavailable."
-            : "An unexpected error occurred. Please try again."),
+        error: message,
+        ...(code ? { code } : {}),
+        ...(blocked ? { blocked } : {}),
+        ...(upgrade ? { upgrade } : {}),
       },
     };
     return;
   }
 
-  yield* parseEventStream<AgentStreamEvent>(response.body, payload.signal);
+  if (!response.body) {
+    yield { event: "error", data: { error: "Empty response body" } };
+    return;
+  }
+
+  for await (const event of parseEventStream(response.body, payload.signal)) {
+    yield event as AgentStreamEvent;
+  }
 }

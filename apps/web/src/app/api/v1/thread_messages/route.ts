@@ -5,8 +5,9 @@ import {
   requireApiKeyAuth,
 } from "@/server/api-key-auth";
 import { assertThreadBelongsToOrg } from "@/server/thread-access";
+import { validateUUID, validateEnum, validateContent, InputValidationError } from "@/lib/input-validation";
 
-const ALLOWED_ROLES = new Set(["user", "assistant"]);
+const ALLOWED_ROLES = ["user", "assistant"] as const;
 
 export async function POST(req: NextRequest) {
   try {
@@ -20,32 +21,34 @@ export async function POST(req: NextRequest) {
       content?: string;
     };
 
-    if (!thread_id || !role || !content) {
-      return NextResponse.json(
-        { success: false, error: "thread_id, role, and content are required" },
-        { status: 400 },
-      );
-    }
+    let validatedThreadId: string;
+    let validatedRole: typeof ALLOWED_ROLES[number];
+    let validatedContent: string;
 
-    if (!ALLOWED_ROLES.has(role)) {
-      return NextResponse.json(
-        { success: false, error: "role must be 'user' or 'assistant'" },
-        { status: 400 },
-      );
+    try {
+      validatedThreadId = validateUUID(thread_id, "thread_id");
+      validatedRole = validateEnum(role, "role", ALLOWED_ROLES);
+      validatedContent = validateContent(content, "content", 50000);
+    } catch (error) {
+      if (error instanceof InputValidationError) {
+        return NextResponse.json(
+          { success: false, error: error.errors[0]?.message || "Invalid input" },
+          { status: 400 },
+        );
+      }
+      throw error;
     }
 
     const denied = await assertThreadBelongsToOrg(
-      thread_id,
+      validatedThreadId,
       auth.organizationId,
     );
     if (denied) return denied;
 
     const result = await ThreadMessagesService.createMessage({
-      thread_id,
-      role,
-      content,
-      // Clients must not inject provenance; server owns metadata.
-      metadata: {},
+      thread_id: validatedThreadId,
+      role: validatedRole,
+      content: validatedContent,
     });
 
     if (!result.success) {

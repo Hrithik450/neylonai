@@ -3,12 +3,29 @@ import {
   applyProviderWebhookEvent,
   createRazorpayProvider,
 } from "@neylonai/domain/billing";
-import { trackEventlySafe } from "@neylonai/integrations/evently";
+import { checkWebhookRateLimit } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   try {
+    const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("x-real-ip");
+
+    const rateLimit = await checkWebhookRateLimit(clientIp);
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { success: false, error: "Rate limit exceeded" },
+        {
+          status: 429,
+          headers: {
+            "X-RateLimit-Limit": "100",
+            "X-RateLimit-Remaining": rateLimit.remaining.toString(),
+            "X-RateLimit-Reset": rateLimit.resetAt.toISOString(),
+          }
+        },
+      );
+    }
+
     const rawBody = await req.text();
     const provider = createRazorpayProvider();
     const event = await provider.parseWebhook(req.headers, rawBody);
@@ -17,23 +34,6 @@ export async function POST(req: NextRequest) {
     }
 
     const result = await applyProviderWebhookEvent(event);
-    if (result.organizationId) {
-      const analyticsEvent =
-        event.type === "subscription_cancelled"
-          ? "subscription_cancelled"
-          : event.type === "checkout_completed"
-            ? "subscription_started"
-            : "subscription_upgraded";
-      trackEventlySafe({
-        event: analyticsEvent,
-        organizationId: result.organizationId,
-        properties: {
-          provider: "razorpay",
-          planId: event.planId ?? null,
-          status: event.status ?? null,
-        },
-      });
-    }
 
     return NextResponse.json({ received: true, ok: result.ok });
   } catch (error) {

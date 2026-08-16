@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import {
   createSession,
   verifySession,
@@ -10,17 +10,38 @@ import {
 
 export type { SessionUser };
 
+function sessionCookieOptions() {
+  return {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    // "lax" keeps the cookie on the top-level navigation that follows login.
+    // WebKit historically mishandles "none", and this cookie is first-party.
+    sameSite: "lax" as const,
+    maxAge: SESSION_MAX_AGE_SECONDS,
+    path: "/",
+  };
+}
+
 /** Sets the session cookie via Next.js cookies() API. */
 export async function setSessionCookie(user: SessionUser): Promise<void> {
   const token = await createSession(user);
   const cookieStore = await cookies();
-  cookieStore.set(SESSION_COOKIE_NAME, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-    maxAge: SESSION_MAX_AGE_SECONDS,
-    path: "/",
-  });
+  cookieStore.set(SESSION_COOKIE_NAME, token, sessionCookieOptions());
+}
+
+/**
+ * Writes the session cookie onto a response the handler already built. Route
+ * handlers that construct their own `NextResponse` must not rely on the
+ * implicit `cookies()` merge — attaching the header directly guarantees the
+ * browser sees `Set-Cookie` on the login response itself.
+ */
+export async function attachSessionCookie<T extends NextResponse>(
+  response: T,
+  user: SessionUser,
+): Promise<T> {
+  const token = await createSession(user);
+  response.cookies.set(SESSION_COOKIE_NAME, token, sessionCookieOptions());
+  return response;
 }
 
 export async function clearSessionCookie(): Promise<void> {

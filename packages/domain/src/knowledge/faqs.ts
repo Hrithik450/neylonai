@@ -177,7 +177,6 @@ export async function deriveFaqsFromOrgKnowledge(
   const chunks = await db
     .select({
       content: knowledgeChunks.content,
-      title: knowledgeDocuments.name,
     })
     .from(knowledgeChunks)
     .innerJoin(
@@ -193,14 +192,6 @@ export async function deriveFaqsFromOrgKnowledge(
 
   for (const row of chunks) {
     if (pairs.length >= max) break;
-    if (row.title?.includes("?")) {
-      const question = normalizeQuestion(row.title);
-      const answer = normalizeAnswer(row.content);
-      if (question && answer) {
-        pushPair(question, answer);
-      }
-    }
-
     const derived = narrativeToFaq(row.content);
     if (derived) pushPair(derived.question, derived.answer);
   }

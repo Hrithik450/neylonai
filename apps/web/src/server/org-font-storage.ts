@@ -4,11 +4,11 @@
  * - Local / Docker: filesystem under data/org-fonts (or NEYLONAI_ORG_FONTS_DIR)
  * - Vercel / serverless: Vercel Blob (requires BLOB_READ_WRITE_TOKEN)
  *
- * Ephemeral serverless disks are never used for durable font storage.
+ * Files are always served via `/api/v1/org-fonts/:id/file` (no stored public URL).
  */
 import { mkdir, writeFile, readFile, unlink } from "node:fs/promises";
 import path from "node:path";
-import { del, put } from "@vercel/blob";
+import { del, get, put } from "@vercel/blob";
 
 export type StoredFontObject = {
   key: string;
@@ -18,8 +18,6 @@ export type StoredFontObject = {
 
 export type PutOrgFontResult = {
   key: string;
-  /** Absolute CDN URL when using Vercel Blob; null for local disk. */
-  publicUrl: string | null;
 };
 
 function blobToken(): string | null {
@@ -34,7 +32,6 @@ function isServerlessRuntime(): boolean {
   );
 }
 
-/** Prefer Blob whenever a token is configured; require it on Vercel. */
 export function shouldUseBlobStorage(): boolean {
   return Boolean(blobToken());
 }
@@ -57,6 +54,19 @@ async function ensureParent(filePath: string): Promise<void> {
   await mkdir(path.dirname(filePath), { recursive: true });
 }
 
+async function bufferFromBlobStream(
+  stream: ReadableStream<Uint8Array>,
+): Promise<Buffer> {
+  const reader = stream.getReader();
+  const chunks: Uint8Array[] = [];
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    if (value) chunks.push(value);
+  }
+  return Buffer.concat(chunks.map((c) => Buffer.from(c)));
+}
+
 export async function putOrgFontObject(input: {
   key: string;
   bytes: Buffer;
@@ -66,26 +76,42 @@ export async function putOrgFontObject(input: {
 
   const token = blobToken();
   if (token) {
-    const result = await put(input.key, input.bytes, {
+    await put(input.key, input.bytes, {
       access: "public",
       contentType: input.contentType,
       token,
       addRandomSuffix: false,
       allowOverwrite: true,
     });
-    return { key: input.key, publicUrl: result.url };
+    return { key: input.key };
   }
 
   const filePath = path.join(rootDir(), input.key);
   await ensureParent(filePath);
   await writeFile(filePath, input.bytes);
-  return { key: input.key, publicUrl: null };
+  return { key: input.key };
 }
 
 export async function getOrgFontObject(
   key: string,
 ): Promise<StoredFontObject | null> {
-  // Disk path (local / docker). Blob-backed fonts are served via publicUrl redirect.
+  const token = blobToken();
+  if (token) {
+    try {
+      const result = await get(key, { access: "public", token });
+      if (!result?.stream) return null;
+      const bytes = await bufferFromBlobStream(result.stream);
+      return {
+        key,
+        bytes,
+        contentType:
+          result.blob.contentType || "application/octet-stream",
+      };
+    } catch {
+      return null;
+    }
+  }
+
   try {
     const filePath = path.join(rootDir(), key);
     const bytes = await readFile(filePath);
@@ -97,12 +123,11 @@ export async function getOrgFontObject(
 
 export async function deleteOrgFontObject(input: {
   key: string;
-  publicUrl?: string | null;
 }): Promise<void> {
   const token = blobToken();
-  if (token && input.publicUrl) {
+  if (token) {
     try {
-      await del(input.publicUrl, { token });
+      await del(input.key, { token });
     } catch (error) {
       console.warn(
         "[org-fonts] Blob delete failed:",

@@ -38,7 +38,7 @@ export function UpgradePrompt({
 
   return (
     <aside className="ink-card bg-[var(--cream)] p-5 space-y-3">
-      <p className="font-medium text-base">{title}</p>
+      <h3 className="text-base">{title}</h3>
       <p className="caption text-sm">{detail}</p>
       <Link
         href={href}

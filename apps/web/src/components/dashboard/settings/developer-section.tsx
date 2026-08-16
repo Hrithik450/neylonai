@@ -1,155 +1,109 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import type { WorkspaceSettings } from "@neylonai/domain/workspace/types";
-import Link from "next/link";
-import {
-  FieldHint,
-  FieldLabel,
-  SettingsSectionFrame,
-} from "./settings-ui";
+import { Check, Copy } from "lucide-react";
+import { useState } from "react";
+import { SettingsSectionFrame } from "./settings-ui";
+import { CodeBlock } from "./code-block";
+import { DEVELOPER_SDK_INSTALL_SKILL } from "./developer-sdk-install-skill";
 
-/**
- * Developer account settings: SDK, webhooks, docs.
- * Widget keys/domains live under Security. Widget UI under Widget.
- */
+type Mode = "manual" | "agent";
+
 export function DeveloperSettingsSection() {
-  const [settings, setSettings] = useState<WorkspaceSettings | null>(null);
-  const [webhookUrl, setWebhookUrl] = useState("");
-  const [secretOnce, setSecretOnce] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+  const [mode, setMode] = useState<Mode>("manual");
+  const [copied, setCopied] = useState(false);
 
-  const load = useCallback(async () => {
-    const res = await fetch("/api/v1/workspace-settings");
-    const json = (await res.json()) as {
-      success: boolean;
-      data?: { settings: WorkspaceSettings };
-      error?: string;
-    };
-    if (json.success && json.data) {
-      setSettings(json.data.settings);
-      setWebhookUrl(json.data.settings.webhookUrl ?? "");
-    } else setMessage(json.error ?? "Failed to load");
-  }, []);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
-
-  const saveWebhook = async (rotate: boolean) => {
-    setBusy(true);
-    setSecretOnce(null);
-    setMessage(null);
+  const copySkill = async () => {
     try {
-      const res = await fetch("/api/v1/workspace-settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          webhookUrl: webhookUrl.trim() || null,
-          rotateWebhookSecret: rotate || undefined,
-        }),
-      });
-      const json = (await res.json()) as {
-        success: boolean;
-        data?: {
-          settings: WorkspaceSettings;
-          webhookSecretOnce: string | null;
-        };
-        error?: string;
-      };
-      if (!json.success || !json.data) throw new Error(json.error ?? "Save failed");
-      setSettings(json.data.settings);
-      if (json.data.webhookSecretOnce) {
-        setSecretOnce(json.data.webhookSecretOnce);
-        setMessage("Webhook secret created. Copy it now — it won’t be shown again.");
-      } else {
-        setMessage("Webhook settings saved.");
-      }
-    } catch (e) {
-      setMessage(e instanceof Error ? e.message : "Save failed");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const clearSecret = async () => {
-    if (!confirm("Clear the webhook signing secret?")) return;
-    setBusy(true);
-    try {
-      const res = await fetch("/api/v1/workspace-settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clearWebhookSecret: true }),
-      });
-      const json = (await res.json()) as {
-        success: boolean;
-        data?: { settings: WorkspaceSettings };
-        error?: string;
-      };
-      if (!json.success || !json.data) throw new Error(json.error ?? "Clear failed");
-      setSettings(json.data.settings);
-      setSecretOnce(null);
-      setMessage("Webhook secret cleared.");
-    } catch (e) {
-      setMessage(e instanceof Error ? e.message : "Clear failed");
-    } finally {
-      setBusy(false);
+      await navigator.clipboard.writeText(DEVELOPER_SDK_INSTALL_SKILL);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2_000);
+    } catch {
+      setCopied(false);
     }
   };
 
   return (
     <SettingsSectionFrame
+      id="developer-section"
       title="Developer"
-      description="Install the SDK and configure server-side webhooks. Browser widget keys and domains are under Security."
+      description="Install the SDK. API keys and domains are under API keys."
     >
-      <section className="ink-card p-6 space-y-3">
-        <h3 className="text-lg font-medium">API information</h3>
-        <p className="caption text-sm">
-          Workspace ID:{" "}
-          <span className="mono">{settings?.organizationId ?? "…"}</span>
-        </p>
-        <p className="caption text-sm">
-          Slug: <span className="mono">{settings?.organizationSlug ?? "…"}</span>
-        </p>
-        <FieldHint>
-          Use widget API keys from{" "}
+      <div
+        id="sdk-mode-options"
+        className="inline-flex rounded-full border border-[var(--ink)] overflow-hidden text-sm"
+      >
+        {(
+          [
+            { id: "manual", label: "Manual" },
+            { id: "agent", label: "Install with coding agent" },
+          ] as { id: Mode; label: string }[]
+        ).map((opt) => (
           <button
+            key={opt.id}
             type="button"
-            className="underline"
-            onClick={() => {
-              window.location.hash = "";
-              const url = new URL(window.location.href);
-              url.searchParams.set("section", "security");
-              window.location.href = url.toString();
-            }}
+            onClick={() => setMode(opt.id)}
+            className="cursor-pointer px-4 py-1.5 transition-colors whitespace-nowrap"
+            style={
+              mode === opt.id
+                ? { background: "var(--ink)", color: "#fff" }
+                : { background: "#fff" }
+            }
           >
-            Security
-          </button>{" "}
-          for browser embeds. Server secrets never go in the SDK.
-        </FieldHint>
-      </section>
+            {opt.label}
+          </button>
+        ))}
+      </div>
 
-      <section className="ink-card p-6 space-y-3">
-        <h3 className="text-lg font-medium">SDK installation</h3>
-        <p className="caption text-sm">
-          Only an API key is required. Anonymous visitors work by default. Widget
-          branding and behavior are managed here in the dashboard and applied by
-          the SDK automatically — do not set colors, fonts, or logo in your app
-          code. Optional: pass a signed-in user from your existing auth.
-        </p>
-        <pre className="overflow-x-auto rounded-xl border border-[var(--ink)] bg-white p-4 text-xs leading-relaxed">
-{`import { SupportWidget } from "@neylonai/sdk/react";
+      {mode === "manual" ? (
+        <div className="space-y-6">
+          <section className="ink-card p-6 space-y-4">
+            <div>
+              <h3 id="sdk-snippet-heading" className="text-lg font-medium mb-1">
+                1. Install the SDK
+              </h3>
+              <p className="caption text-sm text-[var(--muted)]">
+                Add @neylonai/sdk to your project using your package manager.
+              </p>
+            </div>
+            <CodeBlock
+              language="bash"
+              label="Install with npm or pnpm"
+              code={`npm install @neylonai/sdk
+# or
+pnpm add @neylonai/sdk`}
+            />
+          </section>
 
-<SupportWidget
-  config={{
-    apiKey: "nk_live_…",  // from Settings → Security
-  }}
-/>
+          <section className="ink-card p-6 space-y-4">
+            <div>
+              <h3 className="text-lg font-medium mb-1">
+                2. Mount the support widget
+              </h3>
+              <p className="caption text-sm text-[var(--muted)]">
+                Initialize the widget once in your app shell. Mount it on
+                client-side only and call{" "}
+                <code className="text-xs bg-[var(--cream)]/40 px-1.5 py-0.5 rounded">
+                  unmount()
+                </code>{" "}
+                during cleanup. Use your public API key from the dashboard
+                (Settings → API keys).
+              </p>
+            </div>
+            <CodeBlock
+              language="typescript"
+              label="Main app setup"
+              code={`import { mountSupportWidget } from "@neylonai/sdk/embed";
 
-// Optional — page path + existing auth user
-<SupportWidget
-  config={{
+const widget = await mountSupportWidget({
+  config: {
+    apiKey: "nk_live_…",
+    pagePath: window.location.pathname,
+  },
+});
+
+// Update widget wherever user context changes: route changes, login/logout, user data updates
+widget.update({
+  config: {
     apiKey: "nk_live_…",
     pagePath: window.location.pathname,
     user: currentUser
@@ -160,99 +114,123 @@ export function DeveloperSettingsSection() {
           profile_image: currentUser.image,
         }
       : null,
-  }}
-/>`}
-        </pre>
-        <p className="caption text-xs">
-          Supported user fields: <code>id</code>, <code>name</code>,{" "}
-          <code>email</code>, <code>profile_image</code>. Appearance:{" "}
-          <Link href="/dashboard/widget" className="underline">
-            Widget
-          </Link>
-          .
-        </p>
-      </section>
+  },
+});`}
+            />
+          </section>
 
-      <section className="ink-card p-6 space-y-4">
-        <h3 className="text-lg font-medium">Webhook configuration</h3>
-        <p className="caption text-sm">
-          Server-side outbound webhook for events (leads, escalations, handoffs).
-          The signing secret is server-only — never embed it in the browser.
-        </p>
-        <label className="block space-y-1.5">
-          <FieldLabel>Webhook URL</FieldLabel>
-          <input
-            className="ink-input"
-            value={webhookUrl}
-            onChange={(e) => setWebhookUrl(e.target.value)}
-            placeholder="https://your-api.example.com/neylonai-hooks"
-          />
-        </label>
+          <section className="ink-card p-6 space-y-4">
+            <div>
+              <h3 className="text-lg font-medium mb-1">
+                3. Track page sections
+              </h3>
+              <p className="caption text-sm text-[var(--muted)]">
+                After importing your website in Neylon, generate typed section
+                keys and observe major page blocks (3–8 per page). This helps
+                the AI understand your site structure.
+              </p>
+            </div>
 
-        {secretOnce ? (
-          <div className="rounded-xl border border-[var(--ink)] bg-[var(--cream)] p-4 space-y-2">
-            <p className="mono text-[0.65rem] font-bold uppercase tracking-wider">
-              Webhook secret — copy now
-            </p>
-            <code className="block break-all text-sm font-semibold">
-              {secretOnce}
-            </code>
-          </div>
-        ) : null}
+            <div className="space-y-4">
+              <div className="bg-[var(--cream)]/20 rounded-lg p-4 space-y-2">
+                <p className="text-sm font-medium">
+                  Step 1: Generate section keys
+                </p>
+              </div>
+              <CodeBlock
+                language="bash"
+                label="Copy and run in your terminal"
+                code={`# Re-run this after each website crawl that changes sections
+npx neylonai-generate-sections \\
+  --api-key "$NEXT_PUBLIC_NEYLONAI_API_KEY" \\
+  --out ./src/neylon-sections.ts`}
+              />
 
-        <p className="caption text-xs">
-          {settings?.hasWebhookSecret
-            ? `Secret configured (…${settings.webhookSecretLastFour ?? "****"})`
-            : "No webhook secret configured"}
-        </p>
+              <div className="bg-[var(--cream)]/20 rounded-lg p-4 space-y-2">
+                <p className="text-sm font-medium">
+                  Step 2: Add section tracking to components
+                </p>
+                <p className="text-xs text-[var(--muted)]">
+                  Add this hook to each major section component. Make sure the
+                  section element has an{" "}
+                  <code className="text-xs bg-white px-1 py-0.5 rounded">
+                    id
+                  </code>{" "}
+                  attribute that matches your{" "}
+                  <code className="text-xs bg-white px-1 py-0.5 rounded">
+                    getElementById()
+                  </code>{" "}
+                  call:
+                </p>
+              </div>
+              <CodeBlock
+                language="typescript"
+                label="Copy to your section component"
+                code={`import { useEffect } from "react";
+import {
+  neylonSectionKeys,
+  observeNeylonSection,
+} from "./neylon-sections";
 
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            className="btn-ink"
-            disabled={busy}
-            onClick={() => void saveWebhook(false)}
-          >
-            Save URL
-          </button>
-          <button
-            type="button"
-            className="btn-ink bg-white"
-            disabled={busy}
-            onClick={() => void saveWebhook(true)}
-          >
-            Rotate secret
-          </button>
-          {settings?.hasWebhookSecret ? (
-            <button
-              type="button"
-              className="btn-ink bg-white"
-              disabled={busy}
-              onClick={() => void clearSecret()}
-            >
-              Clear secret
-            </button>
-          ) : null}
+// Track this section: monitors visibility & interactions,
+useEffect(() => {
+  const el = document.getElementById("pricing");
+  if (!el) return;
+
+  return observeNeylonSection(el, {
+    pagePath: "/pricing",
+    sectionKey: neylonSectionKeys["/pricing"][0],
+    sectionLabel: "Pricing",
+  });
+}, []);
+
+// Make sure your section element has the matching id:
+// <section id="pricing">...</section>`}
+              />
+            </div>
+          </section>
         </div>
-        <FieldHint>
-          For Slack/CRM product connections, use{" "}
-          <Link href="/dashboard/integrations" className="underline">
-            Integrations
-          </Link>
-          .
-        </FieldHint>
-      </section>
+      ) : (
+        <section className="ink-card p-6 space-y-5">
+          <div className="space-y-1">
+            <h3 className="text-lg font-medium">Install with coding agent</h3>
+            <p className="caption text-sm max-w-2xl">
+              Your agent installs @neylonai/sdk, wires your publishable API key,
+              and after Website import generates typed section keys and wires{" "}
+              <code className="text-xs">observeNeylonSection</code> on major
+              page blocks.
+            </p>
+          </div>
 
-      <section className="ink-card p-6 space-y-2">
-        <h3 className="text-lg font-medium">Documentation</h3>
-        <ul className="caption text-sm space-y-1 list-disc pl-5">
-          <li>Widget & SDK — use your deployment host and Security keys</li>
-          <li>Webhooks — verify signatures with the server-side secret</li>
-          <li>Analytics — detailed product analytics live in Evently</li>
-        </ul>
-      </section>
-
-      {message ? <p className="caption text-sm">{message}</p> : null}
+          <div className="overflow-hidden rounded-xl border border-[var(--ink)]/20 bg-white">
+            <div className="flex items-center justify-between gap-3 border-b border-[var(--ink)]/10 px-4 py-3">
+              <div>
+                <h4 className="font-medium">Coding agent instructions</h4>
+              </div>
+              <button
+                type="button"
+                className="btn-ink flex size-9 items-center justify-center bg-white p-0"
+                onClick={() => void copySkill()}
+                aria-label={
+                  copied
+                    ? "Coding agent instructions copied"
+                    : "Copy coding agent instructions"
+                }
+                title={copied ? "Copied" : "Copy instructions"}
+              >
+                {copied ? (
+                  <Check className="size-4" aria-hidden />
+                ) : (
+                  <Copy className="size-4" aria-hidden />
+                )}
+              </button>
+            </div>
+            <pre className="max-h-[28rem] overflow-auto whitespace-pre-wrap p-4 text-xs leading-relaxed">
+              {DEVELOPER_SDK_INSTALL_SKILL}
+            </pre>
+          </div>
+        </section>
+      )}
     </SettingsSectionFrame>
   );
 }

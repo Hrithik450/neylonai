@@ -5,53 +5,31 @@ import { cn } from "../../ui";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
 import ReactMarkdown from "react-markdown";
-import { ChevronsDown, Copy } from "lucide-react";
+import { ChevronsDown, Copy, ThumbsDown, ThumbsUp } from "lucide-react";
 import { Button } from "../../ui";
 import { useWidgetStore } from "../store/widget-store";
 import { useWidgetHost } from "../context/widget-host";
 import type { ThreadMessage } from "../..";
 import { DynamicAssistantTyping } from "./assistant-typing";
 import { contrastForeground } from "../color-contrast";
+import {
+  getOrCreateVisitorId,
+  submitMessageFeedback,
+} from "../..";
+const mkEl = (tag: string, cls: string) => (props: any) => React.createElement(tag, { className: cls, ...props });
+
 const markdownComponents = {
-  h1({ ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
-    return (
-      <h1 className="text-2xl md:text-3xl font-bold mb-4 mt-5" {...props} />
-    );
-  },
-  h2({ ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
-    return (
-      <h2 className="text-xl md:text-2xl font-semibold mb-3 mt-4" {...props} />
-    );
-  },
-  h3({ ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
-    return (
-      <h3 className="text-lg md:text-xl font-medium mb-2 mt-3" {...props} />
-    );
-  },
-  h4({ ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
-    return (
-      <h4 className="text-base md:text-lg font-medium mb-2 mt-2" {...props} />
-    );
-  },
-  h5({ ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
-    return (
-      <h5 className="text-sm md:text-base font-medium mb-1 mt-1" {...props} />
-    );
-  },
-  h6({ ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
-    return (
-      <h6 className="text-xs md:text-sm font-medium mb-1 mt-1" {...props} />
-    );
-  },
-  li({ ...props }: React.HTMLAttributes<HTMLLIElement>) {
-    return <li className="ml-4 mb-1 list-disc" {...props} />;
-  },
-  p({ ...props }: React.HTMLAttributes<HTMLParagraphElement>) {
-    return <p className="mb-2 leading-relaxed last:mb-0" {...props} />;
-  },
-  a({ ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement>) {
-    return <a className="text-blue-500 hover:underline" {...props} />;
-  },
+  h1: mkEl("h1", "text-2xl md:text-3xl font-bold mb-4 mt-5"),
+  h2: mkEl("h2", "text-xl md:text-2xl font-semibold mb-3 mt-4"),
+  h3: mkEl("h3", "text-lg md:text-xl font-medium mb-2 mt-3"),
+  h4: mkEl("h4", "text-base md:text-lg font-medium mb-2 mt-2"),
+  h5: mkEl("h5", "text-sm md:text-base font-medium mb-1 mt-1"),
+  h6: mkEl("h6", "text-xs md:text-sm font-medium mb-1 mt-1"),
+  ul: mkEl("ul", "my-2 list-disc space-y-1 pl-5"),
+  ol: mkEl("ol", "my-2 list-decimal space-y-1 pl-5"),
+  li: mkEl("li", "mb-1 pl-0.5"),
+  p: mkEl("p", "mb-2 leading-relaxed last:mb-0 break-words [overflow-wrap:anywhere]"),
+  a: mkEl("a", "text-blue-500 hover:underline"),
 };
 
 const MessageBubble = memo(
@@ -70,21 +48,41 @@ const MessageBubble = memo(
     aiMessageBackground: string;
     humanMessageBackground: string;
   }) {
+    const { user } = useWidgetHost();
+    const [rating, setRating] = useState<"up" | "down" | null>(null);
+    const [comment, setComment] = useState("");
     const copyToClipboard = useCallback(() => {
       void navigator.clipboard.writeText(conversation.content);
     }, [conversation.content]);
 
-    if (conversation.role !== "assistant") {
+    const sendFeedback = useCallback(
+      async (helpful: boolean, note?: string) => {
+        const next = helpful ? "up" : "down";
+        setRating(next);
+        const result = await submitMessageFeedback({
+          messageId: conversation.id,
+          visitorId: user?.id?.trim() || getOrCreateVisitorId(),
+          helpful,
+          comment: note?.trim() || null,
+        });
+        if (!result.success) setRating(null);
+      },
+      [conversation.id, user?.id],
+    );
+
+    const isTeamMessage =
+      conversation.role === "assistant" || conversation.role === "human";
+    if (!isTeamMessage) {
       const humanText = contrastForeground(humanMessageBackground);
       return (
         <div
           className={cn(
-            "flex flex-col ml-auto max-w-[75%]",
+            "flex min-w-0 max-w-[75%] flex-col ml-auto",
             groupedWithPrevious ? "mt-1" : "mt-3",
           )}
         >
           <p
-            className="py-3 px-3 border border-black/40 text-sm md:text-base leading-snug rounded-lg rounded-br-sm"
+            className="py-3 px-3 border border-black/40 text-sm md:text-base leading-snug rounded-lg rounded-br-sm break-words [overflow-wrap:anywhere]"
             style={{
               backgroundColor: humanMessageBackground,
               color: humanText,
@@ -105,7 +103,7 @@ const MessageBubble = memo(
     return (
       <div
         className={cn(
-          "max-w-full [content-visibility:auto]",
+          "max-w-full min-w-0 [content-visibility:auto]",
           groupedWithPrevious
             ? "mt-0.5 pt-0 px-3 md:px-4"
             : "mt-2.5 px-3 py-2 md:px-4",
@@ -113,8 +111,8 @@ const MessageBubble = memo(
       >
         <div
           className={cn(
-            "flex flex-col rounded-2xl rounded-bl-md px-3.5 py-2.5",
-            aiTransparent && "px-0 py-0",
+            "flex min-w-0 flex-col rounded-lg px-3.5 py-2.5",
+            aiTransparent && "px-0 py-0 rounded-none",
           )}
           style={{
             backgroundColor: aiTransparent ? "transparent" : aiBg,
@@ -122,7 +120,7 @@ const MessageBubble = memo(
           }}
         >
           <div
-            className="prose max-w-none text-sm md:text-base"
+            className="prose max-w-none min-w-0 w-full break-words text-sm md:text-base [overflow-wrap:anywhere]"
             style={{ color: aiText }}
           >
             <ReactMarkdown
@@ -146,7 +144,57 @@ const MessageBubble = memo(
             >
               <Copy size={18} />
             </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => void sendFeedback(true)}
+              className={cn(
+                "cursor-pointer text-gray-500 hover:text-gray-700",
+                rating === "up" && "text-emerald-700",
+              )}
+              title="Helpful"
+              aria-label="Mark answer helpful"
+              aria-pressed={rating === "up"}
+            >
+              <ThumbsUp size={17} />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => void sendFeedback(false)}
+              className={cn(
+                "cursor-pointer text-gray-500 hover:text-gray-700",
+                rating === "down" && "text-red-600",
+              )}
+              title="Not helpful"
+              aria-label="Mark answer not helpful"
+              aria-pressed={rating === "down"}
+            >
+              <ThumbsDown size={17} />
+            </Button>
           </div>
+        ) : null}
+        {showActions && !isStreaming && rating === "down" ? (
+          <form
+            className="mt-1 flex max-w-sm gap-2 px-1"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void sendFeedback(false, comment);
+            }}
+          >
+            <input
+              value={comment}
+              maxLength={500}
+              onChange={(event) => setComment(event.target.value)}
+              placeholder="What was missing? (optional)"
+              className="min-w-0 flex-1 rounded-md border border-black/10 px-2 py-1.5 text-xs"
+            />
+            <Button type="submit" size="sm" variant="outline">
+              Send
+            </Button>
+          </form>
         ) : null}
       </div>
     );
@@ -270,7 +318,7 @@ export function ConversationUI({
     <div
       ref={scrollRef}
       onScroll={handleScroll}
-      className="relative flex-1 min-h-0 w-full mx-auto overflow-y-auto overflow-x-hidden overscroll-contain [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden px-0.5 pr-1 pt-2 md:pt-4 pb-2"
+      className="relative flex-1 min-h-0 min-w-0 w-full mx-auto overflow-y-auto overflow-x-hidden overscroll-contain [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden px-3 md:px-4 pt-2 md:pt-4 pb-2"
     >
       {conversations &&
         conversations.length > 0 &&
@@ -290,7 +338,7 @@ export function ConversationUI({
           return (
             <div
               key={conversation.id}
-              className={cn("text-sm md:text-base rounded-xl")}
+              className={cn("text-sm md:text-base")}
             >
               <MessageBubble
                 conversation={conversation}

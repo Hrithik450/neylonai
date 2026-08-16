@@ -21,6 +21,8 @@ export interface SessionUser {
   name: string;
   role: string;
   profile_image: string | null;
+  has_been_onboarded: boolean;
+  onboarding_step: number;
 }
 
 /** Signs a short-lived JWT embedding the session user. Pure — no cookie/framework access. */

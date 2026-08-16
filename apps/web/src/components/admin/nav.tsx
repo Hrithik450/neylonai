@@ -6,16 +6,12 @@ import { cn } from "@/lib/utils";
 
 const LINKS = [
   { href: "/admin", label: "Overview" },
-  { href: "/admin/unit-economics", label: "Unit Economics" },
   { href: "/admin/organizations", label: "Organizations" },
   { href: "/admin/users", label: "Users" },
   { href: "/admin/subscriptions", label: "Subscriptions" },
   { href: "/admin/api-keys", label: "API keys" },
-  { href: "/admin/agents", label: "Agents" },
-  { href: "/admin/integrations", label: "Integrations" },
-  { href: "/admin/knowledge", label: "Knowledge" },
-  { href: "/admin/conversations", label: "Conversations" },
-  { href: "/admin/system", label: "System" },
+  { href: "/admin/usage-metrics", label: "Usage Metrics" },
+  { href: "/admin/unit-economics", label: "Unit Economics" },
 ];
 
 export function AdminNav() {
@@ -27,7 +23,7 @@ export function AdminNav() {
         const active =
           link.href === "/admin"
             ? pathname === "/admin"
-            : pathname.startsWith(link.href);
+            : pathname === link.href || pathname.startsWith(`${link.href}/`);
 
         return (
           <Link

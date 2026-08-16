@@ -1,5 +1,5 @@
 /**
- * Synced knowledge integrations: Website / PDF → sources + documents + ingest.
+ * Synced knowledge integrations: Website / Database → sources + documents.
  */
 
 import { and, eq, inArray, sql } from "drizzle-orm";
@@ -9,24 +9,22 @@ import {
   knowledgeDocuments,
   organizationIntegrations,
 } from "@neylonai/database";
-import { fetchWebsiteForImport } from "@neylonai/integrations/website";
 import { connectPostgresForImport } from "@neylonai/integrations/database";
 import {
   DATABASE_CONNECTION_URL_SECRET_KEY,
   putSecret,
-  stripCredentialKeysFromConfig,
 } from "../integrations/secrets";
 import { ingestDocumentsForSource } from "./ingest";
 import {
   createIntegrationSource,
-  createWebsiteSource,
   ensureOrganizationIntegrationRow,
   getKnowledgeSource,
   listSourcesForCatalogIntegration,
   refreshSourceDocumentCount,
   updateKnowledgeSource,
 } from "./service";
-import { DEFAULT_CHATBOT_AGENT_ID } from "./types";
+import { WEBSITE_REIMPORT_COOLDOWN_MS } from "./crawl/helpers";
+import { MAIN_AGENT_KEY } from "../agents/org-agents.types";
 
 export type SyncedKnowledgeIntegrationId = string;
 
@@ -99,114 +97,34 @@ async function countDocsAndChunks(
 export async function connectAndSyncWebsite(input: {
   organizationId: string;
   url?: string;
+  maxPages?: number;
+  plan?: string;
 }): Promise<{
   knowledgeSourceId: string;
+  jobId: string;
   title: string;
   chunkCount: number;
   pagesScraped: number;
   storedText: string;
+  queued: true;
 }> {
-  let url = input.url?.trim() ?? "";
-
-  const existingSources = await listSourcesForCatalogIntegration(
-    input.organizationId,
-    "website",
-  );
-  const primary = existingSources[0] ?? null;
-  if (!url && primary?.websiteUrl) url = primary.websiteUrl;
-  if (!url) throw new Error("A public URL is required.");
-
-  const scraped = await fetchWebsiteForImport(url);
-
-  // COGS: Firecrawl / Jina page credits (static = 0).
-  if (scraped.creditsUsed > 0) {
-    const toolId =
-      scraped.provider === "firecrawl"
-        ? "firecrawl.scrape"
-        : scraped.provider === "jina"
-          ? "jina.reader"
-          : null;
-    if (toolId) {
-      const { recordToolUsageSafe } = await import("../billing/usage");
-      recordToolUsageSafe({
-        organizationId: input.organizationId,
-        requestId: `website-sync:${input.organizationId}:${Date.now()}`,
-        toolId,
-        operation: "page",
-        quantity: scraped.creditsUsed,
-        metadata: {
-          url: scraped.finalUrl,
-          pagesScraped: scraped.pagesScraped,
-          provider: scraped.provider,
-        },
-      });
-    }
-  }
-
-  await ensureOrganizationIntegrationRow({
+  const { getSubscriptionForOrg } = await import("../billing/entitlements");
+  const { startWebsiteCrawl } = await import("./crawl/service");
+  const subscription = await getSubscriptionForOrg(input.organizationId);
+  const job = await startWebsiteCrawl({
     organizationId: input.organizationId,
-    catalogIntegrationId: "website",
-    enabled: true,
-    config: {
-      url: scraped.finalUrl,
-      lastSyncAt: new Date().toISOString(),
-      accountLabel: scraped.finalUrl,
-      scrapeProvider: scraped.provider,
-      pagesScraped: scraped.pagesScraped,
-    },
+    plan: input.plan ?? subscription?.plan ?? "free",
+    url: input.url,
+    maxPages: input.maxPages,
   });
-
-  const source = await createWebsiteSource({
-    organizationId: input.organizationId,
-    url: scraped.finalUrl,
-    agentIds: [DEFAULT_CHATBOT_AGENT_ID],
-  });
-
-  await updateKnowledgeSource({
-    organizationId: input.organizationId,
-    sourceId: source.id,
-    websiteUrl: scraped.finalUrl,
-  });
-
-  const { chunkCount, documentCount } = await ingestDocumentsForSource({
-    organizationId: input.organizationId,
-    sourceId: source.id,
-    catalogIntegrationId: "website",
-    documents: [
-      {
-        externalDocId: `website:${Buffer.from(scraped.finalUrl).toString("base64url").slice(0, 80)}`,
-        name: scraped.title,
-        text: scraped.text,
-      },
-    ],
-  });
-
-  await updateKnowledgeSource({
-    organizationId: input.organizationId,
-    sourceId: source.id,
-    documentCount,
-    lastSyncedAt: new Date(),
-  });
-
-  await ensureOrganizationIntegrationRow({
-    organizationId: input.organizationId,
-    catalogIntegrationId: "website",
-    enabled: true,
-    config: {
-      url: scraped.finalUrl,
-      knowledgeSourceId: source.id,
-      lastSyncAt: new Date().toISOString(),
-      chunkCount,
-      accountLabel: scraped.finalUrl,
-    },
-  });
-
   return {
-    knowledgeSourceId: source.id,
-    title: scraped.title,
-    chunkCount,
-    pagesScraped: scraped.pagesScraped ?? 1,
-    storedText: scraped.text,
+    knowledgeSourceId: job.knowledgeSourceId ?? job.id,
+    jobId: job.id,
+    title: job.seedUrl,
+    chunkCount: 0,
+    pagesScraped: 0,
+    storedText: "",
+    queued: true,
   };
 }
 
@@ -247,29 +165,10 @@ export async function connectAndSyncDatabase(input: {
     plaintext: input.connectionUrl.trim(),
   });
 
-  // Drop any legacy plaintext connectionUrl left in config.
-  const [row] = await db
-    .select({ config: organizationIntegrations.config })
-    .from(organizationIntegrations)
-    .where(eq(organizationIntegrations.id, organizationIntegrationId))
-    .limit(1);
-  if (row?.config && "connectionUrl" in (row.config as object)) {
-    await db
-      .update(organizationIntegrations)
-      .set({
-        config: stripCredentialKeysFromConfig(
-          (row.config as Record<string, unknown>) ?? {},
-          [DATABASE_CONNECTION_URL_SECRET_KEY],
-        ),
-        updated_at: new Date(),
-      })
-      .where(eq(organizationIntegrations.id, organizationIntegrationId));
-  }
-
   const source = await createIntegrationSource({
     organizationId: input.organizationId,
     organizationIntegrationId,
-    agentIds: [DEFAULT_CHATBOT_AGENT_ID],
+    agentIds: [MAIN_AGENT_KEY],
   });
 
   const { chunkCount, documentCount } = await ingestDocumentsForSource({
@@ -279,7 +178,6 @@ export async function connectAndSyncDatabase(input: {
     documents: [
       {
         externalDocId: `database:${organizationIntegrationId}:schema`,
-        name: `Postgres schema (${connected.host}/${connected.database})`,
         text: connected.schemaText,
       },
     ],
@@ -317,111 +215,66 @@ export async function connectAndSyncDatabase(input: {
   };
 }
 
-export async function ingestPdfTextForOrg(input: {
-  organizationId: string;
-  sourceId: string;
-  fileName: string;
-  text: string;
-  storageKey?: string | null;
-}): Promise<{ chunkCount: number }> {
-  const source = await getKnowledgeSource(
-    input.organizationId,
-    input.sourceId,
-  );
-  if (!source) throw new Error("Knowledge source not found");
-
-  const { chunkCount } = await ingestDocumentsForSource({
-    organizationId: input.organizationId,
-    sourceId: input.sourceId,
-    catalogIntegrationId: "pdf",
-    replaceAll: false,
-    documents: [
-      {
-        externalDocId: `pdf:${input.sourceId}:${input.fileName}`.slice(0, 255),
-        name: input.fileName,
-        text: input.text,
-        storageKey: input.storageKey ?? null,
-      },
-    ],
-  });
-
-  const documentCount = await refreshSourceDocumentCount(
-    input.organizationId,
-    input.sourceId,
-  );
-
-  await updateKnowledgeSource({
-    organizationId: input.organizationId,
-    sourceId: input.sourceId,
-    documentCount,
-    lastSyncedAt: new Date(),
-  });
-
-  await ensureOrganizationIntegrationRow({
-    organizationId: input.organizationId,
-    catalogIntegrationId: "pdf",
-    enabled: true,
-    config: {
-      knowledgeSourceId: input.sourceId,
-      fileName: input.fileName,
-      lastSyncAt: new Date().toISOString(),
-      chunkCount,
-      accountLabel: input.fileName,
-    },
-  });
-
-  return { chunkCount };
-}
-
-/** Create PDF source under the org's pdf organization_integrations row. */
-export async function ensurePdfIntegrationSource(input: {
-  organizationId: string;
-}): Promise<{ sourceId: string; organizationIntegrationId: string }> {
-  const organizationIntegrationId = await ensureOrganizationIntegrationRow({
-    organizationId: input.organizationId,
-    catalogIntegrationId: "pdf",
-    enabled: true,
-  });
-  const source = await createIntegrationSource({
-    organizationId: input.organizationId,
-    organizationIntegrationId,
-    agentIds: [DEFAULT_CHATBOT_AGENT_ID],
-  });
-  return { sourceId: source.id, organizationIntegrationId };
-}
-
 export async function disconnectSyncedIntegration(input: {
   organizationId: string;
   integrationId: SyncedKnowledgeIntegrationId;
-}): Promise<{ storageKeys: string[] }> {
-  const { deleteSecretsForOrgCatalogIntegration } = await import(
-    "../integrations/secrets"
-  );
+}): Promise<{
+  deletedDocuments: number;
+  reimportAvailableAt: string | null;
+}> {
+  const [integration] = await db
+    .select({ config: organizationIntegrations.config })
+    .from(organizationIntegrations)
+    .where(
+      and(
+        eq(organizationIntegrations.organization_id, input.organizationId),
+        eq(organizationIntegrations.integration_id, input.integrationId),
+      ),
+    )
+    .limit(1);
+  const reimportAvailableAt =
+    input.integrationId === "website"
+      ? new Date(Date.now() + WEBSITE_REIMPORT_COOLDOWN_MS).toISOString()
+      : null;
+
+  const { deleteSecretsForOrgCatalogIntegration } =
+    await import("../integrations/secrets");
   await deleteSecretsForOrgCatalogIntegration({
     organizationId: input.organizationId,
     integrationType: input.integrationId,
   });
 
   const { purgeKnowledgeForCatalogIntegration } = await import("./service");
-  const { storageKeys } = await purgeKnowledgeForCatalogIntegration(
+  const deletedDocuments = await purgeKnowledgeForCatalogIntegration(
     input.organizationId,
     input.integrationId,
   );
+
+  if (input.integrationId === "website") {
+    const { websiteCrawlJobs } = await import("@neylonai/database");
+    await db
+      .delete(websiteCrawlJobs)
+      .where(eq(websiteCrawlJobs.organization_id, input.organizationId));
+  }
 
   await db
     .update(organizationIntegrations)
     .set({
       enabled: false,
+      config: {
+        ...((integration?.config as Record<string, unknown> | null) ?? {}),
+        ...(reimportAvailableAt ? { reimportAvailableAt } : {}),
+      },
       updated_at: new Date(),
     })
     .where(
       and(
         eq(organizationIntegrations.organization_id, input.organizationId),
-        eq(organizationIntegrations.integration_type, input.integrationId),
+        eq(organizationIntegrations.integration_id, input.integrationId),
       ),
     );
 
-  return { storageKeys };
+  return { deletedDocuments, reimportAvailableAt };
 }
 
 export async function getSyncedKnowledgeSnapshot(
@@ -444,9 +297,8 @@ export async function getSyncedKnowledgeSnapshot(
   const docs = await db
     .select({
       id: knowledgeDocuments.id,
-      name: knowledgeDocuments.name,
+      canonicalPath: knowledgeDocuments.canonical_path,
       rawContent: knowledgeDocuments.raw_content,
-      storageKey: knowledgeDocuments.storage_key,
       updatedAt: knowledgeDocuments.updated_at,
       sourceId: knowledgeDocuments.source_id,
     })
@@ -467,48 +319,26 @@ export async function getSyncedKnowledgeSnapshot(
   const sources: SyncedKnowledgeSourceRow[] = matched.map((s) => {
     const childDocs = docs.filter((d) => d.sourceId === s.id);
     const first = childDocs[0];
+    const hasText =
+      (typeof first?.rawContent === "string" && first.rawContent.length > 0) ||
+      childDocs.some(
+        (d) => typeof d.rawContent === "string" && d.rawContent.length > 0,
+      );
     return {
       id: s.id,
       name:
         s.sourceType === "website"
           ? s.websiteUrl || "Website"
-          : first?.name || "Documents",
+          : s.sourceType === "database"
+            ? "Database schema"
+            : "Documents",
       type: s.sourceType,
       originUri: s.websiteUrl,
-      hasStoredFile:
-        Boolean(first?.storageKey) ||
-        (typeof first?.rawContent === "string" && first.rawContent.length > 0) ||
-        childDocs.length > 0,
+      hasStoredFile: hasText || childDocs.length > 0,
       documentCount: s.documentCount || childDocs.length,
-      updatedAt: s.updatedAt ?? new Date().toISOString(),
+      updatedAt: s.lastSyncedAt ?? s.createdAt ?? new Date().toISOString(),
     };
   });
-
-  // For PDF, expose each document as a navigable row in sources list
-  if (integrationId === "pdf" && docs.length > 0) {
-    const perDoc: SyncedKnowledgeSourceRow[] = docs.map((d) => {
-      return {
-        id: d.id,
-        name: d.name || "document.pdf",
-        type: "pdf",
-        originUri: null,
-        hasStoredFile: Boolean(d.storageKey),
-        documentCount: 1,
-        updatedAt: d.updatedAt?.toISOString() ?? new Date().toISOString(),
-      };
-    });
-    return {
-      knowledgeSourceId: primary.id,
-      sourceCount: perDoc.length,
-      documentCount,
-      chunkCount,
-      downloadable: perDoc.some((s) => s.hasStoredFile),
-      preview: text ? text.slice(0, 500) : null,
-      url: null,
-      fileName: primaryDoc?.name ?? null,
-      sources: perDoc,
-    };
-  }
 
   return {
     knowledgeSourceId: primary.id,
@@ -518,7 +348,9 @@ export async function getSyncedKnowledgeSnapshot(
     downloadable: sources.some((s) => s.hasStoredFile),
     preview: text ? text.slice(0, 500) : null,
     url: primary.websiteUrl,
-    fileName: primaryDoc?.name ?? null,
+    fileName: primaryDoc?.canonicalPath
+      ? `${primaryDoc.canonicalPath.replace(/[^\w.-]+/g, "_") || "document"}.txt`
+      : null,
     sources,
   };
 }

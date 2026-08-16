@@ -9,25 +9,12 @@ import {
   updateApiKeyOrigins,
   getPlanEntitlements,
 } from "@neylonai/domain/billing";
-import { trackEventlySafe } from "@neylonai/integrations/evently";
 
 async function requireOrg(req: NextRequest) {
   const session = await getSessionFromRequest(req);
-  if (!session)
-    return {
-      error: NextResponse.json(
-        { success: false, error: "Unauthorized" },
-        { status: 401 },
-      ),
-    };
+  if (!session) return { error: NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 }) };
   const org = await getOrganizationForUser(session.id);
-  if (!org)
-    return {
-      error: NextResponse.json(
-        { success: false, error: "No organization" },
-        { status: 403 },
-      ),
-    };
+  if (!org) return { error: NextResponse.json({ success: false, error: "No organization" }, { status: 403 }) };
   return { session, org };
 }
 
@@ -100,11 +87,6 @@ export async function POST(req: NextRequest) {
       body.name?.trim() || "Default",
       Array.isArray(body.allowedOrigins) ? body.allowedOrigins : [],
     );
-
-    trackEventlySafe({
-      event: "api_key_created",
-      organizationId: gate.org.organizationId,
-    });
 
     return NextResponse.json({
       success: true,
@@ -186,11 +168,6 @@ export async function DELETE(req: NextRequest) {
         { status: 404 },
       );
     }
-
-    trackEventlySafe({
-      event: "api_key_revoked",
-      organizationId: gate.org.organizationId,
-    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

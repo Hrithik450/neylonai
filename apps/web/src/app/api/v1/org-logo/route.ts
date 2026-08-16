@@ -11,21 +11,9 @@ import {
 
 async function requireOrg(req: NextRequest) {
   const session = await getSessionFromRequest(req);
-  if (!session)
-    return {
-      error: NextResponse.json(
-        { success: false, error: "Unauthorized" },
-        { status: 401 },
-      ),
-    };
+  if (!session) return { error: NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 }) };
   const org = await getOrganizationForUser(session.id);
-  if (!org)
-    return {
-      error: NextResponse.json(
-        { success: false, error: "No organization" },
-        { status: 403 },
-      ),
-    };
+  if (!org) return { error: NextResponse.json({ success: false, error: "No organization" }, { status: 403 }) };
   return { session, org };
 }
 

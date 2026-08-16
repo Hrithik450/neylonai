@@ -1,32 +1,40 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 import { useSearchParams } from "next/navigation";
 import { UpgradePrompt } from "@/components/dashboard/upgrade-prompt";
+
+type BillingCurrency = "USD" | "INR";
 
 type PlanRow = {
   planId: string;
   name: string;
   priceUsdMonthly: number;
+  priceInrMonthly?: number;
   priceLabel: string;
+  aiCreditsPerMonth: number;
   conversationsPerMonth: number;
-  knowledgeDocuments: number;
-  integrationsLimit: number;
   websites: number;
-  teamSeats: number;
-  basicAgents: boolean;
-  advancedAgents: boolean;
-  crmIntegrations: boolean;
-  prioritySupport: boolean;
+  websitePagesPerSync: number;
+  websitePagesPerMonth: number;
+  classQuotas?: { simple: number; standard: number; complex: number };
 };
 
 type BillingPayload = {
+  region?: { country: string | null; currency: BillingCurrency };
   plans: PlanRow[];
   subscription: {
     status: string;
     plan: string;
     planName: string;
     priceUsdMonthly: number;
+    priceInrMonthly?: number;
     priceLabel: string;
     billingCycle: "monthly";
     paymentProvider: string | null;
@@ -36,9 +44,22 @@ type BillingPayload = {
     entitlements: PlanRow & Record<string, unknown>;
   } | null;
   allowance: {
-    conversations: { ok: boolean; used: number; limit: number };
+    aiCredits: {
+      ok: boolean;
+      used: number;
+      limit: number;
+      remaining?: number;
+      onDemandUsed?: number;
+    };
     proactive: { ok: boolean; used: number; limit: number };
+    workloads?: {
+      simple: { used: number; limit: number; remaining: number; ok: boolean };
+      standard: { used: number; limit: number; remaining: number; ok: boolean };
+      complex: { used: number; limit: number; remaining: number; ok: boolean };
+    };
   };
+  policy?: { hardCap: boolean; onDemand: boolean };
+  blocked?: { reason: string } | null;
   suggestedUpgrade: string | null;
   invoices: Array<{
     id: string;
@@ -52,10 +73,39 @@ type BillingPayload = {
 
 function SectionLabel({ children }: { children: ReactNode }) {
   return (
-    <span className="mono block text-[0.6rem] tracking-[0.16em] uppercase opacity-60">
+    <span className="block text-[0.6rem] tracking-[0.16em] uppercase opacity-60">
       {children}
     </span>
   );
+}
+
+function plural(count: number, noun: string): string {
+  if (count === 1) return `1 ${noun}`;
+  const suffix = /(s|sh|ch|x|z)$/.test(noun) ? "es" : "s";
+  return `${count.toLocaleString()} ${noun}${suffix}`;
+}
+
+function monthlyPriceLabel(
+  usd: number,
+  inr: number | undefined,
+  currency: BillingCurrency,
+): string {
+  if (currency === "INR") {
+    const amount = inr ?? 0;
+    return amount === 0 ? "₹0" : `₹${amount.toLocaleString("en-IN")}/mon`;
+  }
+  return usd === 0 ? "$0" : `$${usd.toLocaleString()}/mon`;
+}
+
+/** Browser fallback when the CDN country header is absent (local / self-hosted). */
+function browserLooksIndian(): boolean {
+  try {
+    const zone = Intl.DateTimeFormat().resolvedOptions().timeZone ?? "";
+    if (zone === "Asia/Kolkata" || zone === "Asia/Calcutta") return true;
+    return (navigator.language ?? "").toLowerCase().endsWith("-in");
+  } catch {
+    return false;
+  }
 }
 
 export function BillingPanel({ embedded = false }: { embedded?: boolean }) {
@@ -67,6 +117,8 @@ export function BillingPanel({ embedded = false }: { embedded?: boolean }) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [provider, setProvider] = useState<"stripe" | "razorpay">("stripe");
+  const [providerTouched, setProviderTouched] = useState(false);
+  const [currency, setCurrency] = useState<BillingCurrency>("USD");
 
   const load = useCallback(async () => {
     const res = await fetch("/api/v1/billing");
@@ -82,6 +134,14 @@ export function BillingPanel({ embedded = false }: { embedded?: boolean }) {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    const india =
+      data?.region?.currency === "INR" ||
+      (!data?.region?.country && browserLooksIndian());
+    setCurrency(india ? "INR" : "USD");
+    if (!providerTouched) setProvider(india ? "razorpay" : "stripe");
+  }, [data?.region?.currency, data?.region?.country, providerTouched]);
 
   useEffect(() => {
     if (checkoutState === "success") {
@@ -147,14 +207,13 @@ export function BillingPanel({ embedded = false }: { embedded?: boolean }) {
   };
 
   const sub = data?.subscription;
-  const conv = data?.allowance.conversations;
-  const proactive = data?.allowance.proactive;
+  const credits = data?.allowance.aiCredits;
   const ent = sub?.entitlements;
 
   const usageRatio = useMemo(() => {
-    if (!conv || conv.limit <= 0) return 0;
-    return conv.used / conv.limit;
-  }, [conv]);
+    if (!credits || credits.limit <= 0) return 0;
+    return credits.used / credits.limit;
+  }, [credits]);
 
   const planActionLabel = (planId: string) => {
     if (!sub) return planId === "free" ? "Select" : "Upgrade";
@@ -169,14 +228,14 @@ export function BillingPanel({ embedded = false }: { embedded?: boolean }) {
   return (
     <div className="space-y-10">
       {embedded ? null : (
-      <header className="space-y-2">
-        <h1 className="text-3xl sm:text-4xl">Billing</h1>
-        <p className="caption text-sm max-w-2xl">
-          Manage your subscription here. Plan changes and paid entitlements are
-          confirmed server-side via Stripe or Razorpay webhooks — never from the
-          browser alone.
-        </p>
-      </header>
+        <header className="space-y-2">
+          <h1 className="text-3xl sm:text-4xl">Billing</h1>
+          <p className="caption text-sm max-w-2xl">
+            Manage your subscription here. Plan changes and paid entitlements
+            are confirmed server-side via Stripe or Razorpay webhooks — never
+            from the browser alone.
+          </p>
+        </header>
       )}
 
       {message ? (
@@ -187,8 +246,8 @@ export function BillingPanel({ embedded = false }: { embedded?: boolean }) {
 
       {usageRatio >= 0.85 && sub && sub.plan !== "business" ? (
         <UpgradePrompt
-          title={`You’re using ${Math.round(usageRatio * 100)}% of your monthly conversations`}
-          detail={`Upgrade for higher limits. Suggested: ${
+          title={`You’re using ${Math.round(usageRatio * 100)}% of your included AI credits`}
+          detail={`Upgrade for more included AI credits. Suggested: ${
             data?.suggestedUpgrade
               ? String(data.suggestedUpgrade)
               : "a higher plan"
@@ -216,8 +275,13 @@ export function BillingPanel({ embedded = false }: { embedded?: boolean }) {
               {sub?.planName ?? "No plan"}
             </h2>
             <p className="text-sm">
-              {sub?.priceLabel ?? "—"}
-              <span className="caption"> · billed monthly</span>
+              {sub
+                ? monthlyPriceLabel(
+                    sub.priceUsdMonthly,
+                    sub.priceInrMonthly,
+                    currency,
+                  )
+                : "—"}
             </p>
           </div>
           {sub ? (
@@ -252,9 +316,7 @@ export function BillingPanel({ embedded = false }: { embedded?: boolean }) {
           </div>
           <div>
             <dt className="caption">Provider</dt>
-            <dd className="mt-1 capitalize">
-              {sub?.paymentProvider ?? "—"}
-            </dd>
+            <dd className="mt-1 capitalize">{sub?.paymentProvider ?? "—"}</dd>
           </div>
         </dl>
 
@@ -276,25 +338,21 @@ export function BillingPanel({ embedded = false }: { embedded?: boolean }) {
           <SectionLabel>Included limits</SectionLabel>
           <ul className="space-y-2 text-sm">
             <li>
-              {ent?.conversationsPerMonth?.toLocaleString() ?? "—"} conversations
-              / month
+              {ent?.aiCreditsPerMonth?.toLocaleString() ?? "—"} included AI
+              credits / month
             </li>
             <li>
-              {ent?.knowledgeDocuments ?? "—"} knowledge documents
+              {data?.policy?.onDemand
+                ? "Metered credit overage after the included pool is exhausted"
+                : "No on-demand billing; usage stops at the included pool"}
+            </li>
+            <li>{ent ? plural(ent.websites, "website") : "—"}</li>
+            <li>
+              {ent ? plural(ent.websitePagesPerSync, "website page") : "—"} /
+              crawl
             </li>
             <li>
-              {ent?.integrationsLimit ?? "—"} integrations ·{" "}
-              {ent?.websites ?? "—"} websites
-            </li>
-            <li>
-              Agents:{" "}
-              {ent?.advancedAgents
-                ? "Advanced"
-                : ent?.basicAgents
-                  ? "Basic"
-                  : "None"}
-              {ent?.crmIntegrations ? " · CRM" : ""}
-              {ent?.prioritySupport ? " · Priority support" : ""}
+              {ent ? plural(ent.websitePagesPerMonth, "refresh") : "—"} / month
             </li>
           </ul>
         </div>
@@ -302,9 +360,9 @@ export function BillingPanel({ embedded = false }: { embedded?: boolean }) {
           <SectionLabel>Usage this period</SectionLabel>
           <div>
             <div className="flex justify-between text-sm mb-1">
-              <span>Conversations</span>
+              <span>Included AI credits</span>
               <span className="tabular-nums">
-                {conv?.used ?? 0} / {conv?.limit ?? "—"}
+                {credits?.used ?? 0} / {credits?.limit ?? "—"}
               </span>
             </div>
             <div className="h-1.5 rounded-full bg-[var(--cream)] overflow-hidden border border-[var(--ink)]/10">
@@ -322,17 +380,11 @@ export function BillingPanel({ embedded = false }: { embedded?: boolean }) {
               />
             </div>
           </div>
-          <div className="flex justify-between text-sm">
-            <span>Proactive activity</span>
-            <span className="tabular-nums">
-              {proactive?.used ?? 0} / {proactive?.limit ?? "—"} today
-            </span>
-          </div>
         </div>
       </section>
 
       {/* Plan catalog */}
-      <section className="space-y-4">
+      <section id="billing-plans-section" className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-2xl">Available plans</h2>
           <label className="caption text-xs flex items-center gap-2">
@@ -340,54 +392,53 @@ export function BillingPanel({ embedded = false }: { embedded?: boolean }) {
             <select
               className="rounded-full border border-[var(--ink)] bg-white px-3 py-1"
               value={provider}
-              onChange={(e) =>
-                setProvider(e.target.value as "stripe" | "razorpay")
-              }
+              onChange={(e) => {
+                setProviderTouched(true);
+                setProvider(e.target.value as "stripe" | "razorpay");
+              }}
             >
               <option value="stripe">Stripe (international)</option>
               <option value="razorpay">Razorpay (India)</option>
             </select>
           </label>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 items-stretch">
           {(data?.plans ?? []).map((plan) => {
             const isCurrent = sub?.plan === plan.planId;
             const highlighted = highlightPlan === plan.planId;
             return (
               <div
                 key={plan.planId}
-                className="ink-card p-5 space-y-3 rounded-2xl"
+                data-plan-card={plan.planId}
+                className="ink-card p-5 rounded-2xl flex h-full flex-col gap-3"
                 style={{
-                  background: isCurrent || highlighted ? "var(--cream)" : "white",
+                  background:
+                    isCurrent || highlighted ? "var(--cream)" : "white",
                   outline: highlighted ? "3px solid var(--blue)" : undefined,
                 }}
               >
-                <p className="mono text-[0.6rem] tracking-[0.16em] uppercase opacity-60">
+                <p className="text-[0.6rem] tracking-[0.16em] uppercase opacity-60">
                   {plan.name}
                   {isCurrent ? " · current" : ""}
                 </p>
                 <p className="text-3xl font-medium">
-                  {plan.priceLabel}
-                  {plan.priceUsdMonthly > 0 ? (
-                    <span className="caption text-sm font-normal"> billed monthly</span>
-                  ) : null}
+                  {monthlyPriceLabel(
+                    plan.priceUsdMonthly,
+                    plan.priceInrMonthly,
+                    currency,
+                  )}
                 </p>
-                <ul className="caption text-xs space-y-1">
+                <p className="text-lg font-medium tabular-nums">
+                  {(plan.aiCreditsPerMonth ?? 0).toLocaleString()}{" "}
+                  <span className="text-sm font-normal opacity-70">
+                    included credits
+                  </span>
+                </p>
+                <ul className="caption text-xs space-y-1 flex-1">
+                  <li>{plural(plan.websites, "website")}</li>
+                  <li>{plural(plan.websitePagesPerSync, "website page")}</li>
                   <li>
-                    {plan.conversationsPerMonth.toLocaleString()} conversations
-                  </li>
-                  <li>{plan.knowledgeDocuments} knowledge docs</li>
-                  <li>
-                    {plan.advancedAgents
-                      ? "Advanced agents"
-                      : plan.basicAgents
-                        ? "Basic agents"
-                        : "No agents"}
-                  </li>
-                  <li>
-                    {plan.crmIntegrations
-                      ? "CRM integrations"
-                      : `${plan.integrationsLimit} integrations`}
+                    {plural(plan.websitePagesPerMonth, "refresh")} / month
                   </li>
                 </ul>
                 <button
@@ -406,10 +457,6 @@ export function BillingPanel({ embedded = false }: { embedded?: boolean }) {
             );
           })}
         </div>
-        <p className="caption text-xs">
-          Paid upgrades open Stripe or Razorpay checkout. Entitlements activate
-          only after the provider webhook updates your organization subscription.
-        </p>
       </section>
 
       {/* History */}

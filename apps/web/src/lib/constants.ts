@@ -7,12 +7,12 @@ export const faqs = [
   {
     question: "What can the AI agent do?",
     answer:
-      "Our AI agents can answer customer questions, capture leads, manage support requests, book appointments, and keep conversations running 24/7.",
+      "Our AI agents can answer customer questions, manage support requests, book appointments, and keep conversations running 24/7.",
   },
   {
     question: "Will I be able to see customer conversations?",
     answer:
-      "Yes. Every lead, customer message, and support request is available inside your dashboard, making it easy to track and manage interactions.",
+      "Yes. Every customer message and support request is available inside your dashboard, making it easy to track and manage interactions.",
   },
   {
     question: "Do I need technical knowledge to use it?",
@@ -27,7 +27,7 @@ export const faqs = [
   {
     question: "What happens when a customer needs human support?",
     answer:
-      "The AI can collect the customer's details, create a support request, and notify your team so nothing gets missed.",
+      "The AI escalates the conversation with full context and notifies your team so nothing gets missed.",
   },
   {
     question: "Can the AI book appointments automatically?",

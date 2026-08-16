@@ -10,13 +10,28 @@ import {
   recordProductUsageSafe,
 } from "@neylonai/domain/billing";
 import { resolveKnowledgeScope } from "@neylonai/database";
-import { trackEventlySafe } from "@neylonai/integrations/evently";
 import {
   isApiKeyAuthContext,
   requireApiKeyAuth,
 } from "@/server/api-key-auth";
 
 export const dynamic = "force-dynamic";
+
+function normalizePagePath(value: unknown): string | null {
+  if (typeof value !== "string" || !value.trim()) return null;
+  try {
+    const parsed = new URL(value.trim(), "https://widget.invalid");
+    return (
+      `/${parsed.pathname
+        .split("/")
+        .filter(Boolean)
+        .map((part) => encodeURIComponent(decodeURIComponent(part)))
+        .join("/")}`.slice(0, 512) || "/"
+    );
+  } catch {
+    return null;
+  }
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -45,12 +60,19 @@ export async function POST(req: NextRequest) {
     const body = (await req.json().catch(() => ({}))) as {
       pagePath?: string;
       pageUrl?: string;
+      pageSection?: {
+        sectionId?: string;
+        sectionLabel?: string;
+        pagePath?: string;
+      };
       recentMessages?: Array<{ role: string; content: string }>;
       mode?: "idle" | "post_chat";
       limit?: number;
       visitorId?: string;
       sessionId?: string;
       excludeIds?: string[];
+      unshownSectionKeys?: string[];
+      triggerType?: "idle" | "scroll_depth" | "dwell" | "exit_intent";
     };
 
     const visitorId =
@@ -63,8 +85,36 @@ export async function POST(req: NextRequest) {
           .map((id) => id.slice(0, 64))
           .slice(0, 40)
       : [];
+    const unshownSectionKeys = Array.isArray(body.unshownSectionKeys)
+      ? body.unshownSectionKeys
+          .filter((id): id is string => typeof id === "string")
+          .map((id) => id.trim().toLowerCase().slice(0, 96))
+          .filter((id) => /^[a-z0-9_.:/-]+$/.test(id))
+          .slice(0, 12)
+      : [];
 
     const requestId = randomUUID();
+    const pagePath = normalizePagePath(body.pagePath);
+    const trackedPagePath = normalizePagePath(body.pageSection?.pagePath);
+    const rawSectionId =
+      typeof body.pageSection?.sectionId === "string"
+        ? body.pageSection.sectionId.trim().toLowerCase().slice(0, 96)
+        : "";
+    const pageSection =
+      body.pageSection &&
+      (!trackedPagePath || trackedPagePath === pagePath) &&
+      /^[a-z0-9_.:/-]+$/.test(rawSectionId)
+        ? {
+            sectionId: rawSectionId,
+            sectionLabel:
+              typeof body.pageSection.sectionLabel === "string"
+                ? body.pageSection.sectionLabel
+                    .replace(/\s+/g, " ")
+                    .trim()
+                    .slice(0, 160)
+                : null,
+          }
+        : null;
 
     const suggestions = await runWithAgentTurnContext(
       {
@@ -75,8 +125,9 @@ export async function POST(req: NextRequest) {
       () =>
         buildProactiveSuggestions({
           organizationId: scope.organizationId,
-          pagePath: body.pagePath ?? null,
+          pagePath,
           pageUrl: body.pageUrl ?? null,
+          pageSection,
           recentMessages: Array.isArray(body.recentMessages)
             ? body.recentMessages.slice(-10).map((m) => ({
                 role: String(m.role ?? "user"),
@@ -88,6 +139,14 @@ export async function POST(req: NextRequest) {
           visitorId,
           sessionId,
           excludeIds,
+          unshownSectionKeys,
+          triggerType:
+            body.triggerType === "scroll_depth" ||
+            body.triggerType === "dwell" ||
+            body.triggerType === "exit_intent" ||
+            body.triggerType === "idle"
+              ? body.triggerType
+              : "idle",
         }),
     );
 
@@ -99,21 +158,9 @@ export async function POST(req: NextRequest) {
       metadata: {
         count: suggestions.length,
         mode: body.mode ?? "idle",
+        triggerType: body.triggerType ?? "idle",
       },
     });
-
-    // Evently records impressions only — never used as suggestion source of truth.
-    for (const s of suggestions) {
-      trackEventlySafe({
-        event: "suggestion_shown",
-        organizationId: auth.organizationId,
-        pagePath: body.pagePath ?? null,
-        suggestionId: s.id,
-        visitorId,
-        sessionId,
-        properties: { source: s.source, mode: body.mode ?? "idle" },
-      });
-    }
 
     return NextResponse.json({ success: true, data: suggestions });
   } catch (error) {

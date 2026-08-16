@@ -94,14 +94,6 @@ export async function recordModelUsage(
     unit: "tokens",
     provider_cost_micros: priced.costMicros,
     pricing_status: priced.pricingStatus,
-    metadata: {
-      modelType: entry?.type ?? "unknown",
-      ...(input.inputModality ? { inputModality: input.inputModality } : {}),
-      ...(entry && !input.forceUnknownPricing
-        ? { pricingSource: entry.source, pricingAsOf: entry.asOf }
-        : {}),
-      ...(input.metadata ?? {}),
-    },
   });
 }
 
@@ -132,12 +124,6 @@ export async function recordToolUsage(
     unit: priced.unit,
     provider_cost_micros: priced.costMicros,
     pricing_status: priced.pricingStatus,
-    metadata: {
-      ...(entry
-        ? { pricingSource: entry.source, pricingAsOf: entry.asOf }
-        : {}),
-      ...(input.metadata ?? {}),
-    },
   });
 }
 
@@ -154,7 +140,6 @@ export async function recordProductUsage(
     metric: input.metric,
     request_id: input.requestId ?? null,
     thread_id: input.threadId ?? null,
-    metadata: input.metadata ?? {},
   });
 }
 
@@ -244,10 +229,7 @@ export function extractTokenUsage(response: unknown): {
   return { inputTokens: 0, outputTokens: 0 };
 }
 
-export async function getOrgUsageSummary(
-  organizationId: string,
-  since: Date,
-) {
+export async function getOrgUsageSummary(organizationId: string, since: Date) {
   const rows = await db
     .select({
       provider: usageEvents.provider,
@@ -319,10 +301,7 @@ export async function getOrgUsageSummary(
   };
 }
 
-export async function listRecentUsage(
-  organizationId: string,
-  limit = 50,
-) {
+export async function listRecentUsage(organizationId: string, limit = 50) {
   return db
     .select({
       id: usageEvents.id,

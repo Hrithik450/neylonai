@@ -13,7 +13,6 @@ export {
   hasAnySecret,
   deleteSecretsForIntegration,
   deleteSecretsForOrgCatalogIntegration,
-  stripCredentialKeysFromConfig,
   type PutSecretInput,
 } from "./vault";
 

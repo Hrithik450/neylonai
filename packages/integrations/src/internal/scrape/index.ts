@@ -6,10 +6,7 @@
 export type { ScrapeProvider, ScrapeResult } from "./types";
 
 import type { ScrapeResult } from "./types";
-import {
-  getFirecrawlApiKey,
-  scrapeWithFirecrawl,
-} from "./providers/firecrawl";
+import { getFirecrawlApiKey, scrapeWithFirecrawl } from "./providers/firecrawl";
 import { scrapeWithJina } from "./providers/jina";
 
 const MAX_BYTES = 1_500_000;
@@ -38,6 +35,11 @@ export function stripHtml(html: string): { title: string; text: string } {
     .replace(/<noscript[\s\S]*?<\/noscript>/gi, " ")
     .replace(/<!--[\s\S]*?-->/g, " ");
 
+  body = body.replace(
+    /<h([1-3])\b[^>]*>([\s\S]*?)<\/h\1>/gi,
+    (_match, level: string, content: string) =>
+      `\n\n${"#".repeat(Number(level))} ${content.replace(/<[^>]+>/g, " ")}\n\n`,
+  );
   body = body.replace(/<[^>]+>/g, " ");
   body = body
     .replace(/&nbsp;/gi, " ")
@@ -46,7 +48,8 @@ export function stripHtml(html: string): { title: string; text: string } {
     .replace(/&gt;/gi, ">")
     .replace(/&quot;/gi, '"')
     .replace(/&#39;/gi, "'")
-    .replace(/\s+/g, " ")
+    .replace(/[^\S\r\n]+/g, " ")
+    .replace(/ *\n{2,} */g, "\n\n")
     .trim();
 
   const pieces = [metaDesc.trim(), body].filter(Boolean);
@@ -109,9 +112,9 @@ export function extractSameOriginLinks(
   } catch {
     return [];
   }
-  const hrefs = [...html.matchAll(/<a\b[^>]*href\s*=\s*["']([^"']+)["']/gi)].map(
-    (m) => m[1]!,
-  );
+  const hrefs = [
+    ...html.matchAll(/<a\b[^>]*href\s*=\s*["']([^"']+)["']/gi),
+  ].map((m) => m[1]!);
   const out = new Set<string>();
   for (const href of hrefs) {
     if (
@@ -139,7 +142,10 @@ export function extractSameOriginLinks(
 }
 
 /** Markdown link extractor for Jina/Firecrawl markdown bodies. */
-export function extractMarkdownLinks(markdown: string, baseUrl: string): string[] {
+export function extractMarkdownLinks(
+  markdown: string,
+  baseUrl: string,
+): string[] {
   let base: URL;
   try {
     base = new URL(baseUrl);
@@ -162,7 +168,10 @@ export function extractMarkdownLinks(markdown: string, baseUrl: string): string[
   return [...out];
 }
 
-export async function fetchPublicHtml(urlInput: string): Promise<{
+export async function fetchPublicHtml(
+  urlInput: string,
+  options?: { signal?: AbortSignal },
+): Promise<{
   url: string;
   finalUrl: string;
   html: string;
@@ -171,6 +180,8 @@ export async function fetchPublicHtml(urlInput: string): Promise<{
   const parsed = assertPublicHttpUrl(urlInput);
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  const stop = () => controller.abort();
+  options?.signal?.addEventListener("abort", stop, { once: true });
 
   try {
     const res = await fetch(parsed.toString(), {
@@ -210,16 +221,21 @@ export async function fetchPublicHtml(urlInput: string): Promise<{
     };
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") {
+      if (options?.signal?.aborted) throw new Error("Scrape stopped.");
       throw new Error("Timed out fetching the URL.");
     }
     throw error;
   } finally {
     clearTimeout(timer);
+    options?.signal?.removeEventListener("abort", stop);
   }
 }
 
-async function scrapeStatic(urlInput: string): Promise<ScrapeResult> {
-  const page = await fetchPublicHtml(urlInput);
+async function scrapeStatic(
+  urlInput: string,
+  options?: { signal?: AbortSignal },
+): Promise<ScrapeResult> {
+  const page = await fetchPublicHtml(urlInput, options);
   const { title, text } = stripHtml(page.html);
   if (!text.trim()) {
     throw new Error("No readable text found on this page.");
@@ -240,27 +256,37 @@ async function scrapeStatic(urlInput: string): Promise<ScrapeResult> {
  * Fetch a public page as readable text/markdown.
  * Order: Firecrawl (if key) → Jina Reader (free) → static HTML.
  */
-export async function scrapePublicUrl(urlInput: string): Promise<ScrapeResult> {
+export async function scrapePublicUrl(
+  urlInput: string,
+  options?: { signal?: AbortSignal },
+): Promise<ScrapeResult> {
   assertPublicHttpUrl(urlInput);
   const errors: string[] = [];
+  // A stopped crawl must not fall through to the next provider.
+  const throwIfStopped = () => {
+    if (options?.signal?.aborted) throw new Error("Scrape stopped.");
+  };
 
   if (getFirecrawlApiKey()) {
     try {
-      return await scrapeWithFirecrawl(urlInput);
+      return await scrapeWithFirecrawl(urlInput, options);
     } catch (e) {
+      throwIfStopped();
       errors.push(e instanceof Error ? e.message : "Firecrawl failed");
     }
   }
 
   try {
-    return await scrapeWithJina(urlInput);
+    return await scrapeWithJina(urlInput, options);
   } catch (e) {
+    throwIfStopped();
     errors.push(e instanceof Error ? e.message : "Jina failed");
   }
 
   try {
-    return await scrapeStatic(urlInput);
+    return await scrapeStatic(urlInput, options);
   } catch (e) {
+    throwIfStopped();
     errors.push(e instanceof Error ? e.message : "Static scrape failed");
     throw new Error(
       `Could not scrape URL. ${errors.filter(Boolean).join(" · ")}`,

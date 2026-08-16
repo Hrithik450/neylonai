@@ -34,16 +34,6 @@ export async function GET(
       );
     }
 
-    if (file.kind === "redirect") {
-      return NextResponse.redirect(file.url, {
-        status: 302,
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Cache-Control": "public, max-age=31536000, immutable",
-        },
-      });
-    }
-
     return new NextResponse(new Uint8Array(file.bytes), {
       status: 200,
       headers: {

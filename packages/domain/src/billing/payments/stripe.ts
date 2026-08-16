@@ -135,6 +135,9 @@ export function createStripeProvider(): PaymentProvider {
             periodEnd: obj.current_period_end
               ? new Date(Number(obj.current_period_end) * 1000)
               : null,
+            periodStart: obj.current_period_start
+              ? new Date(Number(obj.current_period_start) * 1000)
+              : null,
             rawType: payload.type,
           };
         case "customer.subscription.deleted":
@@ -172,6 +175,12 @@ export function createStripeProvider(): PaymentProvider {
             externalEventId: payload.id,
             amountCents: Number(obj.amount_paid ?? 0) || null,
             currency: (obj.currency as string) ?? "usd",
+            periodStart: obj.period_start
+              ? new Date(Number(obj.period_start) * 1000)
+              : null,
+            periodEnd: obj.period_end
+              ? new Date(Number(obj.period_end) * 1000)
+              : null,
             rawType: payload.type,
           };
         default:

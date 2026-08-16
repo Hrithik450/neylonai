@@ -1,7 +1,4 @@
-import type {
-  EngagementSettings,
-  EscalationTrigger,
-} from "@neylonai/domain";
+import type { EscalationTrigger } from "@neylonai/domain";
 
 export interface EscalationDecision {
   shouldEscalate: boolean;
@@ -20,21 +17,15 @@ const UNHELPFUL_PATTERNS =
 
 /**
  * Deterministic escalation signals — no model chain-of-thought.
- * Respects workspace engagement settings.
+ * MVP: always-on heuristics (no per-org escalation config).
  */
 export function detectEscalation(
   userInput: string,
   history: Array<{ role: string; content: string }>,
-  settings: EngagementSettings,
 ): EscalationDecision {
-  if (!settings.humanHandoffEnabled) {
-    return { shouldEscalate: false, trigger: null, reason: null };
-  }
-
-  const conditions = settings.escalationConditions;
   const text = userInput.trim();
 
-  if (conditions.explicitHumanRequest && HUMAN_PATTERNS.test(text)) {
+  if (HUMAN_PATTERNS.test(text)) {
     return {
       shouldEscalate: true,
       trigger: "customer_request",
@@ -42,7 +33,7 @@ export function detectEscalation(
     };
   }
 
-  if (conditions.frustration && FRUSTRATION_PATTERNS.test(text)) {
+  if (FRUSTRATION_PATTERNS.test(text)) {
     return {
       shouldEscalate: true,
       trigger: "frustration",
@@ -50,7 +41,7 @@ export function detectEscalation(
     };
   }
 
-  if (conditions.repeatedUnhelpful && UNHELPFUL_PATTERNS.test(text)) {
+  if (UNHELPFUL_PATTERNS.test(text)) {
     const priorUnhelpful = history.filter(
       (m) => m.role === "user" && UNHELPFUL_PATTERNS.test(m.content),
     ).length;

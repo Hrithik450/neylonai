@@ -1,30 +1,28 @@
 import { asc, desc, eq, inArray, sql } from "drizzle-orm";
-import { getAgentManifest } from "@neylonai/agent";
-import { db, conversationStates, schema } from "@neylonai/database";
+import { db, schema } from "@neylonai/database";
+import { summarizeThreadEscalations } from "@neylonai/domain/conversations";
+import {
+  aggregateKnowledgeGaps,
+  loadCitationsForMessages,
+} from "@neylonai/domain/engagement";
 import type { OrgSession } from "@/server/auth-guards";
 import type {
-  ConversationStatus,
   ConversationsInboxPayload,
   InboxThread,
   InboxUser,
+  KnowledgeGapInboxRow,
 } from "./inbox-types";
 
-function normalizeStatus(raw: string): ConversationStatus {
-  if (raw === "escalated") return "escalated";
-  if (raw === "resolved") return "resolved";
-  return "open";
-}
-
-function visitorLabel(displayName?: string | null): string {
-  const name = displayName?.trim();
+function participantLabel(input: {
+  displayName?: string | null;
+  email?: string | null;
+  isAnonymous?: boolean | null;
+}): string {
+  const name = input.displayName?.trim();
   if (name && name !== "Guest") return name;
-  return "anonymous visitor";
-}
-
-function agentDisplayName(agentId: string | null): string {
-  if (!agentId) return "Agent";
-  const manifest = getAgentManifest(agentId);
-  return manifest?.name?.trim() || agentId;
+  const email = input.email?.trim();
+  if (email) return email;
+  return input.isAnonymous ? "anonymous visitor" : "visitor";
 }
 
 function toIso(value: unknown): string {
@@ -44,50 +42,47 @@ export async function loadConversationsInbox(
   member: OrgSession,
 ): Promise<ConversationsInboxPayload> {
   try {
-    const states = await db
-      .select({
-        threadId: conversationStates.thread_id,
-        status: conversationStates.status,
-        escalationReason: conversationStates.escalation_reason,
-        assignedAgentId: conversationStates.assigned_agent_id,
-        updatedAt: conversationStates.updated_at,
-        createdAt: conversationStates.created_at,
-      })
-      .from(conversationStates)
-      .where(eq(conversationStates.organization_id, member.organizationId))
-      .orderBy(desc(conversationStates.updated_at))
-      .limit(500);
-
-    if (states.length === 0) {
-      return { users: [], threads: [] };
-    }
-
-    const threadIds = states.map((s) => s.threadId);
     const threadRows = await db
       .select({
         id: schema.threads.id,
         title: schema.threads.title,
-        visitorId: schema.threads.visitor_id,
+        escalated: schema.threads.escalated,
+        conversationStatus: schema.threads.conversation_status,
+        participantId: schema.threads.participant_id,
         created_at: schema.threads.created_at,
       })
       .from(schema.threads)
-      .where(inArray(schema.threads.id, threadIds));
-    const threadById = new Map(threadRows.map((t) => [t.id, t] as const));
+      .where(eq(schema.threads.organization_id, member.organizationId))
+      .orderBy(desc(schema.threads.created_at))
+      .limit(500);
 
-    const visitorIds = [
-      ...new Set(threadRows.map((t) => t.visitorId).filter(Boolean)),
+    if (threadRows.length === 0) {
+      return { users: [], threads: [], knowledgeGaps: [] };
+    }
+
+    const threadIds = threadRows.map((t) => t.id);
+
+    const participantIds = [
+      ...new Set(threadRows.map((t) => t.participantId).filter(Boolean)),
     ] as string[];
-    const visitorRows =
-      visitorIds.length > 0
+    const participantRows =
+      participantIds.length > 0
         ? await db
             .select({
-              id: schema.visitors.id,
-              displayName: schema.visitors.display_name,
+              id: schema.organizationParticipants.id,
+              externalId: schema.organizationParticipants.external_id,
+              displayName: schema.organizationParticipants.display_name,
+              email: schema.organizationParticipants.email,
+              isAnonymous: schema.organizationParticipants.is_anonymous,
             })
-            .from(schema.visitors)
-            .where(inArray(schema.visitors.id, visitorIds))
+            .from(schema.organizationParticipants)
+            .where(
+              inArray(schema.organizationParticipants.id, participantIds),
+            )
         : [];
-    const visitorById = new Map(visitorRows.map((v) => [v.id, v] as const));
+    const participantById = new Map(
+      participantRows.map((p) => [p.id, p] as const),
+    );
 
     type PreviewRow = {
       thread_id: string;
@@ -125,32 +120,26 @@ export async function loadConversationsInbox(
       ]),
     );
 
+    const escalationByThread = await summarizeThreadEscalations(threadIds);
+
     const threads: InboxThread[] = [];
 
-    for (const state of states) {
-      const thread = threadById.get(state.threadId);
-      if (!thread) continue;
-
-      const visitorId = thread.visitorId ?? "";
-      const preview = previewByThread.get(state.threadId);
-      const createdAt = (
-        thread.created_at ??
-        state.createdAt ??
-        new Date()
-      ).toISOString();
-      const latestAt =
-        preview?.createdAt ??
-        (state.updatedAt ?? state.createdAt ?? new Date()).toISOString();
-      const agentId = state.assignedAgentId ?? null;
+    for (const thread of threadRows) {
+      const participantId = thread.participantId ?? "";
+      const preview = previewByThread.get(thread.id);
+      const createdAt = (thread.created_at ?? new Date()).toISOString();
+      const latestAt = preview?.createdAt ?? createdAt;
+      const escalation = escalationByThread.get(thread.id);
 
       threads.push({
-        id: state.threadId,
-        userId: visitorId,
+        id: thread.id,
+        userId: participantId,
         title: thread.title || "Conversation",
-        status: normalizeStatus(state.status),
-        escalationReason: state.escalationReason,
-        lastAgentId: agentId,
-        lastAgentName: agentId ? agentDisplayName(agentId) : null,
+        escalated: thread.escalated === true,
+        conversationStatus: thread.conversationStatus ?? "ai_active",
+        escalationReasons: escalation?.reasons ?? [],
+        escalationCount: escalation?.escalationCount ?? 0,
+        lastEscalatedAt: escalation?.lastEscalatedAt ?? null,
         preview: (preview?.content ?? thread.title ?? "").slice(0, 140),
         latestAt,
         createdAt,
@@ -158,53 +147,82 @@ export async function loadConversationsInbox(
       });
     }
 
-    const byVisitor = new Map<string, InboxThread[]>();
+    threads.sort((a, b) => (a.latestAt < b.latestAt ? 1 : -1));
+
+    const byParticipant = new Map<string, InboxThread[]>();
     for (const t of threads) {
       if (!t.userId) continue;
-      const list = byVisitor.get(t.userId) ?? [];
+      const list = byParticipant.get(t.userId) ?? [];
       list.push(t);
-      byVisitor.set(t.userId, list);
+      byParticipant.set(t.userId, list);
     }
 
-    const users: InboxUser[] = [...byVisitor.entries()]
-      .map(([userId, userThreads]) => {
-        const v = visitorById.get(userId);
+    const users: InboxUser[] = [...byParticipant.entries()]
+      .map(([participantId, userThreads]) => {
+        const p = participantById.get(participantId);
         const latestAt = userThreads.reduce(
           (max, t) => (t.latestAt > max ? t.latestAt : max),
           userThreads[0]?.latestAt ?? new Date(0).toISOString(),
         );
         return {
-          id: userId,
-          label: visitorLabel(v?.displayName),
-          email: null,
+          id: participantId,
+          externalId: p?.externalId ?? null,
+          label: participantLabel({
+            displayName: p?.displayName,
+            email: p?.email,
+            isAnonymous: p?.isAnonymous,
+          }),
+          email: p?.email?.trim() || null,
           threadCount: userThreads.length,
-          escalatedCount: userThreads.filter((t) => t.status === "escalated")
-            .length,
+          escalatedCount: userThreads.filter((t) => t.escalated).length,
           latestAt,
         };
       })
       .sort((a, b) => (a.latestAt < b.latestAt ? 1 : -1));
 
-    return { users, threads };
+    return {
+      users,
+      threads,
+      knowledgeGaps: await loadKnowledgeGapsForInbox(member.organizationId),
+    };
   } catch (error) {
     console.error("[loadConversationsInbox]", error);
-    return { users: [], threads: [] };
+    return { users: [], threads: [], knowledgeGaps: [] };
   }
+}
+
+export async function loadKnowledgeGapsForInbox(
+  organizationId: string,
+): Promise<KnowledgeGapInboxRow[]> {
+  const rows = await aggregateKnowledgeGaps(organizationId, {
+    windowDays: 30,
+    limit: 100,
+  });
+  return rows.map((row) => ({
+    questionHash: row.questionHash,
+    pagePath: row.pagePath,
+    sampleQuestion: row.sampleQuestion,
+    count: row.count,
+    gapTypes: row.gapTypes,
+    latestAt: row.latestAt,
+    threadId: row.threadId,
+    messageId: row.messageId,
+  }));
 }
 
 export async function loadConversationMessages(
   organizationId: string,
   threadId: string,
 ): Promise<InboxThread["messages"] | null> {
-  const [state] = await db
+  const [owned] = await db
     .select({
-      organizationId: conversationStates.organization_id,
+      organizationId: schema.threads.organization_id,
     })
-    .from(conversationStates)
-    .where(eq(conversationStates.thread_id, threadId))
+    .from(schema.threads)
+    .where(eq(schema.threads.id, threadId))
     .limit(1);
 
-  if (!state || state.organizationId !== organizationId) {
+  if (!owned || owned.organizationId !== organizationId) {
     return null;
   }
 
@@ -213,8 +231,6 @@ export async function loadConversationMessages(
       id: schema.threadMessages.id,
       role: schema.threadMessages.role,
       content: schema.threadMessages.content,
-      agent_id: schema.threadMessages.agent_id,
-      metadata: schema.threadMessages.metadata,
       created_at: schema.threadMessages.created_at,
     })
     .from(schema.threadMessages)
@@ -222,36 +238,28 @@ export async function loadConversationMessages(
     .orderBy(asc(schema.threadMessages.created_at))
     .limit(500);
 
+  const assistantIds = msgs
+    .filter((m) => m.role === "assistant")
+    .map((m) => m.id);
+  const citationsByMessage = await loadCitationsForMessages(
+    organizationId,
+    assistantIds,
+  );
+
   return msgs.map((m) => {
-    const meta = (m.metadata ?? {}) as {
-      source?: string;
-      agent_id?: string;
-      agent_name?: string;
-      provenance?: {
-        sources?: InboxThread["messages"][number]["sources"];
-      };
-    };
-    const fromHuman =
-      m.role === "human" ||
-      meta.source === "human_agent" ||
-      meta.source === "human";
-    const sources = meta.provenance?.sources;
     const role: InboxThread["messages"][number]["role"] =
       m.role === "assistant" || m.role === "system" || m.role === "human"
         ? m.role
         : "user";
-    const agentId = m.agent_id ?? meta.agent_id ?? null;
-    const agentName =
-      (typeof meta.agent_name === "string" && meta.agent_name.trim()) ||
-      (agentId ? agentDisplayName(agentId) : null);
     return {
       id: m.id,
-      role: fromHuman && role === "assistant" ? "human" : role,
+      role,
       content: m.content,
       created_at: (m.created_at ?? new Date()).toISOString(),
-      ...(fromHuman ? { fromHuman: true } : {}),
-      ...(agentId ? { agentId, agentName } : {}),
-      ...(sources && sources.length > 0 ? { sources } : {}),
+      citations:
+        m.role === "assistant"
+          ? citationsByMessage.get(m.id) ?? []
+          : undefined,
     };
   });
 }

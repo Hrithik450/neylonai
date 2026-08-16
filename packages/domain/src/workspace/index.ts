@@ -1,17 +1,14 @@
 /**
- * Client-safe type exports only.
- * Import service functions from `@neylonai/domain/workspace` from server code.
+ * Organization account settings (General, Privacy).
+ * Import service functions from server code only.
  */
 export type {
-  WorkspaceSettings,
-  WorkspaceSettingsPatch,
+  OrganizationSettings,
+  OrganizationSettingsPatch,
+  OrganizationPrivacyPrefs,
 } from "./types";
+export { DEFAULT_PRIVACY } from "./types";
 export {
-  DEFAULT_NOTIFICATIONS,
-  DEFAULT_PRIVACY,
-  DEFAULT_SSO,
-} from "./types";
-export {
-  getWorkspaceSettings,
-  saveWorkspaceSettings,
+  getOrganizationSettings,
+  saveOrganizationSettings,
 } from "./service";

@@ -1,6 +1,6 @@
 # Neylon AI — Proactive AI customer engagement
 
-Neylon AI is a **proactive AI customer-engagement platform**, not only a website chatbot. It combines website-aware knowledge, conversation memory, proactive suggestions, specialized agents, CRM/integrations, and an embeddable chatbot SDK — with a multi-tenant SaaS layer (subscriptions, entitlements, usage metering, payments).
+Neylon AI is a **proactive AI customer-engagement platform**, not only a website chatbot. It combines one tool-enabled Main Agent with website-aware knowledge, conversation memory, proactive suggestions, integrations, and an embeddable chatbot SDK — with a multi-tenant SaaS layer (subscriptions, entitlements, usage metering, payments).
 
 Built as a **pnpm + Turborepo modular monolith**: Next.js in `apps/web`, business logic in `packages/*`.
 
@@ -32,16 +32,15 @@ apps/web  →  @neylonai/sdk (chatbot UI)  →  Neylon AI API
 - Conversation threads and memory
 - Specialized agents (plan-gated)
 - CRM / notification integrations (plan-gated)
-- Lead capture, demo booking, team webhooks
+- Meeting-link sharing, team notifications
 
 ### SaaS platform
 - Organizations → subscriptions → plans → entitlements → usage → API keys
-- Plans: **Free**, **Starter**, **Pro ($49)**, **Business ($149)** — limits in `packages/domain/src/billing/plans.ts`
+- Plans: **Free** (500 credits), **Starter** (2,000), **Pro ($49 / 5,000)**, **Business ($149 / 15,000)**. Shared wallet charges Simple / Standard / Complex at **1 / 2 / 8** credits after delivery (social turns **0**). Hard query limits are Free **100/50/20**, Starter **400/200/70**, Pro **1,000/500/150**, Business **3,000/1,500/500**. Simple may borrow higher-class capacity and Standard may borrow Complex; Complex never borrows downward. Exhausted routes use Simple runtime limits. Free blocks when credits are empty; paid plans continue as metered overage. Policy: `packages/domain/src/billing/workload-policy.ts` and `plans.ts`.
 - Server-authoritative entitlements (`canUseAgent`, `canConsumeConversation`, etc.)
 - Client API keys for SDK embeds (`nk_live_…`) with optional origin allowlists
 - Usage metering (conversations, tokens, estimated cost)
 - Payments: **Stripe** (international) + **Razorpay** (India), provider abstraction for PayPal later
-- Product analytics via **Evently** (custom; adapter under `@neylonai/integrations/evently` — fire-and-forget)
 
 ### Surfaces
 - Marketing site + embeddable widget
@@ -60,8 +59,8 @@ packages/
   agent/                   # @neylonai/agent — LangGraph agent runtime
   auth/                    # @neylonai/auth — JWT sessions
   database/                # @neylonai/database — Drizzle, Redis, pgvector
-  domain/                  # @neylonai/domain — users, chat, leads, billing
-  integrations/            # @neylonai/integrations — Gemini, web-search, Evently, etc.
+  domain/                  # @neylonai/domain — users, chat, billing
+  integrations/            # @neylonai/integrations — customer catalog + shared providers
   ui/                      # @neylonai/ui — shared primitives
   eslint-config/
   typescript-config/
@@ -108,6 +107,8 @@ docker compose up postgres redis -d
 
 ```bash
 pnpm dev
+# In another terminal, for website crawls:
+pnpm dev:crawler
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
@@ -156,7 +157,7 @@ URLs, Gemini keys, or payment secrets in `NEXT_PUBLIC_*`.
 | Route | Purpose |
 |-------|---------|
 | `/dashboard` | Overview |
-| `/dashboard/widget` | Appearance, proactive settings |
+| `/dashboard/widget` | Coding agent widget setup |
 | `/dashboard/knowledge` | Knowledge documents |
 | `/dashboard/conversations` | Threads |
 | `/dashboard/agents` | Enable/disable agents (plan-gated) |
@@ -170,19 +171,14 @@ URLs, Gemini keys, or payment secrets in `NEXT_PUBLIC_*`.
 
 | Route | Purpose |
 |-------|---------|
-| `/admin` | Platform KPIs (orgs, MRR/ARR, AI cost) |
+| `/admin` | Platform KPIs (orgs, MRR/ARR, credits, workload mix, COGS) |
 | `/admin/organizations` | Tenants |
 | `/admin/users` | Accounts |
 | `/admin/subscriptions` | Plan / status |
-| `/admin/usage` | Usage & estimated cost |
 | `/admin/api-keys` | Key inventory (prefix only) |
-| `/admin/agents` | Agent catalog usage |
-| `/admin/integrations` | Integration usage |
-| `/admin/knowledge` | Knowledge overview |
-| `/admin/conversations` | Thread volume |
-| `/admin/system` | System |
+| `/admin/unit-economics` | Workload budgets & plan quotas |
 
-Dashboard type uses **Banda Nova Book** (`apps/web/public/fonts/BandaNova-Book.woff2`) — medium weight for titles, no Palo.
+Dashboard type uses **Banda Nova Book** (`apps/web/src/assets/fonts/BandaNova-Book.woff2`, loaded via `src/assets/fonts.ts`) — medium weight for titles, no Palo.
 
 ---
 
@@ -213,14 +209,9 @@ RAZORPAY_PLAN_STARTER=
 RAZORPAY_PLAN_PRO=
 RAZORPAY_PLAN_BUSINESS=
 
-# Evently (custom analytics — fire-and-forget)
-EVENTLY_API_URL=
-EVENTLY_SECRET=
-EVENTLY_PAT=
-EVENTLY_PROJECT=neylon
 ```
 
-Never put payment or Evently secrets in the SDK / browser. The SDK only uses the **client API key**.
+Never put payment or provider secrets in the SDK / browser. The SDK only uses the **client API key**.
 
 ---
 
@@ -247,7 +238,7 @@ create a Neylon-specific login.
 
 | Mode | Pass | Result |
 | ---- | ---- | ------ |
-| Anonymous | `apiKey` | Chat works; dashboard branding applied |
+| Anonymous | `apiKey` | Chat works; dashboard branding loads |
 | Authenticated | `apiKey` + `user` from existing session | Personalized |
 
 See [`skill.md`](./skill.md).
@@ -260,7 +251,7 @@ Chunks are `halfvec(3072)` (Gemini `gemini-embedding-001`) with HNSW cosine, sco
 
 ```bash
 # Re-embed knowledge chunks with Gemini (after changing embedding model / dims)
-DATABASE_URL=... DATABASE_SSL=false GOOGLE_API_KEYS=... \
+DATABASE_URL=... DATABASE_SSL=false GEMINI_API_KEYS=... \
   pnpm --filter @neylonai/agent run reembed:knowledge
 ```
 

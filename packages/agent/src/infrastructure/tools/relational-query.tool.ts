@@ -7,15 +7,30 @@ import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 import pg from "pg";
 import { resolveDatabaseConnectionUrl } from "@neylonai/domain/integrations";
-import { getAgentTurnContext } from "../agent-turn-context";
+import {
+  DATABASE_STATEMENT_TIMEOUT_SECONDS,
+  getWorkloadBudget,
+  workloadClassOrDefault,
+} from "@neylonai/domain/billing";
+import {
+  getAgentTurnContext,
+  recordDatabaseRows,
+} from "../agent-turn-context";
 
 const FORBIDDEN =
   /\b(INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|TRUNCATE|GRANT|REVOKE|COPY|EXECUTE|CALL|DO|MERGE|VACUUM|COMMENT|PREPARE|LISTEN|NOTIFY|LOAD|REINDEX|CLUSTER|REFRESH|SET|PG_READ_FILE|PG_READ_BINARY_FILE|PG_LS_DIR|PG_STAT_FILE|LO_IMPORT|LO_EXPORT|LO_GET|LO_PUT|LO_UNLINK|PG_SLEEP|DBLINK|PG_TERMINATE_BACKEND|PG_CANCEL_BACKEND)\b/i;
 
 const ALLOWED_START = /^\s*(SELECT|WITH)\b/i;
 const HAS_SEMICOLON = /;/;
-const MAX_ROWS = 100;
 const DEFAULT_ROWS = 20;
+
+function rowCapForTurn(): number {
+  const billing = getAgentTurnContext().billing;
+  const klass = workloadClassOrDefault(
+    billing?.workloadClass ?? billing?.estimate?.estimatedClass ?? "standard",
+  );
+  return getWorkloadBudget(klass).databaseRows;
+}
 
 function validateQuery(query: string): string | null {
   const stripped = query.replace(/;+\s*$/g, "").trim();
@@ -70,7 +85,8 @@ export const relationalQueryTool = tool(
     const err = validateQuery(query);
     if (err) return `Query rejected: ${err}`;
 
-    const rowLimit = Math.max(1, Math.min(Number(limit) || DEFAULT_ROWS, MAX_ROWS));
+    const maxRows = rowCapForTurn();
+    const rowLimit = Math.max(1, Math.min(Number(limit) || DEFAULT_ROWS, maxRows));
     const stripped = query.replace(/;+\s*$/g, "").trim();
     const safeQuery = `SELECT * FROM (${stripped}) _q LIMIT ${rowLimit}`;
 
@@ -82,12 +98,15 @@ export const relationalQueryTool = tool(
     try {
       await client.connect();
       await client.query("SET default_transaction_read_only = on");
-      await client.query("SET statement_timeout = '15s'");
+      await client.query(
+        `SET statement_timeout = '${DATABASE_STATEMENT_TIMEOUT_SECONDS}s'`,
+      );
       await client.query("BEGIN READ ONLY");
       const result = await client.query(safeQuery);
       await client.query("COMMIT");
       const columns = result.fields.map((f) => f.name);
       const rows = result.rows.map((r) => columns.map((c) => r[c]));
+      recordDatabaseRows(rows.length);
       const table = rowsToMarkdown(columns, rows);
       return `${table}\n\n_Showing ${rows.length} row(s) (limit=${rowLimit})._`;
     } catch (error) {
@@ -109,9 +128,9 @@ export const relationalQueryTool = tool(
         .number()
         .int()
         .min(1)
-        .max(100)
+        .max(200)
         .optional()
-        .describe("Max rows to return (default 20, hard cap 100)"),
+        .describe("Max rows to return (default 20; hard-capped by workload class)"),
     }),
   },
 );

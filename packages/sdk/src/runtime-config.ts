@@ -48,7 +48,6 @@ export function getAuthHeaders(
   }
   return {
     Authorization: `Bearer ${apiKey}`,
-    "X-Neylonai-Api-Key": apiKey,
     ...extra,
   };
 }

@@ -1,8 +1,8 @@
 import { count, eq } from "drizzle-orm";
 import { db, knowledgeDocuments } from "@neylonai/database";
 import {
-  canConsumeConversation,
   countProductMetric,
+  getOrgCreditSummary,
   getPlanEntitlements,
   getSubscriptionForOrg,
   isSubscriptionEligible,
@@ -64,23 +64,19 @@ export type DashboardOverviewData = {
     lastSeenLabel: string;
   };
   metrics: {
-    conversationsUsed: number;
-    conversationsLimit: number;
-    conversationsRemaining: number;
+    aiCreditsUsed: number;
+    aiCreditsLimit: number;
+    aiCreditsRemaining: number;
     planName: string;
     planId: string;
     planPriceLabel: string;
     billingCycle: "monthly";
     subscriptionStatus: string;
-    /** Leads are not org-scoped yet — omit fabricated counts. */
-    leadsAvailable: false;
   };
   usageUpgrade: UpgradePromptContent | null;
   proactive: {
     enabled: boolean;
     activityCount: number;
-    clicksAvailable: false;
-    startedFromSuggestionsAvailable: false;
   };
   activity: OverviewActivityItem[];
   checklist: OverviewChecklistItem[];
@@ -106,9 +102,9 @@ function formatRelative(date: Date | null): string {
 
 function brandingCustomized(config: StoredWidgetConfig): boolean {
   const name = config.branding?.name?.trim();
-  const color = config.branding?.primaryColor?.trim();
+  const color = config.branding?.primaryTextColor?.trim();
   const defaultName = DEFAULT_WIDGET_CONFIG.branding?.name;
-  const defaultColor = DEFAULT_WIDGET_CONFIG.branding?.primaryColor;
+  const defaultColor = DEFAULT_WIDGET_CONFIG.branding?.primaryTextColor;
   if (name && name !== defaultName) return true;
   if (color && color !== defaultColor) return true;
   return false;
@@ -149,10 +145,18 @@ export async function loadDashboardOverview(
     docCount = 0;
   }
 
-  const convAllowance = await canConsumeConversation(
-    { organizationId, plan: subscription?.plan ?? "free" },
-    periodStart,
-  );
+  const creditSummary = await getOrgCreditSummary(organizationId);
+  const creditLimit =
+    creditSummary.granted > 0
+      ? creditSummary.granted
+      : entitlements.aiCreditsPerMonth;
+  const creditAllowance = {
+    used: creditSummary.includedUsed,
+    limit: creditLimit,
+    remaining: creditSummary.available,
+    totalUsed: creditSummary.totalUsed,
+    blocked: creditSummary.blocked,
+  };
 
   let proactiveActivity = 0;
   try {
@@ -166,11 +170,11 @@ export async function loadDashboardOverview(
   }
 
   const activity: OverviewActivityItem[] = [];
-  if (convAllowance.used > 0) {
+  if (creditAllowance.totalUsed > 0) {
     activity.push({
-      id: "conversations",
-      label: `${convAllowance.used.toLocaleString()} conversations this period`,
-      meta: `${convAllowance.used} / ${convAllowance.limit}`,
+      id: "ai_credits",
+      label: `${creditAllowance.totalUsed.toLocaleString()} AI credits used this period`,
+      meta: `${creditAllowance.used} of ${creditAllowance.limit} included credits`,
       at: new Date(),
       href: "/dashboard/usage",
     });
@@ -200,7 +204,7 @@ export async function loadDashboardOverview(
     },
     {
       id: "knowledge",
-      label: "Add website or PDF knowledge",
+      label: "Add website or database knowledge",
       done: docCount > 0,
       href: "/dashboard/integrations",
     },
@@ -238,18 +242,21 @@ export async function loadDashboardOverview(
   }
 
   const usageRatio =
-    convAllowance.limit > 0 ? convAllowance.used / convAllowance.limit : 0;
+    creditAllowance.limit > 0
+      ? creditAllowance.used / creditAllowance.limit
+      : 0;
   const usageUpgrade = buildUsageUpgradePrompt(subscription?.plan, {
-    used: convAllowance.used,
-    limit: convAllowance.limit,
+    used: creditAllowance.used,
+    limit: creditAllowance.limit,
+    metricLabel: "included AI credits",
   });
 
   if (eligible && usageRatio >= 0.9) {
     alerts.push({
       id: "usage_limit",
-      tone: "critical",
-      title: "Conversation limit almost reached",
-      detail: `${convAllowance.used} of ${convAllowance.limit} conversations used this period.`,
+      tone: "warning",
+      title: "Most included AI credits used",
+      detail: `${creditAllowance.used} of ${creditAllowance.limit} included credits used. Chat uses a shared wallet (Simple 1 · Standard 2 · Complex 8); paid plans continue as metered overage after the pool is exhausted.`,
       href: "/dashboard/usage",
       actionLabel: "View usage",
     });
@@ -257,8 +264,8 @@ export async function loadDashboardOverview(
     alerts.push({
       id: "usage_warn",
       tone: "warning",
-      title: "Usage approaching plan limit",
-      detail: `${convAllowance.used} of ${convAllowance.limit} conversations used this period.`,
+      title: "Included AI credits running low",
+      detail: `${creditAllowance.used} of ${creditAllowance.limit} included credits used this period.`,
       href: "/dashboard/usage",
       actionLabel: "View usage",
     });
@@ -350,25 +357,22 @@ export async function loadDashboardOverview(
       lastSeenLabel: formatRelative(lastSeenAt),
     },
     metrics: {
-      conversationsUsed: convAllowance.used,
-      conversationsLimit: convAllowance.limit,
-      conversationsRemaining: Math.max(
+      aiCreditsUsed: creditAllowance.used,
+      aiCreditsLimit: creditAllowance.limit,
+      aiCreditsRemaining: Math.max(
         0,
-        convAllowance.limit - convAllowance.used,
+        creditAllowance.limit - creditAllowance.used,
       ),
       planName: entitlements.name,
       planId: entitlements.planId,
       planPriceLabel: formatPlanPrice(entitlements.planId),
       billingCycle: "monthly",
       subscriptionStatus: status,
-      leadsAvailable: false,
     },
     usageUpgrade,
     proactive: {
       enabled: config.proactive?.enabled !== false,
       activityCount: proactiveActivity,
-      clicksAvailable: false,
-      startedFromSuggestionsAvailable: false,
     },
     activity,
     checklist,

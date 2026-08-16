@@ -31,9 +31,8 @@ export type OrgFontRecord = {
   contentType: string;
   byteSize: number;
   storageKey: string;
-  publicUrl: string | null;
   createdAt: string;
-  /** Prefer CDN URL; fall back to same-origin API route for local disk. */
+  /** Same-origin API route that streams the font bytes. */
   fileUrl: string;
 };
 
@@ -48,7 +47,6 @@ function familyFromFilename(name: string): string {
 }
 
 function toRecord(row: typeof organizationFonts.$inferSelect): OrgFontRecord {
-  const publicUrl = row.public_url?.trim() || null;
   return {
     id: row.id,
     organizationId: row.organization_id,
@@ -57,9 +55,8 @@ function toRecord(row: typeof organizationFonts.$inferSelect): OrgFontRecord {
     contentType: row.content_type,
     byteSize: row.byte_size,
     storageKey: row.storage_key,
-    publicUrl,
     createdAt: row.created_at?.toISOString() ?? new Date().toISOString(),
-    fileUrl: publicUrl || `/api/v1/org-fonts/${row.id}/file`,
+    fileUrl: `/api/v1/org-fonts/${row.id}/file`,
   };
 }
 
@@ -138,9 +135,8 @@ export async function uploadOrgFont(input: {
     input.familyName?.trim() || familyFromFilename(input.filename)
   ).slice(0, 120);
 
-  let stored: Awaited<ReturnType<typeof putOrgFontObject>>;
   try {
-    stored = await putOrgFontObject({
+    await putOrgFontObject({
       key: storageKey,
       bytes: input.bytes,
       contentType,
@@ -166,7 +162,6 @@ export async function uploadOrgFont(input: {
       content_type: contentType,
       byte_size: input.bytes.byteLength,
       storage_key: storageKey,
-      public_url: stored.publicUrl,
     })
     .returning();
 
@@ -190,10 +185,7 @@ export async function deleteOrgFont(input: {
 
   if (!row) return { success: false, error: "Font not found" };
 
-  await deleteOrgFontObject({
-    key: row.storage_key,
-    publicUrl: row.public_url,
-  });
+  await deleteOrgFontObject({ key: row.storage_key });
   await db
     .delete(organizationFonts)
     .where(eq(organizationFonts.id, input.fontId));
@@ -226,11 +218,7 @@ export async function deleteOrgFont(input: {
 
 export async function resolveOrgFontFile(
   fontId: string,
-): Promise<
-  | { kind: "redirect"; url: string }
-  | { kind: "bytes"; bytes: Buffer; contentType: string }
-  | null
-> {
+): Promise<{ bytes: Buffer; contentType: string } | null> {
   const [row] = await db
     .select()
     .from(organizationFonts)
@@ -238,14 +226,9 @@ export async function resolveOrgFontFile(
     .limit(1);
   if (!row) return null;
 
-  if (row.public_url?.trim()) {
-    return { kind: "redirect", url: row.public_url.trim() };
-  }
-
   const obj = await getOrgFontObject(row.storage_key);
   if (!obj) return null;
   return {
-    kind: "bytes",
     bytes: obj.bytes,
     contentType: row.content_type || obj.contentType,
   };

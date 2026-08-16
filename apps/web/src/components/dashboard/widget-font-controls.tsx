@@ -18,7 +18,7 @@ type OrgFontRow = {
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return (
-    <span className="mono text-[0.65rem] font-bold tracking-[0.12em] uppercase opacity-60">
+    <span className="text-[0.65rem] font-bold tracking-[0.12em] uppercase opacity-60">
       {children}
     </span>
   );

@@ -3,7 +3,7 @@
 import { useCallback, useMemo } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { SupportWidget } from "@neylonai/sdk/react";
-import { useSessionStore } from "@/store/session-store";
+import { useSessionView } from "@/components/session-view";
 import { useErrorStore } from "@/store/error-store";
 
 /**
@@ -17,7 +17,7 @@ export function SupportWidgetHost({
 } = {}) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { user } = useSessionStore();
+  const { user } = useSessionView();
   const { setStatus, setMessage } = useErrorStore();
 
   const apiKey =

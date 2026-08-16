@@ -1,13 +1,9 @@
 /**
- * Agent dashboard performance — from live org conversations and leads.
+ * Agent dashboard performance — from live org conversations.
  */
 
-import { and, desc, eq, or, isNull } from "drizzle-orm";
-import {
-  db,
-  conversationStates,
-  leads,
-} from "@neylonai/database";
+import { desc, eq } from "drizzle-orm";
+import { db, threads } from "@neylonai/database";
 
 export type AgentActivityItem = {
   id: string;
@@ -26,13 +22,10 @@ export type AgentPerformanceSnapshot = {
   conversations: number;
   resolutions: number;
   escalations: number;
-  leadsOrActions: number;
+  /** Secondary outcome bucket (e.g. escalations for Main Agent). */
+  actions: number;
   activity: AgentActivityItem[];
 };
-
-function isSupportAgent(agentId: string): boolean {
-  return agentId === "neylonai-chatbot";
-}
 
 function emptySnapshot(outcomeLabel: string): AgentPerformanceSnapshot {
   return {
@@ -43,82 +36,54 @@ function emptySnapshot(outcomeLabel: string): AgentPerformanceSnapshot {
     conversations: 0,
     resolutions: 0,
     escalations: 0,
-    leadsOrActions: 0,
+    actions: 0,
     activity: [],
   };
 }
 
 export async function getAgentPerformance(
   organizationId: string,
-  agentId: string,
+  agentKey: string,
   outcomeLabel = "Outcomes",
 ): Promise<AgentPerformanceSnapshot> {
-  if (agentId === "lead") {
-    return getLeadPerformance(organizationId, outcomeLabel);
+  const { MAIN_AGENT_KEY } = await import("../agents/org-agents.types");
+  if (agentKey === MAIN_AGENT_KEY) {
+    return getMainAgentPerformance(organizationId, outcomeLabel);
   }
-  if (agentId === "sales" || agentId === "booking") {
-    return emptySnapshot(outcomeLabel);
-  }
-  return getSupportLikePerformance(organizationId, agentId, outcomeLabel);
+  // Blueprints and non-runtime agents have no live metrics yet.
+  return emptySnapshot(outcomeLabel);
 }
 
-async function getSupportLikePerformance(
+async function getMainAgentPerformance(
   organizationId: string,
-  agentId: string,
   outcomeLabel: string,
 ): Promise<AgentPerformanceSnapshot> {
-  const agentFilter = isSupportAgent(agentId)
-    ? or(
-        eq(conversationStates.assigned_agent_id, agentId),
-        isNull(conversationStates.assigned_agent_id),
-      )
-    : eq(conversationStates.assigned_agent_id, agentId);
-
-  const states = await db
+  const rows = await db
     .select({
-      id: conversationStates.id,
-      threadId: conversationStates.thread_id,
-      status: conversationStates.status,
-      updatedAt: conversationStates.updated_at,
-      createdAt: conversationStates.created_at,
-      reason: conversationStates.escalation_reason,
+      id: threads.id,
+      escalated: threads.escalated,
+      createdAt: threads.created_at,
     })
-    .from(conversationStates)
-    .where(
-      and(
-        eq(conversationStates.organization_id, organizationId),
-        agentFilter,
-      ),
-    )
-    .orderBy(desc(conversationStates.updated_at))
+    .from(threads)
+    .where(eq(threads.organization_id, organizationId))
+    .orderBy(desc(threads.created_at))
     .limit(200);
 
-  const conversations = states.length;
-  const escalations = states.filter((s) => s.status === "escalated").length;
-  const resolutions = states.filter((s) => s.status === "resolved").length;
+  const conversations = rows.length;
+  const escalations = rows.filter((r) => r.escalated).length;
 
-  const activity: AgentActivityItem[] = [];
-
-  for (const s of states.slice(0, 40)) {
-    let kind = "answered_customer";
-    let label = "Answered customer";
-    if (s.status === "escalated") {
-      kind = "escalated_conversation";
-      label = s.reason?.trim()
-        ? `Needs follow-up — ${s.reason.trim().slice(0, 80)}`
-        : "Needs follow-up";
-    } else if (s.status === "resolved") {
-      label = "Resolved conversation";
-    }
-    activity.push({
-      id: `conv:${s.id}`,
+  const activity: AgentActivityItem[] = rows.slice(0, 40).map((r) => {
+    const kind = r.escalated ? "escalated_conversation" : "answered_customer";
+    const label = r.escalated ? "Needs follow-up" : "Answered customer";
+    return {
+      id: `conv:${r.id}`,
       kind,
       label,
-      conversationId: s.threadId,
+      conversationId: r.id,
       ticketId: null,
-      created_at: (s.updatedAt ?? s.createdAt ?? new Date()).toISOString(),
-    });
-  }
+      created_at: (r.createdAt ?? new Date()).toISOString(),
+    };
+  });
 
   const latest = activity[0] ?? null;
 
@@ -128,59 +93,9 @@ async function getSupportLikePerformance(
     lastActivityAt: latest?.created_at ?? null,
     lastActivityLabel: latest?.label ?? null,
     conversations,
-    resolutions,
+    resolutions: 0,
     escalations,
-    leadsOrActions: escalations,
-    activity,
-  };
-}
-
-async function getLeadPerformance(
-  organizationId: string,
-  outcomeLabel: string,
-): Promise<AgentPerformanceSnapshot> {
-  const rows = await db
-    .select({
-      id: leads.id,
-      name: leads.name,
-      email: leads.email,
-      threadId: leads.thread_id,
-      status: leads.status,
-      createdAt: leads.created_at,
-    })
-    .from(leads)
-    .where(
-      and(
-        eq(leads.organization_id, organizationId),
-        or(eq(leads.source_agent_id, "lead"), isNull(leads.source_agent_id)),
-      ),
-    )
-    .orderBy(desc(leads.created_at))
-    .limit(100);
-
-  const activity: AgentActivityItem[] = rows.map((r) => ({
-    id: `lead:${r.id}`,
-    kind: "captured_lead",
-    label: r.name?.trim()
-      ? `Captured lead — ${r.name.trim()}`
-      : r.email?.trim()
-        ? `Captured lead — ${r.email.trim()}`
-        : "Captured lead",
-    conversationId: r.threadId,
-    ticketId: null,
-    created_at: (r.createdAt ?? new Date()).toISOString(),
-  }));
-
-  const latest = activity[0] ?? null;
-  return {
-    outcomeCount: rows.length,
-    outcomeLabel,
-    lastActivityAt: latest?.created_at ?? null,
-    lastActivityLabel: latest?.label ?? null,
-    conversations: rows.length,
-    resolutions: rows.filter((r) => r.status === "qualified").length,
-    escalations: 0,
-    leadsOrActions: rows.length,
+    actions: escalations,
     activity,
   };
 }

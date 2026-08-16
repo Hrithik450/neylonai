@@ -4,7 +4,7 @@
   "private": true,
   "packageManager": "pnpm@10.22.0",
   "scripts": {
-    "dev": "turbo run dev --filter=web",
+    "dev": "turbo run dev --filter=web --filter=crawler",
     "build": "turbo run build --filter=web...",
     "start": "pnpm --filter web start",
     "lint": "turbo run lint",
@@ -19,12 +19,16 @@
     "db:reembed-knowledge": "pnpm --filter @neylonai/agent run reembed:knowledge",
     "docker:up": "docker compose up --build -d",
     "docker:down": "docker compose down",
-    "docker:logs": "docker compose logs -f web",
-    "docker:cloud": "docker compose -f docker-compose.cloud.yml up --build -d"
+    "docker:logs": "docker compose logs -f web crawler",
+    "docker:cloud": "docker compose -f docker-compose.cloud.yml up --build -d",
+    "dev:crawler": "pnpm --filter crawler dev"
   },
   "devDependencies": {
     "dotenv-cli": "^10.0.0",
     "turbo": "^2.5.4",
     "typescript": "^5"
+  },
+  "dependencies": {
+    "react-syntax-highlighter": "^16.1.1"
   }
 }

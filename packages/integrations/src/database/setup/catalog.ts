@@ -123,9 +123,3 @@ export const DATABASE_PRIVATE_PROVIDERS: readonly DatabaseProviderOption[] = [
 ] as const;
 
 export type SupabaseSetupMethod = "manual" | "cli";
-
-/** Public download path for the agent skill (apps/web/public). */
-export const SUPABASE_SETUP_SKILL_PATH =
-  "/skills/neylon-supabase-database-setup/SKILL.md";
-
-export const SUPABASE_SETUP_SKILL_NAME = "neylon-supabase-database-setup";

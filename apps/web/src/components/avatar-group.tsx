@@ -1,5 +1,3 @@
-import { sfProRegular } from "@/assets/fonts";
-import { cn } from "@/lib/utils";
 import Image, { StaticImageData } from "next/image";
 import React from "react";
 
@@ -10,12 +8,7 @@ type AvatarGroupProps = {
 
 export function AvatarGroup({ avatars }: AvatarGroupProps) {
   return (
-    <div
-      className={cn(
-        "relative flex items-center space-x-2",
-        sfProRegular.className
-      )}
-    >
+    <div className="relative flex items-center space-x-2">
       {avatars.map((avatar, index) => (
         <div
           key={index}

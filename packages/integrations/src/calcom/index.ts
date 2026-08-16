@@ -5,12 +5,12 @@ export const calcomManifest = {
   id: "calcom",
   name: "Cal.com",
   description:
-    "Let the Booking Agent share your Cal.com scheduling link so visitors can pick a time.",
+    "Give the Main Agent a public meeting URL to share with visitors.",
   dataMode: "connect",
   connectable: true,
   planBadge: "free",
   stubNote:
-    "Set bookingUrl in the integration config to your public Cal.com event link.",
+    "Set meetingUrl in the integration config to your public Cal.com event link.",
 } as const satisfies IntegrationManifest;
 
 export const calcomIntegration = {

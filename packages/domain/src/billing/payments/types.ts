@@ -42,6 +42,7 @@ export interface ProviderWebhookEvent {
   currency?: string | null;
   /** Non-secret metadata for ledger. */
   rawType?: string;
+  periodStart?: Date | null;
   periodEnd?: Date | null;
 }
 

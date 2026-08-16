@@ -29,6 +29,8 @@ import {
   useWidgetAudio,
 } from "./proactive";
 import { useWidgetFont } from "./hooks/use-widget-font";
+import { getLatestHumanReply } from "../retention";
+import { getOrCreateVisitorId } from "../visitor";
 
 const LAUNCHER_SIZE_PX = {
   sm: 48,
@@ -36,7 +38,10 @@ const LAUNCHER_SIZE_PX = {
   lg: 64,
 } as const;
 
-/** Runtime fields from the host + remote dashboard appearance. */
+/** Narrow screens have less room, so the launcher sits closer to the edge. */
+const MOBILE_OFFSET_X_PX = 10;
+
+/** Runtime fields from the host + remote appearance + code-owned overrides. */
 function mergeRuntimeAndAppearance(
   host: SupportWidgetConfig | undefined,
   appearance: StoredWidgetConfig | null,
@@ -45,7 +50,35 @@ function mergeRuntimeAndAppearance(
     className?: string;
   },
 ): ResolvedWidgetConfig {
-  const base = mergeWidgetConfig(appearance);
+  const customization = host?.customization;
+  const base = mergeWidgetConfig({
+    ...appearance,
+    ...customization,
+    branding: {
+      ...appearance?.branding,
+      ...customization?.branding,
+    },
+    layout: {
+      ...appearance?.layout,
+      ...customization?.layout,
+    },
+    messages: {
+      ...appearance?.messages,
+      ...customization?.messages,
+    },
+    features: {
+      ...appearance?.features,
+      ...customization?.features,
+    },
+    website: {
+      ...appearance?.website,
+      ...customization?.website,
+    },
+    proactive: {
+      ...appearance?.proactive,
+      ...customization?.proactive,
+    },
+  });
   return {
     ...base,
     apiKey: host?.apiKey,
@@ -70,10 +103,57 @@ function SupportWidgetInner({
   const { isOpen, setIsOpen } = useWidgetToggleStore();
   const { navigate } = useWidgetNavigation();
   const { setCurrentThreadId } = useThreadStore();
-  const { active, visible } = useProactiveSuggestions();
-  useWidgetAudio(active?.id ?? null, visible);
+  const { active, visible, clickActive } = useProactiveSuggestions();
+  const [humanReply, setHumanReply] = useState<{
+    id: string;
+    text: string;
+    threadId: string;
+    threadTitle: string;
+  } | null>(null);
+  const displayedSuggestion = humanReply ?? active;
+  const suggestionVisible = Boolean(humanReply) || visible;
+  useWidgetAudio(displayedSuggestion?.id ?? null, suggestionVisible);
   const onOpenChangeRef = React.useRef(onOpenChange);
   onOpenChangeRef.current = onOpenChange;
+
+  useEffect(() => {
+    if (config.presentation === "inline" || config.staticDemo) return;
+    let cancelled = false;
+    const visitorId = config.user?.id?.trim() || getOrCreateVisitorId();
+    const storageKey = `neylonai:last-human-reply:${visitorId}`;
+
+    const check = async () => {
+      if (document.visibilityState !== "visible") return;
+      const result = await getLatestHumanReply(visitorId);
+      const reply = result.success ? result.data : null;
+      if (!reply || cancelled) return;
+      let seen: string | null = null;
+      try {
+        seen = localStorage.getItem(storageKey);
+      } catch {
+        // Storage can be unavailable in privacy modes.
+      }
+      if (reply.messageId === seen) return;
+      setHumanReply({
+        id: `human-reply:${reply.messageId}`,
+        text: "You received a reply from our team. Tap to view.",
+        threadId: reply.threadId,
+        threadTitle: reply.threadTitle,
+      });
+      try {
+        localStorage.setItem(storageKey, reply.messageId);
+      } catch {
+        // The in-memory state still prevents repeats during this mount.
+      }
+    };
+
+    void check();
+    const interval = window.setInterval(() => void check(), 15_000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
+  }, [config.presentation, config.staticDemo, config.user?.id]);
 
   // Mint / refresh durable anonymous id early (localStorage + cookie).
   React.useEffect(() => {
@@ -87,12 +167,13 @@ function SupportWidgetInner({
     (text: string) => {
       const question = text.trim();
       if (!question) return;
+      clickActive();
       setCurrentThreadId(null);
       useProactivePendingStore.getState().setPendingQuestion(question);
       navigate(WidgetTabs.Messages, WidgetScreens.MessagesScreens.Messages);
       setIsOpen(true);
     },
-    [navigate, setCurrentThreadId, setIsOpen],
+    [clickActive, navigate, setCurrentThreadId, setIsOpen],
   );
 
   useEffect(() => {
@@ -132,9 +213,11 @@ function SupportWidgetInner({
     ? undefined
     : ({
         bottom: layout.offsetY,
-        ...(isLeft
-          ? { left: layout.offsetX, right: "auto" }
-          : { right: layout.offsetX, left: "auto" }),
+        ["--neylonai-offset-x" as string]: `${layout.offsetX}px`,
+        ["--neylonai-offset-x-mobile" as string]: `${Math.min(
+          layout.offsetX,
+          MOBILE_OFFSET_X_PX,
+        )}px`,
       } as React.CSSProperties);
 
   return (
@@ -142,8 +225,12 @@ function SupportWidgetInner({
       className={cn(
         inline
           ? "relative z-10 flex flex-col items-end w-full h-full min-w-0 max-w-full overflow-hidden justify-end"
-          : "fixed z-99 flex flex-col",
+          : "fixed z-[110] flex flex-col",
         !inline && (isLeft ? "items-start" : "items-end"),
+        !inline &&
+          (isLeft
+            ? "left-[var(--neylonai-offset-x)] right-auto max-md:left-[var(--neylonai-offset-x-mobile)]"
+            : "right-[var(--neylonai-offset-x)] left-auto max-md:right-[var(--neylonai-offset-x-mobile)]"),
         className ?? config.className,
       )}
       style={{
@@ -154,13 +241,35 @@ function SupportWidgetInner({
       <Widget />
 
       {layout.launcherVisible ? (
-        <div className="relative z-20 shrink-0" data-proactive-suggestion>
-          {active && (
+        <div
+          className={cn(
+            "relative z-20 shrink-0",
+            // Fullscreen mobile chat covers the launcher; keep it for desktop/inline.
+            isOpen && !inline && "max-md:hidden",
+          )}
+          data-proactive-suggestion
+        >
+          {displayedSuggestion && (
             <LauncherSuggestionBubble
-              suggestion={active}
-              visible={visible}
+              suggestion={displayedSuggestion}
+              visible={suggestionVisible}
               align={isLeft ? "left" : "right"}
-              onSelect={openSuggestionInChat}
+              onSelect={
+                humanReply
+                  ? () => {
+                      navigate(
+                        WidgetTabs.Messages,
+                        WidgetScreens.MessagesScreens.Messages,
+                        {
+                          threadId: humanReply.threadId,
+                          title: humanReply.threadTitle,
+                        },
+                      );
+                      setIsOpen(true);
+                      setHumanReply(null);
+                    }
+                  : openSuggestionInChat
+              }
             />
           )}
 
@@ -209,7 +318,7 @@ function SupportWidgetInner({
  *
  *   <SupportWidget config={{ apiKey: "nk_live_…" }} />
  *
- * Branding/layout/copy load from the Neylon dashboard for that API key.
+ * Dashboard config loads for the API key. Optional code customization wins.
  */
 export function SupportWidget({
   config,
@@ -265,9 +374,7 @@ export function SupportWidget({
   const appearanceEpoch = [
     appearance?.branding?.gradientFrom,
     appearance?.branding?.gradientTo,
-    appearance?.branding?.headerTint,
     appearance?.branding?.primaryTextColor,
-    appearance?.branding?.primaryColor,
     appearance?.branding?.secondaryTextColor,
     appearance?.branding?.tabActiveColor,
     appearance?.branding?.accentColor,
@@ -313,25 +420,11 @@ export function SupportWidget({
     }
   }, [appearanceReady, merged.defaultOpen]);
 
-  useEffect(() => {
-    if (!appearanceReady) return;
-    void import("../analytics").then(({ trackAnalytics }) => {
-      trackAnalytics("widget_impression", {
-        pagePath: merged.pagePath ?? null,
-      });
-    });
-  }, [appearanceReady, merged.pagePath]);
-
   const handleOpenChange = React.useCallback(
     (open: boolean) => {
-      void import("../analytics").then(({ trackAnalytics }) => {
-        trackAnalytics(open ? "widget_opened" : "widget_closed", {
-          pagePath: merged.pagePath ?? null,
-        });
-      });
       onOpenChangeRef.current?.(open);
     },
-    [merged.pagePath],
+    [],
   );
 
   if (!appearanceReady) {

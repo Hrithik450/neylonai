@@ -75,7 +75,7 @@ export function WidgetHome() {
       className="h-full min-h-0 overflow-y-auto overscroll-contain [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden px-2 lg:px-3"
       style={{ fontFamily }}
     >
-      <div className="py-2 pb-3 px-2 text-white rounded-b-2xl">
+      <div className="py-2 pb-3 px-2 text-white max-md:rounded-none rounded-b-2xl">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2 min-w-0">
             {branding.logoUrl ? (

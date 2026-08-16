@@ -25,6 +25,7 @@ export async function listThreads(userId: string): Promise<ThreadsResponse> {
 
 export async function listMessages(
   threadId: string,
+  visitorId: string,
 ): Promise<ThreadMessagesResponse> {
   const auth = tryGetAuthHeaders();
   if ("error" in auth) {
@@ -33,7 +34,9 @@ export async function listMessages(
 
   try {
     const response = await fetch(
-      apiUrl(`/api/v1/thread_messages/${threadId}`),
+      apiUrl(
+        `/api/v1/thread_messages/${threadId}?visitorId=${encodeURIComponent(visitorId)}`,
+      ),
       {
         credentials: "include",
         headers: auth.headers,

@@ -3,14 +3,15 @@
  *
  * - Local / Docker: filesystem under data/org-logos (or NEYLONAI_ORG_LOGOS_DIR)
  * - Vercel / serverless: Vercel Blob (requires BLOB_READ_WRITE_TOKEN)
+ *
+ * Files are always served via `/api/v1/org-logos/:id/file` (no stored public URL).
  */
 import { mkdir, writeFile, readFile, unlink } from "node:fs/promises";
 import path from "node:path";
-import { del, put } from "@vercel/blob";
+import { del, get, put } from "@vercel/blob";
 
 export type PutOrgLogoResult = {
   key: string;
-  publicUrl: string | null;
 };
 
 function blobToken(): string | null {
@@ -43,6 +44,19 @@ async function ensureParent(filePath: string): Promise<void> {
   await mkdir(path.dirname(filePath), { recursive: true });
 }
 
+async function bufferFromBlobStream(
+  stream: ReadableStream<Uint8Array>,
+): Promise<Buffer> {
+  const reader = stream.getReader();
+  const chunks: Uint8Array[] = [];
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    if (value) chunks.push(value);
+  }
+  return Buffer.concat(chunks.map((c) => Buffer.from(c)));
+}
+
 export async function putOrgLogoObject(input: {
   key: string;
   bytes: Buffer;
@@ -52,25 +66,42 @@ export async function putOrgLogoObject(input: {
 
   const token = blobToken();
   if (token) {
-    const result = await put(input.key, input.bytes, {
+    await put(input.key, input.bytes, {
       access: "public",
       contentType: input.contentType,
       token,
       addRandomSuffix: false,
       allowOverwrite: true,
     });
-    return { key: input.key, publicUrl: result.url };
+    return { key: input.key };
   }
 
   const filePath = path.join(rootDir(), input.key);
   await ensureParent(filePath);
   await writeFile(filePath, input.bytes);
-  return { key: input.key, publicUrl: null };
+  return { key: input.key };
 }
 
 export async function getOrgLogoObject(
   key: string,
 ): Promise<{ key: string; bytes: Buffer; contentType: string } | null> {
+  const token = blobToken();
+  if (token) {
+    try {
+      const result = await get(key, { access: "public", token });
+      if (!result?.stream) return null;
+      const bytes = await bufferFromBlobStream(result.stream);
+      return {
+        key,
+        bytes,
+        contentType:
+          result.blob.contentType || "application/octet-stream",
+      };
+    } catch {
+      return null;
+    }
+  }
+
   try {
     const filePath = path.join(rootDir(), key);
     const bytes = await readFile(filePath);
@@ -82,12 +113,11 @@ export async function getOrgLogoObject(
 
 export async function deleteOrgLogoObject(input: {
   key: string;
-  publicUrl?: string | null;
 }): Promise<void> {
   const token = blobToken();
-  if (token && input.publicUrl) {
+  if (token) {
     try {
-      await del(input.publicUrl, { token });
+      await del(input.key, { token });
     } catch (error) {
       console.warn(
         "[org-logos] Blob delete failed:",

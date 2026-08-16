@@ -6,10 +6,13 @@ import { UpgradePrompt } from "@/components/dashboard/upgrade-prompt";
 
 type Meter = {
   ok: boolean;
+  hardCap?: boolean;
+  thresholdExceeded?: boolean;
   used: number;
   limit: number;
   remaining: number;
   percent: number;
+  reserved?: number;
 };
 
 type UsagePayload = {
@@ -17,11 +20,44 @@ type UsagePayload = {
   planName: string;
   planPriceLabel: string;
   period: { start: string; end: string | null };
+  policy: {
+    classQueryLimits: {
+      simple: number;
+      standard: number;
+      complex: number;
+    };
+    oneWayBorrowing: boolean;
+    exhaustedClassFallback: "simple";
+    onDemand: boolean;
+  };
+  blocked: { reason: string } | null;
+  credits: {
+    used: number;
+    remaining: number;
+    granted: number;
+    reserved: number;
+    onDemandUsed: number;
+    totalUsed: number;
+    conversations: number;
+    averagePerConversation: number;
+    byClass: Array<{
+      complexityClass: string;
+      label: string;
+      explanation?: string;
+      conversations: number;
+      credits: number;
+    }>;
+    meter: Meter;
+  };
+  workloads: {
+    simple: Meter;
+    standard: Meter;
+    complex: Meter;
+  };
   allowance: {
-    conversations: Meter;
+    aiCredits: Meter;
     proactive: Meter;
-    knowledge: Meter;
-    integrations: Meter;
+    websitePages: Meter;
   };
   nearLimit: boolean;
   upgradePrompt: {
@@ -32,13 +68,13 @@ type UsagePayload = {
   } | null;
   trend: {
     days: number;
-    points: Array<{ date: string; conversations: number; events: number }>;
+    points: Array<{ date: string; credits: number; conversations: number }>;
   };
 };
 
 function Label({ children }: { children: ReactNode }) {
   return (
-    <span className="mono block text-[0.6rem] tracking-[0.16em] uppercase opacity-60">
+    <span className="block text-[0.6rem] tracking-[0.16em] uppercase opacity-60">
       {children}
     </span>
   );
@@ -51,56 +87,22 @@ function formatPeriod(start: string, end: string | null) {
   return `${s} – ${new Date(end).toLocaleDateString(undefined, opts)}`;
 }
 
-function Progress({ percent }: { percent: number }) {
-  const tone =
-    percent >= 90 ? "var(--red)" : percent >= 75 ? "var(--yellow)" : "var(--ink)";
-  return (
-    <div className="h-1.5 rounded-full border border-[var(--ink)]/10 bg-[var(--cream)] overflow-hidden">
-      <div
-        className="h-full rounded-full"
-        style={{ width: `${Math.min(100, percent)}%`, background: tone }}
-      />
-    </div>
-  );
+function formatDay(date: string) {
+  return new Date(date).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+  });
 }
 
-function MeterCard({
-  label,
-  hint,
-  meter,
-}: {
-  label: string;
-  hint: string;
-  meter: Meter;
-}) {
-  return (
-    <div className="ink-card p-4 space-y-2.5 min-w-0">
-      <div className="flex items-baseline justify-between gap-2">
-        <p className="text-sm font-medium truncate">{label}</p>
-        <p className="text-sm tabular-nums whitespace-nowrap">
-          <span className="font-medium">{meter.used.toLocaleString()}</span>
-          <span className="opacity-50"> / {meter.limit.toLocaleString()}</span>
-        </p>
-      </div>
-      <Progress percent={meter.percent} />
-      <p className="caption text-[0.65rem]">
-        {meter.remaining.toLocaleString()} left · {meter.percent}%
-      </p>
-      <p className="caption text-[0.65rem] opacity-70 line-clamp-2">{hint}</p>
-    </div>
-  );
-}
-
-/** Customer usage — plan limits only (no internal COGS). */
+/** Customer usage — shared credits and soft workload planning thresholds. */
 export function UsagePanel() {
   const [data, setData] = useState<UsagePayload | null>(null);
-  const [trendDays, setTrendDays] = useState<7 | 30>(30);
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const load = useCallback(async (days: 7 | 30) => {
+  const load = useCallback(async () => {
     setLoading(true);
-    const res = await fetch(`/api/v1/usage?trendDays=${days}`);
+    const res = await fetch("/api/v1/usage?trendDays=30");
     const json = (await res.json()) as {
       success: boolean;
       data?: UsagePayload;
@@ -114,19 +116,24 @@ export function UsagePanel() {
   }, []);
 
   useEffect(() => {
-    void load(trendDays);
-  }, [load, trendDays]);
+    void load();
+  }, [load]);
 
-  const conv = data?.allowance.conversations;
+  const credits = data?.credits;
   const points = data?.trend.points ?? [];
-  const max = Math.max(1, ...points.map((p) => p.conversations));
+  const maxCredits = Math.max(1, ...points.map((p) => p.credits));
+  const classCreditTotal = (credits?.byClass ?? []).reduce(
+    (sum, row) => sum + row.credits,
+    0,
+  );
 
   return (
-    <div className="space-y-5">
+    <div id="usage-panel" className="space-y-5">
       <header className="space-y-1">
-        <h1 className="text-3xl sm:text-4xl">Usage</h1>
+        <h1 id="usage-heading" className="text-3xl sm:text-4xl">Usage</h1>
         <p className="caption text-sm">
-          What you&apos;ve used this period vs your plan. Billing is in{" "}
+          AI credit and conversation usage for this billing period. Billing is
+          in{" "}
           <Link
             href="/dashboard/settings?section=billing"
             className="underline underline-offset-4"
@@ -145,10 +152,31 @@ export function UsagePanel() {
           ctaLabel={data.upgradePrompt.ctaLabel}
           href={data.upgradePrompt.href}
         />
+      ) : data?.blocked ? (
+        <div className="ink-card px-4 py-3 bg-[var(--red)]/15 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm">
+            <span className="font-medium">This period is capped.</span>{" "}
+            {data.blocked.reason === "credits"
+              ? "Included AI credits are exhausted."
+              : "Included AI credits are exhausted."}{" "}
+            Upgrade to continue.
+          </p>
+          <Link
+            href="/dashboard/settings?section=billing"
+            className="btn-ink text-xs px-3 py-1.5"
+          >
+            Upgrade
+          </Link>
+        </div>
       ) : data?.nearLimit ? (
         <div className="ink-card px-4 py-3 bg-[var(--yellow)]/40 flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm">
-            <span className="font-medium">Approaching your conversation limit.</span>
+            <span className="font-medium">
+              You are close to exhausting included AI credits.
+            </span>{" "}
+            {data.policy.onDemand
+              ? "When included credits run out, paid plans continue on metered overage."
+              : "Chat stops on the next request after included credits run out."}
           </p>
           <Link
             href="/dashboard/settings?section=billing"
@@ -159,117 +187,148 @@ export function UsagePanel() {
         </div>
       ) : null}
 
-      <section className="ink-card px-4 py-3 sm:px-5">
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-          <div>
-            <Label>Plan</Label>
-            <p className="text-lg font-medium mt-0.5">
-              {data?.planName ?? (loading ? "…" : "—")}
+      <section id="usage-metrics-row" className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="ink-card p-4 space-y-1.5">
+          <Label>Plan</Label>
+          <p className="text-2xl font-medium">
+            {data?.planName ?? (loading ? "…" : "—")}
+          </p>
+          <p className="caption text-[0.65rem] opacity-70">
+            {data?.planPriceLabel ?? "—"} ·{" "}
+            {data ? formatPeriod(data.period.start, data.period.end) : "—"}
+          </p>
+          <p className="text-sm tabular-nums">
+            {credits ? credits.granted.toLocaleString() : loading ? "…" : "—"}{" "}
+            included credits
+          </p>
+        </div>
+        <div className="ink-card p-4 space-y-1">
+          <Label>Credits used</Label>
+          <p className="text-2xl font-medium tabular-nums">
+            {credits ? credits.used.toLocaleString() : loading ? "…" : "—"}
+          </p>
+          {credits && credits.onDemandUsed > 0 ? (
+            <p className="caption text-[0.65rem] opacity-70">
+              +{credits.onDemandUsed.toLocaleString()} metered overage
             </p>
-          </div>
-          <div>
-            <Label>Price</Label>
-            <p className="text-sm mt-0.5">{data?.planPriceLabel ?? "—"}</p>
-          </div>
-          <div>
-            <Label>Period</Label>
-            <p className="text-sm mt-0.5">
-              {data ? formatPeriod(data.period.start, data.period.end) : "—"}
-            </p>
-          </div>
-          <div className="flex-1 min-w-0">
-            <Label>Conversations</Label>
-            <p className="text-sm mt-0.5 tabular-nums">
-              {conv
-                ? `${conv.used.toLocaleString()} / ${conv.limit.toLocaleString()} · ${conv.percent}%`
-                : loading
-                  ? "…"
-                  : "—"}
-            </p>
-          </div>
+          ) : null}
+        </div>
+        <div className="ink-card p-4 space-y-1">
+          <Label>Credits remaining</Label>
+          <p className="text-2xl font-medium tabular-nums">
+            {credits ? credits.remaining.toLocaleString() : loading ? "…" : "—"}
+          </p>
+        </div>
+        <div className="ink-card p-4 space-y-1">
+          <Label>Conversations</Label>
+          <p className="text-2xl font-medium tabular-nums">
+            {credits
+              ? credits.conversations.toLocaleString()
+              : loading
+                ? "…"
+                : "—"}
+          </p>
+          <p className="caption text-[0.65rem] opacity-70">
+            Charged after a reply is delivered
+          </p>
         </div>
       </section>
 
-      <section className="space-y-2">
-        <Label>Allowances</Label>
-        {data ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-            <MeterCard
-              label="Conversations"
-              hint="Counted this billing period"
-              meter={data.allowance.conversations}
-            />
-            <MeterCard
-              label="Proactive suggestions"
-              hint="Resets daily"
-              meter={data.allowance.proactive}
-            />
-            <MeterCard
-              label="Knowledge documents"
-              hint="Uploaded docs vs plan capacity"
-              meter={data.allowance.knowledge}
-            />
-            <MeterCard
-              label="Integrations"
-              hint="Connected services enabled"
-              meter={data.allowance.integrations}
-            />
-          </div>
+      <section className="ink-card px-4 py-3 sm:px-5 space-y-3">
+        {credits?.byClass.length ? (
+          <ul className="space-y-2.5">
+            {credits.byClass.map((row) => {
+              const share =
+                classCreditTotal > 0
+                  ? Math.round((row.credits / classCreditTotal) * 100)
+                  : 0;
+              return (
+                <li key={row.complexityClass} className="space-y-1">
+                  <div className="flex items-center justify-between gap-4 text-sm">
+                    <span className="font-medium">{row.label}</span>
+                    <dl className="flex gap-5 text-right">
+                      <div>
+                        <dd className="tabular-nums">
+                          {row.conversations.toLocaleString()}
+                        </dd>
+                        <dt className="caption text-[0.65rem]">
+                          conversations
+                        </dt>
+                      </div>
+                      <div>
+                        <dd className="tabular-nums">
+                          {row.credits.toLocaleString()}
+                        </dd>
+                        <dt className="caption text-[0.65rem]">
+                          credits charged
+                        </dt>
+                      </div>
+                    </dl>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="h-1.5 flex-1 rounded-full bg-[var(--cream)] overflow-hidden border border-[var(--ink)]/10">
+                      <div
+                        className="h-full bg-[var(--ink)]"
+                        style={{ width: `${share}%`, opacity: 0.75 }}
+                      />
+                    </div>
+                    <span className="caption text-[0.65rem] tabular-nums w-9 text-right">
+                      {share}%
+                    </span>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
         ) : (
-          <p className="caption text-sm">{loading ? "Loading…" : "—"}</p>
+          <p className="caption text-sm">No credit usage yet this period.</p>
         )}
       </section>
 
       <section className="ink-card px-4 py-3 sm:px-5 space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <Label>Trend</Label>
-            <p className="caption text-[0.65rem] mt-0.5">Conversations per day</p>
-          </div>
-          <div className="flex gap-1">
-            {([7, 30] as const).map((d) => (
-              <button
-                key={d}
-                type="button"
-                onClick={() => setTrendDays(d)}
-                className={`rounded-full border border-[var(--ink)] px-3 py-1 text-xs font-medium ${
-                  trendDays === d ? "text-white" : "bg-white"
-                }`}
-                style={
-                  trendDays === d ? { background: "var(--ink)" } : undefined
-                }
-              >
-                {d}d
-              </button>
-            ))}
-          </div>
+        <div>
+          <Label>Credit usage over time</Label>
+          <p className="caption text-[0.65rem] mt-0.5">
+            AI credits per day · last 30 days
+          </p>
         </div>
         {points.length ? (
           <>
-            <div className="flex items-end gap-0.5 h-20 w-full" role="img">
+            <div className="flex items-end gap-[3px] h-28 w-full" role="img">
               {points.map((p) => {
-                const h = Math.max(3, Math.round((p.conversations / max) * 100));
+                const fill =
+                  p.credits > 0
+                    ? Math.max(6, Math.round((p.credits / maxCredits) * 100))
+                    : 0;
                 return (
                   <div
                     key={p.date}
-                    className="flex-1 min-w-0 flex flex-col justify-end h-full"
-                    title={`${p.date}: ${p.conversations}`}
+                    className="relative flex-1 min-w-0 h-full rounded-[3px] bg-[var(--ink)]/[0.07] overflow-hidden"
+                    title={`${formatDay(p.date)}: ${p.credits} credits · ${p.conversations} chats`}
                   >
                     <div
-                      className="w-full rounded-sm border border-[var(--ink)]/20 bg-[var(--ink)]"
+                      className="absolute inset-x-0 bottom-0 rounded-[3px] bg-[var(--ink)] transition-[height] duration-300"
                       style={{
-                        height: `${h}%`,
-                        opacity: p.conversations === 0 ? 0.12 : 0.85,
+                        height: fill > 0 ? `${fill}%` : "3px",
+                        opacity: fill > 0 ? 0.85 : 0.25,
                       }}
                     />
                   </div>
                 );
               })}
             </div>
-            <p className="caption text-[0.65rem]">
-              {points.reduce((s, p) => s + p.conversations, 0)} conversations in{" "}
-              {data?.trend.days} days
-            </p>
+            <div className="flex items-center justify-between">
+              <span className="caption text-[0.65rem]">
+                {formatDay(points[0]!.date)}
+              </span>
+              <span className="caption text-[0.65rem]">
+                {points.reduce((s, p) => s + p.credits, 0).toLocaleString()}{" "}
+                credits · peak {maxCredits.toLocaleString()}/day
+              </span>
+              <span className="caption text-[0.65rem]">
+                {formatDay(points[points.length - 1]!.date)}
+              </span>
+            </div>
           </>
         ) : (
           <p className="caption text-sm">No trend data yet.</p>

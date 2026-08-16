@@ -5,7 +5,7 @@
  * even when both are 3072-dimensional.
  *
  * Usage (from repo root):
- *   DATABASE_URL=... DATABASE_SSL=false GOOGLE_API_KEYS=key1,key2 \
+ *   DATABASE_URL=... DATABASE_SSL=false GEMINI_API_KEYS=key1,key2 \
  *     pnpm --filter @neylonai/agent run reembed:knowledge
  */
 import { GoogleGenerativeAIEmbeddings } from "@langchain/google-genai";

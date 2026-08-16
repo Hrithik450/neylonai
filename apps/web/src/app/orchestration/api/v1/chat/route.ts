@@ -3,29 +3,89 @@ import { randomUUID } from "node:crypto";
 import { streamConversation } from "@neylonai/agent";
 import { ThreadMessagesService } from "@neylonai/domain/chat";
 import {
+  ParticipantsService,
+  parseChatUserPayload,
+} from "@neylonai/domain/participants";
+import {
   ApiAuthError,
   assertCanConsumeConversation,
   recordProductUsageSafe,
 } from "@neylonai/domain/billing";
-import { trackEventlySafe } from "@neylonai/integrations/evently";
-import {
-  isApiKeyAuthContext,
-  requireApiKeyAuth,
-} from "@/server/api-key-auth";
+import { isApiKeyAuthContext, requireApiKeyAuth } from "@/server/api-key-auth";
 import { assertThreadBelongsToOrg } from "@/server/thread-access";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
+
+function normalizePageContext(body: Record<string, unknown>): {
+  pagePath: string | null;
+  pageQuery: Record<string, string>;
+  pageSection: { sectionId: string; sectionLabel?: string | null } | null;
+} {
+  const rawPath = typeof body.pagePath === "string" ? body.pagePath.trim() : "";
+  let pagePath: string | null = null;
+  if (rawPath) {
+    try {
+      const parsed = new URL(rawPath, "https://widget.invalid");
+      pagePath = `/${parsed.pathname
+        .split("/")
+        .filter(Boolean)
+        .map((part) => encodeURIComponent(decodeURIComponent(part)))
+        .join("/")}`.slice(0, 512);
+      if (pagePath === "/") pagePath = "/";
+    } catch {
+      pagePath = null;
+    }
+  }
+
+  const pageQuery: Record<string, string> = {};
+  if (
+    body.pageQuery &&
+    typeof body.pageQuery === "object" &&
+    !Array.isArray(body.pageQuery)
+  ) {
+    for (const [key, value] of Object.entries(
+      body.pageQuery as Record<string, unknown>,
+    ).slice(0, 10)) {
+      if (!/^[a-zA-Z0-9_-]{1,40}$/.test(key) || typeof value !== "string") {
+        continue;
+      }
+      const safe = value.trim();
+      if (/^[a-zA-Z0-9 _.,/-]{1,120}$/.test(safe)) pageQuery[key] = safe;
+    }
+  }
+  let pageSection: {
+    sectionId: string;
+    sectionLabel?: string | null;
+  } | null = null;
+  if (
+    body.pageSection &&
+    typeof body.pageSection === "object" &&
+    !Array.isArray(body.pageSection)
+  ) {
+    const raw = body.pageSection as Record<string, unknown>;
+    const sectionId =
+      typeof raw.sectionId === "string" ? raw.sectionId.trim().slice(0, 96) : "";
+    if (/^[a-z0-9_.:/-]+$/.test(sectionId)) {
+      const sectionLabel =
+        typeof raw.sectionLabel === "string"
+          ? raw.sectionLabel.replace(/\s+/g, " ").trim().slice(0, 160)
+          : "";
+      pageSection = { sectionId, sectionLabel: sectionLabel || null };
+    }
+  }
+  return { pagePath, pageQuery, pageSection };
+}
 
 export async function POST(req: NextRequest) {
   try {
     const auth = await requireApiKeyAuth(req);
     if (!isApiKeyAuthContext(auth)) return auth;
 
-    const body = await req.json();
-    const { input, senderId, threadId } = body as {
+    const body = (await req.json()) as Record<string, unknown>;
+    const { input, user, threadId } = body as {
       input: string;
-      senderId?: string;
+      user?: unknown;
       threadId?: string;
     };
 
@@ -36,18 +96,40 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const UUID_RE =
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    const resolvedSenderId =
-      typeof senderId === "string" && UUID_RE.test(senderId.trim())
-        ? senderId.trim()
-        : null;
-
-    if (!resolvedSenderId && !threadId) {
+    const chatUser = parseChatUserPayload(user);
+    const pageContext = normalizePageContext(body);
+    if (!chatUser && !threadId) {
       return NextResponse.json(
-        { success: false, error: "senderId is required to start a conversation" },
+        {
+          success: false,
+          error: "user.id is required to start a conversation",
+        },
         { status: 400 },
       );
+    }
+
+    let participantId: string | null = null;
+    let participantExternalId: string | null = chatUser?.id ?? null;
+
+    if (chatUser) {
+      const ensured = await ParticipantsService.ensureParticipant(
+        auth.organizationId,
+        {
+          externalId: chatUser.id,
+          name: chatUser.name,
+          email: chatUser.email,
+          profileImage: chatUser.profile_image,
+          anonymous: chatUser.anonymous ?? !chatUser.email,
+        },
+      );
+      if (!ensured.success || !ensured.data) {
+        return NextResponse.json(
+          { success: false, error: ensured.error ?? "Invalid participant" },
+          { status: 400 },
+        );
+      }
+      participantId = ensured.data.id;
+      participantExternalId = ensured.data.external_id;
     }
 
     await assertCanConsumeConversation(
@@ -74,47 +156,18 @@ export async function POST(req: NextRequest) {
       metadata: { plan: auth.plan },
     });
 
-    trackEventlySafe({
-      event: threadId ? "message_sent" : "conversation_started",
-      organizationId: auth.organizationId,
-      sessionId: resolvedSenderId ?? null,
-      properties: { plan: auth.plan },
-    });
     let conversationHistory: Array<{ role: string; content: string }> = [];
     if (threadId) {
-      const historyResult =
-        await ThreadMessagesService.listRecentMessages(threadId, 20);
+      const historyResult = await ThreadMessagesService.listRecentMessages(
+        threadId,
+        20,
+      );
       if (historyResult.success && historyResult.data?.length) {
         conversationHistory = historyResult.data.map((m) => ({
           role: m.role,
           content: m.content,
         }));
       }
-    }
-
-    // Fallback: client-visible turns (covers races before DB persist settles).
-    const clientHistory = Array.isArray(
-      (body as { conversationHistory?: unknown }).conversationHistory,
-    )
-      ? (
-          body as {
-            conversationHistory: Array<{ role?: string; content?: string }>;
-          }
-        ).conversationHistory
-          .map((m) => ({
-            role: typeof m?.role === "string" ? m.role : "",
-            content: typeof m?.content === "string" ? m.content : "",
-          }))
-          .filter(
-            (m) =>
-              (m.role === "user" || m.role === "assistant") &&
-              m.content.trim().length > 0,
-          )
-          .slice(-20)
-      : [];
-
-    if (clientHistory.length > conversationHistory.length) {
-      conversationHistory = clientHistory;
     }
 
     const encoder = new TextEncoder();
@@ -124,19 +177,22 @@ export async function POST(req: NextRequest) {
           for await (const chunk of streamConversation({
             userInput: input,
             threadId: threadId ?? null,
-            senderId: resolvedSenderId,
             organizationId: auth.organizationId,
+            participantId,
+            participantExternalId,
+            participantAnonymous: chatUser?.anonymous ?? true,
+            participantName: chatUser?.name ?? null,
+            participantEmail: chatUser?.email ?? null,
+            pagePath: pageContext.pagePath,
+            pageQuery: pageContext.pageQuery,
+            pageSection: pageContext.pageSection,
             requestId,
             apiKeyId: auth.apiKeyId,
             conversationHistory,
           })) {
             controller.enqueue(encoder.encode(chunk));
           }
-          trackEventlySafe({
-            event: "message_received",
-            organizationId: auth.organizationId,
-            sessionId: resolvedSenderId ?? null,
-          });
+
         } catch (error) {
           const errChunk =
             "data: " +

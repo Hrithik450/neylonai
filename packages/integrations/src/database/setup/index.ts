@@ -1,8 +1,6 @@
 export {
   DATABASE_CLOUD_PROVIDERS,
   DATABASE_PRIVATE_PROVIDERS,
-  SUPABASE_SETUP_SKILL_NAME,
-  SUPABASE_SETUP_SKILL_PATH,
   type DatabaseCloudProviderId,
   type DatabaseDeploymentKind,
   type DatabasePrivateProviderId,

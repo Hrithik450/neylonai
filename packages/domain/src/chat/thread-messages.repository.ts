@@ -9,20 +9,15 @@ const { threadMessages } = schema;
 
 function rowToMessage(
   row: typeof threadMessages.$inferSelect,
-  opts?: { includeMetadata?: boolean },
 ): ThreadMessage {
-  const includeMetadata = opts?.includeMetadata !== false;
   return {
     id: row.id,
     thread_id: row.thread_id,
     role: row.role,
     content: row.content,
-    agent_id: row.agent_id ?? null,
-    ...(includeMetadata
-      ? {
-          metadata: (row.metadata ?? {}) as Record<string, unknown>,
-        }
-      : {}),
+    in_reply_to_message_id: row.in_reply_to_message_id ?? null,
+    page_path: row.page_path ?? null,
+    page_query: {},
     created_at: row.created_at!.toISOString(),
   };
 }
@@ -34,32 +29,29 @@ export class ThreadMessagesRepository {
     const [row] = await db
       .insert(threadMessages)
       .values({
+        ...(data.id ? { id: data.id } : {}),
         thread_id: data.thread_id,
         role: data.role,
         content: data.content,
-        agent_id: data.agent_id ?? null,
-        metadata: data.metadata ?? {},
+        in_reply_to_message_id: data.in_reply_to_message_id ?? null,
+        page_path: data.page_path ?? null,
       })
       .returning();
     return rowToMessage(row);
   }
 
-  static async listMessages(
-    threadId: string,
-    opts?: { includeMetadata?: boolean },
-  ): Promise<ThreadMessage[]> {
+  static async listMessages(threadId: string): Promise<ThreadMessage[]> {
     const rows = await db
       .select()
       .from(threadMessages)
       .where(eq(threadMessages.thread_id, threadId))
       .orderBy(asc(threadMessages.created_at));
-    return rows.map((row) => rowToMessage(row, opts));
+    return rows.map(rowToMessage);
   }
 
   static async listRecentMessages(
     threadId: string,
     limit: number = 8,
-    opts?: { includeMetadata?: boolean },
   ): Promise<ThreadMessage[]> {
     const rows = await db
       .select()
@@ -67,6 +59,6 @@ export class ThreadMessagesRepository {
       .where(eq(threadMessages.thread_id, threadId))
       .orderBy(desc(threadMessages.created_at))
       .limit(limit);
-    return rows.reverse().map((row) => rowToMessage(row, opts));
+    return rows.reverse().map(rowToMessage);
   }
 }

@@ -1,10 +1,13 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import { requireUser } from "@/server/auth-guards";
 import { clearSessionCookie } from "@/server/auth-cookies";
 import { DashboardNav } from "@/components/dashboard/nav";
+import { DashboardOnboardingOverlay } from "@/components/dashboard/onboarding/dashboard-onboarding-overlay";
+import { UsersRepository } from "@neylonai/domain/users";
 import { redirect } from "next/navigation";
+import { landingFontClassName } from "@/assets/fonts";
 
 export const metadata: Metadata = { robots: { index: false, follow: false } };
 
@@ -29,17 +32,12 @@ export default async function DashboardLayout({
   children: ReactNode;
 }) {
   const user = await requireUser();
+  // The session cookie is a login-time snapshot; onboarding progress lives on
+  // the row, so read through to it.
+  const row = await UsersRepository.findById(user.id);
 
   return (
-    <div className="paper min-h-svh">
-      <link
-        rel="preload"
-        href="/fonts/BandaNova-Book.woff2"
-        as="font"
-        type="font/woff2"
-        crossOrigin="anonymous"
-      />
-
+    <div className={`${landingFontClassName} paper min-h-svh`}>
       <header className={`nav-pill py-4 ${SHELL_X}`}>
         <div
           className={`${SHELL} flex flex-col gap-5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-4`}
@@ -50,7 +48,7 @@ export default async function DashboardLayout({
 
           <div className="flex items-center justify-between gap-3 sm:justify-end">
             <div className="text-left sm:text-right">
-              <span className="mono block text-[0.6rem] tracking-[0.16em] uppercase opacity-60">
+              <span className="block text-[0.6rem] tracking-[0.16em] uppercase opacity-60">
                 Signed in
               </span>
               <span className="text-sm font-medium leading-none">
@@ -58,7 +56,7 @@ export default async function DashboardLayout({
               </span>
             </div>
 
-            <div className="flex flex-none items-center gap-2 sm:gap-3">
+            <div className="flex flex-none items-center gap-2">
               {user.role === "admin" ? (
                 <Link
                   href="/admin"
@@ -88,6 +86,13 @@ export default async function DashboardLayout({
       <main className={`${SHELL_X} py-8 sm:py-10 lg:py-12`}>
         <div className={SHELL}>{children}</div>
       </main>
+
+      <Suspense fallback={null}>
+        <DashboardOnboardingOverlay
+          hasBeenOnboarded={row?.has_been_onboarded ?? true}
+          onboardingStep={row?.onboarding_step ?? 1}
+        />
+      </Suspense>
     </div>
   );
 }

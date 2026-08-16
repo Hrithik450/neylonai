@@ -3,9 +3,10 @@ export interface UserRecord {
   google_id: string | null;
   username: string;
   email: string;
-  first_name: string;
   profile_image: string | null;
   role: string;
+  has_been_onboarded: boolean;
+  onboarding_step: number;
   created_at: string;
   updated_at: string;
 }
@@ -16,14 +17,15 @@ export interface CreateUserInput {
   google_id?: string | null;
   username: string;
   email: string;
-  first_name: string;
   profile_image?: string;
   role?: string;
 }
 
 export interface UpdateUserInput {
-  first_name?: string;
+  username?: string;
   profile_image?: string;
+  has_been_onboarded?: boolean;
+  onboarding_step?: number;
 }
 
 export interface UserResponse {

@@ -38,7 +38,7 @@ ENV AUTH_SECRET=build-time-placeholder-not-used-at-runtime
 ENV GOOGLE_API_KEY=build-time-placeholder-not-used-at-runtime
 ENV GOOGLE_API_KEYS=build-time-placeholder-not-used-at-runtime
 ENV AGENT_MODEL_LOW=gemini-3.1-flash-lite
-ENV AGENT_MODEL_MEDIUM=gemini-3.5-flash
+ENV AGENT_MODEL_MEDIUM=gemini-3.5-flash-lite
 ENV AGENT_MODEL_HIGH=gemini-3.6-flash
 ENV AGENT_MODEL=gemini-3.6-flash
 ENV ROUTER_CLASSIFIER_MODEL=gemini-3.1-flash-lite
@@ -66,3 +66,19 @@ USER nextjs
 EXPOSE 3000
 
 CMD ["node", "apps/web/server.js"]
+
+# ─── Crawler worker (BullMQ) ──────────────────────────────────────────────────
+FROM base AS crawler-pruner
+WORKDIR /app
+COPY . .
+RUN pnpm dlx turbo@2.5.4 prune crawler --docker
+
+FROM base AS crawler
+WORKDIR /app
+COPY --from=crawler-pruner /app/out/json/ .
+COPY --from=crawler-pruner /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
+COPY --from=crawler-pruner /app/out/pnpm-workspace.yaml ./pnpm-workspace.yaml
+RUN pnpm install --frozen-lockfile
+COPY --from=crawler-pruner /app/out/full/ .
+ENV NODE_ENV=production
+CMD ["pnpm", "--filter", "crawler", "start"]

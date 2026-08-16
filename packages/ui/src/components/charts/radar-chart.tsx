@@ -32,7 +32,7 @@ const chartData = [
     metric: "Efficiency",
     neylonAI: 95,
     others: 70,
-    note: "Time saved per task compared to legacy/manual systems.",
+    note: "Time saved per task compared to traditional manual systems.",
   },
   {
     metric: "Error Reduction",

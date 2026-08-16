@@ -14,7 +14,19 @@ export {
   matchCatalogByFamilyName,
   type WidgetFontCatalogEntry,
 } from "../font-catalog";
-export type { WidgetFontConfig } from "../widget-config";
+export {
+  defineWidgetCustomization,
+  type WidgetFontConfig,
+} from "../widget-config";
+export {
+  createPageSectionId,
+  getTrackedPageSection,
+  type TrackedPageSection,
+} from "../page-context";
+export {
+  observePageSection,
+  type SectionObserveOptions,
+} from "../section-dwell";
 
 /** First-party / advanced composition (landing mock, nav open helpers). */
 export { WidgetHostProvider, useWidgetHost } from "./context/widget-host";

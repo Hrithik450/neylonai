@@ -1,8 +1,8 @@
 /**
- * Tool / agent capability gating.
+ * Tool / capability gating for the Main Agent.
  *
- * Agent disabled → that agent's tools are never bound for a turn.
- * Integration disabled → tools that require it are omitted from the model.
+ * Routing / model selection stays in application/model-router.
+ * Meeting-link sharing is a tool on the Main Agent.
  */
 
 import type { StructuredToolInterface } from "@langchain/core/tools";
@@ -10,15 +10,14 @@ import {
   getOrgAgent,
   listOrgIntegrations,
 } from "@neylonai/domain/billing";
-import { getAgent, listAgentDefinitions } from "../domain/registry";
+import { getAgent, isDefaultAgent, listAgentDefinitions } from "../domain/registry";
 import type { AgentDefinition } from "../domain/types";
 
 /** Tool name → catalog integration that must be enabled for the tool to bind. */
 export const TOOL_INTEGRATION_GATES: Record<string, string> = {
   web_search: "web_search",
   relational_query: "database",
-  provide_booking_link: "calcom",
-  book_meeting: "calcom",
+  provide_meeting_link: "calcom",
 };
 
 export type OrgCapabilitySnapshot = {
@@ -77,7 +76,7 @@ export async function loadOrgCapabilities(
       enabledIntegrationIds: new Set(
         integrationRows
           .filter((r) => r.enabled)
-          .map((r) => r.integration_type),
+          .map((r) => r.integration_id),
       ),
     };
   } catch (error) {
@@ -96,16 +95,19 @@ export async function loadOrgCapabilities(
 
 /**
  * Tools the model may call for this agent turn.
- * - Specialized agent disabled → []
- * - Tool's required integration disabled → omit that tool
+ * - Main Agent always may bind tools (filtered by integrations)
  */
 export function resolveAgentTools(
   agent: AgentDefinition,
   caps: OrgCapabilitySnapshot,
 ): StructuredToolInterface[] {
+  if (!agent.runnable || agent.kind === "blueprint") {
+    return [];
+  }
+
   if (
     caps.organizationId &&
-    agent.id !== "neylonai-chatbot" &&
+    !isDefaultAgent(agent.id) &&
     !caps.enabledAgentIds.has(agent.id)
   ) {
     return [];
@@ -116,6 +118,7 @@ export function resolveAgentTools(
       typeof (tool as { name?: string }).name === "string"
         ? (tool as { name: string }).name
         : "";
+
     const requiredIntegration = TOOL_INTEGRATION_GATES[name];
     if (!requiredIntegration) return true;
     if (!caps.organizationId) return false;

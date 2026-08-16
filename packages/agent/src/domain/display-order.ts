@@ -1,18 +1,11 @@
-/** Dashboard sidebar order: Support → Booking → Lead → Sales. */
-export const AGENT_DISPLAY_ORDER = [
-  "neylonai-chatbot",
-  "booking",
-  "lead",
-  "sales",
-] as const;
-
-export function sortAgentsForDisplay<T extends { id: string }>(
-  agents: T[],
-): T[] {
-  const rank = new Map<string, number>(
-    AGENT_DISPLAY_ORDER.map((id, i) => [id, i]),
-  );
-  return [...agents].sort(
-    (a, b) => (rank.get(a.id) ?? 99) - (rank.get(b.id) ?? 99),
-  );
+/** Dashboard order: Main Agent first, then others by name. */
+export function sortAgentsForDisplay<
+  T extends { id: string; role?: string | null; name?: string | null },
+>(agents: T[]): T[] {
+  return [...agents].sort((a, b) => {
+    const aMain = a.role === "main" ? 0 : 1;
+    const bMain = b.role === "main" ? 0 : 1;
+    if (aMain !== bMain) return aMain - bMain;
+    return (a.name ?? "").localeCompare(b.name ?? "");
+  });
 }

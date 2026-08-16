@@ -10,9 +10,10 @@ function rowToUser(row: typeof users.$inferSelect): UserRecord {
     google_id: row.google_id ?? null,
     username: row.username,
     email: row.email,
-    first_name: row.first_name,
     profile_image: row.profile_image ?? null,
     role: row.role,
+    has_been_onboarded: row.has_been_onboarded,
+    onboarding_step: row.onboarding_step,
     created_at: row.created_at!.toISOString(),
     updated_at: row.updated_at!.toISOString(),
   };
@@ -45,7 +46,6 @@ export class UsersRepository {
         google_id: data.google_id ?? null,
         username: data.username,
         email: data.email,
-        first_name: data.first_name,
         profile_image: data.profile_image ?? null,
         ...(data.role ? { role: data.role } : {}),
       })

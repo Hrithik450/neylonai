@@ -27,6 +27,8 @@ export interface VectorSearchInput {
    * Empty array → no hits (fail closed).
    */
   sourceIds: string[];
+  /** Optional exact website page path. Empty/unmatched callers should retry source-wide. */
+  canonicalPath?: string | null;
   /** HNSW ef_search (default 100). Higher = better recall, slower. */
   efSearch?: number;
   /**
@@ -108,6 +110,9 @@ export async function searchKnowledgeByVector(
         and(
           eq(knowledgeChunks.organization_id, organizationId),
           inArray(knowledgeDocuments.source_id, sourceIds),
+          input.canonicalPath
+            ? eq(knowledgeDocuments.canonical_path, input.canonicalPath)
+            : undefined,
         ),
       )
       .orderBy(distanceExpr)

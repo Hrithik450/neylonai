@@ -12,8 +12,12 @@
     "./workspace": "./src/workspace/index.ts",
     "./workspace/types": "./src/workspace/types.ts",
     "./knowledge": "./src/knowledge/index.ts",
+    "./knowledge/crawler": "./src/knowledge/crawl/worker-entry.ts",
+    "./knowledge/crawl-queue": "./src/knowledge/crawl/queue.ts",
     "./integrations": "./src/integrations/index.ts",
-    "./visitors": "./src/visitors/index.ts"
+    "./participants": "./src/participants/index.ts",
+    "./agents": "./src/agents/index.ts",
+    "./engagement": "./src/engagement/index.ts"
   },
   "scripts": {
     "check-types": "tsc --noEmit",
@@ -26,6 +30,7 @@
     "@langchain/google-genai": "^2.2.0",
     "@neylonai/database": "workspace:*",
     "@neylonai/integrations": "workspace:*",
+    "bullmq": "^5.61.0",
     "drizzle-orm": "^0.44.5"
   },
   "devDependencies": {

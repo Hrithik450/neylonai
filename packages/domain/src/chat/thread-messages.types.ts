@@ -3,19 +3,20 @@ export interface ThreadMessage {
   thread_id: string;
   role: string;
   content: string;
-  /** Agent that authored this assistant turn (null for user/human). */
-  agent_id?: string | null;
-  /** Dashboard fields (e.g. provenance, agent_name). Omit / strip for public widget. */
-  metadata?: Record<string, unknown>;
+  in_reply_to_message_id: string | null;
+  page_path: string | null;
+  page_query: Record<string, string>;
   created_at: string;
 }
 
 export interface CreateThreadMessageInput {
+  id?: string;
   thread_id: string;
   role: string;
   content: string;
-  agent_id?: string | null;
-  metadata?: Record<string, unknown>;
+  in_reply_to_message_id?: string | null;
+  page_path?: string | null;
+  page_query?: Record<string, string>;
 }
 
 export interface ThreadMessageResponse {

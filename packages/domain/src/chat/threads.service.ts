@@ -11,7 +11,7 @@ export class ThreadsService {
   static async createThread(data: CreateThreadInput): Promise<ThreadResponse> {
     try {
       const thread = await ThreadsRepository.createThread(data);
-      await cacheDel(`user:${data.user_id}:user_threads`);
+      await cacheDel(`participant:${data.participant_id}:user_threads`);
       return { success: true, data: thread };
     } catch (error) {
       return {
@@ -22,12 +22,12 @@ export class ThreadsService {
   }
 
   /** Drop cached thread lists after a new thread is bound to an org. */
-  static async invalidateUserThreadCaches(
-    userId: string,
+  static async invalidateParticipantThreadCaches(
+    externalUserId: string,
     organizationId: string,
   ): Promise<void> {
-    await cacheDel(`user:${userId}:user_threads`);
-    await cacheDel(`user:${userId}:org:${organizationId}:user_threads`);
+    await cacheDel(`user:${externalUserId}:user_threads`);
+    await cacheDel(`user:${externalUserId}:org:${organizationId}:user_threads`);
   }
 
   static async getThreadById(threadId: string): Promise<ThreadResponse> {
@@ -45,23 +45,6 @@ export class ThreadsService {
       return {
         success: false,
         error: error instanceof Error ? error.message : "Failed to fetch thread",
-      };
-    }
-  }
-
-  static async listThreads(userId: string): Promise<ThreadsResponse> {
-    try {
-      const cacheKey = `user:${userId}:user_threads`;
-      const cached = await cacheGet(cacheKey);
-      if (cached) return { success: true, data: JSON.parse(cached) };
-
-      const threadList = await ThreadsRepository.listThreadsByUser(userId);
-      await cacheSet(cacheKey, JSON.stringify(threadList));
-      return { success: true, data: threadList };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : "Failed to fetch threads",
       };
     }
   }

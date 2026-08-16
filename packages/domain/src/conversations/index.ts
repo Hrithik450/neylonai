@@ -1,22 +1,25 @@
 export type {
-  ConversationLifecycleStatus,
   EscalationTrigger,
-  ConversationStateRecord,
   EscalateConversationInput,
-  EngagementSettings,
+  ConversationStatus,
 } from "./types";
-export { DEFAULT_ENGAGEMENT_SETTINGS } from "./types";
 export {
-  getEngagementSettings,
-  saveEngagementSettings,
-  getConversationStateByThread,
-  ensureConversationState,
+  ESCALATION_CUSTOMER_MESSAGE,
+  ESCALATION_CONTACT_MESSAGE,
+} from "./types";
+export {
+  getThreadOrganizationId,
+  assertThreadBelongsToOrganization,
+  isThreadEscalated,
+  getConversationStatus,
+  listThreadEscalations,
+  summarizeThreadEscalations,
   escalateConversation,
-  resolveConversation,
-  returnToAi,
-  recordLastAgent,
+  submitHandoffContact,
   postHumanReply,
   canAiRespond,
+  type ThreadEscalationRecord,
+  type ThreadEscalationSummary,
 } from "./service";
 export {
   getAgentPerformance,

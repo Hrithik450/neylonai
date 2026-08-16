@@ -13,7 +13,6 @@ export type SubscriptionStatus =
   | EligibleSubscriptionStatus
   | "past_due"
   | "cancelled"
-  | "canceled"
   | "expired"
   | "suspended"
   | "inactive";
@@ -94,6 +93,7 @@ export type ApiAuthFailureCode =
   | "missing_api_key"
   | "invalid_api_key"
   | "revoked_api_key"
+  | "organization_blocked"
   | "subscription_inactive"
   | "rate_limited"
   | "origin_not_allowed"
@@ -105,6 +105,7 @@ export class ApiAuthError extends Error {
     public readonly code: ApiAuthFailureCode,
     message: string,
     public readonly status: number = 401,
+    public readonly details: Record<string, unknown> = {},
   ) {
     super(message);
     this.name = "ApiAuthError";

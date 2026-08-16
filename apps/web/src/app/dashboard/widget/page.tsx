@@ -19,10 +19,6 @@ export default async function DashboardWidgetPage() {
     <WidgetConfigCenter
       initial={config}
       planId={entitlements.planId}
-      fullWidgetCustomization={planHasFeature(
-        entitlements,
-        "full_widget_customization",
-      )}
       advancedProactive={planHasFeature(entitlements, "advanced_proactive")}
     />
   );

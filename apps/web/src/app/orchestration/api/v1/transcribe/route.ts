@@ -10,7 +10,6 @@ import {
   ApiAuthError,
   assertCanConsumeConversation,
 } from "@neylonai/domain/billing";
-import { trackEventlySafe } from "@neylonai/integrations/evently";
 import {
   isApiKeyAuthContext,
   requireApiKeyAuth,
@@ -116,17 +115,6 @@ export async function POST(req: NextRequest) {
           durationMs,
         }),
     );
-
-    trackEventlySafe({
-      event: "speech_transcribed",
-      organizationId: auth.organizationId,
-      properties: {
-        plan: auth.plan,
-        modelId: result.modelId,
-        durationMs: result.durationMs,
-        textLength: result.text.length,
-      },
-    });
 
     return NextResponse.json({
       success: true,

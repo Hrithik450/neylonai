@@ -4,3 +4,7 @@ export * from "./billing";
 export * from "./conversations";
 export * from "./workspace";
 export * from "./knowledge";
+export * from "./integrations";
+export * from "./participants";
+export * from "./agents";
+export * from "./engagement";

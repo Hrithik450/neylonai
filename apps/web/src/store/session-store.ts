@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { devtools, persist } from "zustand/middleware";
+import { devtools } from "zustand/middleware";
 
 import type { User } from "@neylonai/sdk";
 
@@ -16,47 +16,34 @@ interface SessionStore {
   clearSession: () => void;
 }
 
+/**
+ * In-memory only. The session cookie is authoritative and is read on the server
+ * for the first render, so persisting a copy here would only serve stale users.
+ */
 export const useSessionStore = create<SessionStore>()(
-  devtools(
-    persist(
-      (set) => ({
+  devtools((set) => ({
+    user: null,
+    isLoading: false,
+    isAuthenticated: false,
+    sessionChecked: false,
+
+    setUser: (user) =>
+      set({
+        user,
+        isAuthenticated: Boolean(user),
+      }),
+
+    setLoading: (value) => set({ isLoading: value }),
+
+    setAuthenticated: (value) => set({ isAuthenticated: value }),
+
+    setSessionChecked: (value) => set({ sessionChecked: value }),
+
+    clearSession: () =>
+      set({
         user: null,
-        isLoading: false,
         isAuthenticated: false,
         sessionChecked: false,
-
-        setUser: (user) =>
-          set({
-            user,
-
-            isAuthenticated: Boolean(user),
-          }),
-
-        setLoading: (value) =>
-          set({
-            isLoading: value,
-          }),
-
-        setAuthenticated: (value) =>
-          set({
-            isAuthenticated: value,
-          }),
-
-        setSessionChecked: (value) =>
-          set({
-            sessionChecked: value,
-          }),
-
-        clearSession: () =>
-          set({
-            user: null,
-            isAuthenticated: false,
-            sessionChecked: false,
-          }),
       }),
-      {
-        name: "neylonai-session",
-      },
-    ),
-  ),
+  })),
 );

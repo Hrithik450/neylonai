@@ -1,39 +1,23 @@
 /**
  * Single registry of customer-facing integration manifests.
- * Browser-safe: do not import server-only modules (pg, scrape LLM, pdf-parse).
+ * Browser-safe: do not import server-only modules (pg or scrape providers).
  */
 
 import type { IntegrationIngestKind, IntegrationManifest } from "./types";
 import type { IntegrationModule } from "./module";
 import { websiteManifest } from "../website/manifest";
-import { pdfManifest } from "../pdf/manifest";
 import { databaseManifest } from "../database/manifest";
-import { googleDriveManifest } from "../google-drive";
-import { hubspotManifest } from "../hubspot";
-import { salesforceManifest } from "../salesforce";
-import { slackManifest } from "../slack";
 import { whatsappManifest } from "../whatsapp";
-import { webhooksManifest } from "../webhooks";
-import { calendlyManifest } from "../calendly";
 import { calcomManifest } from "../calcom";
-import { eventlyManifest } from "../evently";
 import { webSearchManifest } from "../web-search";
 
 /** Ordered catalog used by dashboard UI, APIs, and billing entitlement mapping. */
 export const INTEGRATION_MANIFESTS: readonly IntegrationManifest[] = [
   websiteManifest,
-  pdfManifest,
   databaseManifest,
   webSearchManifest,
-  googleDriveManifest,
-  hubspotManifest,
-  salesforceManifest,
-  slackManifest,
   whatsappManifest,
-  webhooksManifest,
   calcomManifest,
-  calendlyManifest,
-  eventlyManifest,
 ] as const;
 
 /** Manifest-only modules (safe for client). Ops live on per-integration imports. */

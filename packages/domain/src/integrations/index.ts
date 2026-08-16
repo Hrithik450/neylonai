@@ -9,7 +9,6 @@ export {
   hasAnySecret,
   deleteSecretsForIntegration,
   deleteSecretsForOrgCatalogIntegration,
-  stripCredentialKeysFromConfig,
   resolveDatabaseConnectionUrl,
   DATABASE_CONNECTION_URL_SECRET_KEY,
   type EncryptedSecretBlob,

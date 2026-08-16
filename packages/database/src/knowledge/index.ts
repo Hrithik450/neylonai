@@ -3,6 +3,7 @@ export {
   KNOWLEDGE_EMBEDDING_MODEL,
   toHalfvecLiteral,
   knowledgeChunks,
+  knowledgePageSections,
   knowledgeDocuments,
 } from "../postgres/schema/knowledge";
 export { organizations } from "../postgres/schema/organizations";
@@ -26,3 +27,11 @@ export {
   type KnowledgeSuggestionSeed,
   type ListKnowledgeSuggestionSeedsInput,
 } from "./suggestion-seeds";
+export {
+  findKnowledgePageSection,
+  listExistingPageSections,
+  listKnowledgePageSectionKeys,
+  type ExistingPageSection,
+  type StoredPageSection,
+  type PageSectionKeyManifest,
+} from "./page-sections";

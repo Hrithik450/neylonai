@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { identityProviders } from "@neylonai/auth/identity";
 import { UsersService } from "@neylonai/domain/users";
 import { ensureOrganizationWorkspace } from "@neylonai/domain/billing";
-import { setSessionCookie } from "@/server/auth-cookies";
+import { attachSessionCookie } from "@/server/auth-cookies";
 
 export async function POST(req: NextRequest) {
   try {
@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { user } = await UsersService.findOrCreateGoogleUser({
+    const { user, created } = await UsersService.findOrCreateGoogleUser({
       google_id: identity.googleId,
       email: identity.email,
       name: identity.name,
@@ -62,20 +62,23 @@ export async function POST(req: NextRequest) {
     const workspace = await ensureOrganizationWorkspace({
       userId: user.id,
       email: user.email,
-      name: user.first_name || identity.name,
+      name: user.username || identity.name,
     });
 
     const sessionUser = {
       id: user.id,
       email: user.email,
-      name: user.first_name,
+      name: user.username,
       role: user.role,
       profile_image: user.profile_image,
+      has_been_onboarded: user.has_been_onboarded,
+      onboarding_step: user.onboarding_step,
     };
 
     const response = NextResponse.json({
       success: true,
       user: sessionUser,
+      isNewUser: created,
       organization: {
         id: workspace.organizationId,
         slug: workspace.organizationSlug,
@@ -83,9 +86,7 @@ export async function POST(req: NextRequest) {
       error: null,
     });
 
-    await setSessionCookie(sessionUser);
-
-    return response;
+    return attachSessionCookie(response, sessionUser);
   } catch (error) {
     return NextResponse.json(
       {

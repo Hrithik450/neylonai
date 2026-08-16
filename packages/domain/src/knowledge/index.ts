@@ -1,5 +1,4 @@
 export {
-  DEFAULT_CHATBOT_AGENT_ID,
   type CreateIntegrationSourceInput,
   type CreateWebsiteSourceInput,
   type KnowledgeSourceRecord,
@@ -21,9 +20,9 @@ export {
   purgeKnowledgeForCatalogIntegration,
   purgeKnowledgeForOrganizationIntegration,
   refreshSourceDocumentCount,
+  resolveAgentKeys,
   setSourceAgents,
   syncKnowledgeSource,
-  touchKnowledgeSource,
   updateKnowledgeSource,
 } from "./service";
 
@@ -52,20 +51,30 @@ export {
 export {
   chunkPlainText,
   ingestDocumentsForSource,
+  ingestWebsitePage,
+  deleteWebsiteDocumentsNotInPaths,
   type IngestDocumentInput,
   type IngestSourceInput,
+  type WebsitePageIngestInput,
 } from "./ingest";
 
 export {
   connectAndSyncWebsite,
   connectAndSyncDatabase,
   disconnectSyncedIntegration,
-  ensurePdfIntegrationSource,
   getSyncedKnowledgeSnapshot,
-  ingestPdfTextForOrg,
   type SyncedKnowledgeIntegrationId,
   type SyncedKnowledgeSnapshot,
   type SyncedKnowledgeSourceRow,
 } from "./synced-integrations";
 
-export { extractPdfText } from "./pdf-extract";
+export {
+  startWebsiteCrawl,
+  getWebsiteCrawlJob,
+  getLatestWebsiteCrawl,
+  cancelWebsiteCrawl,
+  getWebsiteCrawlEntitlements,
+  recoverStaleWebsiteCrawlJobs,
+  processWebsiteCrawlJob,
+  type WebsiteCrawlJobView,
+} from "./crawl";

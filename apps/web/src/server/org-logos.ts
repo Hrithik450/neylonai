@@ -32,9 +32,8 @@ export type OrgLogoRecord = {
   contentType: string;
   byteSize: number;
   storageKey: string;
-  publicUrl: string | null;
   createdAt: string;
-  /** Prefer CDN URL; fall back to same-origin API route for local disk. */
+  /** Same-origin API route that streams the logo bytes. */
   fileUrl: string;
 };
 
@@ -44,7 +43,6 @@ function extFromFilename(name: string): string | null {
 }
 
 function toRecord(row: typeof organizationLogos.$inferSelect): OrgLogoRecord {
-  const publicUrl = row.public_url?.trim() || null;
   return {
     id: row.id,
     organizationId: row.organization_id,
@@ -52,9 +50,8 @@ function toRecord(row: typeof organizationLogos.$inferSelect): OrgLogoRecord {
     contentType: row.content_type,
     byteSize: row.byte_size,
     storageKey: row.storage_key,
-    publicUrl,
     createdAt: row.created_at?.toISOString() ?? new Date().toISOString(),
-    fileUrl: publicUrl || `/api/v1/org-logos/${row.id}/file`,
+    fileUrl: `/api/v1/org-logos/${row.id}/file`,
   };
 }
 
@@ -122,10 +119,7 @@ export async function uploadOrgLogo(input: {
 
   const existing = await getOrgLogo(input.organizationId);
   if (existing) {
-    await deleteOrgLogoObject({
-      key: existing.storageKey,
-      publicUrl: existing.publicUrl,
-    });
+    await deleteOrgLogoObject({ key: existing.storageKey });
     await db
       .delete(organizationLogos)
       .where(eq(organizationLogos.id, existing.id));
@@ -139,9 +133,8 @@ export async function uploadOrgLogo(input: {
     ext,
   });
 
-  let stored: Awaited<ReturnType<typeof putOrgLogoObject>>;
   try {
-    stored = await putOrgLogoObject({
+    await putOrgLogoObject({
       key: storageKey,
       bytes: input.bytes,
       contentType,
@@ -164,7 +157,6 @@ export async function uploadOrgLogo(input: {
       content_type: contentType,
       byte_size: input.bytes.byteLength,
       storage_key: storageKey,
-      public_url: stored.publicUrl,
     })
     .returning();
 
@@ -179,10 +171,7 @@ export async function deleteOrgLogo(input: {
   const existing = await getOrgLogo(input.organizationId);
   if (!existing) return { success: false, error: "Logo not found" };
 
-  await deleteOrgLogoObject({
-    key: existing.storageKey,
-    publicUrl: existing.publicUrl,
-  });
+  await deleteOrgLogoObject({ key: existing.storageKey });
   await db
     .delete(organizationLogos)
     .where(eq(organizationLogos.id, existing.id));
@@ -192,11 +181,7 @@ export async function deleteOrgLogo(input: {
 
 export async function resolveOrgLogoFile(
   logoId: string,
-): Promise<
-  | { kind: "redirect"; url: string }
-  | { kind: "bytes"; bytes: Buffer; contentType: string }
-  | null
-> {
+): Promise<{ bytes: Buffer; contentType: string } | null> {
   const [row] = await db
     .select()
     .from(organizationLogos)
@@ -204,14 +189,9 @@ export async function resolveOrgLogoFile(
     .limit(1);
   if (!row) return null;
 
-  if (row.public_url?.trim()) {
-    return { kind: "redirect", url: row.public_url.trim() };
-  }
-
   const obj = await getOrgLogoObject(row.storage_key);
   if (!obj) return null;
   return {
-    kind: "bytes",
     bytes: obj.bytes,
     contentType: row.content_type || obj.contentType,
   };

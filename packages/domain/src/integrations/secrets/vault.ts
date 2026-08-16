@@ -28,7 +28,6 @@ export async function putSecret(input: PutSecretInput): Promise<void> {
   await db
     .insert(organizationIntegrationSecrets)
     .values({
-      organization_id: input.organizationId,
       organization_integration_id: input.organizationIntegrationId,
       secret_key: key,
       ciphertext: blob.ciphertext,
@@ -144,25 +143,10 @@ export async function deleteSecretsForOrgCatalogIntegration(input: {
     .where(
       and(
         eq(organizationIntegrations.organization_id, input.organizationId),
-        eq(organizationIntegrations.integration_type, input.integrationType),
+        eq(organizationIntegrations.integration_id, input.integrationType),
       ),
     )
     .limit(1);
   if (!row) return;
   await deleteSecretsForIntegration(row.id);
-}
-
-/**
- * Strip credential keys from a config blob (legacy plaintext cleanup).
- */
-export function stripCredentialKeysFromConfig(
-  config: Record<string, unknown>,
-  credentialKeys: readonly string[],
-): Record<string, unknown> {
-  if (credentialKeys.length === 0) return { ...config };
-  const next = { ...config };
-  for (const key of credentialKeys) {
-    delete next[key];
-  }
-  return next;
 }

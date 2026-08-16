@@ -13,7 +13,6 @@ export {
   integrationLogoLetters,
   lastSyncLabel,
   redactIntegrationConfig,
-  configHasLegacyCredentials,
   resolveIntegrationUiState,
 } from "./types";
 

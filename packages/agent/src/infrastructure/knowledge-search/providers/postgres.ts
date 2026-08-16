@@ -19,13 +19,35 @@ import {
 import {
   appendProvenanceHits,
   getAgentTurnContext,
+  markTurnCapped,
+  recordRagOutput,
+  recordSemanticSearch,
 } from "../../agent-turn-context";
+import {
+  getWorkloadBudget,
+  workloadClassOrDefault,
+} from "@neylonai/domain/billing";
 import { meterEmbeddingUsage, meterModelResponse } from "../../metering";
 import { knowledgeSearchProviders } from "../registry";
 import type {
   KnowledgeSearchHit,
   KnowledgeSearchProvider,
 } from "../types";
+
+function turnRagBudget() {
+  const billing = getAgentTurnContext().billing;
+  const klass = workloadClassOrDefault(
+    billing?.workloadClass ?? billing?.estimate?.estimatedClass ?? "standard",
+  );
+  const budget = getWorkloadBudget(klass);
+  return {
+    klass,
+    maxSearches: klass === "simple" ? 1 : 2,
+    maxChunks: budget.ragChunks,
+    maxChars: budget.ragChars,
+    allowQueryExpansion: budget.allowQueryExpansion,
+  };
+}
 
 function messageText(content: unknown): string {
   if (typeof content === "string") return content;
@@ -99,6 +121,7 @@ async function searchSingleQuery(
   query: string,
   organizationId: string,
   sourceIds: string[],
+  canonicalPath?: string | null,
 ): Promise<KnowledgeSearchHit[]> {
   if (sourceIds.length === 0) return [];
 
@@ -114,6 +137,7 @@ async function searchSingleQuery(
     organizationId,
     embedding,
     sourceIds,
+    canonicalPath,
     limit: 5,
   });
   return hits.map((h) => ({
@@ -163,6 +187,13 @@ export const postgresKnowledgeSearchProvider: KnowledgeSearchProvider = {
   name: "postgres",
   async search(query: string): Promise<KnowledgeSearchHit[]> {
     try {
+      const rag = turnRagBudget();
+      const searchN = recordSemanticSearch();
+      if (searchN > rag.maxSearches) {
+        markTurnCapped("max_semantic_searches");
+        return [];
+      }
+
       const resolved = await resolveTurnKnowledgeScope();
       if (!resolved) return [];
       const { scope, agentId } = resolved;
@@ -179,24 +210,54 @@ export const postgresKnowledgeSearchProvider: KnowledgeSearchProvider = {
       );
       if (sourceIds.length === 0) return [];
 
-      const expandedQueries = await expandQueries(query);
-      const allQueries = [query, ...expandedQueries].slice(0, 3);
+      const expandedQueries = rag.allowQueryExpansion
+        ? await expandQueries(query)
+        : [];
+      const allQueries = rag.allowQueryExpansion
+        ? [query, ...expandedQueries].slice(0, 3)
+        : [query];
+      const pagePath = getAgentTurnContext().pagePath?.trim() || null;
 
-      const resultSets = await Promise.all(
+      let resultSets = await Promise.all(
         allQueries.map((q) =>
-          searchSingleQuery(q, scope.organizationId, sourceIds).catch(
+          searchSingleQuery(q, scope.organizationId, sourceIds, pagePath).catch(
             () => [] as KnowledgeSearchHit[],
           ),
         ),
       );
+      if (pagePath && resultSets.every((set) => set.length === 0)) {
+        resultSets = await Promise.all(
+          allQueries.map((q) =>
+            searchSingleQuery(q, scope.organizationId, sourceIds).catch(
+              () => [] as KnowledgeSearchHit[],
+            ),
+          ),
+        );
+      }
 
       const seen = new Set<string>();
       const unique: KnowledgeSearchHit[] = [];
+      let chars = 0;
       for (const docs of resultSets) {
         for (const doc of docs) {
           if (!doc.content || seen.has(doc.chunkId)) continue;
+          if (unique.length >= rag.maxChunks) {
+            markTurnCapped("max_rag_chunks");
+            break;
+          }
+          if (chars + doc.content.length > rag.maxChars) {
+            markTurnCapped("max_rag_chars");
+            break;
+          }
           seen.add(doc.chunkId);
           unique.push(doc);
+          chars += doc.content.length;
+        }
+        if (
+          unique.length >= rag.maxChunks ||
+          chars >= rag.maxChars
+        ) {
+          break;
         }
       }
 
@@ -210,6 +271,7 @@ export const postgresKnowledgeSearchProvider: KnowledgeSearchProvider = {
           externalChunkId: h.externalChunkId,
         })),
       );
+      recordRagOutput(chars);
 
       return unique;
     } catch (error) {

@@ -42,10 +42,10 @@ export function SuggestionBar() {
   if (suggestions.length === 0) return null;
 
   return (
-    <div className="w-full min-w-0">
+    <div className="w-full min-w-0 max-w-full">
       <div
         ref={scrollRef}
-        className="-mx-0.5 overflow-x-auto px-0.5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+        className="w-full min-w-0 overflow-x-auto overscroll-x-contain [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
       >
         <div className="flex w-max max-w-none gap-1.5 py-0.5">
           {filterSuggestions.map((suggestion) => (

@@ -8,7 +8,8 @@ export {
   isAbortError,
   type ConfigureNeylonaiOptions,
 } from "./client";
-export { streamChat, type StreamChatInput } from "./chat";
+export { streamChat, type StreamChatInput, type StreamChatUser } from "./chat";
+export { buildStreamChatUser } from "./chat-user";
 export {
   transcribeAudio,
   type TranscribeAudioClientInput,
@@ -16,16 +17,38 @@ export {
 } from "./transcribe";
 export { listThreads, listMessages } from "./threads";
 export {
+  requestHumanHandoff,
+  submitMessageFeedback,
+  getLatestHumanReply,
+} from "./retention";
+export {
   fetchSuggestions,
   type FetchSuggestionsInput,
   type ProactiveSuggestionDto,
 } from "./suggestions";
 export {
+  createPageSectionId,
+  getTrackedPageSection,
+  subscribeToPageSection,
+  type TrackedPageSection,
+} from "./page-context";
+export {
+  observePageSection,
+  qualifyPageSection,
+  subscribeToQualifiedPageSection,
+  type SectionObserveOptions,
+} from "./section-dwell";
+export {
   getOrCreateVisitorId,
   getOrCreateSessionId,
   getChatParticipantId,
 } from "./visitor";
-export { trackAnalytics } from "./analytics";
+export { trackProactiveTrigger, trackProactiveTriggers } from "./proactive-triggers";
+export type {
+  ProactiveTriggerType,
+  ProactiveTriggerEventType,
+  ProactiveTriggerTelemetryEvent,
+} from "./proactive-triggers";
 export {
   widgetAudioManager,
   WidgetAudioManager,
@@ -34,6 +57,7 @@ export {
 } from "./sounds";
 export {
   fetchWidgetConfig,
+  defineWidgetCustomization,
   mergeWidgetConfig,
   withPlatformBrandingColors,
   brandingColorsNeedMigration,
@@ -67,4 +91,5 @@ export type {
   ThreadMessageResponse,
   ThreadMessagesResponse,
   AgentStreamEvent,
+  CreditExhaustionError,
 } from "./types";

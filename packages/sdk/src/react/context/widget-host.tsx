@@ -15,12 +15,10 @@ import { PROACTIVE_CONFIG } from "../proactive/config";
 
 const DEFAULT_BRANDING = {
   name: "",
-  primaryColor: DEFAULT_WIDGET_CONFIG.branding!.primaryColor!,
   primaryTextColor: DEFAULT_WIDGET_CONFIG.branding!.primaryTextColor!,
   secondaryTextColor: DEFAULT_WIDGET_CONFIG.branding!.secondaryTextColor!,
   accentColor: DEFAULT_WIDGET_CONFIG.branding!.accentColor!,
   tabActiveColor: DEFAULT_WIDGET_CONFIG.branding!.tabActiveColor!,
-  headerTint: DEFAULT_WIDGET_CONFIG.branding!.headerTint!,
   gradientFrom: DEFAULT_WIDGET_CONFIG.branding!.gradientFrom!,
   gradientTo: DEFAULT_WIDGET_CONFIG.branding!.gradientTo!,
   primaryTextBackground: DEFAULT_WIDGET_CONFIG.branding!.primaryTextBackground!,
@@ -37,12 +35,10 @@ export interface WidgetHostValue {
     ResolvedWidgetConfig & {
       branding: NonNullable<ResolvedWidgetConfig["branding"]> & {
         name: string;
-        primaryColor: string;
         primaryTextColor: string;
         secondaryTextColor: string;
         accentColor: string;
         tabActiveColor: string;
-        headerTint: string;
         gradientFrom: string;
         gradientTo: string;
         primaryTextBackground: string;
@@ -85,78 +81,37 @@ export interface WidgetHostValue {
 
 const WidgetHostContext = createContext<WidgetHostValue | null>(null);
 
-function pickColor(
-  ...candidates: Array<string | null | undefined>
-): string | undefined {
-  for (const c of candidates) {
-    const t = c?.trim();
-    if (t) return t;
-  }
-  return undefined;
-}
+const pickColor = (...candidates: Array<string | null | undefined>) =>
+  candidates.find(c => c?.trim())?.trim();
 
-export function WidgetHostProvider({
-  config,
-  onError,
-  children,
-}: {
+export function WidgetHostProvider({ config, onError, children }: {
   config?: ResolvedWidgetConfig;
   onError?: SupportWidgetProps["onError"];
   children: React.ReactNode;
 }) {
   const onErrorRef = React.useRef(onError);
   onErrorRef.current = onError;
-  const stableOnError = React.useCallback((message: string) => {
-    onErrorRef.current?.(message);
-  }, []);
+  const stableOnError = React.useCallback((message: string) => onErrorRef.current?.(message), []);
 
   const value = useMemo<WidgetHostValue>(() => {
     const b = config?.branding;
-    const primaryTextColor =
-      pickColor(b?.primaryTextColor, b?.primaryColor) ??
-      DEFAULT_BRANDING.primaryTextColor;
-    const secondaryTextColor =
-      pickColor(b?.secondaryTextColor) ?? DEFAULT_BRANDING.secondaryTextColor;
-    const tabActiveColor =
-      pickColor(b?.tabActiveColor) ?? DEFAULT_BRANDING.tabActiveColor;
-    const accentColor =
-      pickColor(b?.accentColor) ?? DEFAULT_BRANDING.accentColor;
-    const gradientFrom =
-      pickColor(b?.gradientFrom, b?.headerTint) ?? DEFAULT_BRANDING.gradientFrom;
-    const gradientTo =
-      pickColor(b?.gradientTo) ?? DEFAULT_BRANDING.gradientTo;
-    const primaryTextBackground =
-      pickColor(b?.primaryTextBackground, b?.primaryTextColor, b?.primaryColor) ??
-      DEFAULT_BRANDING.primaryTextBackground;
-    const askButtonTextColor =
-      pickColor(b?.askButtonTextColor) ?? DEFAULT_BRANDING.askButtonTextColor;
-    const secondaryTextBackground =
-      pickColor(b?.secondaryTextBackground) ??
-      DEFAULT_BRANDING.secondaryTextBackground;
-    const aiMessageBackground =
-      pickColor(b?.aiMessageBackground) ?? DEFAULT_BRANDING.aiMessageBackground;
-    const humanMessageBackground =
-      pickColor(b?.humanMessageBackground) ??
-      DEFAULT_BRANDING.humanMessageBackground;
+    const pick = (val: string | null | undefined, fallback: string) => pickColor(val) ?? fallback;
 
     const branding = {
       ...DEFAULT_BRANDING,
       ...b,
-      name: b?.name ?? DEFAULT_BRANDING.name,
-      primaryTextColor,
-      secondaryTextColor,
-      tabActiveColor,
-      accentColor,
-      gradientFrom,
-      gradientTo,
-      primaryTextBackground,
-      askButtonTextColor,
-      secondaryTextBackground,
-      aiMessageBackground,
-      humanMessageBackground,
-      // Legacy mirrors.
-      primaryColor: primaryTextColor,
-      headerTint: gradientFrom,
+      name: b?.name ?? "",
+      primaryTextColor: pick(b?.primaryTextColor, DEFAULT_BRANDING.primaryTextColor),
+      secondaryTextColor: pick(b?.secondaryTextColor, DEFAULT_BRANDING.secondaryTextColor),
+      tabActiveColor: pick(b?.tabActiveColor, DEFAULT_BRANDING.tabActiveColor),
+      accentColor: pick(b?.accentColor, DEFAULT_BRANDING.accentColor),
+      gradientFrom: pick(b?.gradientFrom, DEFAULT_BRANDING.gradientFrom),
+      gradientTo: pick(b?.gradientTo, DEFAULT_BRANDING.gradientTo),
+      primaryTextBackground: pickColor(b?.primaryTextBackground, b?.primaryTextColor) ?? DEFAULT_BRANDING.primaryTextBackground,
+      askButtonTextColor: pick(b?.askButtonTextColor, DEFAULT_BRANDING.askButtonTextColor),
+      secondaryTextBackground: pick(b?.secondaryTextBackground, DEFAULT_BRANDING.secondaryTextBackground),
+      aiMessageBackground: pick(b?.aiMessageBackground, DEFAULT_BRANDING.aiMessageBackground),
+      humanMessageBackground: pick(b?.humanMessageBackground, DEFAULT_BRANDING.humanMessageBackground),
       font: b?.font,
     };
 
@@ -198,16 +153,12 @@ export function WidgetHostProvider({
 
     const proactive = {
       enabled: config?.proactive?.enabled ?? true,
-      soundEnabled:
-        config?.proactive?.soundEnabled ?? PROACTIVE_CONFIG.soundEnabled,
+      soundEnabled: config?.proactive?.soundEnabled ?? PROACTIVE_CONFIG.soundEnabled,
       volume: config?.proactive?.volume ?? 0.22,
-      initialIdleMs:
-        config?.proactive?.initialIdleMs ?? PROACTIVE_CONFIG.initialIdleMs,
+      initialIdleMs: config?.proactive?.initialIdleMs ?? PROACTIVE_CONFIG.initialIdleMs,
       displayMs: config?.proactive?.displayMs ?? PROACTIVE_CONFIG.displayMs,
-      rotateGapMs:
-        config?.proactive?.rotateGapMs ?? PROACTIVE_CONFIG.rotateGapMs,
-      postChatDelayMs:
-        config?.proactive?.postChatDelayMs ?? PROACTIVE_CONFIG.postChatDelayMs,
+      rotateGapMs: config?.proactive?.rotateGapMs ?? PROACTIVE_CONFIG.rotateGapMs,
+      postChatDelayMs: config?.proactive?.postChatDelayMs ?? PROACTIVE_CONFIG.postChatDelayMs,
       poolLimit: config?.proactive?.poolLimit ?? PROACTIVE_CONFIG.poolLimit,
     };
 
@@ -231,13 +182,11 @@ export function WidgetHostProvider({
     // Explicit branding deps so color edits always invalidate context
     // even if a parent memo reuses a config object reference.
     config?.branding?.primaryTextColor,
-    config?.branding?.primaryColor,
     config?.branding?.secondaryTextColor,
     config?.branding?.tabActiveColor,
     config?.branding?.accentColor,
     config?.branding?.gradientFrom,
     config?.branding?.gradientTo,
-    config?.branding?.headerTint,
     config?.branding?.primaryTextBackground,
     config?.branding?.askButtonTextColor,
     config?.branding?.secondaryTextBackground,

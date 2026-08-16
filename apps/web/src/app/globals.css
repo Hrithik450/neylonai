@@ -228,20 +228,27 @@ body {
   }
 }
 
-/* ---- Dashboard fonts (Banda Nova Book only) ----
+/* ---- Landing site fonts ----
  *
- * Single face for paper + admin. No Palo. Book at 400 for body; medium (500)
- * for titles/headlines. Never faux-bold — Book has one real weight.
+ * The faces come from src/assets/fonts.ts, which exposes them as variables on
+ * the landing shell. Components only ever name `landing-strong`, so changing
+ * the typeface never touches a component.
  */
 
-@font-face {
-  font-family: "Banda Nova";
-  src: url("/fonts/BandaNova-Book.woff2") format("woff2");
-  /* Same Book file for 400–500 so `font-medium` does not synthesize bold. */
-  font-weight: 400 500;
-  font-style: normal;
-  font-display: swap;
+.landing {
+  font-family: var(--font-landing), ui-sans-serif, system-ui, sans-serif;
 }
+
+.landing .landing-strong {
+  font-family: var(--font-landing), ui-sans-serif, system-ui, sans-serif;
+  font-weight: 700;
+}
+
+/* ---- Dashboard fonts (same Bricolage Grotesque face as landing) ----
+ *
+ * The dashboard layout loads `--font-landing`; paper aliases all typography
+ * roles to that variable so utilities, code, captions, and headings agree.
+ */
 
 .paper {
   --cream: #f9f3ee;
@@ -255,12 +262,14 @@ body {
   --yellow: #f2c318;
   --sky: #a8d5f2;
 
-  --font-heading: "Banda Nova", ui-sans-serif, system-ui, sans-serif;
-  --font-caption: "Banda Nova", ui-sans-serif, system-ui, sans-serif;
+  --font-app: var(--font-landing), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-app);
+  --font-heading: var(--font-app);
+  --font-caption: var(--font-app);
 
   background-color: #ffffff;
   color: var(--ink);
-  font-family: "Banda Nova", ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-app);
   font-weight: 400;
 }
 
@@ -324,15 +333,24 @@ html {
 }
 
 .paper .mono {
-  font-family: var(--font-mono), ui-monospace, monospace;
+  font-family: var(--font-app);
 }
 
-/* Titles / headlines: Banda Nova at medium. No condensed Palo tracking hacks.
-   In @layer base so a `leading-*` utility can still win. */
+/* Page titles, sub-headings, and kickers use the shared landing face. */
 @layer base {
   .paper h1,
   .paper h2,
   .paper h3 {
+    font-family: var(--font-display);
+    font-weight: 500;
+    letter-spacing: 0;
+    line-height: 1.15;
+    word-spacing: normal;
+  }
+
+  .paper h4,
+  .paper h5,
+  .paper h6 {
     font-family: var(--font-heading);
     font-weight: 500;
     letter-spacing: 0;
@@ -349,14 +367,15 @@ html {
   color: var(--muted);
 }
 
-/* Logo / display line — same face, medium weight. */
-.paper .display {
-  font-family: var(--font-heading);
+/* Logo / display line and the nav strip share the same face. */
+.paper .display,
+.paper .nav-link {
+  font-family: var(--font-display);
   font-weight: 500;
   letter-spacing: 0;
 }
 
-/* Banda Nova Book must not be faux-bolded by Tailwind weight utilities. */
+/* Keep the dashboard's restrained existing weight hierarchy. */
 .paper .font-bold,
 .paper .font-semibold,
 .paper .font-extrabold,
@@ -372,6 +391,17 @@ html {
 
 .paper .font-normal {
   font-weight: 400;
+}
+
+/* Kill Tailwind / utility faces inside the dashboard — one typeface only. */
+.paper .font-mono,
+.paper .font-sans,
+.paper .font-serif,
+.paper code,
+.paper kbd,
+.paper pre,
+.paper samp {
+  font-family: var(--font-app);
 }
 
 /* The card: black keyline, generous radius, hard offset shadow. No blur
@@ -409,9 +439,9 @@ html {
   border: 1px solid var(--ink);
   border-radius: 999px;
   padding: 0.25rem 0.7rem;
-  font-family: var(--font-mono), ui-monospace, monospace;
+  font-family: var(--font-app);
   font-size: 0.7rem;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--ink);
@@ -435,14 +465,13 @@ html {
   text-align: center;
 }
 
-/* The oval's text treatment: the caption face at a readable size instead of the
-   small tracked-out mono the base sticker uses. Banda Nova is a Book weight, so
-   uppercase at wide tracking renders too fine to hold its own against the fill —
-   sentence case at 700 is what keeps it legible. */
+/* The oval's text treatment: Banda Nova at a readable size instead of the
+   small tracked-out sticker default. Book weight at wide tracking is too fine
+   against the fill — sentence case at medium keeps it legible. */
 .paper .sticker-label {
   font-family: var(--font-caption);
   font-size: 1rem;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.01em;
   text-transform: none;
 }
@@ -533,14 +562,14 @@ html {
 
 .admin-shell,
 [data-slot="dialog-content"] {
-  font-family: "Banda Nova", ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-banda), ui-sans-serif, system-ui, sans-serif;
   font-weight: 400;
 }
 
 .admin-shell h1,
 .admin-shell h2,
 .admin-shell h3 {
-  font-family: "Banda Nova", ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-banda), ui-sans-serif, system-ui, sans-serif;
   font-weight: 500;
 }
 
@@ -606,5 +635,10 @@ html {
 /* Keep Book / medium only — do not bump emphasis to 600 (faux-bold). */
 :is(.admin-shell, [data-slot="dialog-content"]) .font-medium {
   font-weight: 500;
+}
+
+@keyframes nudge {
+  0%, 100% { transform: translateX(0); opacity: 0.5; }
+  50% { transform: translateX(4px); opacity: 1; }
 }
 

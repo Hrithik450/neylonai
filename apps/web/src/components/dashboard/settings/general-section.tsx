@@ -1,10 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { WorkspaceSettings } from "@neylonai/domain/workspace/types";
+import type { OrganizationSettings } from "@neylonai/domain/workspace";
 import {
   FieldHint,
   FieldLabel,
+  SettingsButton,
   SettingsSectionFrame,
 } from "./settings-ui";
 
@@ -22,25 +23,16 @@ const TIMEZONES = [
   "Australia/Sydney",
 ];
 
-const LANGUAGES = [
-  { value: "en", label: "English" },
-  { value: "es", label: "Spanish" },
-  { value: "fr", label: "French" },
-  { value: "de", label: "German" },
-  { value: "pt", label: "Portuguese" },
-  { value: "hi", label: "Hindi" },
-];
-
 export function GeneralSettingsSection() {
-  const [settings, setSettings] = useState<WorkspaceSettings | null>(null);
+  const [settings, setSettings] = useState<OrganizationSettings | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const res = await fetch("/api/v1/workspace-settings");
+    const res = await fetch("/api/v1/organization-settings");
     const json = (await res.json()) as {
       success: boolean;
-      data?: { settings: WorkspaceSettings };
+      data?: { settings: OrganizationSettings };
       error?: string;
     };
     if (json.success && json.data) setSettings(json.data.settings);
@@ -56,20 +48,17 @@ export function GeneralSettingsSection() {
     setBusy(true);
     setMessage(null);
     try {
-      const res = await fetch("/api/v1/workspace-settings", {
+      const res = await fetch("/api/v1/organization-settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           organizationName: settings.organizationName,
-          customerFacingName: settings.customerFacingName,
-          logoUrl: settings.logoUrl,
           timezone: settings.timezone,
-          defaultLanguage: settings.defaultLanguage,
         }),
       });
       const json = (await res.json()) as {
         success: boolean;
-        data?: { settings: WorkspaceSettings };
+        data?: { settings: OrganizationSettings };
         error?: string;
       };
       if (!json.success || !json.data) throw new Error(json.error ?? "Save failed");
@@ -89,11 +78,11 @@ export function GeneralSettingsSection() {
   return (
     <SettingsSectionFrame
       title="General"
-      description="Workspace identity shown across your account. Widget look-and-feel stays under Widget; agent behavior under Agents."
+      description="Organization identity and timezone."
     >
       <section className="ink-card p-6 space-y-5">
         <label className="block space-y-1.5">
-          <FieldLabel>Workspace / company name</FieldLabel>
+          <FieldLabel>Organization name</FieldLabel>
           <input
             className="ink-input"
             value={settings.organizationName}
@@ -101,41 +90,7 @@ export function GeneralSettingsSection() {
               setSettings({ ...settings, organizationName: e.target.value })
             }
           />
-          <FieldHint>Internal name for your Neylon AI workspace.</FieldHint>
-        </label>
-
-        <label className="block space-y-1.5">
-          <FieldLabel>Customer-facing name</FieldLabel>
-          <input
-            className="ink-input"
-            value={settings.customerFacingName ?? ""}
-            onChange={(e) =>
-              setSettings({
-                ...settings,
-                customerFacingName: e.target.value || null,
-              })
-            }
-            placeholder={settings.organizationName}
-          />
-          <FieldHint>
-            Optional public name customers may see. Does not change Widget
-            branding colors or launcher — those live under Widget.
-          </FieldHint>
-        </label>
-
-        <label className="block space-y-1.5">
-          <FieldLabel>Logo URL</FieldLabel>
-          <input
-            className="ink-input"
-            value={settings.logoUrl ?? ""}
-            onChange={(e) =>
-              setSettings({ ...settings, logoUrl: e.target.value || null })
-            }
-            placeholder="https://…"
-          />
-          <FieldHint>
-            Workspace logo reference. Widget avatar and theme remain in Widget.
-          </FieldHint>
+          <FieldHint>Internal name for your organization.</FieldHint>
         </label>
 
         <label className="block space-y-1.5">
@@ -154,40 +109,14 @@ export function GeneralSettingsSection() {
             ))}
           </select>
           <FieldHint>
-            Used for business hours and timestamps in your workspace.
+            Used for timestamps across your organization.
           </FieldHint>
         </label>
 
-        <label className="block space-y-1.5">
-          <FieldLabel>Default language</FieldLabel>
-          <select
-            className="ink-input py-2"
-            value={settings.defaultLanguage}
-            onChange={(e) =>
-              setSettings({ ...settings, defaultLanguage: e.target.value })
-            }
-          >
-            {LANGUAGES.map((l) => (
-              <option key={l.value} value={l.value}>
-                {l.label}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <p className="caption text-xs">
-          Slug: <span className="mono">{settings.organizationSlug}</span>
-        </p>
-
         <div className="flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            className="btn-ink"
-            disabled={busy}
-            onClick={() => void save()}
-          >
+          <SettingsButton disabled={busy} onClick={() => void save()}>
             {busy ? "Saving…" : "Save general settings"}
-          </button>
+          </SettingsButton>
           {message ? <span className="caption text-sm">{message}</span> : null}
         </div>
       </section>

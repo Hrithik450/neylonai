@@ -1,10 +1,6 @@
 import { and, eq, count } from "drizzle-orm";
-import {
-  db,
-  knowledgeDocuments,
-  organizationIntegrations,
-  organizationAgents,
-} from "@neylonai/database";
+import { db, organizationIntegrations } from "@neylonai/database";
+import { getIntegrationManifest } from "@neylonai/integrations/catalog";
 import {
   AGENT_CATALOG,
   getPlanEntitlements,
@@ -38,13 +34,29 @@ export function canUseProactive(ctx: EntitlementContext): boolean {
   return canUseFeature(ctx, "proactive");
 }
 
-export function canUseAgent(ctx: EntitlementContext, agentId: string): boolean {
-  const e = entitlementsFor(ctx);
+/**
+ * Single-agent product: Main Agent is always entitled.
+ * Specialized catalog entries are blueprints, not plan-gated tiers.
+ */
+export function canUseAgent(
+  _ctx: EntitlementContext,
+  agentId: string,
+): boolean {
   const agent = AGENT_CATALOG.find((a) => a.id === agentId);
   if (!agent) return false;
-  if (agent.builtIn) return true;
-  // Advanced catalog agents require advancedAgents entitlement.
-  return agent.tier === "advanced" ? e.advancedAgents : e.basicAgents;
+  return agent.id === "main-agent" || agent.defaultEnabled;
+}
+
+export function canUseAgentRecord(
+  _ctx: EntitlementContext,
+  agent: {
+    role: string;
+    tier: string;
+    status: string;
+  },
+): boolean {
+  if (agent.role === "main") return true;
+  return agent.status === "active";
 }
 
 const PLAN_RANK: Record<PlanId, number> = {
@@ -81,18 +93,6 @@ export function canUseWebsite(
   websiteCount: number,
 ): boolean {
   return websiteCount <= entitlementsFor(ctx).websites;
-}
-
-export async function canUseKnowledgeBase(
-  ctx: EntitlementContext,
-): Promise<{ ok: boolean; used: number; limit: number }> {
-  const e = entitlementsFor(ctx);
-  const [row] = await db
-    .select({ n: count() })
-    .from(knowledgeDocuments)
-    .where(eq(knowledgeDocuments.organization_id, ctx.organizationId));
-  const used = Number(row?.n ?? 0);
-  return { ok: used < e.knowledgeDocuments, used, limit: e.knowledgeDocuments };
 }
 
 export async function countConversationsThisPeriod(
@@ -159,14 +159,10 @@ export async function assertCanConsumeConversation(
   ctx: EntitlementContext,
   periodStart?: Date,
 ): Promise<void> {
-  const result = await canConsumeConversation(ctx, periodStart);
-  if (!result.ok) {
-    throw new ApiAuthError(
-      "usage_exceeded",
-      `Conversation limit reached (${result.used}/${result.limit}). Upgrade your plan.`,
-      402,
-    );
-  }
+  // Credit gating happens after the preflight billability/workload classifier.
+  // This lets social turns remain free and paid plans enter on-demand mode.
+  void ctx;
+  void periodStart;
 }
 
 export async function assertCanUseProactive(
@@ -191,12 +187,37 @@ export async function assertCanUseProactive(
 
 export function assertCanUseAgent(
   ctx: EntitlementContext,
-  agentId: string,
+  agentIdOrSlug: string,
 ): void {
-  if (!canUseAgent(ctx, agentId)) {
+  if (!canUseAgent(ctx, agentIdOrSlug)) {
     throw new ApiAuthError(
       "entitlement_denied",
-      `Agent "${agentId}" is not available on this plan.`,
+      `Agent "${agentIdOrSlug}" is not available on this plan.`,
+      403,
+    );
+  }
+}
+
+export function assertCanUseAgentRecord(
+  ctx: EntitlementContext,
+  agent: {
+    role: string;
+    tier: string;
+    status: string;
+    name?: string;
+  },
+): void {
+  if (agent.status !== "active" && agent.role !== "main") {
+    throw new ApiAuthError(
+      "entitlement_denied",
+      `Agent "${agent.name ?? "unknown"}" is coming soon and cannot be enabled yet.`,
+      403,
+    );
+  }
+  if (!canUseAgentRecord(ctx, agent)) {
+    throw new ApiAuthError(
+      "entitlement_denied",
+      `Agent "${agent.name ?? "unknown"}" is not available on this plan.`,
       403,
     );
   }
@@ -220,6 +241,23 @@ export async function assertCanEnableIntegration(
   integrationId: string,
 ): Promise<void> {
   assertCanUseIntegration(ctx, integrationId);
+
+  const manifest = getIntegrationManifest(integrationId);
+  if (!manifest) {
+    throw new ApiAuthError(
+      "entitlement_denied",
+      `Unknown integration "${integrationId}".`,
+      404,
+    );
+  }
+  if (manifest.connectable === false) {
+    throw new ApiAuthError(
+      "entitlement_denied",
+      `Integration "${manifest.name || integrationId}" is coming soon and cannot be enabled yet.`,
+      403,
+    );
+  }
+
   const e = entitlementsFor(ctx);
   const enabled = await countEnabledIntegrations(ctx.organizationId);
   const already = await db
@@ -231,7 +269,7 @@ export async function assertCanEnableIntegration(
     .where(
       and(
         eq(organizationIntegrations.organization_id, ctx.organizationId),
-        eq(organizationIntegrations.integration_type, integrationId),
+        eq(organizationIntegrations.integration_id, integrationId),
       ),
     )
     .limit(1);
@@ -250,49 +288,41 @@ export function getPlanId(plan: string): PlanId {
 }
 
 export async function listOrgAgents(organizationId: string) {
-  return db
-    .select()
-    .from(organizationAgents)
-    .where(eq(organizationAgents.organization_id, organizationId));
+  const { OrgAgentsService } = await import("../agents/org-agents.service");
+  return OrgAgentsService.list(organizationId);
 }
 
+/**
+ * Connect (enabled=true) or disconnect specialized (enabled=false → delete row).
+ * Main agent cannot be disconnected.
+ */
 export async function setOrgAgentEnabled(
   organizationId: string,
-  agentId: string,
+  agentKey: string,
   enabled: boolean,
-  config?: Record<string, unknown>,
+  extra?: Record<string, unknown>,
 ) {
-  await db
-    .insert(organizationAgents)
-    .values({
-      organization_id: organizationId,
-      agent_id: agentId,
-      enabled,
-      config: config ?? {},
-      updated_at: new Date(),
-    })
-    .onConflictDoUpdate({
-      target: [organizationAgents.organization_id, organizationAgents.agent_id],
-      set: {
-        enabled,
-        ...(config !== undefined ? { config } : {}),
-        updated_at: new Date(),
-      },
-    });
+  const { OrgAgentsService } = await import("../agents/org-agents.service");
+  const { MAIN_AGENT_KEY } = await import("../agents/org-agents.types");
+
+  if (!enabled) {
+    if (agentKey === MAIN_AGENT_KEY) {
+      throw new ApiAuthError(
+        "entitlement_denied",
+        "Main Agent cannot be disconnected",
+        400,
+      );
+    }
+    await OrgAgentsService.disconnect(organizationId, agentKey);
+    return;
+  }
+
+  await OrgAgentsService.connect(organizationId, agentKey, extra);
 }
 
-export async function getOrgAgent(organizationId: string, agentId: string) {
-  const [row] = await db
-    .select()
-    .from(organizationAgents)
-    .where(
-      and(
-        eq(organizationAgents.organization_id, organizationId),
-        eq(organizationAgents.agent_id, agentId),
-      ),
-    )
-    .limit(1);
-  return row ?? null;
+export async function getOrgAgent(organizationId: string, agentKey: string) {
+  const { OrgAgentsService } = await import("../agents/org-agents.service");
+  return OrgAgentsService.get(organizationId, agentKey);
 }
 
 export async function listOrgIntegrations(organizationId: string) {
@@ -309,12 +339,12 @@ export async function setOrgIntegration(
     enabled?: boolean;
     config?: Record<string, unknown>;
   },
-): Promise<{ storageKeys: string[] }> {
+): Promise<void> {
   await db
     .insert(organizationIntegrations)
     .values({
       organization_id: organizationId,
-      integration_type: integrationId,
+      integration_id: integrationId,
       enabled: input.enabled ?? false,
       config: input.config ?? {},
       updated_at: new Date(),
@@ -322,7 +352,7 @@ export async function setOrgIntegration(
     .onConflictDoUpdate({
       target: [
         organizationIntegrations.organization_id,
-        organizationIntegrations.integration_type,
+        organizationIntegrations.integration_id,
       ],
       set: {
         ...(input.enabled !== undefined ? { enabled: input.enabled } : {}),
@@ -334,17 +364,14 @@ export async function setOrgIntegration(
   // Turning off removes all knowledge for that integration
   // (source → documents → chunks via FK cascade) and vault secrets.
   if (input.enabled === false) {
-    const { deleteSecretsForOrgCatalogIntegration } = await import(
-      "../integrations/secrets"
-    );
+    const { deleteSecretsForOrgCatalogIntegration } =
+      await import("../integrations/secrets");
     await deleteSecretsForOrgCatalogIntegration({
       organizationId,
       integrationType: integrationId,
     });
-    const { purgeKnowledgeForCatalogIntegration } = await import(
-      "../knowledge/service"
-    );
-    return purgeKnowledgeForCatalogIntegration(organizationId, integrationId);
+    const { purgeKnowledgeForCatalogIntegration } =
+      await import("../knowledge/service");
+    await purgeKnowledgeForCatalogIntegration(organizationId, integrationId);
   }
-  return { storageKeys: [] };
 }

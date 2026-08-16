@@ -10,11 +10,16 @@ import type { ScrapeResult } from "../types";
 
 const JINA_TIMEOUT_MS = 45_000;
 
-export async function scrapeWithJina(urlInput: string): Promise<ScrapeResult> {
+export async function scrapeWithJina(
+  urlInput: string,
+  options?: { signal?: AbortSignal },
+): Promise<ScrapeResult> {
   const target = urlInput.trim();
   const endpoint = `https://r.jina.ai/${target}`;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), JINA_TIMEOUT_MS);
+  const stop = () => controller.abort();
+  options?.signal?.addEventListener("abort", stop, { once: true });
   const apiKey = process.env.JINA_API_KEY?.trim();
 
   try {
@@ -57,10 +62,12 @@ export async function scrapeWithJina(urlInput: string): Promise<ScrapeResult> {
     };
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") {
+      if (options?.signal?.aborted) throw new Error("Scrape stopped.");
       throw new Error("Timed out fetching via Jina Reader.");
     }
     throw error;
   } finally {
     clearTimeout(timer);
+    options?.signal?.removeEventListener("abort", stop);
   }
 }

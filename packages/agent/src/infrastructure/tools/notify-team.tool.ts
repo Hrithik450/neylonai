@@ -14,17 +14,17 @@ export const notifyTeamTool = tool(
         referenceId: threadId,
       });
     }
-    return "Team has been notified about this lead.";
+    return "Team has been notified.";
   },
   {
     name: "notify_team",
     description:
-      "Notify the Neylon AI sales team about a qualified lead. Call this when the user has provided their budget, timeline, or explicitly requested a demo — i.e. when there is enough information to qualify them as a serious lead.",
+      "Notify the workspace team about something important from this conversation — for example a demo request, urgent issue, or information the team should follow up on.",
     schema: z.object({
       summary: z
         .string()
         .describe(
-          "A concise summary of the lead including their name, company, interest, budget, and timeline if available",
+          "A concise summary of why the team should be notified and any relevant visitor context",
         ),
     }),
   },

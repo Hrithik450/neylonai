@@ -14,7 +14,6 @@ import { hasAnySecret } from "@neylonai/domain/integrations";
 import { getSyncedKnowledgeSnapshot } from "@neylonai/domain/knowledge";
 import {
   connectedAccountLabel,
-  configHasLegacyCredentials,
   getImportIngestKind,
   getIntegrationManifest,
   isConnectIntegration,
@@ -25,27 +24,14 @@ import {
   redactIntegrationConfig,
   resolveIntegrationUiState,
 } from "@neylonai/integrations/catalog";
-import { deleteKnowledgeFileObject } from "@/server/knowledge-source-storage";
 
-async function requireOrg(req: NextRequest) {
+const requireOrg = async (req: NextRequest) => {
   const session = await getSessionFromRequest(req);
-  if (!session)
-    return {
-      error: NextResponse.json(
-        { success: false, error: "Unauthorized" },
-        { status: 401 },
-      ),
-    };
+  if (!session) return { error: NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 }) };
   const org = await getOrganizationForUser(session.id);
-  if (!org)
-    return {
-      error: NextResponse.json(
-        { success: false, error: "No organization" },
-        { status: 403 },
-      ),
-    };
+  if (!org) return { error: NextResponse.json({ success: false, error: "No organization" }, { status: 403 }) };
   return { org };
-}
+};
 
 export async function GET(req: NextRequest) {
   try {
@@ -57,7 +43,7 @@ export async function GET(req: NextRequest) {
       listOrgIntegrations(gate.org.organizationId),
     ]);
     const plan = subscription?.plan ?? "free";
-    const byId = new Map(installed.map((i) => [i.integration_type, i]));
+    const byId = new Map(installed.map((i) => [i.integration_id, i]));
     const ctx = { organizationId: gate.org.organizationId, plan };
 
     const integrations = await Promise.all(
@@ -85,11 +71,10 @@ export async function GET(req: NextRequest) {
 
         let credentialsConfigured = false;
         if (credentialKeys.length > 0 && row?.id) {
-          credentialsConfigured =
-            (await hasAnySecret({
-              organizationIntegrationId: row.id,
-              secretKeys: credentialKeys,
-            })) || configHasLegacyCredentials(rawConfig, credentialKeys);
+          credentialsConfigured = await hasAnySecret({
+            organizationIntegrationId: row.id,
+            secretKeys: credentialKeys,
+          });
         }
 
         const knowledge =
@@ -105,6 +90,7 @@ export async function GET(req: NextRequest) {
           name: manifest.name,
           description: manifest.description,
           dataMode: manifest.dataMode,
+          status: connectable ? "active" : "inactive",
           connectable,
           implemented:
             isImportIntegration(manifest.id) ||
@@ -145,7 +131,9 @@ export async function GET(req: NextRequest) {
       {
         success: false,
         error:
-          error instanceof Error ? error.message : "Failed to load integrations",
+          error instanceof Error
+            ? error.message
+            : "Failed to load integrations",
       },
       { status: 500 },
     );
@@ -184,14 +172,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Import mode uses /api/v1/integrations/knowledge (scrape / upload).
-    // Connect mode (e.g. Evently) toggles here. Sync is not implemented yet.
+    // Import mode uses /api/v1/integrations/knowledge or the website crawler.
     if (body.enabled && isImportIntegration(body.integrationId)) {
       return NextResponse.json(
         {
           success: false,
-          error:
-            "Use the Import flow for this integration (scrape or upload).",
+          error: "Use the Import flow for this integration (scrape or upload).",
         },
         { status: 400 },
       );
@@ -236,26 +222,16 @@ export async function POST(req: NextRequest) {
       await assertCanEnableIntegration(ctx, body.integrationId);
     }
 
-    const { storageKeys } = await setOrgIntegration(
-      gate.org.organizationId,
-      body.integrationId,
-      {
-        enabled: body.enabled,
-        ...(body.config !== undefined ? { config: body.config } : {}),
-      },
-    );
-    for (const key of storageKeys) {
-      await deleteKnowledgeFileObject(key);
-    }
+    await setOrgIntegration(gate.org.organizationId, body.integrationId, {
+      enabled: body.enabled,
+      ...(body.config !== undefined ? { config: body.config } : {}),
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {
     if (error instanceof ApiAuthError) {
       const item = getIntegrationManifest(integrationId ?? "");
-      const upgradePrompt = buildPlanBadgeUpgradePrompt(
-        plan,
-        item?.planBadge,
-      );
+      const upgradePrompt = buildPlanBadgeUpgradePrompt(plan, item?.planBadge);
       return NextResponse.json(
         {
           success: false,

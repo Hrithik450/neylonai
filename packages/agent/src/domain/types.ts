@@ -40,18 +40,24 @@ export type AgentConfigField =
 
 export type AgentActivityKind =
   | "answered_customer"
-  | "captured_lead"
-  | "qualified_lead"
   | "used_crm"
   | "escalated_conversation"
-  | "created_ticket"
-  | "booked_meeting"
+  | "shared_meeting_link"
   | "qualified_prospect";
 
 export interface AgentOutcomeMetric {
   key: string;
   label: string;
 }
+
+/** Main = default conversational entry. Specialized = optional domain agent. */
+export type AgentRole = "main" | "specialized";
+
+/**
+ * runtime = handles live turns today.
+ * blueprint = demo / future specialized agent (not operational).
+ */
+export type AgentKind = "runtime" | "blueprint";
 
 /**
  * UI-safe presentation for dashboards.
@@ -64,10 +70,16 @@ export interface AgentManifest {
   purpose: string;
   /** Plain-language overview — WHAT before HOW. */
   description: string;
+  role: AgentRole;
+  kind: AgentKind;
   builtIn: boolean;
   defaultActive: boolean;
-  /** Whether this agent can run chat turns today. Stubs are false. */
+  /** Whether this agent can run chat turns today. Blueprints are false. */
   runnable: boolean;
+  /** Human-readable capabilities (tools + domains) for the Agents UI. */
+  capabilities: string[];
+  /** Display-only model label for the dashboard (routing still picks the real model). */
+  modelLabel: string;
   outcomeMetric: AgentOutcomeMetric;
   configSchema: AgentConfigField[];
   /**
@@ -77,8 +89,7 @@ export interface AgentManifest {
   integrationIds: string[];
   /**
    * Integrations that must be enabled before this agent can be turned on.
-   * Empty for the default Support Agent (and any agent that only needs internal tools).
-   * Example: Sales Agent → `["hubspot"]`.
+   * Empty for the Main Agent (and any agent that only needs internal tools).
    */
   requiredIntegrationIds: string[];
   activityKinds: AgentActivityKind[];
@@ -88,12 +99,12 @@ export interface AgentManifest {
 
 /**
  * Contract every agent in the system must satisfy.
- * New agents register an AgentDefinition — the orchestrator never needs internals.
+ * The product currently registers one Main Agent; capabilities are tools.
  */
 export interface AgentDefinition extends AgentManifest {
   /** System prompt template. May include `{today_date}`. Runtime only. */
   systemPrompt: string;
-  /** Tools this agent can call. Runtime only. */
+  /** Tools this agent can call. */
   tools: StructuredToolInterface[];
   /** Optional: prepare per-turn context (e.g. inject thread id into tools). */
   onTurnStart?: (ctx: AgentTurnContext) => void | Promise<void>;
@@ -101,7 +112,7 @@ export interface AgentDefinition extends AgentManifest {
 
 export interface AgentTurnContext {
   threadId?: string;
-  senderId?: string;
+  participantExternalId?: string;
   organizationId?: string;
   userInput: string;
 }
@@ -114,13 +125,23 @@ export interface ConversationMessage {
 export type AgentEvent =
   | { event: "threadCreated"; data: unknown }
   | { event: "assistantResponse"; data: string }
+  /** Discard everything streamed so far this turn — a tool round preceded the answer. */
+  | { event: "assistantReset"; data: "reset" }
   | {
       event: "thinkingTips";
       data: { tips: string[]; source: "heuristic" | "llm"; thinking: "true" };
     }
   | {
       event: "conversationEscalated";
-      data: { reference: string; status: string };
+      data: { escalated: boolean; status?: string; threadId?: string };
+    }
+  | {
+      event: "handoffContactRequired";
+      data: { escalated: false; status: "awaiting_contact"; threadId: string };
+    }
+  | {
+      event: "messagePersisted";
+      data: { userMessageId: string; assistantMessageId: string };
     }
   | { event: "done"; data: "end" }
   | { event: "error"; data: { error: string } };
@@ -129,8 +150,18 @@ export interface StreamConversationInput {
   agentId?: string;
   userInput: string;
   threadId: string | null;
-  senderId: string | null;
   organizationId?: string | null;
+  participantId?: string | null;
+  participantExternalId?: string | null;
+  participantAnonymous?: boolean;
+  participantName?: string | null;
+  participantEmail?: string | null;
+  pagePath?: string | null;
+  pageQuery?: Record<string, string>;
+  pageSection?: {
+    sectionId: string;
+    sectionLabel?: string | null;
+  } | null;
   /** Correlates all model/tool usage for this HTTP request. */
   requestId?: string | null;
   apiKeyId?: string | null;
@@ -166,9 +197,13 @@ export function toAgentManifest(def: AgentDefinition): AgentManifest {
     name: def.name,
     purpose: def.purpose,
     description: def.description,
+    role: def.role,
+    kind: def.kind,
     builtIn: def.builtIn,
     defaultActive: def.defaultActive,
     runnable: def.runnable,
+    capabilities: def.capabilities,
+    modelLabel: def.modelLabel,
     outcomeMetric: def.outcomeMetric,
     configSchema: def.configSchema,
     integrationIds: def.integrationIds,

@@ -19,6 +19,8 @@ export interface KeywordSearchInput {
   query: string;
   /** Agent-allowed source ids. Empty → no hits (fail closed). */
   sourceIds: string[];
+  /** Optional exact website page path. */
+  canonicalPath?: string | null;
   limit?: number;
 }
 
@@ -59,6 +61,9 @@ export async function searchKnowledgeByKeyword(
       and(
         eq(knowledgeChunks.organization_id, organizationId),
         inArray(knowledgeDocuments.source_id, sourceIds),
+        input.canonicalPath
+          ? eq(knowledgeDocuments.canonical_path, input.canonicalPath)
+          : undefined,
         sql`${knowledgeChunks.content_tsv} @@ plainto_tsquery('english', ${trimmed})`,
       ),
     )
@@ -76,3 +81,4 @@ export async function searchKnowledgeByKeyword(
     rank: Number(row.rank),
   }));
 }
+

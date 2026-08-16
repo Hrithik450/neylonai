@@ -10,6 +10,11 @@ export interface SmoothStreamWriter {
   push: (chunk: string) => void;
   /** Instant jump to full text (Stop / abort only). */
   flush: () => void;
+  /**
+   * Drop all buffered and revealed text without painting.
+   * The caller owns clearing the bubble so a queued paint can't resurrect it.
+   */
+  reset: () => void;
   /** Keep revealing at the same pace until display catches up to received. */
   drain: () => Promise<void>;
   dispose: () => void;
@@ -30,6 +35,11 @@ export interface CreateSmoothStreamWriterOptions {
    */
   maxCharsPerFrame?: number;
 }
+
+/** Backlog (in characters) that doubles the reveal speed. */
+const CATCH_UP_LAG_CHARS = 160;
+/** Ceiling on the catch-up multiplier so reveal never becomes a dump. */
+const MAX_CATCH_UP = 4;
 
 export function createSmoothStreamWriter(
   options: CreateSmoothStreamWriterOptions,
@@ -68,7 +78,10 @@ export function createSmoothStreamWriter(
 
     if (displayed.length < received.length) {
       const lag = received.length - displayed.length;
-      carry += elapsedSec * charsPerSecond;
+      // Gemini delivers in bursts; without catch-up a long answer would still
+      // be typing out seconds after the model finished.
+      const catchUp = Math.min(MAX_CATCH_UP, 1 + lag / CATCH_UP_LAG_CHARS);
+      carry += elapsedSec * charsPerSecond * catchUp;
       let step = Math.floor(carry);
       carry -= step;
 
@@ -108,6 +121,18 @@ export function createSmoothStreamWriter(
       lastTickMs = 0;
       displayed = received;
       options.onFlush(displayed);
+      settleDrain();
+    },
+    reset() {
+      if (disposed) return;
+      if (rafId != null) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+      }
+      received = "";
+      displayed = "";
+      carry = 0;
+      lastTickMs = 0;
       settleDrain();
     },
     drain() {

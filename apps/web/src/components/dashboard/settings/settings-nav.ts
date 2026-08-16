@@ -1,8 +1,6 @@
 export type SettingsSectionId =
   | "general"
-  | "security"
-  | "notifications"
-  | "human-support"
+  | "api-keys"
   | "data-privacy"
   | "developer"
   | "billing";
@@ -11,55 +9,30 @@ export const SETTINGS_SECTIONS: Array<{
   id: SettingsSectionId;
   label: string;
   description: string;
-  keywords: string[];
 }> = [
   {
     id: "general",
     label: "General",
-    description: "Workspace identity, timezone, and language",
-    keywords: ["name", "company", "logo", "timezone", "language", "brand"],
+    description: "Organization name and timezone",
   },
   {
-    id: "security",
-    label: "Security",
-    description: "API keys, domains, sessions, and SSO prep",
-    keywords: ["api", "key", "secret", "domain", "origin", "session", "sso"],
-  },
-  {
-    id: "notifications",
-    label: "Notifications",
-    description: "Handoff and lead alerts",
-    keywords: ["email", "slack", "handoff", "lead", "alert"],
-  },
-  {
-    id: "human-support",
-    label: "Human Support",
-    description: "Business hours, escalations, and handoff messages",
-    keywords: [
-      "hours",
-      "escalation",
-      "assignee",
-      "team",
-      "handoff",
-      "unavailable",
-    ],
+    id: "api-keys",
+    label: "API keys",
+    description: "Keys and allowed domains",
   },
   {
     id: "data-privacy",
     label: "Data & Privacy",
-    description: "Retention, export, and deletion",
-    keywords: ["retention", "export", "delete", "privacy", "gdpr"],
+    description: "Conversation retention",
   },
   {
     id: "developer",
     label: "Developer",
-    description: "SDK, webhooks, and documentation",
-    keywords: ["sdk", "webhook", "docs", "install", "api"],
+    description: "SDK installation guide",
   },
   {
     id: "billing",
     label: "Billing & Plan",
-    description: "Subscription, invoices, and payment",
-    keywords: ["plan", "invoice", "payment", "upgrade", "cancel", "billing"],
+    description: "Subscription and payment",
   },
 ];

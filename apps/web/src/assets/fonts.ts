@@ -1,21 +1,28 @@
 import localFont from "next/font/local";
 
-export const guminertMedium = localFont({
-  src: "./fonts/Guminert-Medium.ttf",
-  weight: "550",
+/**
+ * App fonts live only under `src/assets/fonts/`.
+ * Swap a face by changing the `src` paths here — layouts and CSS classes stay put.
+ */
+
+/** Dashboard + admin (Banda Nova Book). */
+const bandaNova = localFont({
+  src: "./fonts/BandaNova-Book.woff2",
+  weight: "400 500",
+  variable: "--font-banda",
+  display: "swap",
 });
 
-export const guminertRegular = localFont({
-  src: "./fonts/Guminert-Regular.ttf",
-  weight: "400",
+/** Landing (Bricolage Grotesque) — one variable face covering 200–800. */
+const landing = localFont({
+  src: "./fonts/bricolage-grotesque-variable.woff2",
+  weight: "200 800",
+  variable: "--font-landing",
+  display: "swap",
 });
 
-export const guminertBold = localFont({
-  src: "./fonts/Guminert-Bold.ttf",
-  weight: "700",
-});
+/** Root body — exposes `--font-banda` for `.paper`, `.admin-shell`, dialogs. */
+export const appFontClassName = bandaNova.variable;
 
-export const sfProRegular = localFont({
-  src: "./fonts/SF-Pro-Display-Regular.otf",
-  weight: "400",
-});
+/** Landing shell — Bricolage Grotesque via `.landing` / `.landing-strong`. */
+export const landingFontClassName = [landing.variable, "landing"].join(" ");

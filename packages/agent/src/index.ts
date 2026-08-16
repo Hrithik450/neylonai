@@ -1,8 +1,5 @@
 // Ensure agents + providers are registered on import.
-import "./agents/default";
-import "./agents/booking";
-import "./agents/lead";
-import "./agents/sales";
+import "./agents/main-agent";
 import "./infrastructure/knowledge-search";
 import "@neylonai/integrations";
 
@@ -26,6 +23,8 @@ export type {
   AgentConfigField,
   AgentActivityKind,
   AgentOutcomeMetric,
+  AgentRole,
+  AgentKind,
   AgentTurnContext,
   ConversationMessage,
   AgentEvent,
@@ -38,12 +37,6 @@ export {
   buildHandoffSummary,
   type EscalationDecision,
 } from "./application/escalation";
-export { maybeCaptureLeadFromUserMessage } from "./application/lead-capture-bridge";
-export {
-  detectBookingBridgePhase,
-  BOOKING_CONFIRM_MESSAGE,
-  BOOKING_UNAVAILABLE_MESSAGE,
-} from "./application/booking-bridge";
 export {
   loadOrgCapabilities,
   resolveAgentTools,
@@ -51,28 +44,20 @@ export {
   TOOL_INTEGRATION_GATES,
 } from "./application/resolve-agent-tools";
 export type { OrgCapabilitySnapshot } from "./application/resolve-agent-tools";
-export {
-  upsertLead,
-  upsertLeadRecord,
-  listOrgLeads,
-  LeadsRepository,
-  type LeadInput,
-  type LeadRecord,
-  type LeadFieldKey,
-} from "./agents/lead/persistence";
-export {
-  getLeadAgentSettings,
-  DEFAULT_LEAD_FIELDS,
-  type LeadAgentSettings,
-} from "./agents/lead/settings";
 export { reframeQuery } from "./application/reframe-query";
 export { buildAgentGraph } from "./application/build-agent-graph";
 export {
   routeModel,
   classifyComplexityHeuristic,
   getModelForComplexity,
+  parseCreditClassifierDecision,
+  buildEstimatorUserMessage,
+  buildFallbackRoute,
+  buildHeuristicRoute,
+  toTurnCreditEstimate,
   type ComplexityTier,
   type ModelRoute,
+  type CreditEstimatorInput,
 } from "./application/model-router";
 export {
   buildHeuristicTips,
@@ -84,7 +69,7 @@ export {
   type BuildSuggestionsInput,
   type ProactiveSuggestion,
   type SuggestionSource,
-} from "./agents/default/proactive-suggestions";
+} from "./agents/main-agent/proactive-suggestions";
 export {
   runWithAgentTurnContext,
   withAgentTurnContext,
@@ -92,6 +77,9 @@ export {
   patchAgentTurnContext,
   appendProvenanceHits,
   takeProvenanceHits,
+  getTurnBillingSignals,
+  recordRoutedModel,
+  recordCreditEstimate,
   type AgentTurnContextStore,
 } from "./infrastructure/agent-turn-context";
 export {

@@ -5,6 +5,7 @@ import {
   text,
   timestamp,
   integer,
+  jsonb,
   index,
   uniqueIndex,
   halfvec,
@@ -33,7 +34,7 @@ const tsvector = customType<{ data: string }>({
  *   organization
  *     → organization_integrations (1 row per catalog type; credentials + enabled)
  *       → knowledge_sources (exactly 1 source bag per org integration)
- *         → knowledge_documents (instances: e.g. each PDF / scraped page)
+ *         → knowledge_documents (instances such as scraped pages or tables)
  *           → knowledge_chunks
  *
  * Disabling an org integration purges its source → documents → chunks.
@@ -50,20 +51,11 @@ export const knowledgeSources = pgTable(
     organization_integration_id: uuid("organization_integration_id")
       .notNull()
       .references(() => organizationIntegrations.id, { onDelete: "cascade" }),
-    /** Denormalized from organization_integrations.integration_type (kept in sync via DB trigger). */
-    source_type: varchar("source_type", { length: 64 }).notNull(),
-    /** Number of knowledge_documents under this source. */
-    document_count: integer("document_count").notNull().default(0),
     last_synced_at: timestamp("last_synced_at", { withTimezone: true }),
     created_at: timestamp("created_at", { withTimezone: true }).defaultNow(),
-    updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   },
   (t) => [
     index("knowledge_sources_org_idx").on(t.organization_id),
-    index("knowledge_sources_org_source_type_idx").on(
-      t.organization_id,
-      t.source_type,
-    ),
     /** One source bag per org integration; instances are documents. */
     uniqueIndex("knowledge_sources_organization_integration_uidx").on(
       t.organization_integration_id,
@@ -87,13 +79,9 @@ export const knowledgeDocuments = pgTable(
       .notNull()
       .references(() => knowledgeSources.id, { onDelete: "cascade" }),
     external_doc_id: varchar("external_doc_id", { length: 255 }).notNull(),
-    name: text("name"),
+    canonical_path: text("canonical_path"),
     /** Original uploaded / scraped text before chunking. */
     raw_content: text("raw_content"),
-    /** Number of knowledge_chunks under this document. */
-    chunks_count: integer("chunks_count").notNull().default(0),
-    /** Object storage key for uploaded files (e.g. PDF). */
-    storage_key: text("storage_key"),
     created_at: timestamp("created_at", { withTimezone: true }).defaultNow(),
     updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   },
@@ -104,6 +92,14 @@ export const knowledgeDocuments = pgTable(
     ),
     index("knowledge_documents_organization_id_idx").on(t.organization_id),
     index("knowledge_documents_source_id_idx").on(t.source_id),
+    uniqueIndex("knowledge_documents_source_canonical_path_uidx").on(
+      t.source_id,
+      t.canonical_path,
+    ),
+    index("knowledge_documents_org_canonical_path_idx").on(
+      t.organization_id,
+      t.canonical_path,
+    ),
   ],
 );
 
@@ -142,6 +138,42 @@ export const knowledgeChunks = pgTable(
   ],
 );
 
+/** Page sections and their page-specific proactive prompts. */
+export const knowledgePageSections = pgTable(
+  "knowledge_page_sections",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    organization_id: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    document_id: uuid("document_id")
+      .notNull()
+      .references(() => knowledgeDocuments.id, { onDelete: "cascade" }),
+    section_key: varchar("section_key", { length: 96 }).notNull(),
+    content: text("content").notNull(),
+    /** Scraper that produced the source page for this section. */
+    provider: varchar("provider", { length: 32 }).notNull().default("unknown"),
+    /** Who produced the section split: gemini or heuristic. */
+    sectioner: varchar("sectioner", { length: 32 })
+      .notNull()
+      .default("unknown"),
+    suggestions: jsonb("suggestions").$type<string[]>().notNull().default([]),
+    position: integer("position").notNull().default(0),
+    created_at: timestamp("created_at", { withTimezone: true }).defaultNow(),
+    updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("knowledge_page_sections_document_key_uidx").on(
+      t.document_id,
+      t.section_key,
+    ),
+    index("knowledge_page_sections_org_document_idx").on(
+      t.organization_id,
+      t.document_id,
+    ),
+  ],
+);
+
 export function toHalfvecLiteral(values: number[]): string {
   return `[${values.join(",")}]`;
 }
@@ -163,19 +195,19 @@ export const knowledgeSourceAgents = pgTable(
     source_id: uuid("source_id")
       .notNull()
       .references(() => knowledgeSources.id, { onDelete: "cascade" }),
-    agent_id: varchar("agent_id", { length: 64 }).notNull(),
+    agent_key: varchar("agent_key", { length: 64 }).notNull(),
     created_at: timestamp("created_at", { withTimezone: true }).defaultNow(),
   },
   (t) => [
     uniqueIndex("knowledge_source_agents_uidx").on(
       t.organization_id,
       t.source_id,
-      t.agent_id,
+      t.agent_key,
     ),
     index("knowledge_source_agents_org_idx").on(t.organization_id),
     index("knowledge_source_agents_agent_idx").on(
       t.organization_id,
-      t.agent_id,
+      t.agent_key,
     ),
   ],
 );

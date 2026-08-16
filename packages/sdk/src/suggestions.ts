@@ -1,21 +1,35 @@
-import { tryGetAuthHeaders } from "./client";
 import { apiUrl } from "./network";
+import { tryGetAuthHeaders } from "./client";
 import { getOrCreateSessionId, getOrCreateVisitorId } from "./visitor";
+import type { TrackedPageSection } from "./page-context";
 
 export interface ProactiveSuggestionDto {
   id: string;
   text: string;
-  source: "welcome" | "conversation" | "history" | "page" | "knowledge";
+  source:
+    | "welcome"
+    | "recent_conversation"
+    | "conversation_history"
+    | "section"
+    | "page"
+    | "knowledge";
+  /** Stable page-section key when the suggestion is grounded in visible content. */
+  contextKey?: string;
 }
 
 export interface FetchSuggestionsInput {
   pagePath?: string | null;
   pageUrl?: string | null;
+  pageSection?: TrackedPageSection | null;
   recentMessages?: Array<{ role: string; content: string }>;
   mode?: "idle" | "post_chat";
   limit?: number;
   /** Already shown / dismissed ids for this visitor (demoted server-side). */
   excludeIds?: string[];
+  /** Section keys not yet shown on this page (return-visit personalization). */
+  unshownSectionKeys?: string[];
+  /** Behavioral trigger that fired this refresh (constrained enum). */
+  triggerType?: "idle" | "dwell";
   visitorId?: string | null;
   sessionId?: string | null;
   signal?: AbortSignal;
@@ -23,7 +37,11 @@ export interface FetchSuggestionsInput {
 
 export async function fetchSuggestions(
   input: FetchSuggestionsInput = {},
-): Promise<{ success: boolean; data: ProactiveSuggestionDto[]; error?: string }> {
+): Promise<{
+  success: boolean;
+  data: ProactiveSuggestionDto[];
+  error?: string;
+}> {
   const auth = tryGetAuthHeaders({ "Content-Type": "application/json" });
   if ("error" in auth) {
     return { success: false, data: [], error: auth.error };
@@ -41,10 +59,13 @@ export async function fetchSuggestions(
         pageUrl:
           input.pageUrl ??
           (typeof window !== "undefined" ? window.location.href : undefined),
+        pageSection: input.pageSection,
         recentMessages: input.recentMessages,
         mode: input.mode ?? "idle",
         limit: input.limit,
         excludeIds: input.excludeIds,
+        unshownSectionKeys: input.unshownSectionKeys,
+        triggerType: input.triggerType,
         visitorId,
         sessionId,
       }),
@@ -66,7 +87,8 @@ export async function fetchSuggestions(
     return {
       success: false,
       data: [],
-      error: error instanceof Error ? error.message : "Failed to fetch suggestions",
+      error:
+        error instanceof Error ? error.message : "Failed to fetch suggestions",
     };
   }
 }

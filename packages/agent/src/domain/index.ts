@@ -4,6 +4,8 @@ export type {
   AgentConfigField,
   AgentActivityKind,
   AgentOutcomeMetric,
+  AgentRole,
+  AgentKind,
   AgentTurnContext,
   ConversationMessage,
   AgentEvent,
@@ -23,7 +25,4 @@ export {
   setDefaultAgent,
 } from "./registry";
 export { getMissingRequiredIntegrations } from "./integration-requirements";
-export {
-  AGENT_DISPLAY_ORDER,
-  sortAgentsForDisplay,
-} from "./display-order";
+export { sortAgentsForDisplay } from "./display-order";

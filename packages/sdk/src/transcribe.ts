@@ -68,7 +68,7 @@ export async function transcribeAudio(
     throw new Error(
       json.error ??
         (response.status === 402
-          ? "Subscription inactive or conversation limit reached."
+          ? "Included AI credits exhausted. Upgrade to continue."
           : "Could not transcribe audio. Please try again."),
     );
   }

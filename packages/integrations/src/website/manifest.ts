@@ -4,7 +4,7 @@ export const websiteManifest = {
   id: "website",
   name: "Website",
   description:
-    "Import full website evergreen pages. Database backed pages are filtered out, use Database for those.",
+    "Import evergreen site pages like pricing, features, docs, help, and policies into your AI knowledge base.",
   dataMode: "import",
   connectable: true,
   planBadge: "free",

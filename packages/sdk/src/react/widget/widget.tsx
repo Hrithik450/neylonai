@@ -29,9 +29,7 @@ const TabsRegistry = {
   Home: {
     icon: <House className="w-5 h-5" strokeWidth={2} />,
     label: "Home",
-    screens: {
-      [WidgetScreens.HomeScreens.Home]: WidgetHome,
-    },
+    screens: { [WidgetScreens.HomeScreens.Home]: WidgetHome },
     default: WidgetScreens.HomeScreens.Home,
   },
   Messages: {
@@ -46,66 +44,45 @@ const TabsRegistry = {
   Contact: {
     icon: <Mail className="w-5 h-5" strokeWidth={2} />,
     label: "Contact",
-    screens: {
-      [WidgetScreens.ContactScreens.Contact]: WidgetContact,
-    },
+    screens: { [WidgetScreens.ContactScreens.Contact]: WidgetContact },
     default: WidgetScreens.ContactScreens.Contact,
   },
 } as const;
 
-function getScreenComponent(tab: WidgetTabType, screenName: WidgetScreenType) {
-  return (
-    TabsRegistry[tab].screens as Record<string, React.ComponentType<any>>
-  )[screenName];
-}
+const getScreenComponent = (tab: WidgetTabType, screenName: WidgetScreenType) =>
+  (TabsRegistry[tab].screens as Record<string, React.ComponentType<any>>)[screenName];
 
-const LAUNCHER_SIZE_PX = {
-  sm: 48,
-  md: 56,
-  lg: 64,
-} as const;
-
-/** Space between open panel and launcher bubble. */
+const LAUNCHER_SIZE_PX = { sm: 48, md: 56, lg: 64 } as const;
 const PANEL_LAUNCHER_GAP_PX = 12;
 
-function widgetPanelClassName(
-  isOpen: boolean,
-  isCollapse: boolean,
-  fontClassName: string | undefined,
-  inline: boolean,
-  isLeft: boolean,
-) {
-  return cn(
+const widgetPanelClassName = (isOpen: boolean, isCollapse: boolean, fontClassName: string | undefined, inline: boolean, isLeft: boolean) =>
+  cn(
     fontClassName,
     inline
       ? cn(
-          // Sit inside the preview frame; bottom clearance comes from inline style
-          // so the launcher stays visible below the panel.
           "absolute left-1.5 right-1.5 top-2 z-10 overflow-hidden origin-bottom",
           "w-auto min-w-0 max-w-full",
+          "rounded-2xl border border-gray-400/40 shadow-2xl",
         )
       : cn(
-          "fixed max-md:inset-0 overflow-y-auto overscroll-contain [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden",
+          "fixed z-[110] overflow-hidden overscroll-contain",
+          "max-md:inset-0 max-md:h-dvh max-md:max-h-dvh max-md:w-full max-md:min-w-0 max-md:max-w-none",
+          "max-md:rounded-none max-md:border-0 max-md:shadow-none",
+          "max-md:pt-[max(0.5rem,env(safe-area-inset-top,0px))]",
           "md:bottom-[var(--neylonai-panel-bottom,5rem)]",
           isLeft ? "md:left-5 md:right-auto" : "md:right-5",
           "2xl:right-[max(1.2rem,calc((100vw-120rem)/2+2rem))]",
-          isLeft &&
-            "2xl:left-[max(1.2rem,calc((100vw-120rem)/2+2rem))] 2xl:right-auto",
+          isLeft && "2xl:left-[max(1.2rem,calc((100vw-120rem)/2+2rem))] 2xl:right-auto",
           "origin-bottom-right",
           isLeft && "origin-bottom-left",
-          "md:h-[65vh] lg:h-[85vh] max-h-full md:max-h-187.5 z-99",
-          isCollapse
-            ? "w-full md:min-w-md md:max-w-md"
-            : "w-full md:min-w-2xl md:max-w-2xl",
+          "md:h-[65vh] lg:h-[85vh] md:max-h-187.5",
+          "md:rounded-2xl md:border md:border-gray-400/40 md:shadow-2xl",
+          isCollapse ? "md:min-w-md md:max-w-md md:w-full" : "md:min-w-2xl md:max-w-2xl md:w-full",
         ),
-    "border border-gray-400/40 shadow-2xl sm:rounded-2xl pt-2 sm:pt-3 flex flex-col",
-    "overscroll-contain",
+    "md:pt-2 flex flex-col min-w-0",
     "transition-[opacity,transform,min-width,max-width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
-    isOpen
-      ? "opacity-100 translate-y-0 pointer-events-auto"
-      : "opacity-0 translate-y-2 pointer-events-none",
+    isOpen ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 translate-y-2 pointer-events-none",
   );
-}
 
 export function Widget() {
   const { isOpen, isCollapse } = useWidgetToggleStore();
@@ -114,15 +91,10 @@ export function Widget() {
 
   const inline = config.presentation === "inline";
   const isLeft = config.layout.position === "bottom-left";
-  const tabActiveColor = config.branding.tabActiveColor;
-  const tabAccentColor = config.branding.accentColor;
-  const gradientFrom = config.branding.gradientFrom;
-  const gradientTo = config.branding.gradientTo;
+  const { tabActiveColor, accentColor, gradientFrom, gradientTo } = config.branding;
   const launcherPx = LAUNCHER_SIZE_PX[config.layout.launcherSize];
   const { fontFamily } = useWidgetFont(config.branding.font);
-  // Keep the open panel clear of the launcher + a small premium gap (desktop / inline).
-  const panelBottomPx =
-    (inline ? 0 : config.layout.offsetY) + launcherPx + PANEL_LAUNCHER_GAP_PX;
+  const panelBottomPx = (inline ? 0 : config.layout.offsetY) + launcherPx + PANEL_LAUNCHER_GAP_PX;
 
   const enabledTabs = useMemo(() => {
     const tabs: WidgetTabType[] = [];
@@ -130,61 +102,36 @@ export function Widget() {
     if (config.features.messagesTab) tabs.push(WidgetTabs.Messages);
     if (config.features.contactTab) tabs.push(WidgetTabs.Contact);
     return tabs.length > 0 ? tabs : [WidgetTabs.Home];
-  }, [
-    config.features.homeTab,
-    config.features.messagesTab,
-    config.features.contactTab,
-  ]);
+  }, [config.features.homeTab, config.features.messagesTab, config.features.contactTab]);
 
   useEffect(() => {
-    // Contact can be opened from Home ("Talk to the team") even when the
-    // Contact tab is hidden in the bottom bar.
-    if (
-      !enabledTabs.includes(activeTab) &&
-      activeTab !== WidgetTabs.Contact
-    ) {
+    if (!enabledTabs.includes(activeTab) && activeTab !== WidgetTabs.Contact) {
       switchTab(enabledTabs[0]!);
     }
   }, [activeTab, enabledTabs, switchTab]);
 
   const isRootScreen = tabStacks[activeTab]?.stack.length === 1;
   const currentScreen = tabStacks[activeTab]?.stack.at(-1);
-  const ActiveScreen = currentScreen
-    ? getScreenComponent(activeTab, currentScreen.name)
-    : null;
-
+  const ActiveScreen = currentScreen ? getScreenComponent(activeTab, currentScreen.name) : null;
   const showTabBar = isRootScreen && enabledTabs.length > 1;
 
   return (
     <div
       data-neylonai-widget
       className={cn(
-        widgetPanelClassName(
-          isOpen,
-          isCollapse,
-          config.branding.fontClassName,
-          inline,
-          isLeft,
-        ),
-        // Keep bottom flush with chrome (tab bar / composer), same as home nav.
-        !showTabBar && "pb-1.5",
+        widgetPanelClassName(isOpen, isCollapse, config.branding.fontClassName, inline, isLeft),
+        !showTabBar && "pb-1.5 max-md:pb-0",
       )}
       style={{
         fontFamily,
-        // Use longhands so nothing else can clobber the panel gradient.
         backgroundImage: `linear-gradient(to bottom, ${gradientFrom} 0%, ${gradientTo} 100%)`,
         backgroundColor: gradientTo,
-        // Mobile fullscreen uses inset-0; md+ / inline use this clearance.
-        ...(inline
-          ? { bottom: panelBottomPx }
-          : ({
-              ["--neylonai-panel-bottom" as string]: `${panelBottomPx}px`,
-            } as React.CSSProperties)),
+        ...(inline ? { bottom: panelBottomPx } : ({ ["--neylonai-panel-bottom" as string]: `${panelBottomPx}px` } as React.CSSProperties)),
       }}
       onWheel={(e) => e.stopPropagation()}
       onTouchMove={(e) => e.stopPropagation()}
     >
-      <div className="relative flex-1 min-h-0 overflow-hidden flex flex-col">
+      <div className="relative flex-1 min-h-0 min-w-0 overflow-hidden flex flex-col">
         {ActiveScreen && <ActiveScreen {...currentScreen?.props} />}
       </div>
 
@@ -205,14 +152,10 @@ export function Widget() {
                   "bg-transparent border-0 outline-none",
                   "hover:bg-black/[0.03] transition-colors",
                 )}
-                style={{
-                  color: selected ? tabActiveColor : tabAccentColor,
-                }}
+                style={{ color: selected ? tabActiveColor : accentColor }}
               >
                 {configTab.icon}
-                <span className="text-[11px] font-medium leading-none">
-                  {configTab.label}
-                </span>
+                <span className="text-[11px] font-medium leading-none">{configTab.label}</span>
               </button>
             );
           })}

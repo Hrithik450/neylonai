@@ -1,13 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import {
-  useCallback,
-  useMemo,
-  useState,
-  type ReactNode,
-} from "react";
-import { UpgradePrompt } from "@/components/dashboard/upgrade-prompt";
+import { useCallback, useMemo, useState, type ReactNode } from "react";
 import { SmoothCollapse } from "@/components/dashboard/smooth-collapse";
 import { WidgetStaticPreview } from "@/components/dashboard/widget-static-preview";
 import {
@@ -23,14 +17,13 @@ import {
   WidgetLogoControls,
   patchBrandingLogoUrl,
 } from "@/components/dashboard/widget-logo-controls";
+import { WidgetCodingAgentConfig } from "@/components/dashboard/widget-coding-agent-config";
 
 /** Platform default color palette (Appearance → Colors). */
 type WidgetColorPalette = {
   gradientFrom: string;
   gradientTo: string;
-  headerTint: string;
   primaryTextColor: string;
-  primaryColor: string;
   secondaryTextColor: string;
   primaryTextBackground: string;
   askButtonTextColor: string;
@@ -46,9 +39,7 @@ function platformColorPalette(): WidgetColorPalette {
   return {
     gradientFrom: d.gradientFrom!,
     gradientTo: d.gradientTo!,
-    headerTint: d.headerTint ?? d.gradientFrom!,
     primaryTextColor: d.primaryTextColor!,
-    primaryColor: d.primaryColor ?? d.primaryTextColor!,
     secondaryTextColor: d.secondaryTextColor!,
     primaryTextBackground: d.primaryTextBackground!,
     askButtonTextColor: d.askButtonTextColor!,
@@ -66,18 +57,10 @@ function pickColorPalette(
   const platform = platformColorPalette();
   return {
     gradientFrom:
-      branding?.gradientFrom ?? branding?.headerTint ?? platform.gradientFrom,
+      branding?.gradientFrom ?? platform.gradientFrom,
     gradientTo: branding?.gradientTo ?? platform.gradientTo,
-    headerTint:
-      branding?.headerTint ?? branding?.gradientFrom ?? platform.headerTint,
     primaryTextColor:
-      branding?.primaryTextColor ??
-      branding?.primaryColor ??
-      platform.primaryTextColor,
-    primaryColor:
-      branding?.primaryColor ??
-      branding?.primaryTextColor ??
-      platform.primaryColor,
+      branding?.primaryTextColor ?? platform.primaryTextColor,
     secondaryTextColor:
       branding?.secondaryTextColor ?? platform.secondaryTextColor,
     primaryTextBackground:
@@ -101,7 +84,7 @@ function colorPalettesEqual(a: WidgetColorPalette, b: WidgetColorPalette) {
 
 function SectionLabel({ children }: { children: ReactNode }) {
   return (
-    <span className="mono block text-[0.6rem] tracking-[0.16em] uppercase opacity-60">
+    <span className="block text-[0.6rem] tracking-[0.16em] uppercase opacity-60">
       {children}
     </span>
   );
@@ -109,7 +92,7 @@ function SectionLabel({ children }: { children: ReactNode }) {
 
 function FieldLabel({ children }: { children: ReactNode }) {
   return (
-    <span className="mono text-[0.65rem] font-bold tracking-[0.12em] uppercase opacity-60">
+    <span className="text-[0.65rem] font-bold tracking-[0.12em] uppercase opacity-60">
       {children}
     </span>
   );
@@ -120,18 +103,20 @@ function ConfigSection({
   description,
   defaultOpen = false,
   badge,
+  id,
   children,
 }: {
   title: string;
   description: string;
   defaultOpen?: boolean;
   badge?: string;
+  id?: string;
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(defaultOpen);
 
   return (
-    <div className="ink-card overflow-hidden">
+    <div id={id} className="ink-card overflow-hidden">
       <button
         type="button"
         aria-expanded={open}
@@ -171,7 +156,10 @@ function BehaviorFaqEditor({
   onChangeFaq,
 }: {
   faqs: Array<{ question: string; answer: string }>;
-  onChangeFaq: (index: number, next: { question: string; answer: string }) => void;
+  onChangeFaq: (
+    index: number,
+    next: { question: string; answer: string },
+  ) => void;
 }) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
@@ -193,7 +181,7 @@ function BehaviorFaqEditor({
                 onClick={() => setOpenIndex(open ? null : idx)}
               >
                 <span className="min-w-0 flex-1 truncate text-sm">
-                  <span className="mono text-[0.6rem] tracking-[0.14em] uppercase opacity-50 mr-2">
+                  <span className="text-[0.6rem] tracking-[0.14em] uppercase opacity-50 mr-2">
                     FAQ {idx + 1}
                   </span>
                   {faq.question.trim() || "Untitled question"}
@@ -278,23 +266,26 @@ function toColorInputValue(raw: string): string {
   );
   if (rgb) {
     const hex = (n: string) =>
-      Math.max(0, Math.min(255, Number(n))).toString(16).padStart(2, "0");
+      Math.max(0, Math.min(255, Number(n)))
+        .toString(16)
+        .padStart(2, "0");
     return `#${hex(rgb[1]!)}${hex(rgb[2]!)}${hex(rgb[3]!)}`;
   }
   return "#000000";
 }
 
+type ConfigMode = "manual" | "agent";
+
 export function WidgetConfigCenter({
   initial,
   planId,
-  fullWidgetCustomization,
   advancedProactive,
 }: {
   initial: StoredWidgetConfig;
   planId: string;
-  fullWidgetCustomization: boolean;
   advancedProactive: boolean;
 }) {
+  const [configMode, setConfigMode] = useState<ConfigMode>("manual");
   const [saved, setSaved] = useState(() => mergeWidgetConfig(initial));
   const [draft, setDraft] = useState(() => mergeWidgetConfig(initial));
   const [saving, setSaving] = useState(false);
@@ -377,43 +368,33 @@ export function WidgetConfigCenter({
         ...draft,
         branding: {
           ...draft.branding,
-          gradientFrom:
-            draft.branding?.gradientFrom ?? draft.branding?.headerTint,
+          gradientFrom: draft.branding?.gradientFrom,
           gradientTo: draft.branding?.gradientTo,
-          primaryTextColor:
-            draft.branding?.primaryTextColor ?? draft.branding?.primaryColor,
+          primaryTextColor: draft.branding?.primaryTextColor,
           secondaryTextColor: draft.branding?.secondaryTextColor,
           tabActiveColor: draft.branding?.tabActiveColor,
           accentColor: draft.branding?.accentColor,
           primaryTextBackground:
             draft.branding?.primaryTextBackground ??
-            draft.branding?.primaryTextColor ??
-            draft.branding?.primaryColor,
-          askButtonTextColor:
-            draft.branding?.askButtonTextColor ?? "#ffffff",
+            draft.branding?.primaryTextColor,
+          askButtonTextColor: draft.branding?.askButtonTextColor ?? "#ffffff",
           secondaryTextBackground: draft.branding?.secondaryTextBackground,
           aiMessageBackground: draft.branding?.aiMessageBackground,
           humanMessageBackground: draft.branding?.humanMessageBackground,
-          primaryColor:
-            draft.branding?.primaryTextColor ?? draft.branding?.primaryColor,
-          headerTint:
-            draft.branding?.gradientFrom ?? draft.branding?.headerTint,
         },
       }),
     [draft],
   );
 
-  const advancedLocked = !fullWidgetCustomization;
-
   return (
     <div className="space-y-6 pb-24">
       <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="space-y-2 min-w-0">
-          <h1 className="text-3xl sm:text-4xl">Widget</h1>
+          <h1 id="widget-config-heading" className="text-3xl sm:text-4xl">Widget</h1>
           <p className="caption text-sm max-w-2xl">
-            Complete chatbot setup — appearance, behavior, proactive suggestions,
-            appearance, greeting, and launcher. Preview updates as you edit;
-            publish when you&apos;re ready.
+            Complete chatbot setup: appearance, behavior, proactive suggestions,
+            greeting, and launcher. Edit it here, or hand the setup to a coding
+            agent that matches your website&apos;s own theme.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2 sm:justify-end">
@@ -436,20 +417,41 @@ export function WidgetConfigCenter({
         </div>
       </header>
 
-      {advancedLocked ? (
-        <UpgradePrompt
-          compact
-          title="Full widget customization is on Starter+"
-          detail="You can edit core branding and messages on Free. Unlock layout, theme accents, tabs, path targeting, and timing on Starter."
-          ctaLabel="Upgrade to Starter"
-          href="/dashboard/settings?section=billing&upgrade=starter"
-        />
-      ) : null}
+      {/* Setup mode selector */}
+      <div
+        id="widget-mode-options"
+        className="inline-flex rounded-full border border-[var(--ink)] overflow-hidden text-sm"
+      >
+        {(
+          [
+            { id: "manual", label: "Manual" },
+            { id: "agent", label: "Configure with coding agent" },
+          ] as { id: ConfigMode; label: string }[]
+        ).map((opt) => (
+          <button
+            key={opt.id}
+            type="button"
+            onClick={() => setConfigMode(opt.id)}
+            className="cursor-pointer px-4 py-1.5 transition-colors whitespace-nowrap"
+            style={
+              configMode === opt.id
+                ? { background: "var(--ink)", color: "#fff" }
+                : { background: "#fff" }
+            }
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
 
+      {configMode === "agent" ? (
+        <WidgetCodingAgentConfig />
+      ) : (
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(360px,460px)]">
         <div className="space-y-4 min-w-0">
           {/* 1. Appearance */}
           <ConfigSection
+            id="widget-appearance-section"
             title="Appearance"
             description="Name, logo, panel gradient, Ask button, cards, and tabs."
           >
@@ -499,38 +501,28 @@ export function WidgetConfigCenter({
                     <input
                       type="color"
                       className={COLOR_SWATCH_CLASS}
-                      value={
-                        toColorInputValue(
-                          draft.branding?.gradientFrom ??
-                            draft.branding?.headerTint ??
-                            "#90ee90",
-                        )
-                      }
+                      value={toColorInputValue(
+                        draft.branding?.gradientFrom ?? "#90ee90",
+                      )}
                       onChange={(e) =>
                         patch((f) => ({
                           ...f,
                           branding: {
                             ...f.branding,
                             gradientFrom: e.target.value,
-                            headerTint: e.target.value,
                           },
                         }))
                       }
                     />
                     <input
                       className="ink-input flex-1"
-                      value={
-                        draft.branding?.gradientFrom ??
-                        draft.branding?.headerTint ??
-                        ""
-                      }
+                      value={draft.branding?.gradientFrom ?? ""}
                       onChange={(e) =>
                         patch((f) => ({
                           ...f,
                           branding: {
                             ...f.branding,
                             gradientFrom: e.target.value,
-                            headerTint: e.target.value,
                           },
                         }))
                       }
@@ -583,9 +575,7 @@ export function WidgetConfigCenter({
                       type="color"
                       className={COLOR_SWATCH_CLASS}
                       value={toColorInputValue(
-                        draft.branding?.primaryTextColor ??
-                          draft.branding?.primaryColor ??
-                          "#0E3228",
+                        draft.branding?.primaryTextColor ?? "#0E3228",
                       )}
                       onChange={(e) =>
                         patch((f) => ({
@@ -593,25 +583,19 @@ export function WidgetConfigCenter({
                           branding: {
                             ...f.branding,
                             primaryTextColor: e.target.value,
-                            primaryColor: e.target.value,
                           },
                         }))
                       }
                     />
                     <input
                       className="ink-input flex-1"
-                      value={
-                        draft.branding?.primaryTextColor ??
-                        draft.branding?.primaryColor ??
-                        ""
-                      }
+                      value={draft.branding?.primaryTextColor ?? ""}
                       onChange={(e) =>
                         patch((f) => ({
                           ...f,
                           branding: {
                             ...f.branding,
                             primaryTextColor: e.target.value,
-                            primaryColor: e.target.value,
                           },
                         }))
                       }
@@ -665,7 +649,6 @@ export function WidgetConfigCenter({
                       value={toColorInputValue(
                         draft.branding?.primaryTextBackground ??
                           draft.branding?.primaryTextColor ??
-                          draft.branding?.primaryColor ??
                           "#0E3228",
                       )}
                       onChange={(e) =>
@@ -922,6 +905,7 @@ export function WidgetConfigCenter({
 
           {/* 2. Behavior */}
           <ConfigSection
+            id="widget-behavior-section"
             title="Behavior"
             description="Greeting, ask card, home FAQs, and talk-to-the-team copy."
           >
@@ -1127,17 +1111,15 @@ export function WidgetConfigCenter({
                 />
                 Play suggestion sound
               </label>
-              <label
-                className={`block space-y-1.5 ${advancedLocked ? "opacity-50" : ""}`}
-              >
+              <label className="block space-y-1.5">
                 <FieldLabel>
-                  Volume ({Math.round((draft.proactive?.volume ?? 0.22) * 100)}%)
+                  Volume ({Math.round((draft.proactive?.volume ?? 0.22) * 100)}
+                  %)
                 </FieldLabel>
                 <input
                   type="range"
                   min={0}
                   max={100}
-                  disabled={advancedLocked}
                   value={Math.round((draft.proactive?.volume ?? 0.22) * 100)}
                   onChange={(e) =>
                     patch((f) => ({
@@ -1158,12 +1140,8 @@ export function WidgetConfigCenter({
           <ConfigSection
             title="Launcher"
             description="Corner, size, spacing, and visibility."
-            badge={advancedLocked ? "Starter+" : undefined}
           >
-            <fieldset
-              disabled={advancedLocked}
-              className={`space-y-4 ${advancedLocked ? "opacity-50" : ""}`}
-            >
+            <fieldset className="space-y-4">
               <div className="space-y-2">
                 <FieldLabel>Position</FieldLabel>
                 <div className="flex flex-wrap gap-2">
@@ -1285,7 +1263,6 @@ export function WidgetConfigCenter({
               </label>
             </fieldset>
           </ConfigSection>
-
         </div>
 
         {/* Static appearance preview */}
@@ -1302,9 +1279,7 @@ export function WidgetConfigCenter({
               {previewOpen ? "Close panel" : "Open panel"}
             </button>
           </div>
-          <div
-            className="ink-card relative isolate min-w-0 overflow-hidden bg-[linear-gradient(160deg,#e8efe9_0%,#f7f3ea_55%,#efe8dc_100%)] h-[min(78vh,820px)] min-h-[560px]"
-          >
+          <div className="ink-card relative isolate min-w-0 overflow-hidden bg-[linear-gradient(160deg,#e8efe9_0%,#f7f3ea_55%,#efe8dc_100%)] h-[min(78vh,820px)] min-h-[560px]">
             <div className="absolute inset-0 pointer-events-none opacity-30 [background-image:radial-gradient(circle_at_1px_1px,var(--ink)_1px,transparent_0)] [background-size:18px_18px]" />
             <div className="relative h-full min-h-0 min-w-0 overflow-hidden p-2">
               <WidgetStaticPreview
@@ -1316,14 +1291,14 @@ export function WidgetConfigCenter({
           </div>
         </aside>
       </div>
+      )}
 
       {/* Sticky publish bar */}
-      <div className="fixed bottom-0 inset-x-0 z-40 border-t border-[var(--ink)] bg-[var(--cream)]/95 backdrop-blur-sm">
+      {configMode === "manual" ? (
+      <div id="widget-publish-bar" className="fixed bottom-0 inset-x-0 z-40 border-t border-[var(--ink)] bg-[var(--cream)]/95 backdrop-blur-sm">
         <div className="mx-auto max-w-6xl px-4 py-3 flex flex-wrap items-center gap-3 justify-between">
           <p className="caption text-sm">
-            {dirty
-              ? "You have unsaved changes."
-              : "All changes are published."}
+            {dirty ? "You have unsaved changes." : "All changes are published."}
             {message ? (
               <span className="ml-2 opacity-80">{message}</span>
             ) : null}
@@ -1348,6 +1323,7 @@ export function WidgetConfigCenter({
           </div>
         </div>
       </div>
+      ) : null}
     </div>
   );
 }

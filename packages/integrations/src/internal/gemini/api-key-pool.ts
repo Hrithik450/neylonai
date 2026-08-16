@@ -1,10 +1,12 @@
 /**
- * Scalable Google Generative AI API key pool.
+ * Scalable Gemini API key pool.
  *
  * Configure keys via (any combination; duplicates ignored):
- *   GOOGLE_API_KEYS=key1,key2,key3
- *   GOOGLE_API_KEY_1 / GOOGLE_API_KEY_2 / … (numbered)
- *   GOOGLE_API_KEY=single-key (legacy fallback)
+ *   GEMINI_API_KEYS=key1,key2,key3
+ *   GEMINI_API_KEY (single-key shorthand)
+ *   GEMINI_API_KEY_1 / GEMINI_API_KEY_2 / … (numbered)
+ *
+ * Legacy GOOGLE_API_KEYS / GOOGLE_API_KEY / GOOGLE_API_KEY_N are still merged.
  *
  * On 429 / quota / rate-limit errors, the offending key is cooled down and
  * the next healthy key is used. Round-robin spreads load across paid keys.
@@ -38,12 +40,16 @@ export function loadGoogleApiKeysFromEnv(
     }
   };
 
+  add(env.GEMINI_API_KEYS);
+  add(env.GEMINI_API_KEY);
+  // Legacy aliases
   add(env.GOOGLE_API_KEYS);
+  add(env.GOOGLE_API_KEY);
 
-  // Numbered keys: GOOGLE_API_KEY_1 … GOOGLE_API_KEY_99 (and bare GOOGLE_API_KEY)
+  // Numbered keys: GEMINI_API_KEY_1 … / GOOGLE_API_KEY_1 …
   const numbered = Object.keys(env)
     .map((name) => {
-      const match = /^GOOGLE_API_KEY_(\d+)$/.exec(name);
+      const match = /^(?:GEMINI|GOOGLE)_API_KEY_(\d+)$/.exec(name);
       return match ? { name, n: Number(match[1]) } : null;
     })
     .filter((x): x is { name: string; n: number } => x !== null)
@@ -52,8 +58,6 @@ export function loadGoogleApiKeysFromEnv(
   for (const { name } of numbered) {
     add(env[name]);
   }
-
-  add(env.GOOGLE_API_KEY);
 
   return keys;
 }
@@ -92,12 +96,16 @@ export class GoogleApiKeyPool {
     const unique = [...new Set(keys.map((k) => k.trim()).filter(Boolean))];
     if (unique.length === 0) {
       throw new Error(
-        "No Google API keys configured. Set GOOGLE_API_KEYS, GOOGLE_API_KEY_1…, or GOOGLE_API_KEY.",
+        "No Gemini API keys configured. Set GEMINI_API_KEYS, GEMINI_API_KEY, or GEMINI_API_KEY_1…",
       );
     }
     this.keys = unique;
     this.cooldownMs = options?.cooldownMs ??
-      Number(process.env.GOOGLE_API_KEY_COOLDOWN_MS ?? 60_000);
+      Number(
+        process.env.GEMINI_API_KEY_COOLDOWN_MS ??
+          process.env.GOOGLE_API_KEY_COOLDOWN_MS ??
+          60_000,
+      );
   }
 
   get size(): number {
@@ -224,7 +232,7 @@ export async function withGoogleApiRetry<T>(
       }
       pool.markRateLimited(apiKey);
       console.warn(
-        `[google-api-keys] rate limited key ${pool.label(apiKey)} ` +
+        `[gemini-api-keys] rate limited key ${pool.label(apiKey)} ` +
           `(attempt ${attempt + 1}/${maxAttempts}); rotating`,
       );
     }
@@ -233,6 +241,6 @@ export async function withGoogleApiRetry<T>(
   throw lastError instanceof Error
     ? lastError
     : new Error(
-        `All Google API keys rate-limited after ${maxAttempts} attempts`,
+        `All Gemini API keys rate-limited after ${maxAttempts} attempts`,
       );
 }

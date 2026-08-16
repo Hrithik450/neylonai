@@ -29,7 +29,7 @@ function StatusPill({
 
 function SectionLabel({ children }: { children: ReactNode }) {
   return (
-    <span className="mono block text-[0.6rem] tracking-[0.16em] uppercase opacity-60">
+    <span className="block text-[0.6rem] tracking-[0.16em] uppercase opacity-60">
       {children}
     </span>
   );
@@ -44,13 +44,11 @@ export function DashboardOverview({ data }: { data: DashboardOverviewData }) {
         : "bad";
 
   const usagePct =
-    data.metrics.conversationsLimit > 0
+    data.metrics.aiCreditsLimit > 0
       ? Math.min(
           100,
           Math.round(
-            (data.metrics.conversationsUsed /
-              data.metrics.conversationsLimit) *
-              100,
+            (data.metrics.aiCreditsUsed / data.metrics.aiCreditsLimit) * 100,
           ),
         )
       : 0;
@@ -60,7 +58,7 @@ export function DashboardOverview({ data }: { data: DashboardOverviewData }) {
       {/* 1. Welcome / status */}
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-2 min-w-0 flex-1">
-          <h1 className="text-3xl sm:text-4xl">
+          <h1 id="overview-heading" className="text-3xl sm:text-4xl">
             Welcome back, {data.member.firstName}
           </h1>
           <p className="caption text-sm">
@@ -102,7 +100,7 @@ export function DashboardOverview({ data }: { data: DashboardOverviewData }) {
               }}
             >
               <div className="space-y-1">
-                <p className="font-medium text-base">{alert.title}</p>
+                <h3 className="text-base">{alert.title}</h3>
                 <p className="caption text-sm">{alert.detail}</p>
               </div>
               <Link
@@ -117,7 +115,7 @@ export function DashboardOverview({ data }: { data: DashboardOverviewData }) {
       ) : null}
 
       {/* Primary next action */}
-      <section className="ink-card bg-[var(--cream)] p-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <section id="overview-next-step" className="ink-card bg-[var(--cream)] p-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
           <SectionLabel>Next step</SectionLabel>
           <p className="text-xl font-medium">{data.primaryAction.label}</p>
@@ -132,7 +130,7 @@ export function DashboardOverview({ data }: { data: DashboardOverviewData }) {
       </section>
 
       {/* 2. Widget status + 3. Primary metrics */}
-      <div className="grid gap-4 lg:grid-cols-5">
+      <div id="overview-metrics-grid" className="grid gap-4 lg:grid-cols-5">
         <section className="ink-card p-6 space-y-4 lg:col-span-2">
           <div className="flex items-start justify-between gap-3">
             <div>
@@ -185,17 +183,16 @@ export function DashboardOverview({ data }: { data: DashboardOverviewData }) {
 
         <section className="lg:col-span-3 grid gap-4 sm:grid-cols-3">
           <div className="ink-card p-5 space-y-2">
-            <SectionLabel>Usage</SectionLabel>
+            <SectionLabel>AI credits</SectionLabel>
             <p className="text-3xl font-medium tabular-nums">
-              {data.metrics.conversationsUsed}
+              {data.metrics.aiCreditsUsed}
               <span className="text-lg font-normal opacity-50">
                 {" "}
-                / {data.metrics.conversationsLimit}
+                / {data.metrics.aiCreditsLimit}
               </span>
             </p>
             <p className="caption text-sm">
-              {data.metrics.conversationsRemaining} conversations left this
-              period
+              {data.metrics.aiCreditsRemaining} included left
             </p>
             <div className="h-1.5 rounded-full bg-[var(--cream)] border border-[var(--ink)]/10 overflow-hidden">
               <div
@@ -220,6 +217,21 @@ export function DashboardOverview({ data }: { data: DashboardOverviewData }) {
           </div>
 
           <div className="ink-card p-5 space-y-2">
+            <div className="flex items-start justify-between gap-2">
+              <SectionLabel>Proactive engagement</SectionLabel>
+              <StatusPill
+                label={data.proactive.enabled ? "Enabled" : "Disabled"}
+                tone={data.proactive.enabled ? "ok" : "warn"}
+              />
+            </div>
+            <p className="text-sm font-medium">Suggestion performance</p>
+            <p className="text-3xl font-medium tabular-nums">
+              {data.proactive.activityCount}
+            </p>
+            <p className="caption text-sm">Suggestion activity this period</p>
+          </div>
+
+          <div className="ink-card p-5 space-y-2">
             <SectionLabel>Plan</SectionLabel>
             <p className="text-3xl font-medium">{data.metrics.planName}</p>
             <p className="caption text-sm">
@@ -232,59 +244,11 @@ export function DashboardOverview({ data }: { data: DashboardOverviewData }) {
               Billing details
             </Link>
           </div>
-
-          <div className="ink-card p-5 space-y-2">
-            <SectionLabel>Leads</SectionLabel>
-            <p className="text-3xl font-medium tabular-nums">—</p>
-            <p className="caption text-sm">
-              Captured by Lead Agent — open Conversations → Leads to review.
-            </p>
-            <Link
-              href="/dashboard/conversations?view=leads"
-              className="caption text-sm underline underline-offset-4"
-            >
-              View leads
-            </Link>
-          </div>
         </section>
       </div>
 
-      {/* 4. Proactive engagement — compact */}
-      <section className="ink-card p-6 space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <SectionLabel>Proactive engagement</SectionLabel>
-            <h2 className="text-xl mt-1">Suggestion performance</h2>
-          </div>
-          <StatusPill
-            label={data.proactive.enabled ? "Enabled" : "Disabled"}
-            tone={data.proactive.enabled ? "ok" : "warn"}
-          />
-        </div>
-        <div className="grid gap-4 sm:grid-cols-3">
-          <div>
-            <p className="text-2xl font-medium tabular-nums">
-              {data.proactive.activityCount}
-            </p>
-            <p className="caption text-sm">Suggestion activity this period</p>
-          </div>
-          <div>
-            <p className="text-2xl font-medium">—</p>
-            <p className="caption text-sm">
-              Clicks — available once Evently click events are connected
-            </p>
-          </div>
-          <div>
-            <p className="text-2xl font-medium">—</p>
-            <p className="caption text-sm">
-              Conversations from suggestions — coming with attribution
-            </p>
-          </div>
-        </div>
-      </section>
-
       <div className="grid gap-4 lg:grid-cols-2">
-        {/* 5. Recent activity */}
+        {/* Recent activity */}
         <section className="ink-card p-6 space-y-4">
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-xl">Recent activity</h2>

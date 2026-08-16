@@ -31,9 +31,25 @@ export function resolvePaymentProvider(
   return createStripeProvider();
 }
 
+function nextPeriodEnd(from: Date): Date {
+  const end = new Date(from);
+  end.setMonth(end.getMonth() + 1);
+  return end;
+}
+
+function isUniqueViolation(error: unknown): boolean {
+  let current: unknown = error;
+  for (let i = 0; i < 5 && current && typeof current === "object"; i++) {
+    const rec = current as { code?: unknown; cause?: unknown };
+    if (rec.code === "23505") return true;
+    current = rec.cause;
+  }
+  return false;
+}
+
 export async function applyProviderWebhookEvent(
   event: ProviderWebhookEvent,
-): Promise<{ ok: boolean; organizationId?: string }> {
+): Promise<{ ok: boolean; organizationId?: string; duplicate?: boolean }> {
   let organizationId = event.organizationId ?? null;
 
   if (!organizationId && event.externalSubscriptionId) {
@@ -68,6 +84,29 @@ export async function applyProviderWebhookEvent(
 
   if (!sub) return { ok: false };
 
+  if (event.externalEventId) {
+    try {
+      await db.insert(billingEvents).values({
+        organization_id: organizationId,
+        subscription_id: sub.id,
+        provider: event.provider,
+        event_type: event.type,
+        external_id: event.externalEventId,
+        amount_cents: event.amountCents ?? null,
+        currency: event.currency ?? "usd",
+        payload: {
+          rawType: event.rawType ?? null,
+          planId: event.planId ?? null,
+        },
+      });
+    } catch (error) {
+      if (isUniqueViolation(error)) {
+        return { ok: true, organizationId, duplicate: true };
+      }
+      throw error;
+    }
+  }
+
   let nextStatus: SubscriptionStatus | undefined;
   let nextPlan: PlanId | undefined;
   const now = new Date();
@@ -82,12 +121,23 @@ export async function applyProviderWebhookEvent(
       if (event.planId) nextPlan = normalizePlanId(event.planId);
       break;
     case "subscription_cancelled":
-      nextStatus = "cancelled";
+      // Keep Free entitlement usable for API auth after paid cancel.
+      nextStatus = "active";
+      nextPlan = "free";
       break;
     case "payment_failed":
       nextStatus = "past_due";
       break;
   }
+
+  const periodStart =
+    event.periodStart ??
+    (event.type === "checkout_completed" || event.type === "invoice_paid"
+      ? now
+      : undefined);
+  const periodEnd =
+    event.periodEnd ??
+    (periodStart ? nextPeriodEnd(periodStart) : undefined);
 
   await db
     .update(subscriptions)
@@ -101,26 +151,53 @@ export async function applyProviderWebhookEvent(
       ...(event.externalSubscriptionId
         ? { external_subscription_id: event.externalSubscriptionId }
         : {}),
-      ...(event.periodEnd ? { current_period_end: event.periodEnd } : {}),
-      ...(nextStatus === "cancelled" ? { canceled_at: now } : {}),
+      ...(periodStart ? { current_period_start: periodStart } : {}),
+      ...(periodEnd ? { current_period_end: periodEnd } : {}),
+      ...(event.type === "subscription_cancelled" ? { canceled_at: now } : {}),
       updated_at: now,
     })
     .where(eq(subscriptions.id, sub.id));
 
-  await db.insert(billingEvents).values({
-    organization_id: organizationId,
-    subscription_id: sub.id,
-    provider: event.provider,
-    event_type: event.type,
-    external_id: event.externalEventId ?? null,
-    amount_cents: event.amountCents ?? null,
-    currency: event.currency ?? "usd",
-    payload: {
-      rawType: event.rawType ?? null,
-      planId: event.planId ?? null,
-      status: nextStatus ?? null,
-    },
-  });
+  if (!event.externalEventId) {
+    await db.insert(billingEvents).values({
+      organization_id: organizationId,
+      subscription_id: sub.id,
+      provider: event.provider,
+      event_type: event.type,
+      external_id: null,
+      amount_cents: event.amountCents ?? null,
+      currency: event.currency ?? "usd",
+      payload: {
+        rawType: event.rawType ?? null,
+        planId: event.planId ?? null,
+        status: nextStatus ?? null,
+      },
+    });
+  }
+
+  const planForCredits = nextPlan ?? normalizePlanId(sub.plan);
+  const shouldGrant =
+    event.type === "checkout_completed" ||
+    event.type === "invoice_paid" ||
+    (event.type === "subscription_updated" && Boolean(nextPlan)) ||
+    event.type === "subscription_cancelled";
+
+  if (shouldGrant) {
+    try {
+      const { grantPlanCredits } = await import("../credits");
+      await grantPlanCredits({
+        organizationId,
+        plan: planForCredits,
+        periodStart: periodStart ?? sub.current_period_start ?? now,
+        reason: `Billing ${event.type} (${planForCredits})`,
+      });
+    } catch (error) {
+      console.warn(
+        "[billing] credit grant failed:",
+        error instanceof Error ? error.message : error,
+      );
+    }
+  }
 
   return { ok: true, organizationId };
 }
@@ -176,13 +253,17 @@ export async function startCheckout(input: {
 export async function cancelSubscriptionServerSide(
   organizationId: string,
 ): Promise<void> {
+  const now = new Date();
+  const periodEnd = nextPeriodEnd(now);
   await db
     .update(subscriptions)
     .set({
-      status: "cancelled",
-      canceled_at: new Date(),
-      updated_at: new Date(),
+      status: "active",
+      canceled_at: now,
+      updated_at: now,
       plan: "free",
+      current_period_start: now,
+      current_period_end: periodEnd,
     })
     .where(eq(subscriptions.organization_id, organizationId));
 
@@ -199,6 +280,14 @@ export async function cancelSubscriptionServerSide(
     event_type: "subscription_cancelled",
     payload: { source: "dashboard" },
   });
+
+  const { grantPlanCredits } = await import("../credits");
+  await grantPlanCredits({
+    organizationId,
+    plan: "free",
+    periodStart: now,
+    reason: "Cancel to Free plan grant",
+  });
 }
 
 export async function changePlanServerSide(
@@ -207,6 +296,7 @@ export async function changePlanServerSide(
   opts?: { requirePaidCheckout?: boolean },
 ): Promise<{ needsCheckout: boolean }> {
   const normalized = normalizePlanId(planId);
+  const now = new Date();
   if (normalized === "free") {
     await db
       .update(subscriptions)
@@ -214,10 +304,19 @@ export async function changePlanServerSide(
         plan: "free",
         status: "active",
         payment_provider: null,
-        updated_at: new Date(),
+        updated_at: now,
         canceled_at: null,
+        current_period_start: now,
+        current_period_end: nextPeriodEnd(now),
       })
       .where(eq(subscriptions.organization_id, organizationId));
+    const { grantPlanCredits } = await import("../credits");
+    await grantPlanCredits({
+      organizationId,
+      plan: "free",
+      periodStart: now,
+      reason: "Downgrade to Free plan grant",
+    });
     return { needsCheckout: false };
   }
 
@@ -230,9 +329,18 @@ export async function changePlanServerSide(
     .set({
       plan: normalized,
       status: "active",
-      updated_at: new Date(),
+      updated_at: now,
+      current_period_start: now,
+      current_period_end: nextPeriodEnd(now),
     })
     .where(eq(subscriptions.organization_id, organizationId));
+  const { grantPlanCredits } = await import("../credits");
+  await grantPlanCredits({
+    organizationId,
+    plan: normalized,
+    periodStart: now,
+    reason: `Plan change grant (${normalized})`,
+  });
   return { needsCheckout: false };
 }
 

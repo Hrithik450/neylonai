@@ -1,15 +1,13 @@
 /**
  * Knowledge sources group documents under an org integration.
- * Catalog types (website, pdf, …) live in @neylonai/integrations.
+ * Catalog integration types live in @neylonai/integrations.
  * Credentials / URLs / enabled live on organization_integrations.
  */
-
-export const DEFAULT_CHATBOT_AGENT_ID = "neylonai-chatbot";
 
 export type KnowledgeSourceRecord = {
   id: string;
   organizationId: string;
-  /** Denormalized catalog type from organization_integrations.integration_type */
+  /** Denormalized catalog type from organization_integrations.integration_id */
   sourceType: string;
   /** FK → organization_integrations.id */
   organizationIntegrationId: string;
@@ -17,14 +15,15 @@ export type KnowledgeSourceRecord = {
   websiteUrl: string | null;
   documentCount: number;
   lastSyncedAt: string | null;
+  /** Code-registry agent keys linked via knowledge_source_agents */
   agentIds: string[];
   createdAt: string | null;
-  updatedAt: string | null;
 };
 
 export type CreateWebsiteSourceInput = {
   organizationId: string;
   url: string;
+  /** Agent UUID; defaults to Main Agent */
   agentIds?: string[];
 };
 
@@ -32,6 +31,7 @@ export type CreateIntegrationSourceInput = {
   organizationId: string;
   /** organization_integrations.id */
   organizationIntegrationId: string;
+  /** Agent UUID; defaults to Main Agent */
   agentIds?: string[];
 };
 

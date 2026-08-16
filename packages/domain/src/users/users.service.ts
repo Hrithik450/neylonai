@@ -12,7 +12,7 @@ export class UsersService {
 
     if (existing) {
       const updated = await UsersRepository.updateUser(existing.id, {
-        first_name: data.name,
+        username: data.name.trim() || existing.username,
         profile_image: data.picture,
       });
       return { user: updated ?? existing, created: false };
@@ -20,9 +20,8 @@ export class UsersService {
 
     const user = await UsersRepository.createUser({
       google_id: data.google_id,
-      username: data.email,
+      username: data.name.trim() || data.email,
       email: data.email,
-      first_name: data.name,
       profile_image: data.picture,
     });
     return { user, created: true };

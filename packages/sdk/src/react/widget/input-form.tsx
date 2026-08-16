@@ -112,15 +112,15 @@ export function InputForm({ sendMessage, stopStreaming }: InputFormProps) {
     voiceEnabled && recorder.isRecording && Boolean(recorder.stream);
 
   return (
-    <div className="sticky bottom-0 left-0 right-0 z-10 flex flex-col gap-1 px-2 pb-1.5 pt-1 md:px-3 md:pb-1.5">
+    <div className="sticky bottom-0 left-0 right-0 z-10 flex min-w-0 w-full max-w-full flex-col gap-1 px-3 pb-[max(0.375rem,env(safe-area-inset-bottom))] pt-1 md:px-3 md:pb-1.5">
       <SuggestionBar />
 
       <PromptInput
         value={input}
         onValueChange={(value) => setInput(value)}
-        className="flex w-full items-end rounded-2xl border border-black/60 bg-white px-2 py-1"
+        className="flex w-full min-w-0 max-w-full items-end rounded-2xl border border-black/60 bg-white px-2 py-1"
       >
-        <div className="flex w-full flex-1 items-end gap-2">
+        <div className="flex w-full min-w-0 flex-1 items-end gap-2">
           {showVisualizer ? (
             <div className="flex min-w-0 flex-1 items-center gap-2.5 self-center px-1">
               <AudioVisualizer

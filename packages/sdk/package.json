@@ -1,6 +1,6 @@
 {
   "name": "@neylonai/sdk",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "private": false,
   "description": "Neylon AI public browser SDK — SupportWidget + API client",
   "type": "module",
@@ -16,18 +16,28 @@
       "types": "./dist/react/index.d.ts",
       "import": "./dist/react/index.js",
       "default": "./dist/react/index.js"
+    },
+    "./embed": {
+      "types": "./dist/embed.d.ts",
+      "import": "./dist/embed.js",
+      "default": "./dist/embed.js"
     }
   },
   "files": [
     "dist",
     "README.md"
   ],
-  "sideEffects": false,
+  "bin": {
+    "neylonai-generate-sections": "./dist/codegen/cli.js"
+  },
+  "sideEffects": ["**/*.css"],
   "scripts": {
     "check-types": "tsc --noEmit -p tsconfig.json",
-    "build": "rm -rf dist-tmp tsconfig.build.tsbuildinfo && tsc -p tsconfig.build.json --outDir dist-tmp && rm -rf dist && mv dist-tmp dist",
+    "build": "rm -rf dist-tmp tsconfig.build.tsbuildinfo && tsc -p tsconfig.build.json --outDir dist-tmp && tailwindcss -i src/widget.css -o dist-tmp/widget.css --minify && rm -rf dist && mv dist-tmp dist && node build-embed.mjs",
     "prepare": "pnpm run build",
     "prepublishOnly": "pnpm run build && pnpm run check-boundary",
+    "generate-sections": "tsx ./src/codegen/cli.ts",
+    "test": "vitest run",
     "check-boundary": "node -e \"const fs=require('fs');const path=require('path');function walk(d,acc=[]){for(const e of fs.readdirSync(d,{withFileTypes:true})){const p=path.join(d,e.name);if(e.isDirectory())walk(p,acc);else if(/\\.(ts|tsx|js|d\\.ts)$/.test(e.name))acc.push(p);}return acc;}const roots=['src','dist'].filter((r)=>fs.existsSync(r));const bad=[];for(const root of roots){for(const f of walk(root)){const t=fs.readFileSync(f,'utf8');if(/from\\s+['\\\"]@neylonai\\/(?!sdk)/.test(t)||/require\\(\\s*['\\\"]@neylonai\\/(?!sdk)/.test(t))bad.push(f);}}if(bad.length){console.error('SDK boundary violation — private @neylonai/* import in:\\n'+bad.join('\\n'));process.exit(1);}console.log('SDK boundary OK (no private @neylonai/* imports)');\""
   },
   "dependencies": {
@@ -48,14 +58,23 @@
     "react": "^19",
     "react-dom": "^19"
   },
+  "peerDependenciesMeta": {
+    "react": { "optional": true },
+    "react-dom": { "optional": true }
+  },
   "devDependencies": {
     "@neylonai/typescript-config": "workspace:*",
+    "@tailwindcss/cli": "^4.3.3",
     "@types/luxon": "^3.7.1",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
-    "typescript": "^5"
+    "esbuild": "^0.28.2",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "tailwindcss": "^4.2.4",
+    "tsx": "^4.20.6",
+    "typescript": "^5",
+    "vitest": "^3.2.4"
   }
 }

@@ -30,7 +30,7 @@ const sdkSrc = path.join(__dirname, "../../packages/sdk/src");
 
 const nextConfig: NextConfig = {
   output: "standalone",
-  serverExternalPackages: ["pdf-parse"],
+  serverExternalPackages: ["pdf-parse", "bullmq", "ioredis"],
   transpilePackages: [
     "@neylonai/ui",
     "@neylonai/sdk",
@@ -42,7 +42,13 @@ const nextConfig: NextConfig = {
   ],
   // Dev: resolve SDK from source so branding edits hot-reload without a dist rebuild.
   // without requiring a manual dist rebuild + Next restart.
-  webpack: (config, { dev }) => {
+  webpack: (config, { dev, webpack }) => {
+    // BullMQ optionally imports Valkey Glide; we use ioredis only.
+    config.plugins.push(
+      new webpack.IgnorePlugin({
+        resourceRegExp: /^@valkey\/valkey-glide$/,
+      }),
+    );
     if (dev) {
       config.resolve.alias = {
         ...config.resolve.alias,

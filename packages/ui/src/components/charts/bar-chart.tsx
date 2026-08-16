@@ -32,7 +32,7 @@ const chartData = [
     note: "Equivalent to 23.12 human workdays (8 hrs/day)",
   },
   {
-    category: "Lead Qualification Assistant",
+    category: "Support Assistant",
     manual: 165,
     AI: 35,
     note: "Equivalent to 20.62 human workdays (8 hrs/day)", // Saved 130 hrs
@@ -52,7 +52,7 @@ const chartConfig = {
 
 export function ChartBarMultiple({ className }: { className: string }) {
   return (
-    <Card className={cn("h-full font-sf-pro-regular", className)}>
+    <Card className={cn("h-full", className)}>
       <CardContent>
         <ChartContainer className="max-h-[250px] w-full" config={chartConfig}>
           <BarChart accessibilityLayer data={chartData}>

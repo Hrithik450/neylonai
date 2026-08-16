@@ -1,19 +1,19 @@
 "use client";
 
+import { Check, Copy } from "lucide-react";
 import { useState } from "react";
 import {
   DATABASE_CLOUD_PROVIDERS,
   DATABASE_PRIVATE_PROVIDERS,
   SUPABASE_CONNECTION_URL_EXAMPLES,
   SUPABASE_READONLY_SETUP_SQL,
-  SUPABASE_SETUP_SKILL_NAME,
-  SUPABASE_SETUP_SKILL_PATH,
   type DatabaseDeploymentKind,
   type DatabaseProviderId,
   type DatabaseProviderOption,
   type SupabaseSetupMethod,
 } from "@neylonai/integrations/database/setup";
 import { cn } from "@/lib/utils";
+import { DATABASE_CODING_AGENT_SKILL } from "./database-coding-agent-skill";
 
 type Props = {
   integrationId: string;
@@ -241,54 +241,78 @@ function ManualSupabaseGuide() {
 }
 
 function CliSupabaseGuide() {
+  const [copied, setCopied] = useState(false);
+
+  const copyInstructions = async () => {
+    try {
+      await navigator.clipboard.writeText(DATABASE_CODING_AGENT_SKILL);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2_000);
+    } catch {
+      setCopied(false);
+    }
+  };
+
   return (
-    <div className="space-y-3 text-sm">
-      <p className="caption text-xs">
-        Use an AI coding agent in the terminal (Cursor Agent, Claude Code, etc.)
-        with the Neylon Supabase skill. The agent installs the Supabase CLI if
-        needed, logs in, creates <code className="mono">neylon_readonly</code>,
-        and prints a connection URL for you to paste here.
+    <div className="space-y-5 text-sm">
+      <p className="caption text-sm">
+        Your coding agent will guide you through selecting the Supabase project,
+        creating a least-privilege <code className="mono">neylon_readonly</code>{" "}
+        role, and verifying that writes are blocked.
       </p>
 
-      <ol className="list-decimal pl-4 space-y-2 caption text-xs">
-        <li>
-          Download{" "}
-          <a
-            className="underline font-medium"
-            href={SUPABASE_SETUP_SKILL_PATH}
-            download={`${SUPABASE_SETUP_SKILL_NAME}.md`}
-            target="_blank"
-            rel="noreferrer"
-          >
-            {SUPABASE_SETUP_SKILL_NAME}/SKILL.md
-          </a>
+      <ol className="grid gap-3 md:grid-cols-3">
+        <li className="rounded-xl border border-[var(--ink)]/15 bg-white p-4">
+          <span className="mono text-xs opacity-50">1</span>
+          <h3 className="mt-2 font-medium">Copy the instructions</h3>
+          <p className="caption mt-1 text-sm">
+            Paste the complete setup guide into your coding agent.
+          </p>
         </li>
-        <li>
-          Place it where your agent loads project skills, e.g.{" "}
-          <code className="mono">.cursor/skills/{SUPABASE_SETUP_SKILL_NAME}/SKILL.md</code>
+        <li className="rounded-xl border border-[var(--ink)]/15 bg-white p-4">
+          <span className="mono text-xs opacity-50">2</span>
+          <h3 className="mt-2 font-medium">Review each action</h3>
+          <p className="caption mt-1 text-sm">
+            Confirm the project and approve authentication or database changes.
+          </p>
         </li>
-        <li>
-          Ask the agent:{" "}
-          <span className="italic">
-            “Follow the neylon-supabase-database-setup skill and set up a
-            read-only Supabase role for Neylon.”
-          </span>
-        </li>
-        <li>
-          Paste the resulting connection URL below (write-only). Do not commit
-          it to git.
+        <li className="rounded-xl border border-[var(--ink)]/15 bg-white p-4">
+          <span className="mono text-xs opacity-50">3</span>
+          <h3 className="mt-2 font-medium">Paste the URL</h3>
+          <p className="caption mt-1 text-sm">
+            Add the verified read-only connection URL below.
+          </p>
         </li>
       </ol>
 
-      <CopyBlock
-        label="Prompt for your terminal agent"
-        value={`Follow the ${SUPABASE_SETUP_SKILL_NAME} skill end-to-end: install Supabase CLI if missing, login, select my project, create neylon_readonly with SELECT-only grants, verify writes fail, and give me the pooler connection URL to paste into Neylon. Never commit secrets.`}
-      />
-
-      <p className="caption text-xs">
-        Full skill path in this product:{" "}
-        <code className="mono text-[0.65rem]">{SUPABASE_SETUP_SKILL_PATH}</code>
-      </p>
+      <div className="overflow-hidden rounded-xl border border-[var(--ink)]/20 bg-white">
+        <div className="flex items-center justify-between gap-3 border-b border-[var(--ink)]/10 px-4 py-3">
+          <div>
+            <h3 className="font-medium">Coding agent instructions</h3>
+            <p className="caption text-xs">Paste directly into your agent.</p>
+          </div>
+          <button
+            type="button"
+            className="btn-ink flex size-9 items-center justify-center bg-white p-0"
+            onClick={() => void copyInstructions()}
+            aria-label={
+              copied
+                ? "Database setup instructions copied"
+                : "Copy database setup instructions"
+            }
+            title={copied ? "Copied" : "Copy instructions"}
+          >
+            {copied ? (
+              <Check className="size-4" aria-hidden />
+            ) : (
+              <Copy className="size-4" aria-hidden />
+            )}
+          </button>
+        </div>
+        <pre className="max-h-[32rem] overflow-auto whitespace-pre-wrap p-4 text-xs leading-relaxed">
+          {DATABASE_CODING_AGENT_SKILL}
+        </pre>
+      </div>
     </div>
   );
 }
@@ -433,8 +457,8 @@ export function DatabaseConnectPanel({
               onClick={() => setMethod("manual")}
             />
             <ChoiceCard
-              title="CLI / skill setup"
-              description="Agent-driven flow using Supabase CLI and the Neylon skill."
+              title="Configure with coding agent"
+              description="Copy a guided Supabase setup into your coding agent."
               selected={method === "cli"}
               onClick={() => setMethod("cli")}
             />
@@ -451,7 +475,7 @@ export function DatabaseConnectPanel({
 
       {method === "cli" && showSupabaseFlow ? (
         <div className="space-y-3 rounded-lg border border-[var(--ink)]/12 p-3">
-          <p className="text-sm font-medium">CLI / skill setup</p>
+          <p className="text-sm font-medium">Configure with coding agent</p>
           <CliSupabaseGuide />
         </div>
       ) : null}

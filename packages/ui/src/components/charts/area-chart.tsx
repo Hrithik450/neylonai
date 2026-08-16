@@ -30,7 +30,7 @@ const chartData = [
     note: "Valued at $20.83/hr → Equivalent to 150 human workdays (8 hrs/day) → $25,000/month",
   },
   {
-    category: "Lead Qualification Assistant",
+    category: "Support Assistant",
     savings: 50000,
     note: "Valued at $20.83/hr → Equivalent to 300 human workdays (8 hrs/day) → $50,000/month",
   },

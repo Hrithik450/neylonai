@@ -64,7 +64,7 @@ async function seedSynthetic(params: {
     .insert(organizationIntegrations)
     .values({
       organization_id: params.organizationId,
-      integration_type: "bench",
+      integration_id: "bench",
       enabled: true,
       config: { bench: true },
     })
@@ -76,8 +76,6 @@ async function seedSynthetic(params: {
     .values({
       organization_id: params.organizationId,
       organization_integration_id: oi.id,
-      source_type: "bench",
-      document_count: 0,
     })
     .returning({ id: knowledgeSources.id });
   if (!source) throw new Error("Failed to insert benchmark source");
@@ -91,7 +89,6 @@ async function seedSynthetic(params: {
       external_doc_id: externalDocId,
       name: "vector-search benchmark (ephemeral)",
       raw_content: "benchmark seed",
-      chunks_count: params.count,
     })
     .returning({ id: knowledgeDocuments.id });
 

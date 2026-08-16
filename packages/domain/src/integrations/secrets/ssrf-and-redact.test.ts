@@ -4,10 +4,7 @@ import {
   assertPostgresConnectionUrl,
   isBlockedIpLiteral,
 } from "@neylonai/integrations/database/constants";
-import {
-  configHasLegacyCredentials,
-  redactIntegrationConfig,
-} from "@neylonai/integrations/catalog";
+import { redactIntegrationConfig } from "@neylonai/integrations/catalog";
 
 describe("postgres connection URL SSRF guards", () => {
   it("accepts public postgresql URLs", () => {
@@ -49,17 +46,5 @@ describe("redactIntegrationConfig", () => {
     );
     expect(redacted.connectionUrl).toBeUndefined();
     expect(redacted.host).toBe("db.example.com");
-  });
-
-  it("detects legacy credentials in config", () => {
-    expect(
-      configHasLegacyCredentials(
-        { connectionUrl: "postgresql://x" },
-        ["connectionUrl"],
-      ),
-    ).toBe(true);
-    expect(
-      configHasLegacyCredentials({ host: "db.example.com" }, ["connectionUrl"]),
-    ).toBe(false);
   });
 });

@@ -8,8 +8,24 @@ import type {
   InboxMessage,
   InboxThread,
   InboxUser,
+  KnowledgeGapInboxRow,
 } from "./inbox-types";
 import { cn } from "@/lib/utils";
+
+function gapTypeLabel(type: string): string {
+  switch (type) {
+    case "no_retrieval":
+      return "No sources retrieved";
+    case "negative_feedback":
+      return "Negative feedback";
+    case "unhelpful_escalation":
+      return "Unhelpful escalation";
+    case "low_confidence_escalation":
+      return "Low-confidence escalation";
+    default:
+      return type;
+  }
+}
 
 function formatWhen(iso: string): string {
   const d = new Date(iso);
@@ -32,11 +48,60 @@ function formatFullWhen(iso: string): string {
 
 function messageAuthor(m: InboxMessage): string {
   if (m.role === "user") return "Visitor";
-  if (m.fromHuman || m.role === "human") return "Human";
-  if (m.agentName) return m.agentName;
+  if (m.role === "human") return "Human";
   if (m.role === "assistant") return "Assistant";
   if (m.role === "system") return "System";
   return "System";
+}
+
+function conversationStatusLabel(thread: InboxThread): string {
+  if (thread.conversationStatus === "human_active") return "human active";
+  if (thread.conversationStatus === "human_pending") return "awaiting human";
+  if (thread.conversationStatus === "awaiting_contact") return "awaiting contact";
+  if (thread.conversationStatus === "resolved") return "resolved";
+  return "AI active";
+}
+
+function MessageCitations({ citations }: { citations: InboxMessage["citations"] }) {
+  const [open, setOpen] = useState(false);
+  if (!citations?.length) return null;
+
+  return (
+    <div className="mt-2 border-t border-[var(--ink)]/10 pt-2">
+      <button
+        type="button"
+        className="caption text-[0.65rem] underline lowercase"
+        onClick={() => setOpen((v) => !v)}
+      >
+        {open ? "Hide sources" : `Sources used (${citations.length})`}
+      </button>
+      {open ? (
+        <ul className="mt-2 space-y-1.5">
+          {citations.map((citation) => (
+            <li
+              key={`${citation.chunkId}-${citation.rank}`}
+              className="caption text-[0.65rem] leading-snug"
+            >
+              <span className="font-medium">
+                {citation.documentName ||
+                  citation.sourceLabel ||
+                  "Knowledge source"}
+              </span>
+              {citation.sourceLabel && citation.documentName ? (
+                <span className="opacity-70"> · {citation.sourceLabel}</span>
+              ) : null}
+              {typeof citation.score === "number" ? (
+                <span className="opacity-60">
+                  {" "}
+                  · score {citation.score.toFixed(2)}
+                </span>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  );
 }
 
 export function ConversationsInbox({
@@ -46,11 +111,18 @@ export function ConversationsInbox({
 }) {
   const searchParams = useSearchParams();
   const [filter, setFilter] = useState<InboxFilter>(
-    searchParams.get("filter") === "escalated" ? "escalated" : "all",
+    searchParams.get("filter") === "escalated"
+      ? "escalated"
+      : searchParams.get("filter") === "knowledge_gaps"
+        ? "knowledge_gaps"
+        : "all",
   );
   const [query, setQuery] = useState("");
   const [users] = useState<InboxUser[]>(payload.users);
   const [threads, setThreads] = useState<InboxThread[]>(payload.threads);
+  const [knowledgeGaps] = useState<KnowledgeGapInboxRow[]>(
+    payload.knowledgeGaps ?? [],
+  );
   const [selectedUserId, setSelectedUserId] = useState<string | null>(
     searchParams.get("user") ?? payload.users[0]?.id ?? null,
   );
@@ -74,6 +146,24 @@ export function ConversationsInbox({
 
   const q = query.trim().toLowerCase();
 
+  const filteredKnowledgeGaps = useMemo(() => {
+    if (!q) return knowledgeGaps;
+    return knowledgeGaps.filter((gap) => {
+      const hay = `${gap.sampleQuestion} ${gap.pagePath ?? ""} ${gap.gapTypes.join(" ")}`.toLowerCase();
+      return hay.includes(q);
+    });
+  }, [knowledgeGaps, q]);
+
+  const openGapConversation = (gap: KnowledgeGapInboxRow) => {
+    if (!gap.threadId) return;
+    const thread = threads.find((t) => t.id === gap.threadId);
+    if (!thread) return;
+    setFilter("all");
+    setSelectedUserId(thread.userId);
+    setSelectedThreadId(thread.id);
+    setMobilePane("messages");
+  };
+
   const filteredUsers = useMemo(() => {
     return users.filter((u) => {
       if (filter === "escalated" && u.escalatedCount === 0) return false;
@@ -83,7 +173,7 @@ export function ConversationsInbox({
       return threads.some(
         (t) =>
           t.userId === u.id &&
-          `${t.title} ${t.preview} ${t.lastAgentName ?? ""}`.toLowerCase().includes(q),
+          `${t.title} ${t.preview}`.toLowerCase().includes(q),
       );
     });
   }, [filter, q, threads, users]);
@@ -92,12 +182,12 @@ export function ConversationsInbox({
     if (!selectedUserId) return [];
     return threads
       .filter((t) => t.userId === selectedUserId)
-      .filter((t) => (filter === "escalated" ? t.status === "escalated" : true))
+      .filter((t) => (filter === "escalated" ? t.escalated : true))
       .filter((t) => {
         if (!q) return true;
         const user = users.find((u) => u.id === t.userId);
         const hay =
-          `${t.title} ${t.preview} ${t.lastAgentName ?? ""} ${user?.label ?? ""} ${user?.email ?? ""}`.toLowerCase();
+          `${t.title} ${t.preview} ${user?.label ?? ""} ${user?.email ?? ""}`.toLowerCase();
         return hay.includes(q);
       })
       .sort((a, b) => (a.latestAt < b.latestAt ? 1 : -1));
@@ -185,41 +275,6 @@ export function ConversationsInbox({
     setReply("");
   };
 
-  const runAction = async (action: "resolve" | "close") => {
-    if (!selectedThread) return;
-    setBusy(true);
-    setNote(null);
-    try {
-      const res = await fetch("/api/v1/conversations/actions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ threadId: selectedThread.id, action }),
-      });
-      const json = (await res.json()) as { success: boolean; error?: string };
-      if (!json.success) throw new Error(json.error ?? "Action failed");
-      setThreads((prev) =>
-        prev.map((t) =>
-          t.id === selectedThread.id
-            ? {
-                ...t,
-                status: action === "resolve" ? "resolved" : "open",
-                escalationReason: action === "close" ? null : t.escalationReason,
-              }
-            : t,
-        ),
-      );
-      setNote(
-        action === "resolve"
-          ? "Conversation resolved"
-          : "Closed — AI can continue this chat in the widget",
-      );
-    } catch (e) {
-      setNote(e instanceof Error ? e.message : "Action failed");
-    } finally {
-      setBusy(false);
-    }
-  };
-
   const sendReply = async () => {
     if (!selectedThread || !reply.trim()) return;
     setBusy(true);
@@ -250,6 +305,7 @@ export function ConversationsInbox({
                 ...t,
                 preview: msg.content.slice(0, 140),
                 latestAt: msg.created_at,
+                conversationStatus: "human_active",
                 messages: [...t.messages, msg],
               }
             : t,
@@ -265,30 +321,30 @@ export function ConversationsInbox({
   };
 
   return (
-    <div className="space-y-4">
-      <header className="space-y-1 min-w-0">
-        <h1 className="text-3xl sm:text-4xl">Conversations</h1>
+    <div id="conversations-inbox" className="flex flex-col gap-3 h-[52rem] max-h-[52rem] min-h-[52rem] mb-10 sm:mb-12 lg:mb-14">
+      <header className="shrink-0 space-y-1 min-w-0">
+        <h1 id="conversations-heading" className="text-3xl sm:text-4xl">Conversations</h1>
         <p className="caption text-sm">
           Visitors and their chat threads. Search, filter, then take over when
           human needed.
         </p>
       </header>
 
-      <div className="ink-card p-3 sm:p-4 flex flex-col gap-3 sm:flex-row sm:items-end">
+      <div className="ink-card shrink-0 p-3 sm:p-4 flex flex-col gap-3 sm:flex-row sm:items-end">
         <label className="block space-y-1 flex-1 min-w-0">
-          <span className="mono text-[0.6rem] tracking-[0.12em] uppercase opacity-60">
+          <span className="text-[0.6rem] tracking-[0.12em] uppercase opacity-60">
             Search
           </span>
           <input
             type="search"
             className="ink-input py-2 text-sm w-full"
-            placeholder="Visitor, email, title, agent…"
+            placeholder="Visitor, email, title…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
         </label>
         <label className="block space-y-1 sm:w-48">
-          <span className="mono text-[0.6rem] tracking-[0.12em] uppercase opacity-60">
+          <span className="text-[0.6rem] tracking-[0.12em] uppercase opacity-60">
             Show
           </span>
           <select
@@ -300,26 +356,83 @@ export function ConversationsInbox({
             }}
           >
             <option value="all">all conversations</option>
-            <option value="escalated">human needed</option>
+            <option value="escalated">escalated</option>
+            <option value="knowledge_gaps">knowledge gaps</option>
           </select>
         </label>
       </div>
 
-      <div className="ink-card overflow-hidden min-h-[70vh] lg:min-h-[calc(100vh-18rem)] grid lg:grid-cols-[minmax(0,14rem)_minmax(0,16rem)_minmax(0,1fr)]">
-        {/* Users */}
+      <div id="conversations-grid" className="ink-card flex-1 min-h-0 overflow-hidden grid lg:grid-cols-[minmax(0,14rem)_minmax(0,16rem)_minmax(0,1fr)]">
+        {filter === "knowledge_gaps" ? (
+          <section className="col-span-full flex flex-col h-full min-h-0 overflow-hidden">
+            <div className="shrink-0 px-4 py-3 border-b border-[var(--ink)]/10">
+              <h2 className="text-xl font-medium">Knowledge gaps</h2>
+              <p className="caption text-sm">
+                Repeated questions with weak retrieval, negative feedback, or
+                unhelpful escalations (last 30 days).
+              </p>
+            </div>
+            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain divide-y divide-[var(--ink)]/10">
+              {filteredKnowledgeGaps.length === 0 ? (
+                <p className="p-6 caption text-sm">No knowledge gaps recorded yet.</p>
+              ) : (
+                filteredKnowledgeGaps.map((gap) => (
+                  <div
+                    key={`${gap.questionHash}:${gap.pagePath ?? ""}`}
+                    className="px-4 py-4 space-y-2"
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="min-w-0 space-y-1">
+                        <p className="text-sm font-medium leading-snug">
+                          {gap.sampleQuestion}
+                        </p>
+                        <p className="caption text-[0.65rem]">
+                          {gap.pagePath ? gap.pagePath : "unknown page"} ·{" "}
+                          {gap.count} occurrence{gap.count === 1 ? "" : "s"} ·{" "}
+                          {formatWhen(gap.latestAt)}
+                        </p>
+                      </div>
+                      {gap.threadId ? (
+                        <button
+                          type="button"
+                          className="btn-ink text-xs py-1.5 px-3 shrink-0"
+                          onClick={() => openGapConversation(gap)}
+                        >
+                          open conversation
+                        </button>
+                      ) : null}
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {gap.gapTypes.map((type) => (
+                        <span
+                          key={type}
+                          className="sticker sticker-lowercase text-[0.6rem] bg-[var(--cream)]"
+                        >
+                          {gapTypeLabel(type)}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </section>
+        ) : (
+          <>
+        {/* Visitors — own scroll */}
         <aside
           className={cn(
-            "border-b lg:border-b-0 lg:border-r border-[var(--ink)]/15 flex flex-col min-h-0",
+            "border-b lg:border-b-0 lg:border-r border-[var(--ink)]/15 flex flex-col h-full min-h-0 overflow-hidden",
             mobilePane !== "users" && "hidden lg:flex",
           )}
         >
-          <div className="px-3 py-2 border-b border-[var(--ink)]/10">
+          <div className="shrink-0 px-3 py-2 border-b border-[var(--ink)]/10">
             <p className="caption text-xs lowercase">
               {filteredUsers.length} visitor
               {filteredUsers.length === 1 ? "" : "s"}
             </p>
           </div>
-          <ul className="flex-1 overflow-y-auto divide-y divide-[var(--ink)]/10 max-h-[35vh] lg:max-h-none">
+          <ul className="flex-1 min-h-0 overflow-y-auto overscroll-contain divide-y divide-[var(--ink)]/10">
             {filteredUsers.length === 0 ? (
               <li className="p-4 caption text-sm">No visitors match.</li>
             ) : (
@@ -354,7 +467,7 @@ export function ConversationsInbox({
                         {u.threadCount} chat
                         {u.threadCount === 1 ? "" : "s"}
                         {u.escalatedCount > 0
-                          ? ` · ${u.escalatedCount} human needed`
+                          ? ` · ${u.escalatedCount} escalated`
                           : ""}
                       </p>
                     </button>
@@ -365,14 +478,14 @@ export function ConversationsInbox({
           </ul>
         </aside>
 
-        {/* Threads */}
+        {/* Conversations — own scroll */}
         <aside
           className={cn(
-            "border-b lg:border-b-0 lg:border-r border-[var(--ink)]/15 flex flex-col min-h-0",
+            "border-b lg:border-b-0 lg:border-r border-[var(--ink)]/15 flex flex-col h-full min-h-0 overflow-hidden",
             mobilePane !== "threads" && "hidden lg:flex",
           )}
         >
-          <div className="px-3 py-2 border-b border-[var(--ink)]/10 flex items-center justify-between gap-2">
+          <div className="shrink-0 px-3 py-2 border-b border-[var(--ink)]/10 flex items-center justify-between gap-2">
             <button
               type="button"
               className="lg:hidden caption text-xs underline"
@@ -385,7 +498,7 @@ export function ConversationsInbox({
               {userThreads.length === 1 ? "" : "s"}
             </p>
           </div>
-          <ul className="flex-1 overflow-y-auto divide-y divide-[var(--ink)]/10 max-h-[35vh] lg:max-h-none">
+          <ul className="flex-1 min-h-0 overflow-y-auto overscroll-contain divide-y divide-[var(--ink)]/10">
             {!selectedUserId ? (
               <li className="p-4 caption text-sm">Select a visitor.</li>
             ) : userThreads.length === 0 ? (
@@ -402,7 +515,7 @@ export function ConversationsInbox({
                       onClick={() => selectThread(t.id)}
                       className={cn(
                         "w-full text-left px-3 py-3 space-y-1 border-l-4 transition-colors",
-                        t.status === "escalated"
+                        t.escalated
                           ? "border-l-[var(--red)]"
                           : "border-l-transparent",
                         active
@@ -420,9 +533,12 @@ export function ConversationsInbox({
                       </div>
                       <p className="caption text-xs line-clamp-2">{t.preview}</p>
                       <div className="flex flex-wrap items-center gap-1.5">
-                        {t.status === "escalated" ? (
+                        {t.escalated ? (
                           <span className="sticker sticker-lowercase text-[0.6rem] inline-block bg-[var(--red)]/10 text-[var(--red)]">
-                            human needed
+                            {conversationStatusLabel(t)}
+                            {t.escalationCount > 1
+                              ? ` · ${t.escalationCount}×`
+                              : ""}
                           </span>
                         ) : null}
                       </div>
@@ -434,16 +550,16 @@ export function ConversationsInbox({
           </ul>
         </aside>
 
-        {/* Messages */}
+        {/* Messages — scroll above pinned reply */}
         <section
           className={cn(
-            "flex flex-col min-h-0 min-w-0",
+            "flex flex-col h-full min-h-0 min-w-0 overflow-hidden",
             mobilePane !== "messages" && "hidden lg:flex",
           )}
         >
           {selectedThread ? (
             <>
-              <div className="px-4 py-3 border-b border-[var(--ink)]/10 space-y-2">
+              <div className="shrink-0 px-4 py-3 border-b border-[var(--ink)]/10 space-y-2">
                 <button
                   type="button"
                   className="lg:hidden caption text-xs underline"
@@ -456,45 +572,41 @@ export function ConversationsInbox({
                     <h2 className="text-xl font-medium line-clamp-2">
                       {selectedThread.title}
                     </h2>
-                    {selectedThread.status === "escalated" &&
-                    selectedThread.escalationReason ? (
-                      <p className="caption text-sm lowercase">
-                        {selectedThread.escalationReason}
-                      </p>
-                    ) : null}
-                    {selectedThread.status === "escalated" ? (
-                      <span className="sticker sticker-lowercase text-[0.6rem] inline-block bg-[var(--red)]/10 text-[var(--red)]">
-                        human needed
-                      </span>
+                    {selectedThread.escalated ? (
+                      <div className="space-y-1">
+                        <span className="sticker sticker-lowercase text-[0.6rem] inline-block bg-[var(--red)]/10 text-[var(--red)]">
+                          {conversationStatusLabel(selectedThread)}
+                          {selectedThread.escalationCount > 1
+                            ? ` · ${selectedThread.escalationCount}×`
+                            : ""}
+                        </span>
+                        {selectedThread.escalationReasons.length > 0 ? (
+                          <ul className="caption text-sm space-y-0.5 max-h-16 overflow-y-auto">
+                            {selectedThread.escalationReasons.map(
+                              (reason, i) => (
+                                <li key={`${i}-${reason.slice(0, 24)}`}>
+                                  {reason}
+                                </li>
+                              ),
+                            )}
+                          </ul>
+                        ) : null}
+                        {selectedThread.lastEscalatedAt ? (
+                          <p className="caption text-[0.65rem]">
+                            last escalated{" "}
+                            {formatFullWhen(selectedThread.lastEscalatedAt)}
+                          </p>
+                        ) : null}
+                      </div>
                     ) : null}
                   </div>
-                  {selectedThread.status === "escalated" ? (
-                    <div className="flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        className="btn-ink text-xs py-1.5 px-3"
-                        disabled={busy}
-                        onClick={() => void runAction("close")}
-                      >
-                        close & resume ai
-                      </button>
-                      <button
-                        type="button"
-                        className="btn-ink text-xs py-1.5 px-3"
-                        disabled={busy}
-                        onClick={() => void runAction("resolve")}
-                      >
-                        resolve
-                      </button>
-                    </div>
-                  ) : null}
                 </div>
                 {note ? (
                   <p className="caption text-[0.65rem]">{note}</p>
                 ) : null}
               </div>
 
-              <div className="flex-1 overflow-y-auto p-4 space-y-4 max-h-[45vh] lg:max-h-none">
+              <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 space-y-4">
                 {loadingMessages && selectedThread.messages.length === 0 ? (
                   <p className="caption text-sm">Loading messages…</p>
                 ) : selectedThread.messages.length === 0 ? (
@@ -503,7 +615,7 @@ export function ConversationsInbox({
                   selectedThread.messages.map((m) => (
                     <div key={m.id} className="max-w-[42rem] space-y-1">
                       <div className="flex items-baseline justify-between gap-3">
-                        <span className="mono text-[0.6rem] tracking-[0.12em] uppercase opacity-60">
+                        <span className="text-[0.6rem] tracking-[0.12em] uppercase opacity-60">
                           {messageAuthor(m)}
                         </span>
                         <span className="caption text-[0.65rem]">
@@ -515,7 +627,7 @@ export function ConversationsInbox({
                           "px-3 py-2 text-sm leading-relaxed border border-[var(--ink)]/15",
                           m.role === "user"
                             ? "bg-white"
-                            : m.fromHuman || m.role === "human"
+                            : m.role === "human"
                               ? "bg-white border-[var(--ink)]/40"
                               : m.role === "assistant"
                                 ? "bg-[var(--cream)]"
@@ -524,26 +636,18 @@ export function ConversationsInbox({
                       >
                         {m.content}
                       </div>
-                      {m.sources && m.sources.length > 0 ? (
-                        <ul className="flex flex-wrap gap-1.5 pt-1">
-                          {m.sources.map((s) => (
-                            <li key={s.id}>
-                              <span className="caption inline-block border border-[var(--ink)]/15 bg-white px-2 py-0.5 text-[0.7rem]">
-                                {s.name}
-                              </span>
-                            </li>
-                          ))}
-                        </ul>
+                      {m.role === "assistant" ? (
+                        <MessageCitations citations={m.citations} />
                       ) : null}
                     </div>
                   ))
                 )}
               </div>
 
-              {selectedThread.status === "escalated" ? (
-                <div className="border-t border-[var(--ink)]/10 p-3 space-y-2">
+              {selectedThread.escalated ? (
+                <div className="shrink-0 border-t border-[var(--ink)]/10 p-3 space-y-2 bg-white">
                   <textarea
-                    className="ink-input w-full min-h-[4.5rem] text-sm resize-y"
+                    className="ink-input w-full h-[4.5rem] text-sm resize-none"
                     placeholder="Reply as human — visitor sees this in the widget…"
                     value={reply}
                     disabled={busy}
@@ -557,7 +661,7 @@ export function ConversationsInbox({
                   />
                   <div className="flex items-center justify-between gap-2">
                     <p className="caption text-[0.65rem]">
-                      ⌘/Ctrl+Enter to send · AI stays paused until you close
+                      ⌘/Ctrl+Enter to send · AI will not reply while escalated
                     </p>
                     <button
                       type="button"
@@ -579,6 +683,8 @@ export function ConversationsInbox({
             </div>
           )}
         </section>
+          </>
+        )}
       </div>
     </div>
   );

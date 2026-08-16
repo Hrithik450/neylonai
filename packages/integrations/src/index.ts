@@ -1,8 +1,8 @@
 /**
  * @neylonai/integrations
  *
- * - Per-integration folders (website, pdf, slack, ...) own metadata + logic
- * - internal/ shared platform tools (scrape, gemini, web-search provider, notifications, crm adapters)
+ * - Per-integration folders own metadata + logic
+ * - internal/ shared platform tools (scrape, gemini, web-search provider, notifications)
  * - catalog/ customer-facing integrations (including optional Web Search)
  */
 
@@ -28,22 +28,6 @@ export {
 } from "./internal/gemini";
 
 export {
-  trackEvently,
-  trackEventlySafe,
-  type NeylonAnalyticsEvent,
-  type TrackEventInput,
-} from "./evently";
-
-export {
-  registerCrmAdapter,
-  getCrmAdapter,
-  listCrmAdapters,
-  type CrmAdapter,
-  type CrmLeadPayload,
-  type CrmLeadSyncResult,
-} from "./internal/crm";
-
-export {
   connectedAccountLabel,
   getImportIngestKind,
   getIntegrationManifest,
@@ -61,7 +45,6 @@ export {
   listIntegrationManifests,
   listIntegrationModules,
   redactIntegrationConfig,
-  configHasLegacyCredentials,
   resolveIntegrationUiState,
   toBillingCatalogEntry,
   type IntegrationConnectionSnapshot,
@@ -86,15 +69,13 @@ export {
 
 export {
   fetchWebsiteForImport,
+  discoverWebsitePages,
+  scrapeWebsitePage,
+  hashPageContent,
   websiteIntegration,
   type WebsiteFetchResult,
+  type WebsiteDiscoveryResult,
 } from "./website";
-
-export {
-  extractPdfText,
-  pdfIntegration,
-  PDF_MAX_EXTRACT_CHARS,
-} from "./pdf";
 
 export {
   databaseIntegration,
@@ -113,8 +94,6 @@ export {
   SUPABASE_CONNECTION_URL_EXAMPLES,
   SUPABASE_READONLY_ROLE,
   SUPABASE_READONLY_SETUP_SQL,
-  SUPABASE_SETUP_SKILL_NAME,
-  SUPABASE_SETUP_SKILL_PATH,
   type DatabaseCloudProviderId,
   type DatabaseDeploymentKind,
   type DatabasePrivateProviderId,

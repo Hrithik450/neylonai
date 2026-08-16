@@ -115,14 +115,3 @@ export function redactIntegrationConfig(
   return base;
 }
 
-/** True when legacy config still holds a credential key (pre-vault rows). */
-export function configHasLegacyCredentials(
-  config: Record<string, unknown> | null | undefined,
-  credentialKeys: readonly string[] | undefined,
-): boolean {
-  if (!config || !credentialKeys?.length) return false;
-  return credentialKeys.some((key) => {
-    const v = config[key];
-    return typeof v === "string" && v.trim().length > 0;
-  });
-}

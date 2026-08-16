@@ -24,14 +24,6 @@ export default async function AdminLayout({
 
   return (
     <div className="admin-shell bg-muted/30 min-h-svh">
-      <link
-        rel="preload"
-        href="/fonts/BandaNova-Book.woff2"
-        as="font"
-        type="font/woff2"
-        crossOrigin="anonymous"
-      />
-
       <header className="bg-background border-b">
         <div className="mx-auto flex max-w-7xl flex-col gap-5 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-4 sm:px-6">
           <div className="flex min-w-0 items-center gap-3">

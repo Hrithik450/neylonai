@@ -1,38 +1,36 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
-import { startTransition } from "react";
+import { useCallback, useEffect, useRef, startTransition } from "react";
 import { useInputStore } from "../store/input-store";
-import { useWidgetStore } from "../store/widget-store";
+import {
+  useWidgetNavigationStore,
+  useWidgetStore,
+} from "../store/widget-store";
+import { WidgetTabs } from "../constants";
 import { useWidgetHost } from "../context/widget-host";
 import { useThreadMessageStore, useThreadStore } from "../store/thread-store";
 import { flushStreamToken } from "./stream-token-buffer";
 import { createSmoothStreamWriter } from "./smooth-stream-writer";
-import { isAbortError, streamChat, getChatParticipantId } from "../..";
+import {
+  getOrCreateVisitorId,
+  getTrackedPageSection,
+  isAbortError,
+  streamChat,
+} from "../..";
+import { buildStreamChatUser } from "../../chat-user";
 
-/**
- * Owns widget chat send/stream/stop.
- * Tokens are revealed with rAF batching for ChatGPT/Claude-like smoothness.
- */
 export function useWidgetMessageHandler() {
-  const { user, onError } = useWidgetHost();
+  const { user, onError, config } = useWidgetHost();
   const { updateMessage } = useThreadMessageStore();
   const { setInput, setDisableInput } = useInputStore();
   const { setCurrentThreadId, setThreads } = useThreadStore();
-
-  const { setAssistantTyping, setIsStreaming, setThinkingTips } =
-    useWidgetStore();
+  const { setAssistantTyping, setIsStreaming, setThinkingTips } = useWidgetStore();
 
   const abortRef = useRef<AbortController | null>(null);
   const streamIdRef = useRef(0);
   const inFlightRef = useRef(false);
-  const writerRef = useRef<ReturnType<typeof createSmoothStreamWriter> | null>(
-    null,
-  );
-  /** Survives abort/interrupt so follow-ups stay on the same thread. */
-  const sessionThreadIdRef = useRef<string | null>(
-    useThreadStore.getState().currentThreadId,
-  );
+  const writerRef = useRef<ReturnType<typeof createSmoothStreamWriter> | null>(null);
+  const sessionThreadIdRef = useRef<string | null>(useThreadStore.getState().currentThreadId);
 
   const resetUiAfterStream = useCallback(() => {
     inFlightRef.current = false;
@@ -42,25 +40,19 @@ export function useWidgetMessageHandler() {
     setThinkingTips([]);
   }, [setDisableInput, setAssistantTyping, setIsStreaming, setThinkingTips]);
 
-  const bindThreadId = useCallback(
-    (id: string | null) => {
-      sessionThreadIdRef.current = id;
-      setCurrentThreadId(id);
-    },
-    [setCurrentThreadId],
-  );
+  const bindThreadId = useCallback((id: string | null) => {
+    sessionThreadIdRef.current = id;
+    setCurrentThreadId(id);
+  }, [setCurrentThreadId]);
 
-  // Keep session ref aligned when messages screen binds an existing thread / new chat.
-  useEffect(() => {
-    return useThreadStore.subscribe((state, prev) => {
-      if (state.currentThreadId === prev.currentThreadId) return;
+  useEffect(() => useThreadStore.subscribe((state, prev) => {
+    if (state.currentThreadId !== prev.currentThreadId) {
       sessionThreadIdRef.current = state.currentThreadId;
-    });
-  }, []);
+    }
+  }), []);
 
   const stopStreaming = useCallback(() => {
     if (!inFlightRef.current && !abortRef.current) return;
-
     streamIdRef.current += 1;
     writerRef.current?.flush();
     writerRef.current?.dispose();
@@ -70,15 +62,13 @@ export function useWidgetMessageHandler() {
     resetUiAfterStream();
   }, [resetUiAfterStream]);
 
-  useEffect(() => {
-    return () => {
-      streamIdRef.current += 1;
-      writerRef.current?.dispose();
-      writerRef.current = null;
-      abortRef.current?.abort();
-      abortRef.current = null;
-      inFlightRef.current = false;
-    };
+  useEffect(() => () => {
+    streamIdRef.current += 1;
+    writerRef.current?.dispose();
+    writerRef.current = null;
+    abortRef.current?.abort();
+    abortRef.current = null;
+    inFlightRef.current = false;
   }, []);
 
   const sendMessage = useCallback(
@@ -104,28 +94,22 @@ export function useWidgetMessageHandler() {
       const isStale = () => streamId !== streamIdRef.current;
 
       const assistantId = crypto.randomUUID();
+      const userMessageId = crypto.randomUUID();
       let assistantCreated = false;
       let pendingFence = "";
+      /** Bumped on reset so paints queued for a discarded round are dropped. */
+      let bubbleSeq = 0;
 
       // Always read latest thread id (avoid stale hook closure after interrupt).
       const threadIdForRequest =
         sessionThreadIdRef.current ??
         useThreadStore.getState().currentThreadId;
 
-      // Capture prior turns before appending this user message (for model context).
-      const priorHistory = (useThreadMessageStore.getState().messages ?? [])
-        .filter(
-          (m) =>
-            (m.role === "user" || m.role === "assistant") &&
-            typeof m.content === "string" &&
-            m.content.trim().length > 0,
-        )
-        .slice(-20)
-        .map((m) => ({ role: m.role, content: m.content }));
-
       const paint = (displayed: string) => {
-        if (isStale()) return;
+        if (isStale() || !displayed) return;
+        const seq = bubbleSeq;
         startTransition(() => {
+          if (seq !== bubbleSeq || isStale()) return;
           updateMessage((prev) => {
             const list = prev ?? [];
             if (!assistantCreated) {
@@ -164,7 +148,7 @@ export function useWidgetMessageHandler() {
       const writer = createSmoothStreamWriter({
         onFlush: paint,
         charsPerSecond: 42,
-        maxCharsPerFrame: 2,
+        maxCharsPerFrame: 4,
       });
       writerRef.current = writer;
 
@@ -173,7 +157,7 @@ export function useWidgetMessageHandler() {
         {
           role: "user",
           content: text,
-          id: crypto.randomUUID(),
+          id: userMessageId,
           thread: crypto.randomUUID(),
           created_at: new Date().toISOString(),
         },
@@ -210,11 +194,35 @@ export function useWidgetMessageHandler() {
       };
 
       try {
+        const chatUser = buildStreamChatUser({
+          id: user?.id,
+          name: user?.name,
+          email: user?.email,
+          profile_image: user?.profile_image,
+          anonymousVisitorId: getOrCreateVisitorId(),
+        });
+        const pageQuery =
+          typeof window === "undefined"
+            ? {}
+            : Object.fromEntries(
+                [...new URLSearchParams(window.location.search).entries()]
+                  .filter(
+                    ([key, value]) =>
+                      !/token|key|secret|password|email|auth/i.test(key) &&
+                      value.length <= 120,
+                  )
+                  .slice(0, 10),
+              );
+
         for await (const payload of streamChat({
           input: text,
-          senderId: getChatParticipantId(user?.id),
+          user: chatUser,
           threadId: threadIdForRequest,
-          conversationHistory: priorHistory,
+          pagePath:
+            config.pagePath ??
+            (typeof window === "undefined" ? null : window.location.pathname),
+          pageQuery,
+          pageSection: getTrackedPageSection(),
           signal: controller.signal,
         })) {
           if (isStale()) return;
@@ -247,17 +255,87 @@ export function useWidgetMessageHandler() {
               break;
             }
 
-            case "conversationEscalated":
-              // Escalation reference is already in the assistant message.
+            case "assistantReset": {
+              // That round was a tool call, not the answer. Drop its text and
+              // go back to the thinking state until the real answer streams.
+              bubbleSeq += 1;
+              pendingFence = "";
+              writer.reset();
+              if (assistantCreated) {
+                assistantCreated = false;
+                updateMessage((prev) =>
+                  (prev ?? []).filter((message) => message.id !== assistantId),
+                );
+              }
+              setIsStreaming(false);
+              setAssistantTyping(true);
               break;
+            }
+
+            case "conversationEscalated": {
+              const id = sessionThreadIdRef.current;
+              if (id) {
+                const existing =
+                  useThreadStore.getState().threads?.find((t) => t.id === id) ??
+                  null;
+                if (existing) {
+                  setThreads({
+                    ...existing,
+                    escalated: true,
+                    conversation_status:
+                      payload.data.status === "human_active"
+                        ? "human_active"
+                        : "human_pending",
+                  });
+                }
+              }
+              break;
+            }
+
+            case "handoffContactRequired": {
+              const id = payload.data.threadId;
+              bindThreadId(id);
+              const existing =
+                useThreadStore.getState().threads?.find((t) => t.id === id) ??
+                null;
+              if (existing) {
+                setThreads({
+                  ...existing,
+                  escalated: false,
+                  conversation_status: "awaiting_contact",
+                });
+              }
+              useWidgetNavigationStore.getState().switchTab(WidgetTabs.Contact);
+              break;
+            }
+
+            case "messagePersisted": {
+              updateMessage((messages) =>
+                messages.map((message) => {
+                  if (message.id === userMessageId) {
+                    return { ...message, id: payload.data.userMessageId };
+                  }
+                  if (message.id === assistantId) {
+                    return { ...message, id: payload.data.assistantMessageId };
+                  }
+                  return message;
+                }),
+              );
+              break;
+            }
 
             case "done":
               await finishOwnedWriter();
               break;
 
-            case "error":
-              await finishOwnedWriter({ reportError: payload.data.error });
+            case "error": {
+              const detail =
+                payload.data.blocked === "credits" && payload.data.upgrade?.detail
+                  ? `${payload.data.error} ${payload.data.upgrade.detail}`
+                  : payload.data.error;
+              await finishOwnedWriter({ reportError: detail });
               break;
+            }
           }
         }
 
@@ -280,6 +358,7 @@ export function useWidgetMessageHandler() {
     },
     [
       user?.id,
+      config.pagePath,
       updateMessage,
       setInput,
       setDisableInput,
