@@ -48,7 +48,8 @@ services:
   web:
     image: 812047027893.dkr.ecr.ap-south-1.amazonaws.com/neylonai-web:latest
     env_file:
-      - .env.local
+      - path: .env.local
+        required: false
     environment:
       NODE_ENV: production
       PORT: "3000"
@@ -68,7 +69,8 @@ services:
   crawler:
     image: 812047027893.dkr.ecr.ap-south-1.amazonaws.com/neylonai-crawler:latest
     env_file:
-      - .env.local
+      - path: .env.local
+        required: false
     environment:
       NODE_ENV: production
       DATABASE_URL: postgresql://neylonai:neylonai@postgres:5432/neylonai
