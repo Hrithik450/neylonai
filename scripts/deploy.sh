@@ -27,7 +27,7 @@ docker compose exec -T postgres bash -c \
   'until pg_isready -U neylonai -d neylonai; do sleep 1; done'
 
 info "Running database schema push..."
-docker compose run --rm --profile migration migrator
+COMPOSE_PROFILES=migration docker compose run --rm migrator
 
 info "Pruning unused Docker images..."
 docker image prune -f
