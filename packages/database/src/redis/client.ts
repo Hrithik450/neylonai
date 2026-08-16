@@ -13,22 +13,29 @@ function createRedis(): Redis {
     throw new Error("REDIS_URL is not set in environment variables.");
   }
 
+  // During `next build` (NEXT_PHASE=phase-production-build) there is no Redis
+  // available. Return null immediately so ioredis gives up after one attempt
+  // instead of retrying for minutes and crashing the build.
+  const isBuildPhase = process.env.NEXT_PHASE === "phase-production-build";
+
   const instance = new Redis(url, {
     connectTimeout: 5000,
     commandTimeout: 5000,
-    maxRetriesPerRequest: 2,
+    maxRetriesPerRequest: isBuildPhase ? 0 : 2,
     // Required with lazyConnect: otherwise commands fail while connecting with
     // "Stream isn't writeable and enableOfflineQueue options is false".
     enableOfflineQueue: true,
     lazyConnect: true,
     retryStrategy(times) {
-      if (times > 20) return null;
+      if (isBuildPhase || times > 20) return null;
       return Math.min(times * 100, 2000);
     },
   });
 
-  instance.on("error", (err) => {
-    console.warn("[redis]", err.message);
+  // Swallow all Redis errors — AggregateError (Node ≥17 multi-connect) included.
+  instance.on("error", (err: unknown) => {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.warn("[redis]", msg);
   });
 
   return instance;
