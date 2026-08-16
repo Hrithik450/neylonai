@@ -7,13 +7,20 @@ const JWT_EXPIRY = "7d";
 const rawSecret =
   process.env.AUTH_SECRET || process.env.JWT_SECRET;
 
-if (!rawSecret && process.env.NODE_ENV === "production") {
-  throw new Error("AUTH_SECRET / JWT_SECRET must be set in production.");
-}
-
 const JWT_SECRET = new TextEncoder().encode(
   rawSecret || "dev-only-secret-not-for-production",
 );
+
+function validateSecretAtRuntime() {
+  if (
+    process.env.NODE_ENV === "production" &&
+    (!rawSecret || rawSecret.includes("placeholder"))
+  ) {
+    throw new Error(
+      "AUTH_SECRET / JWT_SECRET must be set to a real value in production runtime.",
+    );
+  }
+}
 
 export interface SessionUser {
   id: string;
@@ -27,6 +34,7 @@ export interface SessionUser {
 
 /** Signs a short-lived JWT embedding the session user. Pure — no cookie/framework access. */
 export async function createSession(user: SessionUser): Promise<string> {
+  validateSecretAtRuntime();
   return new SignJWT({ user })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
@@ -36,6 +44,7 @@ export async function createSession(user: SessionUser): Promise<string> {
 
 /** Verifies a session JWT and returns the embedded user, or null if invalid/expired. */
 export async function verifySession(token: string): Promise<SessionUser | null> {
+  validateSecretAtRuntime();
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET);
     return (payload as { user: SessionUser }).user;
