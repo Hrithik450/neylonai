@@ -46,10 +46,7 @@ services:
       retries: 10
 
   web:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: runner
+    image: 812047027893.dkr.ecr.ap-south-1.amazonaws.com/neylonai-web:latest
     env_file:
       - .env.local
     environment:
@@ -69,10 +66,7 @@ services:
     restart: unless-stopped
 
   crawler:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: crawler
+    image: 812047027893.dkr.ecr.ap-south-1.amazonaws.com/neylonai-crawler:latest
     env_file:
       - .env.local
     environment:
