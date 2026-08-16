@@ -24,8 +24,9 @@ widget.unmount();
 
 ## Typed section keys
 
-Generate path-scoped TypeScript literals so section tracking only accepts
-keys that exist for that page:
+Neylon AI automatically discovers the sections on your pages. Generate
+path-scoped TypeScript literals so section tracking only accepts keys
+that exist for that page:
 
 ```bash
 npx neylonai-generate-sections \
