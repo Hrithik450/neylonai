@@ -8,6 +8,7 @@ import Link from "next/link";
 import { observeNeylonSection, neylonSectionKeys } from "@/neylon-sections";
 import { useSessionView } from "@/components/session-view";
 import { GoogleSignInButton } from "@/components/google-signin-button";
+import { cn } from "@neylonai/ui";
 
 // design.md tokens — background inherited from page wrapper (#FFF7F4)
 const TEXT_PRIMARY = "#242424";
