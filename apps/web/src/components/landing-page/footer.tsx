@@ -27,10 +27,7 @@ export function Footer() {
   const { handleLogin } = useGoogleAuthHandler();
 
   return (
-    <footer
-      id="footer"
-      className="px-6 sm:px-10 md:px-20 lg:px-28"
-    >
+    <footer id="footer" className="px-6 sm:px-10 md:px-20 lg:px-28">
       <div>
         {/* CTA */}
         <div className="text-center py-10 sm:py-14 md:py-16">
@@ -38,7 +35,7 @@ export function Footer() {
             className="landing-strong text-3xl md:text-4xl xl:text-5xl leading-tight"
             style={{ color: GREEN }}
           >
-            Stop losing visitors you've already earned.
+            Stop losing visitors you&apos;ve already earned.
           </h2>
           <p className="text-gray-500 text-base mt-4 max-w-sm mx-auto">
             Free to start. Live in minutes.
@@ -74,7 +71,8 @@ export function Footer() {
               Neylon AI
             </h3>
             <p className="text-gray-500 text-sm leading-relaxed max-w-[220px]">
-              Visitor engagement and retention for websites that want more from their traffic.
+              Visitor engagement and retention for websites that want more from
+              their traffic.
             </p>
           </div>
 

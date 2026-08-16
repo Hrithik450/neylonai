@@ -137,7 +137,7 @@ export function HowItWorks() {
             </h2>
             <p className="mt-4 max-w-xl text-sm leading-relaxed text-gray-500 sm:text-base">
               No engineering sprint needed. Just add a snippet, share what your
-              business does, and you're live.
+              business does, and you&apos;re live.
             </p>
           </div>
 
