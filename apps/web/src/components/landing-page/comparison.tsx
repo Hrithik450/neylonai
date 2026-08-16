@@ -20,44 +20,66 @@ const ROWS: {
   {
     label: "Starting price",
     neylon: "$19 / mo",
-    intercom: "$29+ / seat",
-    chatbase: "$32 / mo",
+    intercom: "$39+ / seat",
+    chatbase: "$19 / mo",
   },
 
   {
-    label: "AI suggestions from page + knowledge",
+    label: "Proactive visitor engagement",
     neylon: true,
-    intercom: "Help articles / outbound",
-    chatbase: "Static / custom JS",
-  },
-
-  {
-    label: "Native idle & exit-intent triggers",
-    neylon: true,
-    intercom: "Custom event / GTM",
-    chatbase: "Custom JS",
-  },
-
-  {
-    label: "Scroll-depth & dwell triggers",
-    neylon: true,
-    intercom: "Custom event",
-    chatbase: "Custom JS",
-  },
-
-  {
-    label: "Personalized post-chat suggestions",
-    neylon: true,
-    intercom: "Audience rules",
-    chatbase: "In-chat follow-ups",
+    intercom: "Paid add-on",
+    chatbase: false,
   },
 
   {
     label: "Answers from your own content",
     neylon: true,
-    intercom: "Fin AI",
+    intercom: "Fin AI tier",
     chatbase: true,
   },
+
+  {
+    label: "Human escalation & inbox",
+    neylon: true,
+    intercom: true,
+    chatbase: false,
+  },
+
+  {
+    label: "Conversation memory",
+    neylon: true,
+    intercom: true,
+    chatbase: false,
+  },
+
+  {
+    label: "Visitor retention insights",
+    neylon: true,
+    intercom: false,
+    chatbase: false,
+  },
+
+  {
+    label: "Slack / CRM notifications",
+    neylon: "Pro+",
+    intercom: true,
+    chatbase: false,
+  },
+
+  {
+    label: "Full widget customization",
+    neylon: "Starter+",
+    intercom: true,
+    chatbase: true,
+  },
+
+  {
+    label: "India payments (Razorpay)",
+    neylon: true,
+    intercom: false,
+    chatbase: false,
+  },
+  { label: "Embeddable SDK", neylon: true, intercom: false, chatbase: false },
 ];
 
 export function Comparison() {
@@ -75,7 +97,7 @@ export function Comparison() {
           className="landing-strong text-2xl md:text-3xl xl:text-4xl leading-tight"
           style={{ color: GREEN }}
         >
-          More engagement, compared to the rest.
+          More for less, compared to the rest.
         </h2>
       </div>
 
@@ -142,23 +164,13 @@ export function Comparison() {
                   className="py-3.5 px-4 md:py-4 md:px-6 flex items-center justify-center border-l border-black/[0.07]"
                   style={{ background: "rgba(14,50,40,0.03)" }}
                 >
-                  <Cell
-                    val={row.neylon}
-                    highlight
-                    showIcon={row.label !== "Starting price"}
-                  />
+                  <Cell val={row.neylon} highlight />
                 </div>
                 <div className="py-3.5 px-4 md:py-4 md:px-6 flex items-center justify-center border-l border-black/[0.07]">
-                  <Cell
-                    val={row.intercom}
-                    showIcon={row.label !== "Starting price"}
-                  />
+                  <Cell val={row.intercom} />
                 </div>
                 <div className="py-3.5 px-4 md:py-4 md:px-6 flex items-center justify-center border-l border-black/[0.07]">
-                  <Cell
-                    val={row.chatbase}
-                    showIcon={row.label !== "Starting price"}
-                  />
+                  <Cell val={row.chatbase} />
                 </div>
               </div>
             ))}
@@ -169,15 +181,7 @@ export function Comparison() {
   );
 }
 
-function Cell({
-  val,
-  highlight,
-  showIcon = true,
-}: {
-  val: CellVal;
-  highlight?: boolean;
-  showIcon?: boolean;
-}) {
+function Cell({ val, highlight }: { val: CellVal; highlight?: boolean }) {
   if (val === true) {
     return (
       <span className="inline-flex items-center gap-1.5">
@@ -198,9 +202,7 @@ function Cell({
   }
   return (
     <span className="inline-flex items-center gap-1.5 text-sm text-gray-500">
-      {showIcon ? (
-        <X className="w-4 h-4 flex-shrink-0 text-amber-500" strokeWidth={2.5} />
-      ) : null}
+      <X className="w-4 h-4 flex-shrink-0 text-amber-500" strokeWidth={2.5} />
       {val}
     </span>
   );
