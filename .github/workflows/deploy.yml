@@ -58,7 +58,7 @@ jobs:
           COMMAND_ID=$(aws ssm send-command \
             --instance-ids "${{ secrets.EC2_INSTANCE_ID }}" \
             --document-name "AWS-RunShellScript" \
-            --parameters 'commands=[
+            --parameters commands='[
               "set -e",
               "echo \"Setting up application directory...\"",
               "sudo mkdir -p /srv/neylonai",
@@ -72,7 +72,7 @@ jobs:
               "git fetch origin main",
               "git reset --hard origin/main",
               "echo \"Logging into ECR...\"",
-              "aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}",
+              "aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com",
               "echo \"Pulling latest images...\"",
               "docker compose -f docker-compose.yml pull",
               "echo \"Starting services...\"",
