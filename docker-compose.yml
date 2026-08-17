@@ -66,6 +66,8 @@ services:
       context: .
       dockerfile: Dockerfile
       target: runner
+      args:
+        NEXT_PUBLIC_NEYLONAI_API_ORIGIN: ${NEXT_PUBLIC_NEYLONAI_API_ORIGIN:-}
     env_file:
       - path: .env.local
         required: false
