@@ -29,8 +29,18 @@ jobs:
             git fetch origin main
             git reset --hard origin/main
 
-            echo "==> Building images and starting services..."
-            docker compose up --build -d --remove-orphans
+            echo "==> Stopping existing containers..."
+            docker compose down --remove-orphans
+
+            echo "==> Building images..."
+            docker compose build
+
+            echo "==> Starting services..."
+            docker compose up -d
+
+            echo "==> Waiting for Postgres to be healthy..."
+            docker compose exec -T postgres bash -c \
+              'until pg_isready -U neylonai -d neylonai; do sleep 1; done'
 
             echo "==> Running database schema push..."
             COMPOSE_PROFILES=migration docker compose run --rm migrator
@@ -39,6 +49,7 @@ jobs:
             docker image prune -f
 
             echo "==> Deployment complete!"
+            docker compose ps
 
   publish-sdk:
     runs-on: ubuntu-latest

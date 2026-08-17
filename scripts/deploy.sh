@@ -19,8 +19,14 @@ info "Pulling latest code..."
 git fetch origin main
 git reset --hard origin/main
 
-info "Building images and starting services..."
-docker compose up --build -d --remove-orphans
+info "Stopping existing containers..."
+docker compose down --remove-orphans
+
+info "Building images..."
+docker compose build
+
+info "Starting services..."
+docker compose up -d
 
 info "Waiting for Postgres to be healthy..."
 docker compose exec -T postgres bash -c \
