@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { integrationLogoLetters } from "@neylonai/integrations/catalog";
+import { integrationLogoLetters } from "@neylonai/sdk";
 
 export type IntegrationRow = {
   id: string;

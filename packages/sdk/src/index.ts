@@ -93,3 +93,27 @@ export type {
   AgentStreamEvent,
   CreditExhaustionError,
 } from "./types";
+export { integrationLogoLetters } from "./integration-utils";
+export type {
+  OrganizationPrivacyPrefs,
+  OrganizationSettings,
+  OrganizationSettingsPatch,
+} from "./organization";
+export { DEFAULT_PRIVACY } from "./organization";
+export {
+  DATABASE_CLOUD_PROVIDERS,
+  DATABASE_PRIVATE_PROVIDERS,
+  SUPABASE_READONLY_ROLE,
+  SUPABASE_READONLY_SETUP_SQL,
+  SUPABASE_CONNECTION_URL_EXAMPLES,
+  POSTGRES_READONLY_SETUP_SQL,
+} from "./database-integration";
+export type {
+  DatabaseDeploymentKind,
+  DatabaseProviderStatus,
+  DatabaseCloudProviderId,
+  DatabasePrivateProviderId,
+  DatabaseProviderId,
+  DatabaseProviderOption,
+  SupabaseSetupMethod,
+} from "./database-integration";

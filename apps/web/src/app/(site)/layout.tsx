@@ -5,8 +5,7 @@ import { SupportWidgetHost } from "@/components/support-widget-host";
 import { getSiteWidgetApiKey } from "@/server/site-widget";
 import { OnboardingOverlay } from "@/components/landing-page/onboarding-overlay";
 import { SessionViewProvider } from "@/components/session-view";
-import { getSessionFromCookies } from "@/server/auth-cookies";
-import { UsersRepository } from "@neylonai/domain/users";
+import { getLandingUser } from "@/server/landing-user";
 import { landingFontClassName } from "@/assets/fonts";
 import {
   OrganizationJsonLd,
@@ -28,19 +27,7 @@ export default async function SiteLayout({
     "";
   // Same as a customer embed: publishable key for this deployment’s org.
   const siteApiKey = getSiteWidgetApiKey();
-  const sessionUser = await getSessionFromCookies();
-  // Cookie is a login-time snapshot; onboarding progress lives on the row.
-  const row = sessionUser
-    ? await UsersRepository.findById(sessionUser.id)
-    : null;
-  const initialUser =
-    sessionUser && row
-      ? {
-          ...sessionUser,
-          has_been_onboarded: row.has_been_onboarded,
-          onboarding_step: row.onboarding_step,
-        }
-      : sessionUser;
+  const initialUser = await getLandingUser();
 
   const body = (
     <LayoutWrapper>

@@ -127,8 +127,13 @@ widget.update({
 \`\`\`
 
 7. **Section tracking (requires a Website integration first).**
-   After the customer sets up their Website integration in Neylon AI, generate TypeScript types so section
-   tracking only offers keys that exist for each page path:
+   **CRITICAL: DO NOT generate section types or neylon-sections.ts file yourself. DO NOT create dummy section keys or placeholder types.**
+
+   After the customer has imported/connected their website in the Neylon dashboard:
+   1. **STOP and ask the user**: "I see you want to add section tracking. Have you completed the Website integration in the Neylon dashboard?"
+   2. **Wait for user confirmation** that the website import is complete
+   3. **Then tell the user**: "Now I will run the generate command to fetch your actual sections from Neylon"
+   4. **Only then run**:
 
 \`\`\`bash
 npx neylonai-generate-sections \\
@@ -136,7 +141,10 @@ npx neylonai-generate-sections \\
   --out ./src/neylon-sections.ts
 \`\`\`
 
-If sections are not available yet, tell the user to complete Website setup in the Neylon dashboard, then re-run the command.
+   **Never create section keys manually.** If the command fails or sections are not available, tell the user to:
+   - Complete Website setup in the Neylon dashboard first
+   - Verify their website has been crawled/imported
+   - Then re-run the generate command
 
 Wire **observeNeylonSection** on 3–8 major blocks per content page (home,
 pricing, features, product, docs, FAQ). Mount the widget once. Use

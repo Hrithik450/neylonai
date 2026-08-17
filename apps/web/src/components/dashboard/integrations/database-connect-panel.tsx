@@ -11,7 +11,7 @@ import {
   type DatabaseProviderId,
   type DatabaseProviderOption,
   type SupabaseSetupMethod,
-} from "@neylonai/integrations/database/setup";
+} from "@neylonai/sdk";
 import { cn } from "@/lib/utils";
 import { DATABASE_CODING_AGENT_SKILL } from "./database-coding-agent-skill";
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { OrganizationSettings } from "@neylonai/domain/workspace";
+import type { OrganizationSettings } from "@neylonai/sdk";
 import {
   FieldHint,
   FieldLabel,
