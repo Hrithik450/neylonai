@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { observeNeylonSection, neylonSectionKeys } from "@/neylon-sections";
 
 const GREEN = "#0E3228";
 
@@ -55,9 +56,21 @@ const TABS = [
 export function ProductShowcase() {
   const [activeTab, setActiveTab] = useState("overview");
   const active = TABS.find((t) => t.id === activeTab)!;
+  const sectionRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    const node = sectionRef.current;
+    if (!node) return;
+    return observeNeylonSection(node, {
+      pagePath: "/",
+      sectionKey: neylonSectionKeys["/"][1],
+      sectionLabel: "Product showcase",
+    });
+  }, []);
 
   return (
     <section
+      ref={sectionRef}
       id="showcase"
       className="py-10 sm:py-12 lg:py-20 px-6 sm:px-10 md:px-20 lg:px-28"
     >
