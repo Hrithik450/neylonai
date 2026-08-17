@@ -53,6 +53,7 @@ const nextConfig: NextConfig = {
       config.resolve.alias = {
         ...config.resolve.alias,
         "@neylonai/sdk/react": path.join(sdkSrc, "react/index.ts"),
+        "@neylonai/sdk/embed": path.join(sdkSrc, "embed.ts"),
         "@neylonai/sdk": path.join(sdkSrc, "index.ts"),
       };
     }
