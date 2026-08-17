@@ -1,6 +1,6 @@
 "use client";
 
-import React, { memo, useCallback, useEffect, useRef, useState } from "react";
+import React, { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { cn } from "../../ui";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
@@ -295,10 +295,14 @@ export function ConversationUI({
   const lastContent = last?.content ?? "";
   const lastId = last?.id ?? "";
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (userScrolledUpRef.current) return;
     if (isStreaming || assistantTyping) {
-      smoothFollowBottom();
+      // During streaming, jump immediately to keep content visible
+      const el = scrollRef.current;
+      if (el) {
+        el.scrollTop = el.scrollHeight;
+      }
       return;
     }
     // After a turn settles, land exactly on the bottom once.
@@ -308,7 +312,6 @@ export function ConversationUI({
     lastId,
     assistantTyping,
     isStreaming,
-    smoothFollowBottom,
     jumpToBottom,
   ]);
 
