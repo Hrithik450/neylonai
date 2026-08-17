@@ -112,21 +112,15 @@ export function useWidgetMessageHandler() {
           if (seq !== bubbleSeq || isStale()) return;
           updateMessage((prev) => {
             const list = prev ?? [];
-            if (!assistantCreated) {
-              assistantCreated = true;
-              return [
-                ...list,
-                {
-                  role: "assistant",
-                  id: assistantId,
-                  thread: crypto.randomUUID(),
-                  content: displayed,
-                  created_at: new Date().toISOString(),
-                },
-              ];
-            }
+
+            // Find existing assistant message
             const idx = list.findIndex((m) => m.id === assistantId);
+
             if (idx === -1) {
+              // Create new assistant message if it doesn't exist
+              if (!assistantCreated) {
+                assistantCreated = true;
+              }
               return [
                 ...list,
                 {
@@ -138,6 +132,8 @@ export function useWidgetMessageHandler() {
                 },
               ];
             }
+
+            // Update existing message
             const next = list.slice();
             next[idx] = { ...next[idx]!, content: displayed };
             return next;

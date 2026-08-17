@@ -18,6 +18,22 @@ import {
 } from "../..";
 const mkEl = (tag: string, cls: string) => (props: any) => React.createElement(tag, { className: cls, ...props });
 
+const MemoizedMarkdown = memo(function MemoizedMarkdown({
+  content,
+  remarkPlugins,
+  components,
+}: {
+  content: string;
+  remarkPlugins: any[];
+  components: any;
+}) {
+  return (
+    <ReactMarkdown remarkPlugins={remarkPlugins} components={components}>
+      {content}
+    </ReactMarkdown>
+  );
+}, (prev, next) => prev.content === next.content);
+
 const markdownComponents = {
   h1: mkEl("h1", "text-2xl md:text-3xl font-bold mb-4 mt-5"),
   h2: mkEl("h2", "text-xl md:text-2xl font-semibold mb-3 mt-4"),
@@ -123,12 +139,11 @@ const MessageBubble = memo(
             className="prose max-w-none min-w-0 w-full break-words text-sm md:text-base [overflow-wrap:anywhere]"
             style={{ color: aiText }}
           >
-            <ReactMarkdown
+            <MemoizedMarkdown
+              content={conversation.content}
               remarkPlugins={[remarkGfm, remarkBreaks]}
               components={markdownComponents}
-            >
-              {conversation.content}
-            </ReactMarkdown>
+            />
           </div>
         </div>
         {showActions && !isStreaming ? (
@@ -199,15 +214,30 @@ const MessageBubble = memo(
       </div>
     );
   },
-  (prev, next) =>
-    prev.isStreaming === next.isStreaming &&
-    prev.groupedWithPrevious === next.groupedWithPrevious &&
-    prev.showActions === next.showActions &&
-    prev.aiMessageBackground === next.aiMessageBackground &&
-    prev.humanMessageBackground === next.humanMessageBackground &&
-    prev.conversation.id === next.conversation.id &&
-    prev.conversation.content === next.conversation.content &&
-    prev.conversation.role === next.conversation.role,
+  (prev, next) => {
+    // Only re-render if content actually changed
+    const contentChanged = prev.conversation.content !== next.conversation.content;
+    // Or if any of these props changed
+    const propsChanged =
+      prev.isStreaming !== next.isStreaming ||
+      prev.groupedWithPrevious !== next.groupedWithPrevious ||
+      prev.showActions !== next.showActions ||
+      prev.aiMessageBackground !== next.aiMessageBackground ||
+      prev.humanMessageBackground !== next.humanMessageBackground;
+
+    // If content hasn't changed and no props changed, skip re-render
+    if (!contentChanged && !propsChanged) {
+      return true; // Don't re-render (React.memo returns true when equal)
+    }
+
+    // Also check if it's the same message
+    if (prev.conversation.id !== next.conversation.id) {
+      return false; // Different message, re-render
+    }
+
+    // Same message, but something changed, re-render
+    return false;
+  }
 );
 
 export function ConversationUI({
@@ -225,6 +255,8 @@ export function ConversationUI({
   const [showScrollButton, setShowScrollButton] = useState(false);
   const userScrolledUpRef = useRef(false);
   const scrollRafRef = useRef<number | null>(null);
+  const prevContentRef = useRef<string>("");
+  const scrollThrottleRef = useRef(false);
 
   const stopSmoothScroll = useCallback(() => {
     if (scrollRafRef.current != null) {
@@ -233,18 +265,23 @@ export function ConversationUI({
     }
   }, []);
 
-  const handleScroll = () => {
-    if (!scrollRef.current) return;
-    const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
-    const isAtBottom = scrollHeight - scrollTop <= clientHeight + 64;
-    if (!isAtBottom) {
-      userScrolledUpRef.current = true;
-      stopSmoothScroll();
-    } else {
-      userScrolledUpRef.current = false;
-    }
-    setShowScrollButton(!isAtBottom);
-  };
+  const handleScroll = useCallback(() => {
+    if (!scrollRef.current || scrollThrottleRef.current) return;
+
+    scrollThrottleRef.current = true;
+    requestAnimationFrame(() => {
+      scrollThrottleRef.current = false;
+      const { scrollTop, scrollHeight, clientHeight } = scrollRef.current!;
+      const isAtBottom = scrollHeight - scrollTop <= clientHeight + 64;
+      if (!isAtBottom) {
+        userScrolledUpRef.current = true;
+        stopSmoothScroll();
+      } else {
+        userScrolledUpRef.current = false;
+      }
+      setShowScrollButton(!isAtBottom);
+    });
+  }, [stopSmoothScroll]);
 
   /** Ease toward bottom — premium follow while tokens stream. */
   const smoothFollowBottom = useCallback(() => {
@@ -297,14 +334,22 @@ export function ConversationUI({
 
   useLayoutEffect(() => {
     if (userScrolledUpRef.current) return;
+
+    const el = scrollRef.current;
+    if (!el) return;
+
+    const isAtBottom = el.scrollHeight - el.scrollTop <= el.clientHeight + 64;
+
     if (isStreaming || assistantTyping) {
       // During streaming, jump immediately to keep content visible
-      const el = scrollRef.current;
-      if (el) {
+      // But only if we're already near the bottom or content is actively updating
+      if (isAtBottom || lastContent !== prevContentRef.current) {
         el.scrollTop = el.scrollHeight;
       }
+      prevContentRef.current = lastContent;
       return;
     }
+
     // After a turn settles, land exactly on the bottom once.
     jumpToBottom();
   }, [
