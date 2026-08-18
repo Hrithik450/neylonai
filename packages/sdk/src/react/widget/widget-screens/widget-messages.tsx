@@ -15,6 +15,7 @@ import { useWidgetMessageHandler } from "../../hooks/use-message-handler";
 import { useWidgetHost } from "../../context/widget-host";
 import { useProactivePendingStore } from "../../proactive";
 import { getOrCreateVisitorId, listMessages } from "../../..";
+import { useWidgetToggleStore } from "../../store/widget-store";
 
 interface WidgetMessagesProps {
   threadId?: string;
@@ -30,6 +31,7 @@ export function WidgetMessages({ threadId, title }: WidgetMessagesProps) {
 
   const { back } = useWidgetNavigation();
   const { sendMessage, stopStreaming } = useWidgetMessageHandler();
+  const { isOpen } = useWidgetToggleStore();
   const pendingQuestion = useProactivePendingStore((s) => s.pendingQuestion);
   const sendMessageRef = React.useRef(sendMessage);
   const stopStreamingRef = React.useRef(stopStreaming);
@@ -55,15 +57,15 @@ export function WidgetMessages({ threadId, title }: WidgetMessagesProps) {
     activeThread?.conversation_status === "human_pending" ||
     activeThread?.conversation_status === "human_active";
 
-  // Home / proactive click-through → auto-send once the messages screen is ready.
+  // Home / proactive click-through → auto-send once the widget is open and ready.
   React.useEffect(() => {
-    if (loading || !pendingQuestion) return;
+    if (!isOpen || loading || !pendingQuestion) return;
     const text =
       useProactivePendingStore.getState().consumePendingQuestion();
     if (text) {
       void sendMessageRef.current(text);
     }
-  }, [loading, pendingQuestion]);
+  }, [isOpen, loading, pendingQuestion]);
 
   // Bind thread + load history. Only re-fetch when threadId changes.
   React.useEffect(() => {

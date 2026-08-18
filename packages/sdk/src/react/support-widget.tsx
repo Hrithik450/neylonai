@@ -19,8 +19,8 @@ import type {
 import { WidgetScreens, WidgetTabs } from "./constants";
 import { WidgetHostProvider, useWidgetHost } from "./context/widget-host";
 import { useWidgetNavigation } from "./hooks/use-widget-navigation";
-import { useThreadStore } from "./store/thread-store";
-import { useWidgetToggleStore } from "./store/widget-store";
+import { useThreadMessageStore, useThreadStore } from "./store/thread-store";
+import { useWidgetNavigationStore, useWidgetToggleStore } from "./store/widget-store";
 import { Widget } from "./widget/widget";
 import {
   LauncherSuggestionBubble,
@@ -168,12 +168,14 @@ function SupportWidgetInner({
       const question = text.trim();
       if (!question) return;
       clickActive();
-      setCurrentThreadId(null);
-      useProactivePendingStore.getState().setPendingQuestion(question);
-      navigate(WidgetTabs.Messages, WidgetScreens.MessagesScreens.Messages);
+      // Open the panel first so the message screen is visible when we send.
       setIsOpen(true);
+      setCurrentThreadId(null);
+      useThreadMessageStore.getState().setMessages([]);
+      useWidgetNavigationStore.getState().openNewChat();
+      useProactivePendingStore.getState().setPendingQuestion(question);
     },
-    [clickActive, navigate, setCurrentThreadId, setIsOpen],
+    [clickActive, setCurrentThreadId, setIsOpen],
   );
 
   useEffect(() => {

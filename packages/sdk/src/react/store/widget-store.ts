@@ -54,6 +54,8 @@ interface WidgetNavigationStore {
   /** Replaces the top screen on a tab (same name, new props) without growing the stack. */
   replaceTopScreen: (tab: WidgetTabType, screen: WidgetScreen) => void;
   popScreen: (tab: WidgetTabType) => void;
+  /** Jump to a fresh message screen (no threads list underneath). */
+  openNewChat: () => void;
 }
 
 export const useWidgetNavigationStore = create<WidgetNavigationStore>()(
@@ -106,6 +108,16 @@ export const useWidgetNavigationStore = create<WidgetNavigationStore>()(
               state.tabStacks[tab].stack.length > 1
                 ? state.tabStacks[tab].stack.slice(0, -1)
                 : state.tabStacks[tab].stack,
+          },
+        },
+      })),
+    openNewChat: () =>
+      set((state) => ({
+        activeTab: WidgetTabs.Messages,
+        tabStacks: {
+          ...state.tabStacks,
+          [WidgetTabs.Messages]: {
+            stack: [{ name: WidgetScreens.MessagesScreens.Messages }],
           },
         },
       })),
