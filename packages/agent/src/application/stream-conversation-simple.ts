@@ -552,7 +552,10 @@ async function* streamConversationTurn(
     );
 
     // Build conversation history
-    const contents = [];
+    const contents: Array<{
+      role: "user" | "model";
+      parts: Array<{ text: string }>;
+    }> = [];
     for (const msg of conversationHistory) {
       if (!msg.content) continue;
       contents.push({
