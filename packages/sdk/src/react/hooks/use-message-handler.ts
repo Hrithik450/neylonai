@@ -93,7 +93,7 @@ export function useWidgetMessageHandler() {
 
       const isStale = () => streamId !== streamIdRef.current;
 
-      const assistantId = crypto.randomUUID();
+      let assistantId = crypto.randomUUID();
       const userMessageId = crypto.randomUUID();
       let assistantCreated = false;
       let pendingFence = "";
@@ -312,6 +312,7 @@ export function useWidgetMessageHandler() {
                     return { ...message, id: payload.data.userMessageId };
                   }
                   if (message.id === assistantId) {
+                    assistantId = payload.data.assistantMessageId;
                     return { ...message, id: payload.data.assistantMessageId };
                   }
                   return message;
