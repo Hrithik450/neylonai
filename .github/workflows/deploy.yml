@@ -23,7 +23,7 @@ jobs:
           command_timeout: 30m
           script: |
             set -e
-            cd /srv/neylonai/app
+            cd ~/srv/neylonai/app
 
             echo "==> Pulling latest code..."
             git fetch origin main
