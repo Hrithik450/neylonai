@@ -28,6 +28,7 @@ jobs:
             echo "==> Pulling latest code..."
             git fetch origin main
             git reset --hard origin/main
+            git clean -fd
 
             echo "==> Stopping existing containers..."
             docker compose down --remove-orphans
