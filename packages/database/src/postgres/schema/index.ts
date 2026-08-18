@@ -110,6 +110,7 @@ export type {
   ProactiveTriggerType,
   ProactiveTriggerEventType,
 } from "./engagement";
+export { visitorSuggestionState } from "./visitor-suggestions";
 
 export const userRelations = relations(users, ({ many }) => ({
   organizationAccounts: many(organizationAccounts),

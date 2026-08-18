@@ -250,7 +250,7 @@ function normalizeSuggestions(values: unknown[]): string[] {
     .map((value) => value.replace(/\s+/g, " ").trim())
     .filter((value) => value.length >= 8 && value.length <= 120)
     .map((value) => (value.endsWith("?") ? value : `${value}?`))
-    .slice(0, 3);
+    .slice(0, 4);
 }
 
 export type ProcessedWebsitePage = {

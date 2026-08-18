@@ -1,6 +1,11 @@
 import type { ProactiveSuggestionDto } from "../..";
 import { PROACTIVE_CONFIG } from "./config";
 import { getOrCreateVisitorId } from "../../visitor";
+import {
+  EMPTY_SUGGESTION_QUEUE,
+  parseSuggestionQueue,
+  type SuggestionQueue,
+} from "./suggestion-queue";
 
 export interface PageVisitProgress {
   knownSectionKeys: string[];
@@ -27,6 +32,8 @@ export interface ProactivePersistedState {
   poolSectionKey: string | null;
   poolMode: "idle" | "post_chat" | null;
   poolFetchedAt: number;
+  /** FIFO delivery queue: section prompts before session batch. */
+  suggestionQueue: SuggestionQueue;
 }
 
 const EMPTY = (visitorId: string): ProactivePersistedState => ({
@@ -44,6 +51,7 @@ const EMPTY = (visitorId: string): ProactivePersistedState => ({
   poolSectionKey: null,
   poolMode: null,
   poolFetchedAt: 0,
+  suggestionQueue: { ...EMPTY_SUGGESTION_QUEUE },
 });
 
 function canUseStorage(): boolean {
@@ -143,6 +151,7 @@ export function loadProactiveState(): ProactivePersistedState {
           : null,
       poolFetchedAt:
         typeof parsed.poolFetchedAt === "number" ? parsed.poolFetchedAt : 0,
+      suggestionQueue: parseSuggestionQueue(parsed.suggestionQueue),
     };
   } catch {
     return EMPTY(visitorId);

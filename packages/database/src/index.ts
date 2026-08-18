@@ -99,6 +99,13 @@ export type {
   ProactiveTriggerType,
   ProactiveTriggerEventType,
 } from "./postgres/schema/engagement";
+export { visitorSuggestionState } from "./postgres/schema/visitor-suggestions";
+export {
+  getVisitorSectionSuggestionState,
+  syncVisitorSectionSuggestionPool,
+  markVisitorSectionSuggestionShown,
+  type VisitorSectionSuggestionState,
+} from "./engagement";
 export type { ConversationStatus } from "./postgres/schema/threads";
 export { organizationParticipants } from "./postgres/schema/participants";
 export { users } from "./postgres/schema/users";

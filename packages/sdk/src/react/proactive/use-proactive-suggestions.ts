@@ -21,11 +21,19 @@ import {
   isPageVisitComplete,
   loadProactiveState,
   markSectionSuggestionShown,
-  pickNextSuggestion,
   saveProactiveState,
   unshownSectionKeysForPath,
   type ProactivePersistedState,
 } from "./persistence";
+import {
+  dequeueNextSuggestion,
+  enqueueSectionSuggestions,
+  enqueueSessionSuggestions,
+  isSectionQueueLocked,
+  nextPendingFetchSectionKey,
+  requestSectionFetch,
+  shiftPendingFetchSectionKey,
+} from "./suggestion-queue";
 import {
   hasTriggerCooldownExpired,
   markTriggerFired,
@@ -59,9 +67,11 @@ export interface ActiveProactiveSuggestion {
   id: string;
   text: string;
   source: ProactiveSuggestionDto["source"];
+  sectionKey?: string;
 }
 
-const isTabVisible = () => typeof document === "undefined" || document.visibilityState === "visible";
+const isTabVisible = () =>
+  typeof document === "undefined" || document.visibilityState === "visible";
 
 export function useProactiveSuggestions() {
   const { config } = useWidgetHost();
@@ -87,8 +97,6 @@ export function useProactiveSuggestions() {
   const reloadDocumentRef = useRef(isReloadNavigation());
   const [initialPersistedState] = useState<ProactivePersistedState>(() => {
     const state = loadProactiveState();
-    // The budget is what limits a session, so claiming has to know how much of
-    // it this session already spent.
     const sameSession = state.sessionBatchId === sessionIdRef.current;
     const spent = sameSession ? state.sessionSuggestionCount : 0;
     sessionBatchActiveRef.current = claimProactiveSessionBatch(
@@ -130,11 +138,12 @@ export function useProactiveSuggestions() {
   const userMessageCountRef = useRef(0);
   const openUserMessageCountRef = useRef(0);
   const activeTriggerRef = useRef<ProactiveTriggerType>("idle");
-  const showNextRef = useRef<(triggerType?: ProactiveTriggerType) => Promise<void>>(async () => undefined);
+  const showNextRef = useRef<(triggerType?: ProactiveTriggerType) => Promise<void>>(
+    async () => undefined,
+  );
 
   const persist = useCallback(() => saveProactiveState(stateRef.current), []);
 
-  /** A refresh stays inside the tab session, so unspent bubbles still owed. */
   const sessionBatchPending = useCallback(
     () =>
       Boolean(sessionBatchActiveRef.current) &&
@@ -143,8 +152,13 @@ export function useProactiveSuggestions() {
     [],
   );
 
+  const queueHasItems = useCallback(
+    () => stateRef.current.suggestionQueue.items.length > 0,
+    [],
+  );
+
   const clearTimers = useCallback(() => {
-    [idleTimerRef, rotateTimerRef, hideTimerRef].forEach(ref => {
+    [idleTimerRef, rotateTimerRef, hideTimerRef].forEach((ref) => {
       if (ref.current) clearTimeout(ref.current);
       ref.current = null;
     });
@@ -156,15 +170,16 @@ export function useProactiveSuggestions() {
     setActive(null);
   }, []);
 
-  const canShow = useCallback(() =>
-    proactiveEnabled &&
-    !isOpen &&
-    !visibleRef.current &&
-    !isStreaming &&
-    !assistantTyping &&
-    !isPageInteractionActive() &&
-    isTabVisible(),
-    [assistantTyping, isOpen, isStreaming, proactiveEnabled]
+  const canShow = useCallback(
+    () =>
+      proactiveEnabled &&
+      !isOpen &&
+      !visibleRef.current &&
+      !isStreaming &&
+      !assistantTyping &&
+      !isPageInteractionActive() &&
+      isTabVisible(),
+    [assistantTyping, isOpen, isStreaming, proactiveEnabled],
   );
 
   const triggerAllowed = useCallback(
@@ -178,6 +193,94 @@ export function useProactiveSuggestions() {
       );
     },
     [pathname, sectionScopeKey],
+  );
+
+  const scheduleNext = useCallback((delayMs: number) => {
+    if (rotateTimerRef.current) clearTimeout(rotateTimerRef.current);
+    rotateTimerRef.current = setTimeout(() => {
+      void showNextRef.current("idle");
+    }, delayMs);
+  }, []);
+
+  const enqueueFetchedSuggestions = useCallback(
+    (
+      data: ProactiveSuggestionDto[],
+      mode: "idle" | "post_chat",
+      section: TrackedPageSection | null,
+      sessionBatch: boolean,
+    ) => {
+      if (mode === "post_chat") {
+        stateRef.current = {
+          ...stateRef.current,
+          pool: data,
+          poolPagePath: pathname,
+          poolSectionKey: section?.sectionId ?? null,
+          poolMode: mode,
+          poolFetchedAt: Date.now(),
+        };
+        return;
+      }
+
+      if (section) {
+        stateRef.current = {
+          ...stateRef.current,
+          suggestionQueue: enqueueSectionSuggestions(
+            stateRef.current.suggestionQueue,
+            section.sectionId,
+            data.filter((s) => s.source === "section"),
+          ),
+          pool: data,
+          poolPagePath: pathname,
+          poolSectionKey: section.sectionId,
+          poolMode: mode,
+          poolFetchedAt: Date.now(),
+        };
+        return;
+      }
+
+      if (sessionBatch) {
+        const visitComplete =
+          pathname != null &&
+          isPageVisitComplete(
+            stateRef.current,
+            pathname,
+            knownSectionKeysRef.current,
+          );
+        const batchItems = data.filter((suggestion) => {
+          if (
+            suggestion.source === "recent_conversation" ||
+            suggestion.source === "conversation_history"
+          ) {
+            return false;
+          }
+          if (visitComplete && suggestion.source === "section") return false;
+          return true;
+        });
+        stateRef.current = {
+          ...stateRef.current,
+          suggestionQueue: enqueueSessionSuggestions(
+            stateRef.current.suggestionQueue,
+            batchItems,
+          ),
+          pool: data,
+          poolPagePath: pathname,
+          poolSectionKey: null,
+          poolMode: mode,
+          poolFetchedAt: Date.now(),
+        };
+        return;
+      }
+
+      stateRef.current = {
+        ...stateRef.current,
+        pool: data,
+        poolPagePath: pathname,
+        poolSectionKey: null,
+        poolMode: mode,
+        poolFetchedAt: Date.now(),
+      };
+    },
+    [pathname],
   );
 
   const refreshPool = useCallback(
@@ -204,14 +307,8 @@ export function useProactiveSuggestions() {
           pathname != null &&
           isPageVisitComplete(stateRef.current, pathname, knownKeys);
         const unshownSectionKeys =
-          options?.sessionBatch &&
-          pathname &&
-          !visitComplete
-            ? unshownSectionKeysForPath(
-                stateRef.current,
-                pathname,
-                knownKeys,
-              )
+          options?.sessionBatch && pathname && !visitComplete
+            ? unshownSectionKeysForPath(stateRef.current, pathname, knownKeys)
             : undefined;
 
         const result = await fetchSuggestions({
@@ -226,14 +323,12 @@ export function useProactiveSuggestions() {
         });
 
         if (result.success && result.data.length > 0) {
-          stateRef.current = {
-            ...stateRef.current,
-            pool: result.data,
-            poolPagePath: pathname,
-            poolSectionKey: section?.sectionId ?? null,
-            poolMode: mode,
-            poolFetchedAt: Date.now(),
-          };
+          enqueueFetchedSuggestions(
+            result.data,
+            mode,
+            section,
+            Boolean(options?.sessionBatch),
+          );
           persist();
           setLifecycleVersion((version) => version + 1);
         }
@@ -242,15 +337,95 @@ export function useProactiveSuggestions() {
         fetchingRef.current = false;
       }
     },
-    [pathname, persist, proactive.poolLimit],
+    [enqueueFetchedSuggestions, pathname, persist, proactive.poolLimit],
   );
 
-  const scheduleNext = useCallback((delayMs: number) => {
-    if (rotateTimerRef.current) clearTimeout(rotateTimerRef.current);
-    rotateTimerRef.current = setTimeout(() => {
-      void showNextRef.current("idle");
-    }, delayMs);
-  }, []);
+  const presentSuggestion = useCallback(
+    (
+      next: {
+        id: string;
+        text: string;
+        source: ProactiveSuggestionDto["source"];
+        sectionKey?: string;
+      },
+      triggerType: ProactiveTriggerType,
+      options: { sessionBatch: boolean; postChat: boolean },
+    ) => {
+      let nextState: ProactivePersistedState = {
+        ...stateRef.current,
+        shownIds: stateRef.current.shownIds.includes(next.id)
+          ? stateRef.current.shownIds
+          : [...stateRef.current.shownIds, next.id],
+        welcomeShown:
+          stateRef.current.welcomeShown || next.source === "welcome",
+        sessionSuggestionCount:
+          options.sessionBatch && next.source !== "welcome"
+            ? Math.min(
+                SESSION_SUGGESTION_LIMIT,
+                stateRef.current.sessionSuggestionCount + 1,
+              )
+            : stateRef.current.sessionSuggestionCount,
+      };
+
+      if (next.source === "section" && pathname && next.sectionKey) {
+        const sectionPoolSize = Math.max(
+          1,
+          stateRef.current.pool.filter(
+            (s) => s.source === "section" && s.contextKey === next.sectionKey,
+          ).length,
+        );
+        nextState = markSectionSuggestionShown(
+          nextState,
+          pathname,
+          next.sectionKey,
+          knownSectionKeysRef.current,
+          sectionPoolSize,
+        );
+      }
+
+      stateRef.current = nextState;
+      if (options.postChat) postChatPendingRef.current = false;
+      persist();
+      setLifecycleVersion((version) => version + 1);
+
+      setActive({
+        id: next.id,
+        text: next.text,
+        source: next.source,
+        sectionKey: next.sectionKey,
+      });
+      visibleRef.current = true;
+      setVisible(true);
+
+      trackProactiveTrigger({
+        eventType: "shown",
+        triggerType,
+        pagePath: pathname,
+        suggestionId: next.id,
+        metadata: next.sectionKey
+          ? { sectionKey: next.sectionKey }
+          : undefined,
+      });
+
+      hideTimerRef.current = setTimeout(() => {
+        visibleRef.current = false;
+        setVisible(false);
+        setActive(null);
+        if (queueHasItems() || sessionBatchPending()) {
+          scheduleNext(proactive.rotateGapMs);
+        }
+      }, proactive.displayMs);
+    },
+    [
+      pathname,
+      persist,
+      proactive.displayMs,
+      proactive.rotateGapMs,
+      queueHasItems,
+      scheduleNext,
+      sessionBatchPending,
+    ],
+  );
 
   const showNext = useCallback(
     async (triggerType: ProactiveTriggerType = "idle") => {
@@ -268,179 +443,171 @@ export function useProactiveSuggestions() {
           : "idle";
       const showingSessionBatch = mode === "idle" && sessionBatchPending();
       const isPostChat = mode === "post_chat";
+
       if (
         mode === "idle" &&
         reloadDocumentRef.current &&
-        !showingSessionBatch
+        !showingSessionBatch &&
+        !queueHasItems()
       ) {
         return;
       }
+
+      // Post-chat follow-ups bypass the FIFO queue.
+      if (isPostChat) {
+        const poolReady = await refreshPool(mode, triggerType, qualifiedSection);
+        if (!canShow() || !poolReady) return;
+        const eligible = stateRef.current.pool.filter(
+          (suggestion) =>
+            suggestion.source === "recent_conversation" ||
+            suggestion.source === "conversation_history",
+        );
+        const next = eligible.find(
+          (s) => !stateRef.current.shownIds.includes(s.id),
+        );
+        if (!next) {
+          postChatPendingRef.current = false;
+          return;
+        }
+        presentSuggestion(
+          {
+            id: next.id,
+            text: next.text,
+            source: next.source,
+            sectionKey: next.contextKey,
+          },
+          triggerType,
+          { sessionBatch: false, postChat: true },
+        );
+        return;
+      }
+
+      // Drain queued items first (section → session FIFO with section lock).
+      if (queueHasItems()) {
+        const { suggestion, updatedQueue } = dequeueNextSuggestion(
+          stateRef.current.suggestionQueue,
+        );
+        stateRef.current = {
+          ...stateRef.current,
+          suggestionQueue: updatedQueue,
+        };
+        persist();
+
+        if (suggestion) {
+          presentSuggestion(
+            {
+              id: suggestion.id,
+              text: suggestion.text,
+              source: suggestion.source,
+              sectionKey: suggestion.sectionKey,
+            },
+            triggerType,
+            {
+              sessionBatch: suggestion.priority === "session",
+              postChat: false,
+            },
+          );
+          return;
+        }
+      }
+
+      // Process a section fetch that was deferred while another section was locked.
+      const pendingFetchKey = nextPendingFetchSectionKey(
+        stateRef.current.suggestionQueue,
+      );
+      if (pendingFetchKey && !isSectionQueueLocked(stateRef.current.suggestionQueue)) {
+        stateRef.current = {
+          ...stateRef.current,
+          suggestionQueue: shiftPendingFetchSectionKey(
+            stateRef.current.suggestionQueue,
+          ),
+        };
+        persist();
+        const pendingSection: TrackedPageSection = {
+          sectionId: pendingFetchKey,
+          pagePath: pathname ?? "/",
+        };
+        const fetched = await refreshPool("idle", "dwell", pendingSection);
+        if (fetched && queueHasItems() && canShow()) {
+          void showNextRef.current(triggerType);
+        }
+        return;
+      }
+
       const targetSection =
         showingSessionBatch || visitComplete ? null : qualifiedSection;
       const targetSectionScope = targetSection
         ? `${pathname ?? "/"}:${targetSection.sectionId}`
         : null;
 
-      if (
-        !showingSessionBatch &&
-        !isPostChat &&
-        (visitComplete ||
-          !targetSection ||
-          !targetSectionScope ||
-          stateRef.current.shownSectionKeys.includes(targetSectionScope))
-      ) {
+      if (targetSection) {
+        const fetchDecision = requestSectionFetch(
+          stateRef.current.suggestionQueue,
+          targetSection.sectionId,
+        );
+        stateRef.current = {
+          ...stateRef.current,
+          suggestionQueue: fetchDecision.queue,
+        };
+        persist();
+
+        if (!fetchDecision.shouldFetch) {
+          // Locked to another section — wait for queue drain.
+          if (queueHasItems()) {
+            void showNextRef.current(triggerType);
+          }
+          return;
+        }
+
+        if (
+          stateRef.current.shownSectionKeys.includes(targetSectionScope ?? "")
+        ) {
+          return;
+        }
+
+        const fetched = await refreshPool("idle", triggerType, targetSection);
+        if (!canShow()) return;
+        if (
+          qualifiedSectionRef.current?.sectionId !== targetSection.sectionId &&
+          isSectionQueueLocked(stateRef.current.suggestionQueue) &&
+          stateRef.current.suggestionQueue.lockedSectionKey !==
+            targetSection.sectionId
+        ) {
+          return;
+        }
+        if (fetched && queueHasItems()) {
+          void showNextRef.current(triggerType);
+        }
         return;
       }
 
-      const poolAge = Date.now() - stateRef.current.poolFetchedAt;
-      const pathChanged = stateRef.current.poolPagePath !== pathname;
-      const modeChanged = stateRef.current.poolMode !== mode;
-      const sectionChanged =
-        stateRef.current.poolSectionKey !== (targetSection?.sectionId ?? null);
-      const needRefresh =
-        isPostChat ||
-        stateRef.current.pool.length === 0 ||
-        pathChanged ||
-        modeChanged ||
-        sectionChanged ||
-        poolAge > PROACTIVE_CONFIG.poolTtlMs;
-
-      const poolReady = needRefresh
-        ? await refreshPool(mode, triggerType, targetSection, {
-            sessionBatch: showingSessionBatch,
-          })
-        : true;
-
-      if (!canShow()) return;
-      if (
-        targetSection &&
-        qualifiedSectionRef.current?.sectionId !== targetSection.sectionId
-      ) {
-        return;
-      }
-
-      const eligiblePool = showingSessionBatch
-        ? stateRef.current.pool.filter((suggestion) => {
-            if (
-              suggestion.source === "recent_conversation" ||
-              suggestion.source === "conversation_history"
-            ) {
-              return false;
-            }
-            // After all sections explored, session batches are FAQ/general only.
-            if (visitComplete && suggestion.source === "section") return false;
-            return true;
-          })
-        : isPostChat
-          ? stateRef.current.pool.filter(
-              (suggestion) =>
-                suggestion.source === "recent_conversation" ||
-                suggestion.source === "conversation_history",
-            )
-          : stateRef.current.pool.filter(
-              (suggestion) =>
-                suggestion.source === "section" &&
-                suggestion.contextKey === targetSection?.sectionId,
-            );
-      const next = pickNextSuggestion(
-        eligiblePool,
-        stateRef.current,
-        pathname,
-        {
-          preferWelcome:
-            Boolean(showingSessionBatch) && !stateRef.current.welcomeShown,
-        },
-      );
-
-      if (!next) {
-        if (isPostChat) postChatPendingRef.current = false;
-        if (showingSessionBatch) {
+      if (showingSessionBatch) {
+        const fetched = await refreshPool("idle", triggerType, null, {
+          sessionBatch: true,
+        });
+        if (!canShow()) return;
+        if (fetched && queueHasItems()) {
+          void showNextRef.current(triggerType);
+        } else if (!queueHasItems()) {
           stateRef.current = {
             ...stateRef.current,
             sessionSuggestionCount: SESSION_SUGGESTION_LIMIT,
           };
           persist();
-        } else if (
-          !isPostChat &&
-          poolReady &&
-          targetSectionScope &&
-          targetSection &&
-          !stateRef.current.shownSectionKeys.includes(targetSectionScope)
-        ) {
-          const sectionPoolSize = stateRef.current.pool.filter(
-            (s) => s.source === "section" && s.contextKey === targetSection.sectionId,
-          ).length;
-          stateRef.current = markSectionSuggestionShown(
-            stateRef.current,
-            pathname ?? "/",
-            targetSection.sectionId,
-            knownSectionKeysRef.current,
-            Math.max(1, sectionPoolSize),
-          );
-          persist();
         }
         return;
       }
-
-      let nextState: ProactivePersistedState = {
-        ...stateRef.current,
-        shownIds: stateRef.current.shownIds.includes(next.id)
-          ? stateRef.current.shownIds
-          : [...stateRef.current.shownIds, next.id],
-        welcomeShown:
-          stateRef.current.welcomeShown || next.source === "welcome",
-        sessionSuggestionCount:
-          showingSessionBatch && next.source !== "welcome"
-            ? Math.min(
-                SESSION_SUGGESTION_LIMIT,
-                stateRef.current.sessionSuggestionCount + 1,
-              )
-            : stateRef.current.sessionSuggestionCount,
-      };
-
-      if (
-        next.source === "section" &&
-        pathname &&
-        next.contextKey
-      ) {
-        const sectionPoolSize = stateRef.current.pool.filter(
-          (s) => s.source === "section" && s.contextKey === next.contextKey,
-        ).length;
-        nextState = markSectionSuggestionShown(
-          nextState,
-          pathname,
-          next.contextKey,
-          knownSectionKeysRef.current,
-          Math.max(1, sectionPoolSize),
-        );
-      }
-
-      stateRef.current = nextState;
-      if (isPostChat) postChatPendingRef.current = false;
-      persist();
-      setLifecycleVersion((version) => version + 1);
-
-      setActive({ id: next.id, text: next.text, source: next.source });
-      visibleRef.current = true;
-      setVisible(true);
-
-      trackProactiveTrigger({
-        eventType: "shown",
-        triggerType,
-        pagePath: pathname,
-        suggestionId: next.id,
-      });
-
-      hideTimerRef.current = setTimeout(() => {
-        visibleRef.current = false;
-        setVisible(false);
-        setActive(null);
-        if (sessionBatchPending()) {
-          scheduleNext(proactive.rotateGapMs);
-        }
-      }, proactive.displayMs);
     },
-    [canShow, pathname, persist, proactive.displayMs, proactive.rotateGapMs, qualifiedSection, refreshPool, scheduleNext, sessionBatchPending],
+    [
+      canShow,
+      pathname,
+      persist,
+      presentSuggestion,
+      qualifiedSection,
+      queueHasItems,
+      refreshPool,
+      sessionBatchPending,
+    ],
   );
 
   showNextRef.current = showNext;
@@ -452,7 +619,14 @@ export function useProactiveSuggestions() {
       markTriggerFired("idle", pathname, undefined, sectionScopeKey);
       void showNextRef.current("idle");
     }, proactive.initialIdleMs);
-  }, [canShow, clearTimers, pathname, proactive.initialIdleMs, sectionScopeKey, showNext, triggerAllowed]);
+  }, [
+    canShow,
+    clearTimers,
+    pathname,
+    proactive.initialIdleMs,
+    sectionScopeKey,
+    triggerAllowed,
+  ]);
 
   useEffect(() => {
     const userMessageCount =
@@ -465,20 +639,43 @@ export function useProactiveSuggestions() {
     setPageSection(getTrackedPageSection());
     return subscribeToPageSection(() => {
       setPageSection(getTrackedPageSection());
-      hideBubble();
-      clearTimers();
+      // Keep locked-section bubbles; only clear when nothing is draining.
+      if (!isSectionQueueLocked(stateRef.current.suggestionQueue)) {
+        hideBubble();
+        clearTimers();
+      }
     });
   }, [clearTimers, hideBubble, pathname]);
 
   useEffect(() => {
     return subscribeToQualifiedPageSection((section) => {
       setQualifiedSection(section);
-      hideBubble();
-      clearTimers();
+      const locked = isSectionQueueLocked(stateRef.current.suggestionQueue);
+      const lockedToThis =
+        locked &&
+        stateRef.current.suggestionQueue.lockedSectionKey === section.sectionId;
+      if (!locked || lockedToThis) {
+        // New section may fetch; don't wipe an in-flight locked other section.
+        if (!locked) {
+          hideBubble();
+          clearTimers();
+        }
+      } else {
+        // Defer fetch for this section until the lock clears.
+        const decision = requestSectionFetch(
+          stateRef.current.suggestionQueue,
+          section.sectionId,
+        );
+        stateRef.current = {
+          ...stateRef.current,
+          suggestionQueue: decision.queue,
+        };
+        persist();
+      }
     });
-  }, [clearTimers, hideBubble]);
+  }, [clearTimers, hideBubble, persist]);
 
-  /** Fetch on-demand seeds for qualified sections (runs alongside session batch). */
+  /** Fetch / drain on qualified section dwell (respects queue lock). */
   useEffect(() => {
     if (
       !proactiveEnabled ||
@@ -489,7 +686,13 @@ export function useProactiveSuggestions() {
     ) {
       return;
     }
-    if (isPageVisitComplete(stateRef.current, pathname, knownSectionKeysRef.current)) {
+    if (
+      isPageVisitComplete(
+        stateRef.current,
+        pathname,
+        knownSectionKeysRef.current,
+      )
+    ) {
       return;
     }
     const scope = `${pathname}:${qualifiedSection.sectionId}`;
@@ -506,17 +709,31 @@ export function useProactiveSuggestions() {
 
   useEffect(() => {
     const onScroll = () => {
+      // Hide the bubble on scroll for cleanliness, but keep the queue intact
+      // so locked section remaining prompts continue after rotateGap.
       if (active) hideBubble();
       if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
       if (rotateTimerRef.current) clearTimeout(rotateTimerRef.current);
-      scheduleNext(proactive.initialIdleMs);
+      if (queueHasItems() || sessionBatchPending()) {
+        scheduleNext(proactive.rotateGapMs);
+      } else {
+        scheduleNext(proactive.initialIdleMs);
+      }
     };
 
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => {
       window.removeEventListener("scroll", onScroll);
     };
-  }, [active, hideBubble, proactive.initialIdleMs, scheduleNext]);
+  }, [
+    active,
+    hideBubble,
+    proactive.initialIdleMs,
+    proactive.rotateGapMs,
+    queueHasItems,
+    scheduleNext,
+    sessionBatchPending,
+  ]);
 
   useEffect(() => {
     const isInteractiveTarget = (target: EventTarget | null) =>
@@ -533,7 +750,11 @@ export function useProactiveSuggestions() {
       hideBubble();
     };
     const resumeAfterInteraction = () => {
-      scheduleNext(proactive.initialIdleMs);
+      if (queueHasItems() || sessionBatchPending()) {
+        scheduleNext(proactive.rotateGapMs);
+      } else {
+        scheduleNext(proactive.initialIdleMs);
+      }
     };
 
     document.addEventListener("pointerdown", pauseForInteraction, true);
@@ -544,7 +765,15 @@ export function useProactiveSuggestions() {
       document.removeEventListener("keydown", pauseForInteraction, true);
       document.removeEventListener("focusout", resumeAfterInteraction, true);
     };
-  }, [clearTimers, hideBubble, proactive.initialIdleMs, scheduleNext]);
+  }, [
+    clearTimers,
+    hideBubble,
+    proactive.initialIdleMs,
+    proactive.rotateGapMs,
+    queueHasItems,
+    scheduleNext,
+    sessionBatchPending,
+  ]);
 
   useEffect(() => {
     const onVisibility = () => {
@@ -561,43 +790,11 @@ export function useProactiveSuggestions() {
   }, [clearTimers, hideBubble]);
 
   useEffect(() => {
-    if (!proactiveEnabled || !tabVisible || isOpen) return;
-    if (
-      reloadDocumentRef.current &&
-      !hasChattedRef.current &&
-      !sessionBatchPending()
-    ) {
+    if (!proactiveEnabled || !tabVisible) {
+      clearTimers();
+      hideBubble();
       return;
     }
-    const sessionBatchComplete = !sessionBatchPending();
-    const visitComplete =
-      pathname != null &&
-      isPageVisitComplete(
-        stateRef.current,
-        pathname,
-        knownSectionKeysRef.current,
-      );
-    if (sessionBatchComplete && visitComplete) {
-      return;
-    }
-    if (
-      sessionBatchComplete &&
-      (!sectionScopeKey ||
-        stateRef.current.shownSectionKeys.includes(sectionScopeKey))
-    ) {
-      return;
-    }
-  }, [
-    isOpen,
-    lifecycleVersion,
-    pathname,
-    proactiveEnabled,
-    sectionScopeKey,
-    tabVisible,
-  ]);
-
-  useEffect(() => {
-    if (!proactiveEnabled || !tabVisible) { clearTimers(); hideBubble(); return; }
 
     if (isOpen) {
       if (!hadOpenRef.current) {
@@ -614,7 +811,10 @@ export function useProactiveSuggestions() {
       postChatPendingRef.current =
         userMessageCountRef.current > openUserMessageCountRef.current;
       clearTimers();
-      if (!postChatPendingRef.current) return;
+      if (!postChatPendingRef.current) {
+        if (queueHasItems()) scheduleNext(proactive.rotateGapMs);
+        return;
+      }
       idleTimerRef.current = setTimeout(() => {
         void showNextRef.current("idle");
       }, proactive.postChatDelayMs);
@@ -627,9 +827,11 @@ export function useProactiveSuggestions() {
     hideBubble,
     isOpen,
     proactive.postChatDelayMs,
+    proactive.rotateGapMs,
     proactiveEnabled,
+    queueHasItems,
     scheduleIdleShow,
-    showNext,
+    scheduleNext,
     tabVisible,
   ]);
 
@@ -653,10 +855,21 @@ export function useProactiveSuggestions() {
         triggerType: activeTriggerRef.current,
         pagePath: pathname,
         suggestionId: active.id,
+        metadata: active.sectionKey
+          ? { sectionKey: active.sectionKey }
+          : undefined,
       });
     }
     hideBubble();
-  }, [active, hideBubble, pathname]);
+    if (queueHasItems()) scheduleNext(proactive.rotateGapMs);
+  }, [
+    active,
+    hideBubble,
+    pathname,
+    proactive.rotateGapMs,
+    queueHasItems,
+    scheduleNext,
+  ]);
 
   const clickActive = useCallback(() => {
     if (active) {
@@ -665,6 +878,9 @@ export function useProactiveSuggestions() {
         triggerType: activeTriggerRef.current,
         pagePath: pathname,
         suggestionId: active.id,
+        metadata: active.sectionKey
+          ? { sectionKey: active.sectionKey }
+          : undefined,
       });
     }
   }, [active, pathname]);

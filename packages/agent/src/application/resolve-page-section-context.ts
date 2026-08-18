@@ -87,7 +87,7 @@ export async function resolvePageSectionContext(input: {
     const result: ResolvedPageSectionContext = {
       ...section,
       content: storedSection.content.slice(0, 8_000),
-      suggestions: storedSection.suggestions.slice(0, 2),
+      suggestions: storedSection.suggestions.slice(0, 4),
     };
     await cacheSet(key, JSON.stringify(result), CACHE_TTL_SECONDS);
     return result;

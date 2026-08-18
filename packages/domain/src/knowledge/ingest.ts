@@ -277,7 +277,7 @@ async function replacePageSections(input: {
     content: section.content,
     provider: input.provider,
     sectioner: input.sectioner,
-    suggestions: section.suggestions.slice(0, 3),
+    suggestions: section.suggestions.slice(0, 4),
     position,
   }));
 
@@ -426,7 +426,7 @@ export async function ingestWebsitePage(
         content: section.content,
         provider: input.provider,
         sectioner: input.sectioner,
-        suggestions: section.suggestions.slice(0, 3),
+        suggestions: section.suggestions.slice(0, 4),
         position,
       })),
     );

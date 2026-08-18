@@ -2,6 +2,7 @@ import {
   listKnowledgeSuggestionSeeds,
   cacheGet,
   cacheSet,
+  syncVisitorSectionSuggestionPool,
   type KnowledgeSuggestionSeed,
 } from "@neylonai/database";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
@@ -635,7 +636,8 @@ export async function buildProactiveSuggestions(
     : "none";
 
   const canCachePersonalized = Boolean(
-    input.visitorId?.trim() || input.sessionId?.trim(),
+    (input.visitorId?.trim() || input.sessionId?.trim()) &&
+      !input.pageSection,
   );
   const cacheKey = canCachePersonalized
     ? personalizedCacheKey({
@@ -676,10 +678,10 @@ export async function buildProactiveSuggestions(
         section: input.pageSection,
       })
     : null;
-  const sectionSuggestions: ProactiveSuggestion[] = (resolvedSection?.suggestions ?? [])
+  const sectionSuggestionsRaw: ProactiveSuggestion[] = (resolvedSection?.suggestions ?? [])
     .map((text) => cleanQuestion(text))
     .filter((text): text is string => Boolean(text))
-    .slice(0, 2)
+    .slice(0, 4)
     .map((text) => ({
       id: stableId(`section:${text}`),
       text,
@@ -687,6 +689,36 @@ export async function buildProactiveSuggestions(
       contextKey: resolvedSection?.sectionId,
     }))
     .filter((suggestion) => !excludeIds.has(suggestion.id));
+
+  /** Prefer unshown section prompts when we know this visitor. */
+  let sectionSuggestions = sectionSuggestionsRaw;
+  if (
+    resolvedSection?.sectionId &&
+    input.visitorId?.trim() &&
+    sectionSuggestionsRaw.length > 0 &&
+    pagePath
+  ) {
+    try {
+      const state = await syncVisitorSectionSuggestionPool({
+        organizationId,
+        visitorId: input.visitorId.trim(),
+        pagePath,
+        sectionKey: resolvedSection.sectionId,
+        suggestionIds: sectionSuggestionsRaw.map((s) => s.id),
+      });
+      if (state.pending.length > 0) {
+        const pending = new Set(state.pending);
+        sectionSuggestions = sectionSuggestionsRaw.filter((s) =>
+          pending.has(s.id),
+        );
+      } else if (state.shown.length > 0) {
+        // All section prompts already shown for this visitor.
+        sectionSuggestions = [];
+      }
+    } catch {
+      // Fall through with the full section list if state sync fails.
+    }
+  }
 
   /** Session-batch seeds for sections the visitor has not explored yet. */
   const unshownBatchSectionSuggestions: ProactiveSuggestion[] = [];
