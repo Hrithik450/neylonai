@@ -312,7 +312,7 @@ export function useWidgetMessageHandler() {
                     return { ...message, id: payload.data.userMessageId };
                   }
                   if (message.id === assistantId) {
-                    assistantId = payload.data.assistantMessageId;
+                    assistantId = payload.data.assistantMessageId as typeof assistantId;
                     return { ...message, id: payload.data.assistantMessageId };
                   }
                   return message;
