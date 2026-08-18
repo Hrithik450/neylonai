@@ -43,7 +43,7 @@ export async function scrapeWithFirecrawl(
       },
       body: JSON.stringify({
         url: target,
-        formats: ["markdown", "links"],
+        formats: ["markdown", "html", "links"],
         onlyMainContent: false,
       }),
     });
@@ -53,6 +53,7 @@ export async function scrapeWithFirecrawl(
       error?: string;
       data?: {
         markdown?: string;
+        html?: string;
         metadata?: {
           title?: string;
           sourceURL?: string;
@@ -77,11 +78,14 @@ export async function scrapeWithFirecrawl(
     const finalUrl =
       json.data?.metadata?.sourceURL || json.data?.metadata?.url || target;
 
+    const html = (json.data?.html ?? "").trim();
+
     return {
       url: target,
       finalUrl,
       title,
       text: markdown.slice(0, 200_000),
+      html: html ? html.slice(0, 200_000) : undefined,
       fetchedAt: new Date().toISOString(),
       provider: "firecrawl",
       creditsUsed: 1,

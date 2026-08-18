@@ -239,7 +239,7 @@ export async function ingestDocumentsForSource(
   return { documentCount, chunkCount };
 }
 
-export type WebsiteSectioner = "gemini" | "heuristic";
+export type WebsiteSectioner = "dom" | "overview";
 
 export type WebsitePageIngestInput = {
   organizationId: string;

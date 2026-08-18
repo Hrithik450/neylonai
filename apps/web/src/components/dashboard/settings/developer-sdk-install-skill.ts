@@ -27,51 +27,22 @@ const widget = await mountSupportWidget({
 4. If asked where to get the key: Neylon Dashboard → Settings → API keys →
    Create an API key → copy it.
 5. **Section tracking (requires a Website integration first).**
-   **CRITICAL: DO NOT generate section types or neylon-sections.ts file yourself. DO NOT create dummy section keys or placeholder types.**
+   Give 3–8 major blocks a stable \`id\` on \`<section>\` or \`<article>\` elements
+   (home, pricing, features, product, docs, FAQ). The crawl reads those ids
+   from rendered HTML and stores suggestions under the same keys.
 
-   After your website integration is set up in Neylon AI:
-   1. **STOP and ask the user**: "I see you want to add section tracking. Have you completed the Website integration in the Neylon dashboard?"
-   2. **Wait for user confirmation** that the website import is complete
-   3. **Then tell the user**: "Now I will run the generate command to fetch your actual sections from Neylon"
-   4. **Only then run**:
+   **CRITICAL: Use stable kebab-case ids. Avoid layout shell ids like \`root\`
+   or \`app\`.**
 
-\`\`\`bash
-npx neylonai-generate-sections \\
-  --api-key "$NEXT_PUBLIC_NEYLONAI_API_KEY" \\
-  --out ./src/neylon-sections.ts
+\`\`\`html
+<section id="pricing">
+  <h2>Pricing</h2>
+  ...
+</section>
 \`\`\`
 
-   **Never create section keys manually.** If the command fails or sections are not available, tell the user to:
-   - Complete Website setup in the Neylon dashboard first
-   - Verify their website has been crawled/imported
-   - Then re-run the generate command
-
-   Wire **observeNeylonSection** on 3–8 major blocks per content page (home,
-   pricing, features, product, docs, FAQ). Mount the widget once. Use
-   \`observeNeylonSection\` directly on each section.
-
-   **IMPORTANT: Only pass pagePath, sectionKey, and sectionLabel. Do NOT add threshold, minDwellMs, or any timing parameters - the SDK handles these internally.**
-
-\`\`\`ts
-import { useEffect } from "react";
-import {
-  neylonSectionKeys,
-  observeNeylonSection,
-} from "./neylon-sections";
-
-useEffect(() => {
-  const el = document.getElementById("pricing");
-  if (!el) return;
-  return observeNeylonSection(el, {
-    pagePath: "/pricing",
-    sectionKey: neylonSectionKeys["/pricing"][0],
-    sectionLabel: "Pricing",
-  });
-}, []);
-
-// Make sure your section element has the matching id:
-<section id="pricing">...</section>
-\`\`\`
+   The widget auto-tracks marked sections when mounted. No codegen step and no
+   manual \`observePageSection\` calls are required for the default embed.
 
 6. Do not customize branding, behavior, layout, auth mapping, or page path here.
 7. Tell the user explicitly to confirm the install and set the public API key

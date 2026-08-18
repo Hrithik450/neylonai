@@ -28,9 +28,8 @@ export function WidgetCodingAgentConfig() {
         <p className="caption text-sm max-w-2xl">
           Your agent reuses the installed SDK when present, installs it when
           missing, then configures colors, copy, and behavior from the current
-          application. After Website import it wires{" "}
-          <code className="text-xs">observeNeylonSection</code> on major page
-          blocks.
+          application. After Website import it adds stable element{" "}
+          <code className="text-xs">id</code> values on major page blocks.
         </p>
       </div>
 

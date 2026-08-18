@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
-import { observeNeylonSection, neylonSectionKeys } from "@/neylon-sections";
+import React, { useRef } from "react";
 
 const GREEN = "#0E3228";
 
@@ -43,17 +42,6 @@ const FEATURES = [
 
 export function Features() {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const sectionRef = useRef<HTMLElement | null>(null);
-
-  useEffect(() => {
-    const node = sectionRef.current;
-    if (!node) return;
-    return observeNeylonSection(node, {
-      pagePath: "/",
-      sectionKey: neylonSectionKeys["/"][2],
-      sectionLabel: "Features overview",
-    });
-  }, []);
 
   function scroll(dir: "left" | "right") {
     const container = scrollRef.current;
@@ -71,7 +59,10 @@ export function Features() {
   }
 
   return (
-    <section ref={sectionRef} id="features" className="py-10 sm:py-12 lg:py-20 overflow-hidden">
+    <section
+      id="features-overview"
+      className="py-10 sm:py-12 lg:py-20 overflow-hidden"
+    >
       {/* Top row: heading + tag on first line, nav buttons below on mobile */}
       <div className="pl-6 sm:pl-10 md:pl-20 lg:pl-28 pr-6 sm:pr-10 md:pr-20 lg:pr-28 flex flex-col sm:flex-row sm:items-end sm:justify-between mb-10 gap-4 sm:gap-6">
         <div>

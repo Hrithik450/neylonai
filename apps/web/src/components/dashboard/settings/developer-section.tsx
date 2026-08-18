@@ -122,72 +122,25 @@ widget.update({
           <section className="ink-card p-6 space-y-4">
             <div>
               <h3 className="text-lg font-medium mb-1">
-                3. Track page sections
+                3. Mark page sections
               </h3>
               <p className="caption text-sm text-[var(--muted)]">
-                After importing your website in Neylon, generate typed section
-                keys and observe major page blocks (3–8 per page). This helps
-                the AI understand your site structure.
+                Give major page blocks a stable <code className="text-xs">id</code>{" "}
+                on <code className="text-xs">&lt;section&gt;</code> or{" "}
+                <code className="text-xs">&lt;article&gt;</code> elements. After
+                your Website import, Neylon crawls those ids and the widget
+                auto-tracks them.
               </p>
             </div>
 
-            <div className="space-y-4">
-              <div className="bg-[var(--cream)]/20 rounded-lg p-4 space-y-2">
-                <p className="text-sm font-medium">
-                  Step 1: Generate section keys
-                </p>
-              </div>
-              <CodeBlock
-                language="bash"
-                label="Copy and run in your terminal"
-                code={`# Re-run this after each website crawl that changes sections
-npx neylonai-generate-sections \\
-  --api-key "$NEXT_PUBLIC_NEYLONAI_API_KEY" \\
-  --out ./src/neylon-sections.ts`}
-              />
-
-              <div className="bg-[var(--cream)]/20 rounded-lg p-4 space-y-2">
-                <p className="text-sm font-medium">
-                  Step 2: Add section tracking to components
-                </p>
-                <p className="text-xs text-[var(--muted)]">
-                  Add this hook to each major section component. Make sure the
-                  section element has an{" "}
-                  <code className="text-xs bg-white px-1 py-0.5 rounded">
-                    id
-                  </code>{" "}
-                  attribute that matches your{" "}
-                  <code className="text-xs bg-white px-1 py-0.5 rounded">
-                    getElementById()
-                  </code>{" "}
-                  call:
-                </p>
-              </div>
-              <CodeBlock
-                language="typescript"
-                label="Copy to your section component"
-                code={`import { useEffect } from "react";
-import {
-  neylonSectionKeys,
-  observeNeylonSection,
-} from "./neylon-sections";
-
-// Track this section: monitors visibility & interactions,
-useEffect(() => {
-  const el = document.getElementById("pricing");
-  if (!el) return;
-
-  return observeNeylonSection(el, {
-    pagePath: "/pricing",
-    sectionKey: neylonSectionKeys["/pricing"][0],
-    sectionLabel: "Pricing",
-  });
-}, []);
-
-// Make sure your section element has the matching id:
-// <section id="pricing">...</section>`}
-              />
-            </div>
+            <CodeBlock
+              language="text"
+              label="Section markup"
+              code={`<section id="pricing">
+  <h2>Pricing</h2>
+  ...
+</section>`}
+            />
           </section>
         </div>
       ) : (
@@ -196,9 +149,8 @@ useEffect(() => {
             <h3 className="text-lg font-medium">Install with coding agent</h3>
             <p className="caption text-sm max-w-2xl">
               Your agent installs @neylonai/sdk, wires your publishable API key,
-              and after Website import generates typed section keys and wires{" "}
-              <code className="text-xs">observeNeylonSection</code> on major
-              page blocks.
+              and marks major page blocks with stable element{" "}
+              <code className="text-xs">id</code> values after Website import.
             </p>
           </div>
 

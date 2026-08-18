@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React from "react";
 import { Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { observeNeylonSection, neylonSectionKeys } from "@/neylon-sections";
 
 const GREEN = "#0E3228";
 const LIME = "#D4F58A";
@@ -84,22 +83,9 @@ const ROWS: {
 ];
 
 export function Comparison() {
-  const sectionRef = useRef<HTMLElement | null>(null);
-
-  useEffect(() => {
-    const node = sectionRef.current;
-    if (!node) return;
-    return observeNeylonSection(node, {
-      pagePath: "/",
-      sectionKey: neylonSectionKeys["/"][4],
-      sectionLabel: "Comparison table",
-    });
-  }, []);
-
   return (
     <section
-      ref={sectionRef}
-      id="comparison"
+      id="comparison-table"
       className="py-10 sm:py-12 lg:py-20 overflow-hidden"
     >
       {/* Heading — padded both sides */}

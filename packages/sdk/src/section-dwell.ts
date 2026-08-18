@@ -64,10 +64,6 @@ function scheduleQualification(
   cancelPendingDwell(key);
   const timer = setTimeout(() => {
     pendingDwell.delete(key);
-    const existing = getRegisteredPageSections(section.pagePath);
-    if (!existing.includes(section.sectionId)) {
-      registerPageSections(section.pagePath, [...existing, section.sectionId]);
-    }
     emitQualified(section);
   }, dwellMs);
   pendingDwell.set(key, timer);
@@ -158,42 +154,4 @@ export function observePageSection(
       clearTrackedPageSection(cleanedId);
     }
   };
-}
-
-/** Register section keys for a page path (internal). */
-export function registerPageSections(
-  pagePath: string,
-  sectionKeys: string[],
-): void {
-  if (typeof window === "undefined" || typeof localStorage === "undefined") {
-    return;
-  }
-  const path = pagePath.trim().slice(0, 512) || "/";
-  const keys = [
-    ...new Set(sectionKeys.map(cleanSectionId).filter(Boolean)),
-  ].sort();
-  if (!keys.length) return;
-  try {
-    localStorage.setItem(
-      `neylonai.pageSections.v1:${path}`,
-      JSON.stringify(keys),
-    );
-  } catch {
-    // quota / private mode
-  }
-}
-
-export function getRegisteredPageSections(pagePath: string): string[] {
-  if (typeof localStorage === "undefined") return [];
-  try {
-    const raw = localStorage.getItem(
-      `neylonai.pageSections.v1:${pagePath.trim() || "/"}`,
-    );
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as unknown;
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter((k): k is string => typeof k === "string");
-  } catch {
-    return [];
-  }
 }

@@ -11,13 +11,13 @@ const GREEN = "#0E3228";
 
 const LINKS = {
   Product: [
-    { label: "Features", href: "#showcase" },
-    { label: "Engagement", href: "#features" },
-    { label: "Comparison", href: "#comparison" },
+    { label: "Features", href: "#product-showcase" },
+    { label: "Engagement", href: "#features-overview" },
+    { label: "Comparison", href: "#comparison-table" },
   ],
   Company: [
     { label: "Dashboard", href: "/dashboard" },
-    { label: "Sign in", href: "#home" },
+    { label: "Sign in", href: "#home-overview" },
   ],
   Support: [{ label: "Contact", href: "mailto:mhrithik450@gmail.com" }],
 };

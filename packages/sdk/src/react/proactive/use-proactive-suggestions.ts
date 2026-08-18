@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   fetchSuggestions,
   getOrCreateSessionId,
-  getRegisteredPageSections,
   getTrackedPageSection,
   subscribeToPageSection,
   subscribeToQualifiedPageSection,
@@ -13,6 +12,7 @@ import {
   type ProactiveTriggerType,
   type TrackedPageSection,
 } from "../..";
+import { discoverDomSectionKeys } from "../../section-auto-track";
 import { useWidgetToggleStore, useWidgetStore } from "../store/widget-store";
 import { useThreadMessageStore } from "../store/thread-store";
 import { useWidgetHost } from "../context/widget-host";
@@ -128,17 +128,17 @@ export function useProactiveSuggestions() {
   qualifiedSectionRef.current = qualifiedSection;
   const knownSectionKeysRef = useRef<string[]>([]);
   knownSectionKeysRef.current = pathname
-    ? getRegisteredPageSections(pathname)
+    ? discoverDomSectionKeys(pathname)
     : [];
 
   useEffect(() => {
     if (!pathname) return;
-    const registered = getRegisteredPageSections(pathname);
-    if (!registered.length) return;
+    const discovered = discoverDomSectionKeys(pathname);
+    if (!discovered.length) return;
     const merged = mergeKnownSectionKeys(
       stateRef.current,
       pathname,
-      registered,
+      discovered,
     );
     if (merged !== stateRef.current) {
       stateRef.current = merged;

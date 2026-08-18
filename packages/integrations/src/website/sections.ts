@@ -17,8 +17,6 @@ export const SECTION_MAX_TOKENS = SECTION_MIN_TOKENS * 2;
 export const SECTION_MIN_CHARS = SECTION_MIN_TOKENS * APPROX_CHARS_PER_TOKEN;
 export const SECTION_MAX_CHARS = SECTION_MAX_TOKENS * APPROX_CHARS_PER_TOKEN;
 
-const MIN_SECTION_CHARS = 40;
-
 export function estimateTokenCount(text: string): number {
   return Math.max(1, Math.ceil(text.length / APPROX_CHARS_PER_TOKEN));
 }
@@ -76,17 +74,7 @@ export function normalizeSuggestions(values: unknown[]): string[] {
     .slice(0, 4);
 }
 
-function uniqueSectionId(baseId: string, seen: Map<string, number>): string {
-  const root = baseId || "section";
-  const occurrence = (seen.get(root) ?? 0) + 1;
-  seen.set(root, occurrence);
-  if (occurrence === 1) return root.slice(0, 96);
-  const suffix = `-${occurrence}`;
-  return `${root.slice(0, 96 - suffix.length)}${suffix}`;
-}
-
-/**
- * Split text into chunks at paragraph/sentence/word boundaries without
+/** Split text into chunks at paragraph/sentence/word boundaries without
  * dropping content. Each part is at most `maxChars`.
  */
 export function splitTextToMaxChars(
@@ -210,7 +198,6 @@ export function enforceSectionSizeLimit(
     });
   }
 
-  const seen = new Map<string, number>();
   const out: WebsitePageSection[] = [];
 
   for (const section of mergeUndersizedSections(normalized)) {
@@ -227,7 +214,7 @@ export function enforceSectionSizeLimit(
       const idBase =
         parts.length === 1 ? baseId : i === 0 ? baseId : `${baseId}-${i + 1}`;
       out.push({
-        sectionId: uniqueSectionId(idBase, seen),
+        sectionId: idBase,
         heading: partHeading,
         content: parts[i]!,
         suggestions:
@@ -242,67 +229,7 @@ export function enforceSectionSizeLimit(
 }
 
 /**
- * Deterministic markdown heading split — used only when the Gemini pool fails.
- */
-export function extractWebsitePageSections(
-  text: string,
-  pageTitle: string,
-  options?: { suggestions?: boolean },
-): WebsitePageSection[] {
-  const lines = text.replace(/\r\n/g, "\n").split("\n");
-  const raw: Array<{ heading: string; lines: string[] }> = [];
-  let current = {
-    heading: cleanHeading(pageTitle) || "Page overview",
-    lines: [] as string[],
-  };
-
-  for (const line of lines) {
-    const match = line.match(/^\s{0,3}#{1,3}\s+(.+?)\s*#*\s*$/);
-    if (!match) {
-      current.lines.push(line);
-      continue;
-    }
-    if (current.lines.join("\n").trim()) raw.push(current);
-    current = { heading: cleanHeading(match[1] ?? ""), lines: [] };
-  }
-  if (current.lines.join("\n").trim()) raw.push(current);
-
-  const seen = new Map<string, number>();
-  const sections: WebsitePageSection[] = [];
-  for (const item of raw) {
-    const content = item.lines.join("\n").replace(/\n{3,}/g, "\n\n").trim();
-    if (!item.heading || content.length < MIN_SECTION_CHARS) continue;
-    sections.push({
-      sectionId: uniqueSectionId(
-        sectionIdFromHeading(item.heading) || "section",
-        seen,
-      ),
-      heading: item.heading,
-      content,
-      suggestions: [],
-    });
-  }
-
-  if (!sections.length) {
-    const content = text.trim();
-    if (content.length < MIN_SECTION_CHARS) return [];
-    const heading = cleanHeading(pageTitle) || "Page overview";
-    sections.push({
-      sectionId: sectionIdFromHeading(heading) || "page-overview",
-      heading,
-      content,
-      suggestions: [],
-    });
-  }
-
-  const sized = enforceSectionSizeLimit(sections);
-  return options?.suggestions === false
-    ? sized.map((section) => ({ ...section, suggestions: [] }))
-    : withFallbackSuggestions(sized);
-}
-
-/**
- * Light deterministic cleanup used only as Gemini-pool fallback.
+ * Light deterministic cleanup for scraped page text.
  * Does not summarize — only strips obvious cookie/nav chrome lines.
  */
 export function deterministicCleanPageText(text: string): string {
@@ -323,21 +250,4 @@ export function deterministicCleanPageText(text: string): string {
     .join("\n")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
-}
-
-export function buildFallbackProcessedPage(input: {
-  pageKey: string;
-  title: string;
-  text: string;
-}): {
-  pageKey: string;
-  cleanedText: string;
-  sections: WebsitePageSection[];
-} {
-  const cleanedText = deterministicCleanPageText(input.text) || input.text.trim();
-  return {
-    pageKey: input.pageKey,
-    cleanedText,
-    sections: extractWebsitePageSections(cleanedText, input.title),
-  };
 }

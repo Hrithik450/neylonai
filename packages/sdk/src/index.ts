@@ -27,7 +27,6 @@ export {
   type ProactiveSuggestionDto,
 } from "./suggestions";
 export {
-  createPageSectionId,
   getTrackedPageSection,
   subscribeToPageSection,
   type TrackedPageSection,
@@ -36,10 +35,14 @@ export {
   observePageSection,
   qualifyPageSection,
   subscribeToQualifiedPageSection,
-  registerPageSections,
-  getRegisteredPageSections,
   type SectionObserveOptions,
 } from "./section-dwell";
+export {
+  discoverDomSectionKeys,
+  initNeylonSectionAutoTrack,
+  SECTION_TRACK_SELECTOR,
+  type NeylonSectionAutoTrackOptions,
+} from "./section-auto-track";
 export {
   getOrCreateVisitorId,
   getOrCreateSessionId,

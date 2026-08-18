@@ -17,29 +17,6 @@ function cleanId(value: string): string {
   return value.trim().toLowerCase().replace(/[^a-z0-9_.:/-]+/g, "-").slice(0, 96);
 }
 
-/**
- * Creates a stable section key from heading text. Prefer generated
- * `neylonSectionKeys` from the generated `neylon-sections.ts` for client tracking — this
- * helper is for tooling that still derives keys from headings.
- */
-export function createPageSectionId(
-  heading: string,
-  occurrence = 1,
-): string {
-  const base = heading
-    .trim()
-    .toLowerCase()
-    .replace(/<[^>]+>/g, " ")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-  const safeOccurrence =
-    Number.isFinite(occurrence) && occurrence >= 1
-      ? Math.floor(occurrence)
-      : 1;
-  const suffix = safeOccurrence > 1 ? `-${safeOccurrence}` : "";
-  return `${base.slice(0, 96 - suffix.length)}${suffix}`;
-}
-
 /** Returns the active section only when it belongs to the visitor's current page. */
 export function getTrackedPageSection(): TrackedPageSection | null {
   if (!activeSection || activeSection.pagePath !== currentPath()) return null;

@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import type { IntegrationModule } from "../catalog/module";
 import { scrapePublicUrl, type ScrapeProvider } from "../internal/scrape";
 import { discoverWebsitePages } from "./discover";
-import { processWebsitePagesWithLlm } from "./llm";
+import { processWebsitePages } from "./process-pages";
 import { websiteManifest } from "./manifest";
 import type { WebsitePageSection } from "./sections";
 
@@ -20,7 +20,6 @@ export {
 export { parseRobotsTxt, isDisallowedByRobots } from "./robots";
 export { parseSitemapXml } from "./sitemap";
 export {
-  extractWebsitePageSections,
   enforceSectionSizeLimit,
   estimateTokenCount,
   sectionIdFromHeading,
@@ -29,13 +28,18 @@ export {
   type WebsitePageSection,
 } from "./sections";
 export {
-  processWebsitePagesWithLlm,
-  packWebsiteProcessingBatches,
-} from "./llm";
-export type {
-  WebsiteProcessingInput,
-  ProcessedWebsitePage,
-} from "./llm";
+  extractDomPageSections,
+  htmlToPlainText,
+  labelFromSectionId,
+  SECTION_TRACK_TAGS,
+  type DomPageSection,
+} from "./dom-sections";
+export {
+  processWebsitePages,
+  type ProcessedWebsitePage,
+  type WebsiteProcessingInput,
+} from "./process-pages";
+export { llmRerankEvergreenUrls } from "./llm";
 export {
   normalizePageUrl,
   canonicalPathOf,
@@ -84,6 +88,7 @@ export async function scrapeWebsitePageRaw(
   finalUrl: string;
   title: string;
   text: string;
+  html?: string;
   provider: ScrapeProvider;
   creditsUsed: number;
 }> {
@@ -97,6 +102,7 @@ export async function scrapeWebsitePageRaw(
     finalUrl: scraped.finalUrl,
     title: scraped.title,
     text: raw.slice(0, MAX_PAGE_CHARS),
+    html: scraped.html?.slice(0, MAX_PAGE_CHARS),
     provider: scraped.provider,
     creditsUsed: scraped.creditsUsed ?? 0,
   };
@@ -115,7 +121,7 @@ export async function scrapeWebsitePage(
   sections: WebsitePageSection[];
 }> {
   const scraped = await scrapeWebsitePageRaw(url, options);
-  const processed = await processWebsitePagesWithLlm([
+  const processed = await processWebsitePages([
     {
       pageKey: "_",
       url: scraped.finalUrl,
@@ -181,7 +187,7 @@ export async function fetchWebsiteForImport(
     throw new Error("No readable text found on this website.");
   }
 
-  const processedByPath = await processWebsitePagesWithLlm(
+  const processedByPath = await processWebsitePages(
     pages.map((page) => ({
       pageKey: page.path,
       url: page.url,

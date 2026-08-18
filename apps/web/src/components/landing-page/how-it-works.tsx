@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import Image from "next/image";
 import { MoveRight } from "lucide-react";
-import { observeNeylonSection, neylonSectionKeys } from "@/neylon-sections";
 
 const GREEN = "#0E3228";
 
@@ -104,17 +103,6 @@ function StepCard({ step }: { step: (typeof STEPS)[number] }) {
 
 export function HowItWorks() {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const sectionRef = useRef<HTMLElement | null>(null);
-
-  useEffect(() => {
-    const node = sectionRef.current;
-    if (!node) return;
-    return observeNeylonSection(node, {
-      pagePath: "/",
-      sectionKey: neylonSectionKeys["/"][3],
-      sectionLabel: "How it works",
-    });
-  }, []);
 
   function scroll(dir: "left" | "right") {
     const container = scrollRef.current;
@@ -131,8 +119,7 @@ export function HowItWorks() {
 
   return (
     <section
-      ref={sectionRef}
-      id="how-it-works"
+      id="how-it-works-steps"
       className="overflow-hidden py-12 sm:py-16 lg:py-24"
     >
       <div className="px-6 sm:px-10 md:px-20 lg:px-28">

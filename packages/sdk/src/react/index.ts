@@ -19,7 +19,6 @@ export {
   type WidgetFontConfig,
 } from "../widget-config";
 export {
-  createPageSectionId,
   getTrackedPageSection,
   type TrackedPageSection,
 } from "../page-context";

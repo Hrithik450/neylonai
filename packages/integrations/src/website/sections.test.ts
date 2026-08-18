@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import {
   enforceSectionSizeLimit,
   estimateTokenCount,
-  extractWebsitePageSections,
   SECTION_MAX_TOKENS,
   SECTION_MIN_CHARS,
   SECTION_MIN_TOKENS,
@@ -10,38 +9,6 @@ import {
 } from "./sections";
 
 describe("website page sections", () => {
-  it("extracts stable sections from markdown headings", () => {
-    const sections = extractWebsitePageSections(
-      `# Product overview
-This platform helps support teams answer customer questions with grounded company knowledge and useful automation.
-
-## Pricing and plans
-Choose a plan based on conversation volume, required integrations, and the level of support your team needs.`,
-      "Acme",
-      { suggestions: false },
-    );
-
-    // Both headings are far below the token floor, so they land in one section.
-    expect(sections.map((section) => section.sectionId)).toEqual([
-      "product-overview",
-    ]);
-    expect(sections[0]?.content).toContain("Pricing and plans");
-    expect(sections[0]?.content).toContain("conversation volume");
-    expect(sections.every((section) => section.suggestions.length === 0)).toBe(
-      true,
-    );
-  });
-
-  it("falls back to one page section without headings", () => {
-    const sections = extractWebsitePageSections(
-      "A sufficiently detailed page description that explains the product and gives visitors enough useful information to ask a follow-up question.",
-      "Product",
-      { suggestions: false },
-    );
-    expect(sections).toHaveLength(1);
-    expect(sections[0]?.sectionId).toBe("product");
-  });
-
   it("normalizes headings into tracker-compatible ids", () => {
     expect(sectionIdFromHeading("Pricing & Plans!")).toBe("pricing-plans");
   });
@@ -106,7 +73,6 @@ Choose a plan based on conversation volume, required integrations, and the level
         (section) => estimateTokenCount(section.content) <= SECTION_MAX_TOKENS,
       ),
     ).toBe(true);
-    // Merged groups keep the first heading and carry every topic's content.
     expect(merged[0]?.heading).toBe("Topic 0");
     expect(merged.map((section) => section.content).join(" ")).toContain(
       "Topic 11 detail 7",
@@ -128,16 +94,5 @@ Choose a plan based on conversation volume, required integrations, and the level
     expect(sections).toHaveLength(1);
     expect(sections[0]?.content).toBe(content);
     expect(content.length).toBeLessThan(SECTION_MIN_CHARS);
-  });
-
-  it("adds fallback seeds only in deterministic fallback mode", () => {
-    const [section] = extractWebsitePageSections(
-      "This page contains enough useful product detail to create a stable fallback section for customer questions.",
-      "Product",
-    );
-    expect(section?.suggestions).toEqual([
-      "How does Product work?",
-      "What should I know about Product?",
-    ]);
   });
 });

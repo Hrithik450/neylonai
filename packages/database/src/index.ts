@@ -27,17 +27,13 @@ export {
   resolveDevKnowledgeScope,
   listKnowledgeSuggestionSeeds,
   findKnowledgePageSection,
-  listExistingPageSections,
-  listKnowledgePageSectionKeys,
   type KnowledgeSearchHit,
   type VectorSearchInput,
   type KeywordSearchHit,
   type KeywordSearchInput,
   type KnowledgeScope,
   type KnowledgeSuggestionSeed,
-  type ExistingPageSection,
   type StoredPageSection,
-  type PageSectionKeyManifest,
 } from "./knowledge";
 export {
   knowledgeSources,

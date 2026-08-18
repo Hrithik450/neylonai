@@ -2,15 +2,15 @@ import { and, eq, inArray, notInArray, sql } from "drizzle-orm";
 import {
   db,
   knowledgeDocuments,
-  listExistingPageSections,
   websiteCrawlJobs,
   websiteCrawlPages,
   type WebsiteCrawlJobStatus,
 } from "@neylonai/database";
 import {
   discoverWebsitePages,
+  extractDomPageSections,
   hashPageContent,
-  processWebsitePagesWithLlm,
+  processWebsitePages,
   scrapeWebsitePageRaw,
   type WebsitePageSection,
 } from "@neylonai/integrations/website";
@@ -433,7 +433,7 @@ export async function processWebsiteCrawlJob(jobId: string): Promise<void> {
           ReturnType<typeof scrapeWebsitePageRaw>
         >["provider"];
         sections: WebsitePageSection[];
-        sectioner: "gemini" | "heuristic";
+        sectioner: "dom" | "overview";
       };
       contentHash: string;
     };
@@ -489,21 +489,23 @@ export async function processWebsiteCrawlJob(jobId: string): Promise<void> {
       return;
     }
 
-    const existingSectionsByPath = await listExistingPageSections({
-      organizationId: job.organization_id,
-      sourceId: source.id,
-      canonicalPaths: rawReady.map((item) => item.page.canonical_path),
-    });
-
-    const processedByPath = await processWebsitePagesWithLlm(
-      rawReady.map((item) => ({
-        pageKey: item.page.canonical_path,
-        url: item.scraped.finalUrl,
-        title: item.scraped.title,
-        text: item.scraped.text,
-        existingSections:
-          existingSectionsByPath[item.page.canonical_path] ?? [],
-      })),
+    const processedByPath = processWebsitePages(
+      rawReady.map((item) => {
+        const domSections = item.scraped.html
+          ? extractDomPageSections(item.scraped.html)
+          : [];
+        return {
+          pageKey: item.page.canonical_path,
+          url: item.scraped.finalUrl,
+          title: item.scraped.title,
+          text: item.scraped.text,
+          domSections: domSections.map((section) => ({
+            sectionId: section.sectionId,
+            heading: section.label,
+            content: section.content,
+          })),
+        };
+      }),
     );
 
     if (cancellation.cancelled()) {
@@ -528,7 +530,7 @@ export async function processWebsiteCrawlJob(jobId: string): Promise<void> {
           text,
           provider: item.scraped.provider,
           sections: processed.sections,
-          sectioner: processed.usedFallback ? "heuristic" : "gemini",
+          sectioner: processed.usedDomSections ? "dom" : "overview",
         },
         contentHash,
       };

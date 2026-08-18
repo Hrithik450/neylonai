@@ -2,7 +2,6 @@ import type { SupportWidgetProps } from "./react/config/types";
 import { WIDGET_STYLES } from "./widget-styles";
 
 export {
-  createPageSectionId,
   getTrackedPageSection,
   type TrackedPageSection,
 } from "./page-context";

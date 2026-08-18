@@ -1,11 +1,10 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React from "react";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { observeNeylonSection, neylonSectionKeys } from "@/neylon-sections";
 import { useSessionView } from "@/components/session-view";
 import { GoogleSignInButton } from "@/components/google-signin-button";
 import { cn } from "@/lib/utils";
@@ -14,27 +13,15 @@ import { cn } from "@/lib/utils";
 const TEXT_PRIMARY = "#242424";
 const TEXT_SECONDARY = "#45413F";
 
-/** Section key for `/` (see neylonSectionKeys["/"]). */
+/** Section key for `/` — matched by crawl via element `id`. */
 const SECTION_KEY = "home-overview";
 
 export function Hero() {
   const { user, isAuthenticated } = useSessionView();
-  const sectionRef = useRef<HTMLElement | null>(null);
-
-  useEffect(() => {
-    const node = sectionRef.current;
-    if (!node) return;
-    return observeNeylonSection(node, {
-      pagePath: "/",
-      sectionKey: neylonSectionKeys["/"][0],
-      sectionLabel: "Home overview",
-    });
-  }, []);
 
   return (
     <section
-      ref={sectionRef}
-      id="home"
+      id={SECTION_KEY}
       style={{ background: "#FFF7F4" }}
       className={cn(
         "flex flex-col overflow-hidden",

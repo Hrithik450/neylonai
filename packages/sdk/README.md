@@ -22,37 +22,23 @@ widget.update({ config: { apiKey: "nk_live_…", user: currentUser } });
 widget.unmount();
 ```
 
-## Typed section keys
+## Page sections
 
-Neylon AI automatically discovers the sections on your pages. Generate
-path-scoped TypeScript literals so section tracking only accepts keys
-that exist for that page:
+Give major page blocks a stable `id` on `<section>` or `<article>` elements.
+The widget auto-tracks them when mounted — no codegen or manual wiring.
 
-```bash
-npx neylonai-generate-sections \
-  --api-key "$NEXT_PUBLIC_NEYLONAI_API_KEY" \
-  --out ./src/neylon-sections.ts
+```html
+<section id="pricing">
+  <h2>Pricing</h2>
+  ...
+</section>
 ```
 
-```ts
-import { useEffect } from "react";
-import {
-  neylonSectionKeys,
-  observeNeylonSection,
-} from "./neylon-sections";
+After your Website integration crawls the site, Neylon uses the same element
+`id` values as knowledge section keys and proactive suggestion seeds.
 
-useEffect(() => {
-  const el = document.getElementById("pricing");
-  if (!el) return;
-  return observeNeylonSection(el, {
-    pagePath: "/",
-    sectionKey: neylonSectionKeys["/"][0],
-    sectionLabel: "Pricing",
-  });
-}, []);
-```
-
-The generated file is deterministic: identical manifests produce identical TypeScript.
+For custom hosts without the widget, call `initNeylonSectionAutoTrack()` from
+`@neylonai/sdk` once on the page.
 
 The embed bundles and isolates its React implementation and widget styles in
 Shadow DOM. Host applications do not configure React or Tailwind.

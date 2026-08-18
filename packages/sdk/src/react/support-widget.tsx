@@ -31,6 +31,7 @@ import {
 import { useWidgetFont } from "./hooks/use-widget-font";
 import { getLatestHumanReply } from "../retention";
 import { getOrCreateVisitorId } from "../visitor";
+import { initNeylonSectionAutoTrack } from "../section-auto-track";
 
 const LAUNCHER_SIZE_PX = {
   sm: 48,
@@ -115,6 +116,13 @@ function SupportWidgetInner({
   useWidgetAudio(displayedSuggestion?.id ?? null, suggestionVisible);
   const onOpenChangeRef = React.useRef(onOpenChange);
   onOpenChangeRef.current = onOpenChange;
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    return initNeylonSectionAutoTrack({
+      pagePath: config.pagePath ?? undefined,
+    });
+  }, [config.pagePath]);
 
   useEffect(() => {
     if (config.presentation === "inline" || config.staticDemo) return;

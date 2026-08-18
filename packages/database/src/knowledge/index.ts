@@ -29,9 +29,5 @@ export {
 } from "./suggestion-seeds";
 export {
   findKnowledgePageSection,
-  listExistingPageSections,
-  listKnowledgePageSectionKeys,
-  type ExistingPageSection,
   type StoredPageSection,
-  type PageSectionKeyManifest,
 } from "./page-sections";

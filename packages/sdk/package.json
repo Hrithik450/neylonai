@@ -27,16 +27,12 @@
     "dist",
     "README.md"
   ],
-  "bin": {
-    "neylonai-generate-sections": "./dist/codegen/cli.js"
-  },
   "sideEffects": ["**/*.css"],
   "scripts": {
     "check-types": "tsc --noEmit -p tsconfig.json",
     "build": "rm -rf dist-tmp tsconfig.build.tsbuildinfo && tsc -p tsconfig.build.json --outDir dist-tmp && tailwindcss -i src/widget.css -o dist-tmp/widget.css --minify && rm -rf dist && mv dist-tmp dist && node build-embed.mjs",
     "prepare": "pnpm run build",
     "prepublishOnly": "pnpm run build && pnpm run check-boundary",
-    "generate-sections": "tsx ./src/codegen/cli.ts",
     "test": "vitest run",
     "check-boundary": "node -e \"const fs=require('fs');const path=require('path');function walk(d,acc=[]){for(const e of fs.readdirSync(d,{withFileTypes:true})){const p=path.join(d,e.name);if(e.isDirectory())walk(p,acc);else if(/\\.(ts|tsx|js|d\\.ts)$/.test(e.name))acc.push(p);}return acc;}const roots=['src','dist'].filter((r)=>fs.existsSync(r));const bad=[];for(const root of roots){for(const f of walk(root)){const t=fs.readFileSync(f,'utf8');if(/from\\s+['\\\"]@neylonai\\/(?!sdk)/.test(t)||/require\\(\\s*['\\\"]@neylonai\\/(?!sdk)/.test(t))bad.push(f);}}if(bad.length){console.error('SDK boundary violation — private @neylonai/* import in:\\n'+bad.join('\\n'));process.exit(1);}console.log('SDK boundary OK (no private @neylonai/* imports)');\""
   },

@@ -153,7 +153,7 @@ export const knowledgePageSections = pgTable(
     content: text("content").notNull(),
     /** Scraper that produced the source page for this section. */
     provider: varchar("provider", { length: 32 }).notNull().default("unknown"),
-    /** Who produced the section split: gemini or heuristic. */
+    /** Who produced the section split: dom (element id) or overview fallback. */
     sectioner: varchar("sectioner", { length: 32 })
       .notNull()
       .default("unknown"),
