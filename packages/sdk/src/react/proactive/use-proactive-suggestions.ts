@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   fetchSuggestions,
   getOrCreateSessionId,
+  getRegisteredPageSections,
   getTrackedPageSection,
   subscribeToPageSection,
   subscribeToQualifiedPageSection,
@@ -19,8 +20,11 @@ import { PROACTIVE_CONFIG } from "./config";
 import {
   claimProactiveSessionBatch,
   isPageVisitComplete,
+  isSectionFullyShown,
   loadProactiveState,
   markSectionSuggestionShown,
+  mergeKnownSectionKeys,
+  recordSectionSuggestionTotals,
   saveProactiveState,
   unshownSectionKeysForPath,
   type ProactivePersistedState,
@@ -123,7 +127,24 @@ export function useProactiveSuggestions() {
   const qualifiedSectionRef = useRef<TrackedPageSection | null>(qualifiedSection);
   qualifiedSectionRef.current = qualifiedSection;
   const knownSectionKeysRef = useRef<string[]>([]);
-  knownSectionKeysRef.current = [];
+  knownSectionKeysRef.current = pathname
+    ? getRegisteredPageSections(pathname)
+    : [];
+
+  useEffect(() => {
+    if (!pathname) return;
+    const registered = getRegisteredPageSections(pathname);
+    if (!registered.length) return;
+    const merged = mergeKnownSectionKeys(
+      stateRef.current,
+      pathname,
+      registered,
+    );
+    if (merged !== stateRef.current) {
+      stateRef.current = merged;
+      saveProactiveState(merged);
+    }
+  }, [pathname]);
   const sectionScopeKey = pageSection
     ? `${pathname ?? "/"}:${pageSection.sectionId}`
     : null;
@@ -323,6 +344,14 @@ export function useProactiveSuggestions() {
         });
 
         if (result.success && result.data.length > 0) {
+          if (section && result.sectionState?.sectionKey) {
+            stateRef.current = recordSectionSuggestionTotals(
+              stateRef.current,
+              pathname ?? "/",
+              result.sectionState.sectionKey,
+              result.sectionState.total,
+            );
+          }
           enqueueFetchedSuggestions(
             result.data,
             mode,
@@ -331,6 +360,18 @@ export function useProactiveSuggestions() {
           );
           persist();
           setLifecycleVersion((version) => version + 1);
+        } else if (
+          section &&
+          result.sectionState &&
+          result.sectionState.total > 0
+        ) {
+          stateRef.current = recordSectionSuggestionTotals(
+            stateRef.current,
+            pathname ?? "/",
+            result.sectionState.sectionKey,
+            result.sectionState.total,
+          );
+          persist();
         }
         return result.success;
       } finally {
@@ -560,7 +601,12 @@ export function useProactiveSuggestions() {
         }
 
         if (
-          stateRef.current.shownSectionKeys.includes(targetSectionScope ?? "")
+          targetSection &&
+          isSectionFullyShown(
+            stateRef.current,
+            pathname ?? "/",
+            targetSection.sectionId,
+          )
         ) {
           return;
         }
@@ -675,7 +721,7 @@ export function useProactiveSuggestions() {
     });
   }, [clearTimers, hideBubble, persist]);
 
-  /** Fetch / drain on qualified section dwell (respects queue lock). */
+  /** Fetch / drain on qualified section dwell (after session batch, respects lock). */
   useEffect(() => {
     if (
       !proactiveEnabled ||
@@ -686,6 +732,7 @@ export function useProactiveSuggestions() {
     ) {
       return;
     }
+    if (sessionBatchPending()) return;
     if (
       isPageVisitComplete(
         stateRef.current,
@@ -695,8 +742,15 @@ export function useProactiveSuggestions() {
     ) {
       return;
     }
-    const scope = `${pathname}:${qualifiedSection.sectionId}`;
-    if (stateRef.current.shownSectionKeys.includes(scope)) return;
+    if (
+      isSectionFullyShown(
+        stateRef.current,
+        pathname,
+        qualifiedSection.sectionId,
+      )
+    ) {
+      return;
+    }
     void showNextRef.current("dwell");
   }, [
     isOpen,
@@ -704,6 +758,7 @@ export function useProactiveSuggestions() {
     pathname,
     proactiveEnabled,
     qualifiedSection,
+    sessionBatchPending,
     tabVisible,
   ]);
 

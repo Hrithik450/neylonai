@@ -70,8 +70,8 @@ export function isSectionQueueLocked(
 }
 
 /**
- * Insert section suggestions ahead of any session-priority items so
- * section prompts always drain before the session batch.
+ * Append section suggestions after existing queue items so the session batch
+ * drains before section prompts on a first visit.
  */
 export function enqueueSectionSuggestions(
   queue: SuggestionQueue,
@@ -83,22 +83,10 @@ export function enqueueSectionSuggestions(
 
   const incomingIds = new Set(newItems.map((item) => item.id));
   const withoutDupes = queue.items.filter((item) => !incomingIds.has(item.id));
-  const firstSessionIdx = withoutDupes.findIndex(
-    (item) => item.priority === "session",
-  );
-
-  const items =
-    firstSessionIdx === -1
-      ? [...withoutDupes, ...newItems]
-      : [
-          ...withoutDupes.slice(0, firstSessionIdx),
-          ...newItems,
-          ...withoutDupes.slice(firstSessionIdx),
-        ];
 
   return {
     ...queue,
-    items,
+    items: [...withoutDupes, ...newItems],
     pendingFetchSectionKeys: queue.pendingFetchSectionKeys.filter(
       (key) => key !== sectionKey,
     ),

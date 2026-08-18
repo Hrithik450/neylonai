@@ -604,6 +604,16 @@ function messageFingerprint(
     .slice(0, 16);
 }
 
+export interface ProactiveSuggestionsResult {
+  suggestions: ProactiveSuggestion[];
+  sectionState?: {
+    sectionKey: string;
+    total: number;
+    shown: number;
+    pending: number;
+  } | null;
+}
+
 /**
  * Org knowledge and visible section content → visitor/context ranking → 3–5 suggestions.
  *
@@ -612,7 +622,7 @@ function messageFingerprint(
  */
 export async function buildProactiveSuggestions(
   input: BuildSuggestionsInput,
-): Promise<ProactiveSuggestion[]> {
+): Promise<ProactiveSuggestionsResult> {
   const organizationId = requireTenantId("organizationId", input.organizationId);
   const limit = Math.min(Math.max(input.limit ?? 5, 4), 5);
   const mode = input.mode === "post_chat" ? "post_chat" : "idle";
@@ -658,7 +668,9 @@ export async function buildProactiveSuggestions(
     if (cached) {
       try {
         const parsed = JSON.parse(cached) as ProactiveSuggestion[];
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return { suggestions: parsed };
+        }
       } catch {
         // ignore
       }
@@ -692,6 +704,7 @@ export async function buildProactiveSuggestions(
 
   /** Prefer unshown section prompts when we know this visitor. */
   let sectionSuggestions = sectionSuggestionsRaw;
+  let sectionState: ProactiveSuggestionsResult["sectionState"] = null;
   if (
     resolvedSection?.sectionId &&
     input.visitorId?.trim() &&
@@ -706,6 +719,12 @@ export async function buildProactiveSuggestions(
         sectionKey: resolvedSection.sectionId,
         suggestionIds: sectionSuggestionsRaw.map((s) => s.id),
       });
+      sectionState = {
+        sectionKey: resolvedSection.sectionId,
+        total: state.total,
+        shown: state.shown.length,
+        pending: state.pending.length,
+      };
       if (state.pending.length > 0) {
         const pending = new Set(state.pending);
         sectionSuggestions = sectionSuggestionsRaw.filter((s) =>
@@ -812,5 +831,5 @@ export async function buildProactiveSuggestions(
     await cacheSet(cacheKey, JSON.stringify(result), PERSONALIZED_CACHE_TTL_SEC);
   }
 
-  return result;
+  return { suggestions: result, sectionState };
 }

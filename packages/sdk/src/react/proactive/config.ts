@@ -1,6 +1,6 @@
 /** Timing for proactive launcher suggestions. */
 export const PROACTIVE_CONFIG = {
-  storageKey: "neylonai.proactiveSuggestions.v9",
+  storageKey: "neylonai.proactiveSuggestions.v10",
   /** Quiet delay before the first bubble. */
   initialIdleMs: 2_200,
   /** How long a bubble stays visible. */

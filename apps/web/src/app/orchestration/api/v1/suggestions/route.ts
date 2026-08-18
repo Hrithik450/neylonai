@@ -116,7 +116,7 @@ export async function POST(req: NextRequest) {
           }
         : null;
 
-    const suggestions = await runWithAgentTurnContext(
+    const built = await runWithAgentTurnContext(
       {
         organizationId: scope.organizationId,
         requestId,
@@ -156,13 +156,17 @@ export async function POST(req: NextRequest) {
       metric: "proactive_refresh",
       requestId,
       metadata: {
-        count: suggestions.length,
+        count: built.suggestions.length,
         mode: body.mode ?? "idle",
         triggerType: body.triggerType ?? "idle",
       },
     });
 
-    return NextResponse.json({ success: true, data: suggestions });
+    return NextResponse.json({
+      success: true,
+      data: built.suggestions,
+      sectionState: built.sectionState ?? null,
+    });
   } catch (error) {
     if (error instanceof ApiAuthError) {
       return NextResponse.json(

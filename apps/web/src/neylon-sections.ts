@@ -8,7 +8,7 @@
  *     --origin https://neylonai.mhrithik.com \
  *     --out ./apps/web/src/neylon-sections.ts
  */
-import { observePageSection } from "@neylonai/sdk";
+import { observePageSection, registerPageSections } from "@neylonai/sdk";
 
 export const neylonSectionKeys = {
   "/": [
@@ -19,6 +19,12 @@ export const neylonSectionKeys = {
     "comparison-table",
   ],
 } as const;
+
+if (typeof window !== "undefined") {
+  for (const [path, keys] of Object.entries(neylonSectionKeys)) {
+    registerPageSections(path, [...keys]);
+  }
+}
 
 export type NeylonPagePath = keyof typeof neylonSectionKeys;
 export type NeylonSectionKey<P extends NeylonPagePath> =

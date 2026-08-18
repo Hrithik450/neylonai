@@ -35,11 +35,19 @@ export interface FetchSuggestionsInput {
   signal?: AbortSignal;
 }
 
+export interface ProactiveSectionStateDto {
+  sectionKey: string;
+  total: number;
+  shown: number;
+  pending: number;
+}
+
 export async function fetchSuggestions(
   input: FetchSuggestionsInput = {},
 ): Promise<{
   success: boolean;
   data: ProactiveSuggestionDto[];
+  sectionState?: ProactiveSectionStateDto | null;
   error?: string;
 }> {
   const auth = tryGetAuthHeaders({ "Content-Type": "application/json" });
@@ -75,12 +83,14 @@ export async function fetchSuggestions(
     const json = (await response.json()) as {
       success?: boolean;
       data?: ProactiveSuggestionDto[];
+      sectionState?: ProactiveSectionStateDto | null;
       error?: string;
     };
 
     return {
       success: Boolean(json.success),
       data: Array.isArray(json.data) ? json.data : [],
+      sectionState: json.sectionState ?? null,
       error: json.error,
     };
   } catch (error) {

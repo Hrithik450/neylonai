@@ -26,7 +26,7 @@ const sessionSug = (id: string, text: string): ProactiveSuggestionDto => ({
 });
 
 describe("suggestion queue", () => {
-  it("inserts section suggestions ahead of session batch", () => {
+  it("appends section suggestions after session batch", () => {
     let queue = enqueueSessionSuggestions(EMPTY_SUGGESTION_QUEUE, [
       sessionSug("s1", "Session one?"),
       sessionSug("s2", "Session two?"),
@@ -36,7 +36,7 @@ describe("suggestion queue", () => {
       sectionSug("a2", "Pricing B?", "pricing"),
     ]);
 
-    expect(queue.items.map((i) => i.id)).toEqual(["a1", "a2", "s1", "s2"]);
+    expect(queue.items.map((i) => i.id)).toEqual(["s1", "s2", "a1", "a2"]);
   });
 
   it("locks on first section dequeue and prefers that section", () => {

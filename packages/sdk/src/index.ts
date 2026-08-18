@@ -36,6 +36,8 @@ export {
   observePageSection,
   qualifyPageSection,
   subscribeToQualifiedPageSection,
+  registerPageSections,
+  getRegisteredPageSections,
   type SectionObserveOptions,
 } from "./section-dwell";
 export {

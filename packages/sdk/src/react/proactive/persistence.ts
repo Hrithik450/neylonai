@@ -16,6 +16,9 @@ export interface PageVisitProgress {
 /** Counts how many suggestions have been shown per section scope ("path:sectionId"). */
 export type SectionShownCounts = Record<string, number>;
 
+/** Total predefined suggestions per section scope ("pagePath:sectionId"). */
+export type SectionTotalCounts = Record<string, number>;
+
 export interface ProactivePersistedState {
   visitorId: string;
   shownIds: string[];
@@ -26,6 +29,8 @@ export interface ProactivePersistedState {
   shownSectionKeys: string[];
   /** How many suggestions shown per section scope ("pagePath:sectionId"). */
   sectionShownCounts: SectionShownCounts;
+  /** Predefined suggestion count per section scope from the server. */
+  sectionTotalCounts: SectionTotalCounts;
   visitProgressByPath: Record<string, PageVisitProgress>;
   pool: ProactiveSuggestionDto[];
   poolPagePath: string | null;
@@ -45,6 +50,7 @@ const EMPTY = (visitorId: string): ProactivePersistedState => ({
   sessionSuggestionCount: 0,
   shownSectionKeys: [],
   sectionShownCounts: {},
+  sectionTotalCounts: {},
   visitProgressByPath: {},
   pool: [],
   poolPagePath: null,
@@ -106,6 +112,16 @@ export function loadProactiveState(): ProactivePersistedState {
         !Array.isArray(parsed.sectionShownCounts)
           ? Object.fromEntries(
               Object.entries(parsed.sectionShownCounts).filter(
+                ([, v]) => typeof v === "number",
+              ) as [string, number][],
+            )
+          : {},
+      sectionTotalCounts:
+        parsed.sectionTotalCounts &&
+        typeof parsed.sectionTotalCounts === "object" &&
+        !Array.isArray(parsed.sectionTotalCounts)
+          ? Object.fromEntries(
+              Object.entries(parsed.sectionTotalCounts).filter(
                 ([, v]) => typeof v === "number",
               ) as [string, number][],
             )
@@ -198,24 +214,77 @@ function sectionScopeKey(pagePath: string, sectionId: string): string {
   return `${pagePath}:${sectionId}`;
 }
 
+export function isSectionFullyShown(
+  state: ProactivePersistedState,
+  pagePath: string,
+  sectionId: string,
+): boolean {
+  const path = pagePath.trim() || "/";
+  const scope = sectionScopeKey(path, sectionId);
+  const total = state.sectionTotalCounts[scope];
+  const shown = state.sectionShownCounts[scope] ?? 0;
+  if (typeof total === "number" && total > 0) {
+    return shown >= total;
+  }
+  return state.shownSectionKeys.includes(scope);
+}
+
+export function mergeKnownSectionKeys(
+  state: ProactivePersistedState,
+  pagePath: string,
+  sectionKeys: string[],
+): ProactivePersistedState {
+  const path = pagePath.trim() || "/";
+  const known = [
+    ...new Set([
+      ...(state.visitProgressByPath[path]?.knownSectionKeys ?? []),
+      ...sectionKeys.filter(Boolean),
+    ]),
+  ].sort();
+  if (!known.length) return state;
+  const progress = state.visitProgressByPath[path] ?? {
+    knownSectionKeys: [],
+    shownSectionKeys: [],
+    visitComplete: false,
+  };
+  return {
+    ...state,
+    visitProgressByPath: {
+      ...state.visitProgressByPath,
+      [path]: {
+        ...progress,
+        knownSectionKeys: known,
+        visitComplete:
+          known.length > 0 &&
+          known.every((key) => progress.shownSectionKeys.includes(key)),
+      },
+    },
+  };
+}
+
 export function markSectionSuggestionShown(
   state: ProactivePersistedState,
   pagePath: string,
   sectionId: string,
   knownSectionKeys: string[],
-  /** Total suggestions available for this section in the current pool. */
+  /** Fallback total when server count is unavailable. */
   sectionPoolSize: number,
 ): ProactivePersistedState {
   const path = pagePath.trim() || "/";
   const scope = sectionScopeKey(path, sectionId);
 
-  // Increment the per-section shown count.
   const prevCount = state.sectionShownCounts[scope] ?? 0;
   const newCount = prevCount + 1;
   const sectionShownCounts = { ...state.sectionShownCounts, [scope]: newCount };
+  const total =
+    state.sectionTotalCounts[scope] ??
+    (sectionPoolSize > 0 ? sectionPoolSize : newCount);
+  const sectionTotalCounts = {
+    ...state.sectionTotalCounts,
+    [scope]: Math.max(total, newCount),
+  };
 
-  // Only mark the section as fully done when all pool suggestions are exhausted.
-  const sectionExhausted = newCount >= sectionPoolSize;
+  const sectionExhausted = newCount >= sectionTotalCounts[scope]!;
   const shownSectionKeys =
     sectionExhausted && !state.shownSectionKeys.includes(scope)
       ? [...state.shownSectionKeys, scope]
@@ -241,6 +310,7 @@ export function markSectionSuggestionShown(
     ...state,
     shownSectionKeys,
     sectionShownCounts,
+    sectionTotalCounts,
     visitProgressByPath: {
       ...state.visitProgressByPath,
       [path]: {
@@ -288,6 +358,24 @@ export function unshownSectionKeysForPath(
       .filter((key) => key.startsWith(`${path}:`))
       .map((key) => key.slice(path.length + 1));
   return known.filter((key) => !shown.includes(key));
+}
+
+export function recordSectionSuggestionTotals(
+  state: ProactivePersistedState,
+  pagePath: string,
+  sectionId: string,
+  total: number,
+): ProactivePersistedState {
+  if (!total || total < 1) return state;
+  const path = pagePath.trim() || "/";
+  const scope = sectionScopeKey(path, sectionId);
+  return {
+    ...state,
+    sectionTotalCounts: {
+      ...state.sectionTotalCounts,
+      [scope]: Math.max(state.sectionTotalCounts[scope] ?? 0, total),
+    },
+  };
 }
 
 export function pickNextSuggestion(

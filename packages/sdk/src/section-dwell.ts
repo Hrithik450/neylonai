@@ -15,7 +15,7 @@ export interface SectionObserveOptions {
   intersectionRatio?: number;
 }
 
-const DEFAULT_DWELL_MS = 4_500;
+const DEFAULT_DWELL_MS = 2_500;
 const DEFAULT_RATIO = 0.35;
 
 type QualifiedListener = (section: TrackedPageSection) => void;
@@ -64,6 +64,10 @@ function scheduleQualification(
   cancelPendingDwell(key);
   const timer = setTimeout(() => {
     pendingDwell.delete(key);
+    const existing = getRegisteredPageSections(section.pagePath);
+    if (!existing.includes(section.sectionId)) {
+      registerPageSections(section.pagePath, [...existing, section.sectionId]);
+    }
     emitQualified(section);
   }, dwellMs);
   pendingDwell.set(key, timer);
