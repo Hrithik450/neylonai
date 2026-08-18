@@ -1,6 +1,21 @@
 import { Redis } from "ioredis";
 
-const redis = new Redis(process.env.REDIS_URL || "redis://localhost:6379");
+let redis: Redis | null = null;
+
+function getRedis(): Redis {
+  if (!redis) {
+    redis = new Redis(process.env.REDIS_URL || "redis://localhost:6379", {
+      lazyConnect: true,
+      maxRetriesPerRequest: 3,
+      enableReadyCheck: false,
+      retryStrategy(times) {
+        if (times > 3) return null;
+        return Math.min(times * 50, 2000);
+      },
+    });
+  }
+  return redis;
+}
 
 export interface RateLimitConfig {
   /**
@@ -37,6 +52,8 @@ export async function checkRateLimit(
   const windowStart = now - windowMs;
 
   try {
+    const redis = getRedis();
+
     // Use Redis sorted set to track requests in the time window
     const multi = redis.multi();
 
@@ -67,7 +84,7 @@ export async function checkRateLimit(
 
     // If not allowed, remove the request we just added
     if (!allowed) {
-      await redis.zrem(key, `${now}`);
+      await getRedis().zrem(key, `${now}`);
     }
 
     return {
