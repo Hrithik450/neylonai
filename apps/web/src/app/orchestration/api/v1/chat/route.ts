@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
-import { streamConversation } from "@neylonai/agent";
+import { streamConversation } from "@neylonai/agent/stream-conversation-simple";
 import { ThreadMessagesService } from "@neylonai/domain/chat";
 import {
   ParticipantsService,
