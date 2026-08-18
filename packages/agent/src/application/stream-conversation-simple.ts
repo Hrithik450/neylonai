@@ -28,6 +28,7 @@ import {
   resolvePageSectionContext,
   type ResolvedPageSectionContext,
 } from "./resolve-page-section-context";
+import { withGoogleApiRetry } from "@neylonai/integrations/gemini";
 
 function sseEvent(payload: object): string {
   return "data: " + JSON.stringify(payload) + "\n\n";
@@ -550,17 +551,6 @@ async function* streamConversationTurn(
       resolvedPageSection,
     );
 
-    // Initialize Gemini
-    const apiKey = process.env.GOOGLE_AI_API_KEY;
-    if (!apiKey) {
-      throw new Error("GOOGLE_AI_API_KEY not configured");
-    }
-
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({
-      model: route.model.replace("gemini-", "gemini-"),
-    });
-
     // Build conversation history
     const contents = [];
     for (const msg of conversationHistory) {
@@ -578,16 +568,23 @@ async function* streamConversationTurn(
     let assistantMessage = "";
 
     try {
-      const chat = model.startChat({
-        history: contents.slice(0, -1),
-        systemInstruction: systemPrompt,
-        generationConfig: {
-          temperature: 0.4,
-          maxOutputTokens: 2048,
-        },
-      });
+      const result = await withGoogleApiRetry(async (apiKey) => {
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({
+          model: route.model.replace("gemini-", "gemini-"),
+        });
 
-      const result = await chat.sendMessageStream(effectiveInput);
+        const chat = model.startChat({
+          history: contents.slice(0, -1),
+          systemInstruction: systemPrompt,
+          generationConfig: {
+            temperature: 0.4,
+            maxOutputTokens: 2048,
+          },
+        });
+
+        return chat.sendMessageStream(effectiveInput);
+      });
 
       for await (const chunk of result.stream) {
         const text = chunk.text();
