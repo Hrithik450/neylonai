@@ -146,8 +146,19 @@ describe("heuristic and fallback", () => {
     },
   );
 
-  it("does not heuristic-route a product question", () => {
+  it("does not heuristic-route a product question without small-corpus context", () => {
     expect(buildHeuristicRoute("What is included in the Starter plan?")).toBeNull();
+  });
+
+  it("fast-paths short product questions on a tiny knowledge corpus", () => {
+    const route = buildHeuristicRoute("What is included in the free plan?", {
+      availableToolNames: ["semantic_search"],
+      chunkCount: 6,
+    });
+    expect(route?.source).toBe("heuristic");
+    expect(route?.workloadClass).toBe("simple");
+    expect(route?.likelyTools).toEqual(["semantic_search"]);
+    expect(route?.estimatedCredits).toBe(1);
   });
 
   it("keeps a short meaningful company question billable", () => {

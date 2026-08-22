@@ -4,25 +4,26 @@
  */
 
 export function OrganizationJsonLd() {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://neylon.ai";
+  const baseUrl =
+    process.env.NEXT_PUBLIC_SITE_URL || "https://neylonai.mhrithik.com";
 
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Organization",
     name: "Neylon AI",
     url: baseUrl,
-    logo: `${baseUrl}/logo.png`,
+    logo: `${baseUrl}/images/neylonai-logo.jpg`,
     description:
       "AI-powered customer engagement platform specializing in real-time visitor tracking and proactive conversational AI.",
     sameAs: [
-      "https://twitter.com/neylonai",
-      "https://linkedin.com/company/neylonai",
-      "https://github.com/neylonai",
+      "https://twitter.com/mhritihk470",
+      "https://www.linkedin.com/in/hruthik-m-3595a0329/",
+      "https://github.com/hruthikm/neylonai",
     ],
     contactPoint: {
       "@type": "ContactPoint",
       contactType: "Customer Support",
-      email: "support@neylon.ai",
+      email: "support@neylonai.mhrithik.com",
     },
   };
 
@@ -35,7 +36,8 @@ export function OrganizationJsonLd() {
 }
 
 export function WebsiteJsonLd() {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://neylon.ai";
+  const baseUrl =
+    process.env.NEXT_PUBLIC_SITE_URL || "https://neylonai.mhrithik.com";
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -60,7 +62,8 @@ export function WebsiteJsonLd() {
 }
 
 export function SoftwareApplicationJsonLd() {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://neylon.ai";
+  const baseUrl =
+    process.env.NEXT_PUBLIC_SITE_URL || "https://neylonai.mhrithik.com";
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -82,7 +85,7 @@ export function SoftwareApplicationJsonLd() {
     description:
       "AI-powered customer engagement platform that watches visitors in real time and starts conversations at the right moment.",
     url: baseUrl,
-    screenshot: `${baseUrl}/images/dashboard-preview.png`,
+    screenshot: `${baseUrl}/images/opengraph-neylonai.png`,
     featureList: [
       "Real-time visitor tracking",
       "Proactive AI conversations",

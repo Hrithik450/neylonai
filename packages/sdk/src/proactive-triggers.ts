@@ -2,7 +2,7 @@ import { tryGetAuthHeaders } from "./runtime-config";
 import { apiUrl } from "./network";
 import { getOrCreateSessionId, getOrCreateVisitorId } from "./visitor";
 
-export type ProactiveTriggerType = "idle" | "dwell";
+export type ProactiveTriggerType = "idle";
 
 export type ProactiveTriggerEventType = "shown" | "clicked" | "dismissed";
 

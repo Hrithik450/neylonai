@@ -140,6 +140,7 @@ export function Features() {
                 loop
                 muted
                 playsInline
+                preload="none"
                 style={{
                   width: 112,
                   height: 112,

@@ -1,10 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useMemo } from "react";
-import type {
-  ResolvedWidgetConfig,
-  SupportWidgetProps,
-} from "../config/types";
+import type { ResolvedWidgetConfig, SupportWidgetProps } from "../config/types";
 import {
   DEFAULT_WIDGET_FEATURES,
   DEFAULT_WIDGET_LAYOUT,
@@ -26,7 +23,8 @@ const DEFAULT_BRANDING = {
   secondaryTextBackground:
     DEFAULT_WIDGET_CONFIG.branding!.secondaryTextBackground!,
   aiMessageBackground: DEFAULT_WIDGET_CONFIG.branding!.aiMessageBackground!,
-  humanMessageBackground: DEFAULT_WIDGET_CONFIG.branding!.humanMessageBackground!,
+  humanMessageBackground:
+    DEFAULT_WIDGET_CONFIG.branding!.humanMessageBackground!,
   tagline: "AI assistants for modern businesses",
 } as const;
 
@@ -82,36 +80,64 @@ export interface WidgetHostValue {
 const WidgetHostContext = createContext<WidgetHostValue | null>(null);
 
 const pickColor = (...candidates: Array<string | null | undefined>) =>
-  candidates.find(c => c?.trim())?.trim();
+  candidates.find((c) => c?.trim())?.trim();
 
-export function WidgetHostProvider({ config, onError, children }: {
+export function WidgetHostProvider({
+  config,
+  onError,
+  children,
+}: {
   config?: ResolvedWidgetConfig;
   onError?: SupportWidgetProps["onError"];
   children: React.ReactNode;
 }) {
   const onErrorRef = React.useRef(onError);
   onErrorRef.current = onError;
-  const stableOnError = React.useCallback((message: string) => onErrorRef.current?.(message), []);
+  const stableOnError = React.useCallback(
+    (message: string) => onErrorRef.current?.(message),
+    [],
+  );
 
   const value = useMemo<WidgetHostValue>(() => {
     const b = config?.branding;
-    const pick = (val: string | null | undefined, fallback: string) => pickColor(val) ?? fallback;
+    const pick = (val: string | null | undefined, fallback: string) =>
+      pickColor(val) ?? fallback;
 
     const branding = {
       ...DEFAULT_BRANDING,
       ...b,
       name: b?.name ?? "",
-      primaryTextColor: pick(b?.primaryTextColor, DEFAULT_BRANDING.primaryTextColor),
-      secondaryTextColor: pick(b?.secondaryTextColor, DEFAULT_BRANDING.secondaryTextColor),
+      primaryTextColor: pick(
+        b?.primaryTextColor,
+        DEFAULT_BRANDING.primaryTextColor,
+      ),
+      secondaryTextColor: pick(
+        b?.secondaryTextColor,
+        DEFAULT_BRANDING.secondaryTextColor,
+      ),
       tabActiveColor: pick(b?.tabActiveColor, DEFAULT_BRANDING.tabActiveColor),
       accentColor: pick(b?.accentColor, DEFAULT_BRANDING.accentColor),
       gradientFrom: pick(b?.gradientFrom, DEFAULT_BRANDING.gradientFrom),
       gradientTo: pick(b?.gradientTo, DEFAULT_BRANDING.gradientTo),
-      primaryTextBackground: pickColor(b?.primaryTextBackground, b?.primaryTextColor) ?? DEFAULT_BRANDING.primaryTextBackground,
-      askButtonTextColor: pick(b?.askButtonTextColor, DEFAULT_BRANDING.askButtonTextColor),
-      secondaryTextBackground: pick(b?.secondaryTextBackground, DEFAULT_BRANDING.secondaryTextBackground),
-      aiMessageBackground: pick(b?.aiMessageBackground, DEFAULT_BRANDING.aiMessageBackground),
-      humanMessageBackground: pick(b?.humanMessageBackground, DEFAULT_BRANDING.humanMessageBackground),
+      primaryTextBackground:
+        pickColor(b?.primaryTextBackground, b?.primaryTextColor) ??
+        DEFAULT_BRANDING.primaryTextBackground,
+      askButtonTextColor: pick(
+        b?.askButtonTextColor,
+        DEFAULT_BRANDING.askButtonTextColor,
+      ),
+      secondaryTextBackground: pick(
+        b?.secondaryTextBackground,
+        DEFAULT_BRANDING.secondaryTextBackground,
+      ),
+      aiMessageBackground: pick(
+        b?.aiMessageBackground,
+        DEFAULT_BRANDING.aiMessageBackground,
+      ),
+      humanMessageBackground: pick(
+        b?.humanMessageBackground,
+        DEFAULT_BRANDING.humanMessageBackground,
+      ),
       font: b?.font,
     };
 
@@ -140,9 +166,7 @@ export function WidgetHostProvider({ config, onError, children }: {
           }))
           .filter((f) => f.question && f.answer)
           .slice(0, 4);
-        return cleaned.length > 0
-          ? cleaned
-          : [...DEFAULT_WIDGET_MESSAGES.faqs];
+        return cleaned.length > 0 ? cleaned : [...DEFAULT_WIDGET_MESSAGES.faqs];
       })(),
     };
 
@@ -153,12 +177,16 @@ export function WidgetHostProvider({ config, onError, children }: {
 
     const proactive = {
       enabled: config?.proactive?.enabled ?? true,
-      soundEnabled: config?.proactive?.soundEnabled ?? PROACTIVE_CONFIG.soundEnabled,
+      soundEnabled:
+        config?.proactive?.soundEnabled ?? PROACTIVE_CONFIG.soundEnabled,
       volume: config?.proactive?.volume ?? 0.22,
-      initialIdleMs: config?.proactive?.initialIdleMs ?? PROACTIVE_CONFIG.initialIdleMs,
+      initialIdleMs:
+        config?.proactive?.initialIdleMs ?? PROACTIVE_CONFIG.initialIdleMs,
       displayMs: config?.proactive?.displayMs ?? PROACTIVE_CONFIG.displayMs,
-      rotateGapMs: config?.proactive?.rotateGapMs ?? PROACTIVE_CONFIG.rotateGapMs,
-      postChatDelayMs: config?.proactive?.postChatDelayMs ?? PROACTIVE_CONFIG.postChatDelayMs,
+      rotateGapMs:
+        config?.proactive?.rotateGapMs ?? PROACTIVE_CONFIG.rotateGapMs,
+      postChatDelayMs:
+        config?.proactive?.postChatDelayMs ?? PROACTIVE_CONFIG.postChatDelayMs,
       poolLimit: config?.proactive?.poolLimit ?? PROACTIVE_CONFIG.poolLimit,
     };
 

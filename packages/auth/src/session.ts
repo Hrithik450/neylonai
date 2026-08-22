@@ -4,8 +4,7 @@ export const SESSION_COOKIE_NAME = "neylonai-session";
 export const SESSION_MAX_AGE_SECONDS = 7 * 24 * 60 * 60; // 7 days
 
 const JWT_EXPIRY = "7d";
-const rawSecret =
-  process.env.AUTH_SECRET || process.env.JWT_SECRET;
+const rawSecret = process.env.AUTH_SECRET;
 
 const JWT_SECRET = new TextEncoder().encode(
   rawSecret || "dev-only-secret-not-for-production",
@@ -17,7 +16,7 @@ function validateSecretAtRuntime() {
     (!rawSecret || rawSecret.includes("placeholder"))
   ) {
     throw new Error(
-      "AUTH_SECRET / JWT_SECRET must be set to a real value in production runtime.",
+      "AUTH_SECRET must be set to a real value in production runtime.",
     );
   }
 }
@@ -43,7 +42,9 @@ export async function createSession(user: SessionUser): Promise<string> {
 }
 
 /** Verifies a session JWT and returns the embedded user, or null if invalid/expired. */
-export async function verifySession(token: string): Promise<SessionUser | null> {
+export async function verifySession(
+  token: string,
+): Promise<SessionUser | null> {
   validateSecretAtRuntime();
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET);

@@ -1,14 +1,14 @@
 /** Timing for proactive launcher suggestions. */
 export const PROACTIVE_CONFIG = {
-  storageKey: "neylonai.proactiveSuggestions.v10",
+  storageKey: "neylonai.proactive.suggestions.v1",
   /** Quiet delay before the first bubble. */
-  initialIdleMs: 2_200,
+  initialIdleMs: 1000,
   /** How long a bubble stays visible. */
   displayMs: 6_500,
   /** Gap after auto-hide before the next bubble. */
-  rotateGapMs: 4_500,
+  rotateGapMs: 7_500,
   /** Bubbles delivered per tab session, excluding the one-time welcome. */
-  sessionSuggestionLimit: 4,
+  sessionSuggestionLimit: 10,
   /** After widget closes, wait before post-chat suggestions. */
   postChatDelayMs: 2_000,
   /** Personalized suggestions requested per pool refresh (3–5). */

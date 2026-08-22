@@ -1,45 +1,33 @@
 import { apiUrl } from "./network";
 import { tryGetAuthHeaders } from "./client";
 import { getOrCreateSessionId, getOrCreateVisitorId } from "./visitor";
-import type { TrackedPageSection } from "./page-context";
 
 export interface ProactiveSuggestionDto {
   id: string;
   text: string;
   source:
     | "welcome"
+    | "welcome_back"
     | "recent_conversation"
-    | "conversation_history"
-    | "section"
     | "page"
     | "knowledge";
-  /** Stable page-section key when the suggestion is grounded in visible content. */
-  contextKey?: string;
 }
 
 export interface FetchSuggestionsInput {
   pagePath?: string | null;
   pageUrl?: string | null;
-  pageSection?: TrackedPageSection | null;
   recentMessages?: Array<{ role: string; content: string }>;
-  mode?: "idle" | "post_chat";
+  mode?: "idle" | "post_chat" | "fallback";
   limit?: number;
   /** Already shown / dismissed ids for this visitor (demoted server-side). */
   excludeIds?: string[];
-  /** Section keys not yet shown on this page (return-visit personalization). */
-  unshownSectionKeys?: string[];
-  /** Behavioral trigger that fired this refresh (constrained enum). */
-  triggerType?: "idle" | "dwell";
+  /** True on the visitor's first-ever proactive session. */
+  isFirstVisit?: boolean;
+  /** True when a returning visitor starts a new tab session. */
+  isReturningSession?: boolean;
   visitorId?: string | null;
   sessionId?: string | null;
   signal?: AbortSignal;
-}
-
-export interface ProactiveSectionStateDto {
-  sectionKey: string;
-  total: number;
-  shown: number;
-  pending: number;
 }
 
 export async function fetchSuggestions(
@@ -47,7 +35,6 @@ export async function fetchSuggestions(
 ): Promise<{
   success: boolean;
   data: ProactiveSuggestionDto[];
-  sectionState?: ProactiveSectionStateDto | null;
   error?: string;
 }> {
   const auth = tryGetAuthHeaders({ "Content-Type": "application/json" });
@@ -67,13 +54,12 @@ export async function fetchSuggestions(
         pageUrl:
           input.pageUrl ??
           (typeof window !== "undefined" ? window.location.href : undefined),
-        pageSection: input.pageSection,
         recentMessages: input.recentMessages,
         mode: input.mode ?? "idle",
         limit: input.limit,
         excludeIds: input.excludeIds,
-        unshownSectionKeys: input.unshownSectionKeys,
-        triggerType: input.triggerType,
+        isFirstVisit: input.isFirstVisit,
+        isReturningSession: input.isReturningSession,
         visitorId,
         sessionId,
       }),
@@ -83,14 +69,12 @@ export async function fetchSuggestions(
     const json = (await response.json()) as {
       success?: boolean;
       data?: ProactiveSuggestionDto[];
-      sectionState?: ProactiveSectionStateDto | null;
       error?: string;
     };
 
     return {
       success: Boolean(json.success),
       data: Array.isArray(json.data) ? json.data : [],
-      sectionState: json.sectionState ?? null,
       error: json.error,
     };
   } catch (error) {

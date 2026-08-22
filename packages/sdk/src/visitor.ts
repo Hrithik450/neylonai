@@ -33,6 +33,7 @@ function randomUuid(): string {
 
 function canUseStorage(kind: "local" | "session"): boolean {
   if (typeof window === "undefined") return false;
+
   try {
     const store =
       kind === "local" ? window.localStorage : window.sessionStorage;
@@ -137,6 +138,7 @@ export function getChatParticipantId(
 /** Stable for the current tab session (sessionStorage). */
 export function getOrCreateSessionId(): string {
   if (memorySessionId) return memorySessionId;
+
   if (!canUseStorage("session")) {
     memorySessionId = randomUuid();
     return memorySessionId;
@@ -147,6 +149,7 @@ export function getOrCreateSessionId(): string {
       memorySessionId = existing;
       return existing;
     }
+
     const id = randomUuid();
     sessionStorage.setItem(SESSION_KEY, id);
     memorySessionId = id;

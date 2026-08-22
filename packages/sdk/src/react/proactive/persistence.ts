@@ -7,56 +7,28 @@ import {
   type SuggestionQueue,
 } from "./suggestion-queue";
 
-export interface PageVisitProgress {
-  knownSectionKeys: string[];
-  shownSectionKeys: string[];
-  visitComplete: boolean;
-}
-
-/** Counts how many suggestions have been shown per section scope ("path:sectionId"). */
-export type SectionShownCounts = Record<string, number>;
-
-/** Total predefined suggestions per section scope ("pagePath:sectionId"). */
-export type SectionTotalCounts = Record<string, number>;
-
 export interface ProactivePersistedState {
   visitorId: string;
   shownIds: string[];
-  welcomeShown: boolean;
-  initialSuggestionCount: number;
+  /** True after the visitor has seen their first welcome bubble. */
+  hasVisitedBefore: boolean;
   sessionBatchId: string | null;
   sessionSuggestionCount: number;
-  shownSectionKeys: string[];
-  /** How many suggestions shown per section scope ("pagePath:sectionId"). */
-  sectionShownCounts: SectionShownCounts;
-  /** Predefined suggestion count per section scope from the server. */
-  sectionTotalCounts: SectionTotalCounts;
-  visitProgressByPath: Record<string, PageVisitProgress>;
-  pool: ProactiveSuggestionDto[];
-  poolPagePath: string | null;
-  poolSectionKey: string | null;
-  poolMode: "idle" | "post_chat" | null;
-  poolFetchedAt: number;
-  /** FIFO delivery queue: section prompts before session batch. */
+  /** Path the current queue was seeded for (cleared on navigation). */
+  queuePagePath: string | null;
+  /** Conversation fingerprint already used for context-based suggestions. */
+  lastConsumedContextFingerprint: string | null;
   suggestionQueue: SuggestionQueue;
 }
 
 const EMPTY = (visitorId: string): ProactivePersistedState => ({
   visitorId,
   shownIds: [],
-  welcomeShown: false,
-  initialSuggestionCount: 0,
+  hasVisitedBefore: false,
   sessionBatchId: null,
   sessionSuggestionCount: 0,
-  shownSectionKeys: [],
-  sectionShownCounts: {},
-  sectionTotalCounts: {},
-  visitProgressByPath: {},
-  pool: [],
-  poolPagePath: null,
-  poolSectionKey: null,
-  poolMode: null,
-  poolFetchedAt: 0,
+  queuePagePath: null,
+  lastConsumedContextFingerprint: null,
   suggestionQueue: { ...EMPTY_SUGGESTION_QUEUE },
 });
 
@@ -74,7 +46,9 @@ export function loadProactiveState(): ProactivePersistedState {
   try {
     const raw = localStorage.getItem(storageKey(visitorId));
     if (!raw) return EMPTY(visitorId);
-    const parsed = JSON.parse(raw) as Partial<ProactivePersistedState>;
+    const parsed = JSON.parse(raw) as Partial<ProactivePersistedState> & {
+      welcomeShown?: boolean;
+    };
     if (parsed.visitorId && parsed.visitorId !== visitorId) {
       return EMPTY(visitorId);
     }
@@ -83,13 +57,12 @@ export function loadProactiveState(): ProactivePersistedState {
       shownIds: Array.isArray(parsed.shownIds)
         ? parsed.shownIds.filter((id): id is string => typeof id === "string")
         : [],
-      welcomeShown:
+      hasVisitedBefore:
+        parsed.hasVisitedBefore === true ||
         parsed.welcomeShown === true ||
-        (Array.isArray(parsed.shownIds) && parsed.shownIds.includes("welcome")),
-      initialSuggestionCount:
-        typeof parsed.initialSuggestionCount === "number"
-          ? Math.min(Math.max(parsed.initialSuggestionCount, 0), 2)
-          : 0,
+        (Array.isArray(parsed.shownIds) &&
+          (parsed.shownIds.includes("welcome") ||
+            parsed.shownIds.includes("welcome-back"))),
       sessionBatchId:
         typeof parsed.sessionBatchId === "string"
           ? parsed.sessionBatchId
@@ -101,72 +74,12 @@ export function loadProactiveState(): ProactivePersistedState {
               PROACTIVE_CONFIG.sessionSuggestionLimit,
             )
           : 0,
-      shownSectionKeys: Array.isArray(parsed.shownSectionKeys)
-        ? parsed.shownSectionKeys.filter(
-            (key): key is string => typeof key === "string",
-          )
-        : [],
-      sectionShownCounts:
-        parsed.sectionShownCounts &&
-        typeof parsed.sectionShownCounts === "object" &&
-        !Array.isArray(parsed.sectionShownCounts)
-          ? Object.fromEntries(
-              Object.entries(parsed.sectionShownCounts).filter(
-                ([, v]) => typeof v === "number",
-              ) as [string, number][],
-            )
-          : {},
-      sectionTotalCounts:
-        parsed.sectionTotalCounts &&
-        typeof parsed.sectionTotalCounts === "object" &&
-        !Array.isArray(parsed.sectionTotalCounts)
-          ? Object.fromEntries(
-              Object.entries(parsed.sectionTotalCounts).filter(
-                ([, v]) => typeof v === "number",
-              ) as [string, number][],
-            )
-          : {},
-      visitProgressByPath:
-        parsed.visitProgressByPath &&
-        typeof parsed.visitProgressByPath === "object"
-          ? Object.fromEntries(
-              Object.entries(parsed.visitProgressByPath).flatMap(
-                ([path, progress]) => {
-                  if (!progress || typeof progress !== "object") return [];
-                  const p = progress as Partial<PageVisitProgress>;
-                  return [
-                    [
-                      path,
-                      {
-                        knownSectionKeys: Array.isArray(p.knownSectionKeys)
-                          ? p.knownSectionKeys.filter(
-                              (k): k is string => typeof k === "string",
-                            )
-                          : [],
-                        shownSectionKeys: Array.isArray(p.shownSectionKeys)
-                          ? p.shownSectionKeys.filter(
-                              (k): k is string => typeof k === "string",
-                            )
-                          : [],
-                        visitComplete: p.visitComplete === true,
-                      },
-                    ],
-                  ];
-                },
-              ),
-            )
-          : {},
-      pool: Array.isArray(parsed.pool) ? parsed.pool.slice(0, 12) : [],
-      poolPagePath:
-        typeof parsed.poolPagePath === "string" ? parsed.poolPagePath : null,
-      poolSectionKey:
-        typeof parsed.poolSectionKey === "string" ? parsed.poolSectionKey : null,
-      poolMode:
-        parsed.poolMode === "post_chat" || parsed.poolMode === "idle"
-          ? parsed.poolMode
+      queuePagePath:
+        typeof parsed.queuePagePath === "string" ? parsed.queuePagePath : null,
+      lastConsumedContextFingerprint:
+        typeof parsed.lastConsumedContextFingerprint === "string"
+          ? parsed.lastConsumedContextFingerprint
           : null,
-      poolFetchedAt:
-        typeof parsed.poolFetchedAt === "number" ? parsed.poolFetchedAt : 0,
       suggestionQueue: parseSuggestionQueue(parsed.suggestionQueue),
     };
   } catch {
@@ -210,221 +123,12 @@ export function saveProactiveState(state: ProactivePersistedState): void {
   }
 }
 
-function sectionScopeKey(pagePath: string, sectionId: string): string {
-  return `${pagePath}:${sectionId}`;
-}
-
-export function isSectionFullyShown(
-  state: ProactivePersistedState,
-  pagePath: string,
-  sectionId: string,
+export function countsTowardSessionLimit(
+  source: ProactiveSuggestionDto["source"],
 ): boolean {
-  const path = pagePath.trim() || "/";
-  const scope = sectionScopeKey(path, sectionId);
-  const total = state.sectionTotalCounts[scope];
-  const shown = state.sectionShownCounts[scope] ?? 0;
-  if (typeof total === "number" && total > 0) {
-    return shown >= total;
-  }
-  return state.shownSectionKeys.includes(scope);
-}
-
-export function mergeKnownSectionKeys(
-  state: ProactivePersistedState,
-  pagePath: string,
-  sectionKeys: string[],
-): ProactivePersistedState {
-  const path = pagePath.trim() || "/";
-  const known = [
-    ...new Set([
-      ...(state.visitProgressByPath[path]?.knownSectionKeys ?? []),
-      ...sectionKeys.filter(Boolean),
-    ]),
-  ].sort();
-  if (!known.length) return state;
-  const progress = state.visitProgressByPath[path] ?? {
-    knownSectionKeys: [],
-    shownSectionKeys: [],
-    visitComplete: false,
-  };
-  return {
-    ...state,
-    visitProgressByPath: {
-      ...state.visitProgressByPath,
-      [path]: {
-        ...progress,
-        knownSectionKeys: known,
-        visitComplete:
-          known.length > 0 &&
-          known.every((key) => progress.shownSectionKeys.includes(key)),
-      },
-    },
-  };
-}
-
-export function markSectionSuggestionShown(
-  state: ProactivePersistedState,
-  pagePath: string,
-  sectionId: string,
-  knownSectionKeys: string[],
-  /** Fallback total when server count is unavailable. */
-  sectionPoolSize: number,
-): ProactivePersistedState {
-  const path = pagePath.trim() || "/";
-  const scope = sectionScopeKey(path, sectionId);
-
-  const prevCount = state.sectionShownCounts[scope] ?? 0;
-  const newCount = prevCount + 1;
-  const sectionShownCounts = { ...state.sectionShownCounts, [scope]: newCount };
-  const total =
-    state.sectionTotalCounts[scope] ??
-    (sectionPoolSize > 0 ? sectionPoolSize : newCount);
-  const sectionTotalCounts = {
-    ...state.sectionTotalCounts,
-    [scope]: Math.max(total, newCount),
-  };
-
-  const sectionExhausted = newCount >= sectionTotalCounts[scope]!;
-  const shownSectionKeys =
-    sectionExhausted && !state.shownSectionKeys.includes(scope)
-      ? [...state.shownSectionKeys, scope]
-      : state.shownSectionKeys;
-
-  const progress = state.visitProgressByPath[path] ?? {
-    knownSectionKeys: [],
-    shownSectionKeys: [],
-    visitComplete: false,
-  };
-  const known =
-    knownSectionKeys.length > 0
-      ? [...new Set(knownSectionKeys)]
-      : progress.knownSectionKeys;
-  const pathShown =
-    sectionExhausted && !progress.shownSectionKeys.includes(sectionId)
-      ? [...progress.shownSectionKeys, sectionId]
-      : progress.shownSectionKeys;
-  const visitComplete =
-    known.length > 0 && known.every((key) => pathShown.includes(key));
-
-  return {
-    ...state,
-    shownSectionKeys,
-    sectionShownCounts,
-    sectionTotalCounts,
-    visitProgressByPath: {
-      ...state.visitProgressByPath,
-      [path]: {
-        knownSectionKeys: known,
-        shownSectionKeys: pathShown,
-        visitComplete,
-      },
-    },
-  };
-}
-
-/** True once every registered section on this path has received a dwell seed. */
-export function isPageVisitComplete(
-  state: ProactivePersistedState,
-  pagePath: string,
-  knownSectionKeys: string[],
-): boolean {
-  const path = pagePath.trim() || "/";
-  const progress = state.visitProgressByPath[path];
-  if (progress?.visitComplete) return true;
-  const known = knownSectionKeys.length
-    ? knownSectionKeys
-    : (progress?.knownSectionKeys ?? []);
-  if (!known.length) return false;
-  const shown =
-    progress?.shownSectionKeys ??
-    state.shownSectionKeys
-      .filter((key) => key.startsWith(`${path}:`))
-      .map((key) => key.slice(path.length + 1));
-  return known.every((key) => shown.includes(key));
-}
-
-export function unshownSectionKeysForPath(
-  state: ProactivePersistedState,
-  pagePath: string,
-  knownSectionKeys: string[],
-): string[] {
-  const path = pagePath.trim() || "/";
-  const known = knownSectionKeys.length
-    ? knownSectionKeys
-    : (state.visitProgressByPath[path]?.knownSectionKeys ?? []);
-  const shown =
-    state.visitProgressByPath[path]?.shownSectionKeys ??
-    state.shownSectionKeys
-      .filter((key) => key.startsWith(`${path}:`))
-      .map((key) => key.slice(path.length + 1));
-  return known.filter((key) => !shown.includes(key));
-}
-
-export function recordSectionSuggestionTotals(
-  state: ProactivePersistedState,
-  pagePath: string,
-  sectionId: string,
-  total: number,
-): ProactivePersistedState {
-  if (!total || total < 1) return state;
-  const path = pagePath.trim() || "/";
-  const scope = sectionScopeKey(path, sectionId);
-  return {
-    ...state,
-    sectionTotalCounts: {
-      ...state.sectionTotalCounts,
-      [scope]: Math.max(state.sectionTotalCounts[scope] ?? 0, total),
-    },
-  };
-}
-
-export function pickNextSuggestion(
-  pool: ProactiveSuggestionDto[],
-  state: ProactivePersistedState,
-  pagePath: string | null,
-  options?: { preferWelcome?: boolean },
-): ProactiveSuggestionDto | null {
-  if (!pool.length) return null;
-
-  const tokens = (pagePath ?? "")
-    .toLowerCase()
-    .split(/[^a-z0-9]+/)
-    .filter((t) => t.length > 2);
-
-  // First bubble for this visitor is always the welcome.
-  if (options?.preferWelcome) {
-    const welcome = pool.find(
-      (s) => s.source === "welcome" && !state.shownIds.includes(s.id),
-    );
-    if (welcome) return welcome;
-  }
-
-  const candidates = pool.filter(
-    (s) => s.source !== "welcome" && !state.shownIds.includes(s.id),
+  return (
+    source !== "welcome" &&
+    source !== "welcome_back" &&
+    source !== "recent_conversation"
   );
-  if (!candidates.length) return null;
-
-  const ranked = [...candidates].sort((a, b) => {
-    const sourceBoost = (s: ProactiveSuggestionDto) => {
-      switch (s.source) {
-        case "recent_conversation":
-          return 40;
-        case "conversation_history":
-          return 25;
-        case "section":
-          return 20;
-        case "page":
-          return 15;
-        default:
-          return 0;
-      }
-    };
-    const pageBoost = (s: ProactiveSuggestionDto) => {
-      const hay = s.text.toLowerCase();
-      return tokens.reduce((n, t) => n + (hay.includes(t) ? 3 : 0), 0);
-    };
-    return sourceBoost(b) + pageBoost(b) - (sourceBoost(a) + pageBoost(a));
-  });
-
-  return ranked[0] ?? null;
 }

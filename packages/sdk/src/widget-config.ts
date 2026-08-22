@@ -155,8 +155,7 @@ export const DEFAULT_WIDGET_MESSAGES = {
   askSubtitle: "Instant answers from our knowledge",
   /** Home “Talk to the team” card. */
   feedbackTitle: "Talk to the team",
-  feedbackSubtitle:
-    "We escalate with full context when AI can't resolve it",
+  feedbackSubtitle: "We escalate with full context when AI can't resolve it",
   faqs: [
     {
       question: "What can this assistant help with?",
@@ -218,7 +217,7 @@ const DEFAULT_PROACTIVE = {
   enabled: true,
   soundEnabled: true,
   volume: 0.22,
-  initialIdleMs: 2_200,
+  initialIdleMs: 800,
   displayMs: 6_500,
   rotateGapMs: 4_500,
   postChatDelayMs: 2_000,
@@ -240,7 +239,11 @@ export const DEFAULT_WIDGET_CONFIG: StoredWidgetConfig = {
     faqs: [...DEFAULT_WIDGET_MESSAGES.faqs],
   },
   features: { ...DEFAULT_WIDGET_FEATURES },
-  website: { visiblePathPrefixes: [], hiddenPathPrefixes: [], autoOpenPathPrefixes: [] },
+  website: {
+    visiblePathPrefixes: [],
+    hiddenPathPrefixes: [],
+    autoOpenPathPrefixes: [],
+  },
   proactive: DEFAULT_PROACTIVE,
   defaultOpen: false,
 };
@@ -284,7 +287,8 @@ export function brandingColorsNeedMigration(
 }
 
 /** Deep-merge stored config onto defaults (org row may be partial). */
-const trimOr = (val: string | undefined, fallback: string) => val?.trim() || fallback;
+const trimOr = (val: string | undefined, fallback: string) =>
+  val?.trim() || fallback;
 
 const mergeBranding = (stored: any) => {
   const def = DEFAULT_WIDGET_CONFIG.branding!;
@@ -293,16 +297,33 @@ const mergeBranding = (stored: any) => {
     ...stored,
     font: { ...DEFAULT_WIDGET_FONT, ...def.font, ...stored.font },
     primaryTextColor: trimOr(stored.primaryTextColor, def.primaryTextColor!),
-    secondaryTextColor: trimOr(stored.secondaryTextColor, def.secondaryTextColor!),
+    secondaryTextColor: trimOr(
+      stored.secondaryTextColor,
+      def.secondaryTextColor!,
+    ),
     tabActiveColor: trimOr(stored.tabActiveColor, def.tabActiveColor!),
     accentColor: trimOr(stored.accentColor, def.accentColor!),
     gradientFrom: trimOr(stored.gradientFrom, def.gradientFrom!),
     gradientTo: trimOr(stored.gradientTo, def.gradientTo!),
-    primaryTextBackground: trimOr(stored.primaryTextBackground, stored.primaryTextColor) || def.primaryTextBackground,
-    askButtonTextColor: trimOr(stored.askButtonTextColor, def.askButtonTextColor!),
-    secondaryTextBackground: trimOr(stored.secondaryTextBackground, def.secondaryTextBackground!),
-    aiMessageBackground: trimOr(stored.aiMessageBackground, def.aiMessageBackground!),
-    humanMessageBackground: trimOr(stored.humanMessageBackground, def.humanMessageBackground!),
+    primaryTextBackground:
+      trimOr(stored.primaryTextBackground, stored.primaryTextColor) ||
+      def.primaryTextBackground,
+    askButtonTextColor: trimOr(
+      stored.askButtonTextColor,
+      def.askButtonTextColor!,
+    ),
+    secondaryTextBackground: trimOr(
+      stored.secondaryTextBackground,
+      def.secondaryTextBackground!,
+    ),
+    aiMessageBackground: trimOr(
+      stored.aiMessageBackground,
+      def.aiMessageBackground!,
+    ),
+    humanMessageBackground: trimOr(
+      stored.humanMessageBackground,
+      def.humanMessageBackground!,
+    ),
     colorsVersion: stored.colorsVersion,
   };
 };
@@ -310,13 +331,18 @@ const mergeBranding = (stored: any) => {
 const cleanFaqs = (faqs: any) => {
   const raw = Array.isArray(faqs) ? faqs : [];
   const cleaned = raw
-    .map(f => ({ question: f?.question?.trim() || "", answer: f?.answer?.trim() || "" }))
-    .filter(f => f.question && f.answer)
+    .map((f) => ({
+      question: f?.question?.trim() || "",
+      answer: f?.answer?.trim() || "",
+    }))
+    .filter((f) => f.question && f.answer)
     .slice(0, 4);
   return cleaned.length ? cleaned : [...DEFAULT_WIDGET_CONFIG.messages!.faqs!];
 };
 
-export function mergeWidgetConfig(stored?: StoredWidgetConfig | null): StoredWidgetConfig {
+export function mergeWidgetConfig(
+  stored?: StoredWidgetConfig | null,
+): StoredWidgetConfig {
   const s = stored ?? {};
   const sb = s.branding ?? {};
   const sm = s.messages ?? {};
@@ -333,12 +359,23 @@ export function mergeWidgetConfig(stored?: StoredWidgetConfig | null): StoredWid
     messages: {
       ...def.messages,
       ...sm,
-      introMessages: sm.introMessages?.length ? sm.introMessages : def.messages?.introMessages,
-      suggestedQuestions: sm.suggestedQuestions?.length ? sm.suggestedQuestions : def.messages?.suggestedQuestions,
+      introMessages: sm.introMessages?.length
+        ? sm.introMessages
+        : def.messages?.introMessages,
+      suggestedQuestions: sm.suggestedQuestions?.length
+        ? sm.suggestedQuestions
+        : def.messages?.suggestedQuestions,
       faqs: cleanFaqs(sm.faqs),
       faqsInitialized: sm.faqsInitialized === true,
-      feedbackTitle: !feedbackTitle || feedbackTitle === "Share Your Feedback" ? def.messages?.feedbackTitle : feedbackTitle,
-      feedbackSubtitle: !feedbackSubtitle || feedbackSubtitle === "Help us improve with your feedback." ? def.messages?.feedbackSubtitle : feedbackSubtitle,
+      feedbackTitle:
+        !feedbackTitle || feedbackTitle === "Share Your Feedback"
+          ? def.messages?.feedbackTitle
+          : feedbackTitle,
+      feedbackSubtitle:
+        !feedbackSubtitle ||
+        feedbackSubtitle === "Help us improve with your feedback."
+          ? def.messages?.feedbackSubtitle
+          : feedbackSubtitle,
     },
     features: { ...def.features, ...s.features },
     website: { ...def.website, ...s.website },

@@ -5,7 +5,11 @@ import {
   SECTION_MIN_TOKENS,
   type WebsitePageSection,
 } from "@neylonai/integrations/website";
-import { buildWebsiteChunkParts, chunkPlainText } from "./ingest";
+import {
+  buildWebsiteChunkParts,
+  chunkPlainText,
+  prepareWebsitePageSections,
+} from "./ingest";
 
 describe("knowledge chunking", () => {
   it("merges undersized website sections into one chunk part", () => {
@@ -32,6 +36,44 @@ describe("knowledge chunking", () => {
     for (const section of sections) {
       expect(parts[0]?.content).toContain(section.content);
     }
+  });
+
+  it("preserves DOM section ids for page-section storage", () => {
+    const sections: WebsitePageSection[] = [
+      {
+        sectionId: "home-overview",
+        heading: "Know why visitors leave",
+        content: "Short hero copy for the landing page.",
+        suggestions: [],
+      },
+      {
+        sectionId: "product-showcase",
+        heading: "See everything at a glance",
+        content: "Short product showcase copy for the landing page.",
+        suggestions: [],
+      },
+      {
+        sectionId: "features-overview",
+        heading: "Catch visitors",
+        content: "Short features copy for the landing page.",
+        suggestions: [],
+      },
+    ];
+
+    const pageSections = prepareWebsitePageSections(sections, "dom");
+    expect(pageSections.map((section) => section.sectionId)).toEqual([
+      "home-overview",
+      "product-showcase",
+      "features-overview",
+    ]);
+    expect(
+      pageSections.every((section) => section.suggestions.length >= 2),
+    ).toBe(true);
+
+    // Chunks may still merge for embeddings — that must not affect stored keys.
+    expect(buildWebsiteChunkParts(pageSections).length).toBeLessThan(
+      pageSections.length,
+    );
   });
 
   it("keeps website chunks at or above the section token floor", () => {

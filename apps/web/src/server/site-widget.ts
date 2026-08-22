@@ -6,9 +6,6 @@
  * No special admin / auto-mint path.
  */
 export function getSiteWidgetApiKey(): string | null {
-  const key =
-    process.env.NEXT_PUBLIC_NEYLONAI_API_KEY?.trim() ||
-    process.env.NEYLONAI_SITE_API_KEY?.trim() ||
-    null;
+  const key = process.env.NEXT_PUBLIC_NEYLONAI_API_KEY?.trim() || null;
   return key || null;
 }

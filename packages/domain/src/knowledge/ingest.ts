@@ -18,6 +18,7 @@ import { withGoogleApiRetry } from "@neylonai/integrations";
 import {
   enforceSectionSizeLimit,
   hashPageContent,
+  withFallbackSuggestions,
   type ScrapeProvider,
   type WebsitePageSection,
 } from "@neylonai/integrations/website";
@@ -27,6 +28,37 @@ import {
   setSourceAgents,
 } from "./service";
 import { MAIN_AGENT_KEY } from "../agents/org-agents.types";
+
+export type WebsiteSectioner = "dom" | "overview";
+
+/**
+ * Page-section rows must keep DOM tracker ids so dwell can resolve seeds.
+ * Size merging is only for embedding chunks ({@link buildWebsiteChunkParts}).
+ */
+export function prepareWebsitePageSections(
+  sections: WebsitePageSection[],
+  sectioner: WebsiteSectioner,
+): WebsitePageSection[] {
+  if (sectioner === "dom") {
+    return withFallbackSuggestions(
+      sections
+        .map((section) => {
+          const content = section.content.replace(/\n{3,}/g, "\n\n").trim();
+          if (!content) return null;
+          const sectionId = section.sectionId.trim().slice(0, 96);
+          if (!sectionId) return null;
+          return {
+            sectionId,
+            heading: section.heading.trim() || sectionId,
+            content,
+            suggestions: section.suggestions.slice(0, 4),
+          };
+        })
+        .filter((section): section is WebsitePageSection => section != null),
+    );
+  }
+  return enforceSectionSizeLimit(sections);
+}
 
 const APPROX_CHARS_PER_TOKEN = 4;
 /** Target chunk length in tokens (approx via chars). */
@@ -239,8 +271,6 @@ export async function ingestDocumentsForSource(
   return { documentCount, chunkCount };
 }
 
-export type WebsiteSectioner = "dom" | "overview";
-
 export type WebsitePageIngestInput = {
   organizationId: string;
   sourceId: string;
@@ -297,8 +327,12 @@ export async function ingestWebsitePage(
   input: WebsitePageIngestInput,
 ): Promise<{ skipped: boolean; reason?: "hash"; chunkCount: number }> {
   const path = input.path.trim() || "/";
-  const sections = enforceSectionSizeLimit(input.sections);
-  if (sections.length === 0) {
+  // Keep DOM tracker keys intact for proactive dwell. Chunk merging stays separate.
+  const pageSections = prepareWebsitePageSections(
+    input.sections,
+    input.sectioner,
+  );
+  if (pageSections.length === 0) {
     throw new Error("No ingestible website sections found.");
   }
   const [existing] = await db
@@ -327,29 +361,43 @@ export async function ingestWebsitePage(
     typeof existing?.rawContent === "string" &&
     existing.rawContent.length > 0
   ) {
+    const chunkParts = buildWebsiteChunkParts(pageSections);
     const storedChunks = await db
       .select({ content: knowledgeChunks.content })
       .from(knowledgeChunks)
       .where(eq(knowledgeChunks.document_id, existing.id))
       .orderBy(asc(knowledgeChunks.chunk_index));
     const chunksAligned =
-      storedChunks.length === sections.length &&
+      storedChunks.length === chunkParts.length &&
       storedChunks.every(
-        (chunk, index) => chunk.content === sections[index]?.content,
+        (chunk, index) => chunk.content === chunkParts[index]?.content,
       );
+
+    const storedSectionRows = await db
+      .select({
+        sectionKey: knowledgePageSections.section_key,
+      })
+      .from(knowledgePageSections)
+      .where(eq(knowledgePageSections.document_id, existing.id));
+    const storedKeys = storedSectionRows
+      .map((row) => row.sectionKey)
+      .sort()
+      .join("|");
+    const nextKeys = pageSections
+      .map((section) => section.sectionId)
+      .sort()
+      .join("|");
+    const sectionsAligned =
+      storedKeys === nextKeys && storedSectionRows.length > 0;
+
     if (chunksAligned) {
-      const [storedSection] = await db
-        .select({ id: knowledgePageSections.id })
-        .from(knowledgePageSections)
-        .where(eq(knowledgePageSections.document_id, existing.id))
-        .limit(1);
-      if (!storedSection) {
+      if (!sectionsAligned) {
         await replacePageSections({
           organizationId: input.organizationId,
           documentId: existing.id,
           provider: input.provider,
           sectioner: input.sectioner,
-          sections,
+          sections: pageSections,
         });
       }
       await db
@@ -360,9 +408,10 @@ export async function ingestWebsitePage(
         .where(eq(knowledgeDocuments.id, existing.id));
       return { skipped: true, reason: "hash", chunkCount: 0 };
     }
+    // Content hash matched but chunk layout changed — rewrite below.
   }
 
-  const chunkParts = buildWebsiteChunkParts(sections);
+  const chunkParts = buildWebsiteChunkParts(pageSections);
   const vectors = await embedDocuments(chunkParts.map((part) => part.content));
   const externalDocId =
     `website:${Buffer.from(input.url).toString("base64url").slice(0, 80)}`.slice(
@@ -419,7 +468,7 @@ export async function ingestWebsitePage(
       .delete(knowledgePageSections)
       .where(eq(knowledgePageSections.document_id, documentId));
     await tx.insert(knowledgePageSections).values(
-      sections.map((section, position) => ({
+      pageSections.map((section, position) => ({
         organization_id: input.organizationId,
         document_id: documentId,
         section_key: section.sectionId,

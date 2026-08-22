@@ -126,6 +126,7 @@ export function ProductShowcase() {
                     src={active.dashboardImage}
                     alt={active.title}
                     fill
+                    sizes="(max-width: 1024px) 80vw, 560px"
                     className="object-cover object-top"
                   />
                 ) : (
@@ -142,8 +143,8 @@ export function ProductShowcase() {
                 alt="Dashboard"
                 width={1536}
                 height={1024}
+                sizes="(max-width: 1024px) 90vw, 640px"
                 className="w-full h-auto relative z-10"
-                priority
               />
             </div>
 
@@ -172,6 +173,8 @@ export function ProductShowcase() {
                   src="/images/widget-preview.png"
                   alt="Support widget"
                   fill
+                  sizes="(max-width: 1024px) 30vw, 220px"
+                  loading="lazy"
                   className="object-fill"
                 />
               </div>
@@ -180,6 +183,8 @@ export function ProductShowcase() {
                 alt="Support widget on phone"
                 width={1034}
                 height={1521}
+                sizes="(max-width: 1024px) 30vw, 220px"
+                loading="lazy"
                 className="w-full h-auto relative z-10"
               />
             </div>

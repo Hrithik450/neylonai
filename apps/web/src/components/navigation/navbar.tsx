@@ -259,7 +259,7 @@ export function Navbar() {
             style={{ textDecoration: "none" }}
           >
             <Image
-              src="/images/neylonai.jpg"
+              src="/images/neylonai-logo.jpg"
               alt="Neylon AI"
               width={32}
               height={32}

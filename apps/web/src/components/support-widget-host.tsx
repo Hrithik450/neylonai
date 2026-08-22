@@ -18,6 +18,7 @@ export function SupportWidgetHost({
 } = {}) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+
   const { user } = useSessionView();
   const { setStatus, setMessage } = useErrorStore();
 
@@ -66,6 +67,7 @@ export function SupportWidgetHost({
   if (pathname?.startsWith("/dashboard") || pathname?.startsWith("/admin")) {
     return null;
   }
+
   if (!apiKey) {
     if (process.env.NODE_ENV === "development") {
       console.warn(

@@ -47,7 +47,7 @@ export const metadata: Metadata = {
       "Know why visitors leave. Engage them sooner. Real-time visitor insights and proactive AI conversations that turn traffic into engagement.",
     images: [
       {
-        url: "/opengraph-image.png",
+        url: "/images/opengraph-neylonai.png",
         width: 1200,
         height: 630,
         alt: "Neylon AI - AI-Powered Customer Engagement",
@@ -59,7 +59,7 @@ export const metadata: Metadata = {
     title: "Neylon AI - AI-Powered Customer Engagement Platform",
     description:
       "Know why visitors leave. Engage them sooner. Real-time visitor insights and proactive AI conversations.",
-    images: ["/twitter-image.png"],
+    images: ["/images/opengraph-neylonai.png"],
     creator: "@neylonai",
   },
   robots: {
@@ -74,11 +74,10 @@ export const metadata: Metadata = {
     },
   },
   icons: {
-    icon: "/favicon.ico",
-    shortcut: "/favicon.ico",
-    apple: "/apple-touch-icon.png",
+    icon: "/images/favicon.jpg",
+    shortcut: "/images/favicon.jpg",
+    apple: "/images/neylonai-logo.jpg",
   },
-  manifest: "/site.webmanifest",
   alternates: {
     canonical: "/",
   },

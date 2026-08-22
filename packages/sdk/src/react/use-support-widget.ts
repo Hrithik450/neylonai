@@ -8,9 +8,6 @@ import {
 import { useWidgetNavigation } from "./hooks/use-widget-navigation";
 import type { WidgetScreenType, WidgetTabType } from "./constants";
 
-/**
- * Imperative / host API for opening the widget from nav, hero CTAs, etc.
- */
 export function useSupportWidget() {
   const { isOpen, setIsOpen, setCollapse } = useWidgetToggleStore();
   const { switchTab } = useWidgetNavigationStore();

@@ -34,18 +34,28 @@ import type {
   KnowledgeSearchProvider,
 } from "../types";
 
+/** Query expansion only helps once the corpus is large enough to justify it. */
+const QUERY_EXPANSION_MIN_CHUNKS = 100;
+/** Hard cap on parallel vector searches when expansion is enabled. */
+const MAX_SEARCH_QUERIES = 2;
+
 function turnRagBudget() {
-  const billing = getAgentTurnContext().billing;
+  const turn = getAgentTurnContext();
+  const billing = turn.billing;
   const klass = workloadClassOrDefault(
     billing?.workloadClass ?? billing?.estimate?.estimatedClass ?? "standard",
   );
   const budget = getWorkloadBudget(klass);
+  const chunkCount = turn.knowledgeChunkCount;
+  const corpusLargeEnoughForExpansion =
+    chunkCount != null && chunkCount > QUERY_EXPANSION_MIN_CHUNKS;
   return {
     klass,
     maxSearches: klass === "simple" ? 1 : 2,
     maxChunks: budget.ragChunks,
     maxChars: budget.ragChars,
-    allowQueryExpansion: budget.allowQueryExpansion,
+    allowQueryExpansion:
+      budget.allowQueryExpansion && corpusLargeEnoughForExpansion,
   };
 }
 
@@ -113,7 +123,7 @@ async function expandQueries(question: string): Promise<string[]> {
       .split("\n")
       .map((q) => q.trim())
       .filter(Boolean)
-      .slice(0, 3);
+      .slice(0, MAX_SEARCH_QUERIES - 1);
   });
 }
 
@@ -214,7 +224,7 @@ export const postgresKnowledgeSearchProvider: KnowledgeSearchProvider = {
         ? await expandQueries(query)
         : [];
       const allQueries = rag.allowQueryExpansion
-        ? [query, ...expandedQueries].slice(0, 3)
+        ? [query, ...expandedQueries].slice(0, MAX_SEARCH_QUERIES)
         : [query];
       const pagePath = getAgentTurnContext().pagePath?.trim() || null;
 

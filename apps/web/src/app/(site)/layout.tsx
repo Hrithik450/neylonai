@@ -11,6 +11,7 @@ import {
   OrganizationJsonLd,
   WebsiteJsonLd,
   SoftwareApplicationJsonLd,
+  FAQJsonLd,
 } from "../jsonld";
 
 import { LayoutWrapper } from "../layout-wrapper";
@@ -21,37 +22,34 @@ export default async function SiteLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const googleClientId =
-    process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ||
-    process.env.GOOGLE_CLIENT_ID ||
-    "";
+  const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
+
   // Same as a customer embed: publishable key for this deployment’s org.
   const siteApiKey = getSiteWidgetApiKey();
   const initialUser = await getLandingUser();
 
-  const body = (
-    <LayoutWrapper>
-      <OrganizationJsonLd />
-      <WebsiteJsonLd />
-      <SoftwareApplicationJsonLd />
-      <SessionViewProvider initialUser={initialUser}>
-        <TrackingProvider>
-          <Suspense fallback={null}>
-            <div className={landingFontClassName}>
-              <Navbar />
-              {children}
-              <OnboardingOverlay />
-            </div>
-            <SupportWidgetHost apiKey={siteApiKey} />
-          </Suspense>
-        </TrackingProvider>
-      </SessionViewProvider>
-    </LayoutWrapper>
-  );
+  return (
+    <GoogleOAuthProvider clientId={googleClientId}>
+      <LayoutWrapper>
+        <OrganizationJsonLd />
+        <WebsiteJsonLd />
+        <SoftwareApplicationJsonLd />
+        <FAQJsonLd />
 
-  return googleClientId ? (
-    <GoogleOAuthProvider clientId={googleClientId}>{body}</GoogleOAuthProvider>
-  ) : (
-    body
+        <SessionViewProvider initialUser={initialUser}>
+          <TrackingProvider>
+            <Suspense fallback={null}>
+              <div className={landingFontClassName}>
+                <Navbar />
+                {children}
+                <OnboardingOverlay />
+              </div>
+
+              <SupportWidgetHost apiKey={siteApiKey} />
+            </Suspense>
+          </TrackingProvider>
+        </SessionViewProvider>
+      </LayoutWrapper>
+    </GoogleOAuthProvider>
   );
 }

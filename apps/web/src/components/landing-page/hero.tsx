@@ -152,9 +152,9 @@ export function Hero() {
 
       {/* ── Illustration ─────────────────────────────────── */}
       <motion.div
-        initial={{ opacity: 0, y: 30 }}
+        initial={{ opacity: 1, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.65, delay: 0.38 }}
+        transition={{ duration: 0.45, delay: 0.12 }}
         style={{ marginTop: 32, maxWidth: 1200 }}
         className="flex items-end overflow-hidden lg:flex-1 lg:min-h-0 w-full md:w-[68%] lg:w-full"
       >
@@ -163,6 +163,7 @@ export function Hero() {
           alt="Teams using Neylon AI"
           width={1200}
           height={500}
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 68vw, 1200px"
           className="w-full h-auto object-contain object-bottom"
           style={{ maxHeight: "110%" }}
           priority

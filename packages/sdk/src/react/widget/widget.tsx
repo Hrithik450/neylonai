@@ -113,7 +113,11 @@ export function Widget() {
   const isRootScreen = tabStacks[activeTab]?.stack.length === 1;
   const currentScreen = tabStacks[activeTab]?.stack.at(-1);
   const ActiveScreen = currentScreen ? getScreenComponent(activeTab, currentScreen.name) : null;
-  const showTabBar = isRootScreen && enabledTabs.length > 1;
+  // Chat is never a tab-bar surface — even if it is alone on the stack.
+  const onChatScreen =
+    currentScreen?.name === WidgetScreens.MessagesScreens.Messages;
+  const showTabBar =
+    isRootScreen && !onChatScreen && enabledTabs.length > 1;
 
   return (
     <div
@@ -135,7 +139,7 @@ export function Widget() {
         {ActiveScreen && <ActiveScreen {...currentScreen?.props} />}
       </div>
 
-      {isRootScreen ? <WidgetPoweredBy /> : null}
+      {isRootScreen && !onChatScreen ? <WidgetPoweredBy /> : null}
 
       {showTabBar ? (
         <nav className="border-t flex justify-around px-1">

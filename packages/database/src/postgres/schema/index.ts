@@ -127,21 +127,44 @@ export const organizationParticipantRelations = relations(
   }),
 );
 
-export const organizationRelations = relations(organizations, ({ many }) => ({
+export const organizationRelations = relations(organizations, ({ many, one }) => ({
   knowledgeSources: many(knowledgeSources),
   accounts: many(organizationAccounts),
   participants: many(organizationParticipants),
   threads: many(threads),
   subscriptions: many(subscriptions),
   apiKeys: many(apiKeys),
-  widgetConfigs: many(widgetConfigs),
+  widgetConfig: one(widgetConfigs, {
+    fields: [organizations.id],
+    references: [widgetConfigs.organization_id],
+  }),
   usageEvents: many(usageEvents),
   organizationAgents: many(organizationAgents),
   integrations: many(organizationIntegrations),
   billingEvents: many(billingEvents),
-  settings: many(organizationSettings),
+  settings: one(organizationSettings, {
+    fields: [organizations.id],
+    references: [organizationSettings.organization_id],
+  }),
   websiteCrawlJobs: many(websiteCrawlJobs),
 }));
+
+export const widgetConfigRelations = relations(widgetConfigs, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [widgetConfigs.organization_id],
+    references: [organizations.id],
+  }),
+}));
+
+export const organizationSettingsRelations = relations(
+  organizationSettings,
+  ({ one }) => ({
+    organization: one(organizations, {
+      fields: [organizationSettings.organization_id],
+      references: [organizations.id],
+    }),
+  }),
+);
 
 export const organizationAccountRelations = relations(
   organizationAccounts,

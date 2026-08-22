@@ -15,8 +15,8 @@ export interface SectionObserveOptions {
   intersectionRatio?: number;
 }
 
-const DEFAULT_DWELL_MS = 2_500;
-const DEFAULT_RATIO = 0.35;
+const DEFAULT_DWELL_MS = 2_000;
+const DEFAULT_RATIO = 0.1;
 
 type QualifiedListener = (section: TrackedPageSection) => void;
 
@@ -33,7 +33,11 @@ function scopeKey(section: { sectionId: string; pagePath: string }): string {
 }
 
 function cleanSectionId(value: string): string {
-  return value.trim().toLowerCase().replace(/[^a-z0-9_.:/-]+/g, "-").slice(0, 96);
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_.:/-]+/g, "-")
+    .slice(0, 96);
 }
 
 /** Subscribe to sections that passed the dwell threshold (triggers seed fetch). */

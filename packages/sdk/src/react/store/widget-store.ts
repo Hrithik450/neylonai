@@ -116,8 +116,13 @@ export const useWidgetNavigationStore = create<WidgetNavigationStore>()(
         activeTab: WidgetTabs.Messages,
         tabStacks: {
           ...state.tabStacks,
+          // Keep Threads under Messages so chat is not a root screen
+          // (root screens show the bottom tab bar).
           [WidgetTabs.Messages]: {
-            stack: [{ name: WidgetScreens.MessagesScreens.Messages }],
+            stack: [
+              { name: WidgetScreens.MessagesScreens.Threads },
+              { name: WidgetScreens.MessagesScreens.Messages },
+            ],
           },
         },
       })),

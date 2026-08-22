@@ -314,18 +314,34 @@ function buildAgentState(
   return { messages };
 }
 
+function fallbackThreadTitle(userInput: string): string {
+  const trimmed = userInput.trim().replace(/\s+/g, " ");
+  if (!trimmed) return "New Chat";
+  return trimmed.length <= 60 ? trimmed : `${trimmed.slice(0, 57)}...`;
+}
+
 async function createThread(
   organizationId: string,
   participantId: string,
   userInput: string,
 ) {
-  const title = await generateThreadTitle(userInput);
+  const title = fallbackThreadTitle(userInput);
   const result = await ThreadsService.createThread({
     organization_id: organizationId,
     participant_id: participantId,
     title,
   });
   if (!result.success || !result.data) return null;
+
+  // Title polish is nice-to-have — don't block the first answer on it.
+  void generateThreadTitle(userInput)
+    .then(async (generated) => {
+      if (!generated || generated === title || !result.data?.id) return;
+      await ThreadsService.updateThread(result.data.id, { title: generated });
+    })
+    .catch(() => {
+      // Keep the fallback title.
+    });
 
   return result.data;
 }
@@ -528,22 +544,6 @@ async function* streamConversationTurn(
     // LLM tip refresh runs in parallel with reframe + routing (hard timeout inside).
     const tipsRefresh = startThinkingTipsRefresh(userInput);
 
-    let effectiveInput = userInput;
-    if (conversationHistory.length > 0) {
-      const reframed = await reframeQuery(userInput, conversationHistory);
-      effectiveInput = reframed.optimized_query ?? userInput;
-      console.log(
-        `[memory] is_followup=${reframed.is_followup} | optimized: "${effectiveInput}"`,
-      );
-    }
-
-    const tools = resolveAgentTools(activeAgent, caps);
-    const toolNames = tools.map((tool) =>
-      typeof (tool as { name?: string }).name === "string"
-        ? (tool as { name: string }).name
-        : "",
-    ).filter(Boolean);
-
     const {
       emptyOrgWorkloadSummary,
       getOrgWorkloadSummary,
@@ -557,9 +557,35 @@ async function* streamConversationTurn(
       normalizePlanId,
       ApiAuthError,
     } = await import("@neylonai/domain/billing");
-    const workload = organizationId
-      ? await getOrgWorkloadSummary(organizationId)
-      : emptyOrgWorkloadSummary();
+
+    const tools = resolveAgentTools(activeAgent, caps);
+    const toolNames = tools.map((tool) =>
+      typeof (tool as { name?: string }).name === "string"
+        ? (tool as { name: string }).name
+        : "",
+    ).filter(Boolean);
+
+    const [reframeResult, workload] = await Promise.all([
+      conversationHistory.length > 0
+        ? reframeQuery(userInput, conversationHistory)
+        : Promise.resolve(null),
+      organizationId
+        ? getOrgWorkloadSummary(organizationId)
+        : Promise.resolve(emptyOrgWorkloadSummary()),
+    ]);
+
+    let effectiveInput = userInput;
+    if (reframeResult) {
+      effectiveInput = reframeResult.optimized_query ?? userInput;
+      console.log(
+        `[memory] is_followup=${reframeResult.is_followup} | optimized: "${effectiveInput}"`,
+      );
+    }
+
+    if (organizationId) {
+      patchAgentTurnContext({ knowledgeChunkCount: workload.chunkCount });
+    }
+
     const conversation = snapshotConversationWorkload(
       conversationHistory,
       effectiveInput,
@@ -623,6 +649,16 @@ async function* streamConversationTurn(
       }
     }
 
+    const pageSectionPromise =
+      organizationId && pagePath && pageSection
+        ? resolvePageSectionContext({
+            organizationId,
+            agentId: activeAgent.id,
+            pagePath,
+            section: pageSection,
+          })
+        : Promise.resolve(null);
+
     let route = await routeModel({
       question: effectiveInput,
       availableTools: toolCostMetadata(toolNames),
@@ -663,7 +699,10 @@ async function* streamConversationTurn(
       `[model-router] requested=${route.requestedClass ?? route.workloadClass} effective=${route.workloadClass} billable=${route.billable} billingMode=${route.billingMode ?? "included"} complexity=${route.complexity} model=${route.model} source=${route.source} credits=${route.estimatedCredits}${route.downgradedFrom ? ` downgradedFrom=${route.downgradedFrom}` : ""}`,
     );
 
-    const upgraded = await tipsRefresh;
+    const [upgraded, resolvedPageSection] = await Promise.all([
+      tipsRefresh,
+      pageSectionPromise,
+    ]);
     if (upgraded?.tips.length) {
       yield tipEvent(upgraded.tips, "llm");
       console.log(`[thinking-tips] upgraded via llm (${upgraded.tips.length})`);
@@ -676,15 +715,6 @@ async function* streamConversationTurn(
       maxToolCalls: budget.totalToolCalls,
     });
 
-    const resolvedPageSection =
-      organizationId && pagePath && pageSection
-        ? await resolvePageSectionContext({
-            organizationId,
-            agentId: activeAgent.id,
-            pagePath,
-            section: pageSection,
-          })
-        : null;
     const agentState = buildAgentState(
       activeAgent.systemPrompt,
       effectiveInput,

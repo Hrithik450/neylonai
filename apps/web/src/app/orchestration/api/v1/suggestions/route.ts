@@ -60,19 +60,14 @@ export async function POST(req: NextRequest) {
     const body = (await req.json().catch(() => ({}))) as {
       pagePath?: string;
       pageUrl?: string;
-      pageSection?: {
-        sectionId?: string;
-        sectionLabel?: string;
-        pagePath?: string;
-      };
       recentMessages?: Array<{ role: string; content: string }>;
-      mode?: "idle" | "post_chat";
+      mode?: "idle" | "post_chat" | "fallback";
       limit?: number;
       visitorId?: string;
       sessionId?: string;
       excludeIds?: string[];
-      unshownSectionKeys?: string[];
-      triggerType?: "idle" | "scroll_depth" | "dwell" | "exit_intent";
+      isFirstVisit?: boolean;
+      isReturningSession?: boolean;
     };
 
     const visitorId =
@@ -85,36 +80,9 @@ export async function POST(req: NextRequest) {
           .map((id) => id.slice(0, 64))
           .slice(0, 40)
       : [];
-    const unshownSectionKeys = Array.isArray(body.unshownSectionKeys)
-      ? body.unshownSectionKeys
-          .filter((id): id is string => typeof id === "string")
-          .map((id) => id.trim().toLowerCase().slice(0, 96))
-          .filter((id) => /^[a-z0-9_.:/-]+$/.test(id))
-          .slice(0, 12)
-      : [];
 
     const requestId = randomUUID();
     const pagePath = normalizePagePath(body.pagePath);
-    const trackedPagePath = normalizePagePath(body.pageSection?.pagePath);
-    const rawSectionId =
-      typeof body.pageSection?.sectionId === "string"
-        ? body.pageSection.sectionId.trim().toLowerCase().slice(0, 96)
-        : "";
-    const pageSection =
-      body.pageSection &&
-      (!trackedPagePath || trackedPagePath === pagePath) &&
-      /^[a-z0-9_.:/-]+$/.test(rawSectionId)
-        ? {
-            sectionId: rawSectionId,
-            sectionLabel:
-              typeof body.pageSection.sectionLabel === "string"
-                ? body.pageSection.sectionLabel
-                    .replace(/\s+/g, " ")
-                    .trim()
-                    .slice(0, 160)
-                : null,
-          }
-        : null;
 
     const built = await runWithAgentTurnContext(
       {
@@ -127,26 +95,24 @@ export async function POST(req: NextRequest) {
           organizationId: scope.organizationId,
           pagePath,
           pageUrl: body.pageUrl ?? null,
-          pageSection,
           recentMessages: Array.isArray(body.recentMessages)
             ? body.recentMessages.slice(-10).map((m) => ({
                 role: String(m.role ?? "user"),
                 content: String(m.content ?? "").slice(0, 500),
               }))
             : [],
-          mode: body.mode === "post_chat" ? "post_chat" : "idle",
+          mode:
+            body.mode === "post_chat"
+              ? "post_chat"
+              : body.mode === "fallback"
+                ? "fallback"
+                : "idle",
           limit: body.limit,
           visitorId,
           sessionId,
           excludeIds,
-          unshownSectionKeys,
-          triggerType:
-            body.triggerType === "scroll_depth" ||
-            body.triggerType === "dwell" ||
-            body.triggerType === "exit_intent" ||
-            body.triggerType === "idle"
-              ? body.triggerType
-              : "idle",
+          isFirstVisit: body.isFirstVisit === true,
+          isReturningSession: body.isReturningSession === true,
         }),
     );
 
@@ -158,14 +124,12 @@ export async function POST(req: NextRequest) {
       metadata: {
         count: built.suggestions.length,
         mode: body.mode ?? "idle",
-        triggerType: body.triggerType ?? "idle",
       },
     });
 
     return NextResponse.json({
       success: true,
       data: built.suggestions,
-      sectionState: built.sectionState ?? null,
     });
   } catch (error) {
     if (error instanceof ApiAuthError) {

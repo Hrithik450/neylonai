@@ -25,7 +25,6 @@ export const useSessionStore = create<SessionStore>()(
     user: null,
     isLoading: false,
     isAuthenticated: false,
-    sessionChecked: false,
 
     setUser: (user) =>
       set({
@@ -37,13 +36,10 @@ export const useSessionStore = create<SessionStore>()(
 
     setAuthenticated: (value) => set({ isAuthenticated: value }),
 
-    setSessionChecked: (value) => set({ sessionChecked: value }),
-
     clearSession: () =>
       set({
         user: null,
         isAuthenticated: false,
-        sessionChecked: false,
       }),
   })),
 );

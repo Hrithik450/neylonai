@@ -23,6 +23,8 @@ export {
   enforceSectionSizeLimit,
   estimateTokenCount,
   sectionIdFromHeading,
+  withFallbackSuggestions,
+  fallbackSectionSuggestions,
   SECTION_MAX_TOKENS,
   SECTION_MIN_TOKENS,
   type WebsitePageSection,

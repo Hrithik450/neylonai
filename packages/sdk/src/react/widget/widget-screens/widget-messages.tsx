@@ -58,13 +58,23 @@ export function WidgetMessages({ threadId, title }: WidgetMessagesProps) {
     activeThread?.conversation_status === "human_active";
 
   // Home / proactive click-through → auto-send once the widget is open and ready.
+  // Defer past the thread-bind effect in this same commit: that effect calls
+  // setMessages([]) for new chats and would wipe the optimistic user bubble
+  // (and leave the stream looking "stuck") if we send synchronously here.
   React.useEffect(() => {
     if (!isOpen || loading || !pendingQuestion) return;
-    const text =
-      useProactivePendingStore.getState().consumePendingQuestion();
-    if (text) {
-      void sendMessageRef.current(text);
-    }
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (cancelled) return;
+      const text =
+        useProactivePendingStore.getState().consumePendingQuestion();
+      if (text) {
+        void sendMessageRef.current(text);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [isOpen, loading, pendingQuestion]);
 
   // Bind thread + load history. Only re-fetch when threadId changes.

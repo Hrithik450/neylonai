@@ -1,9 +1,24 @@
 import { defineWidgetCustomization } from "@neylonai/sdk/embed";
 
 /**
- * Code-owned widget customization derived from Neylon AI's own brand.
- * These values override dashboard config so the launcher and panel match
- * the landing site's warm-neutral palette exactly.
+ * Hero: warm cream #FFF7F4, near-black #242424, brown-gray #45413F
+ *
+ * Widget: crisp neutral panel + hero-black actions + forest-green brand accents.
+ * Surfaces are cool gray (not cream/peach/coral) so the panel reads as its own layer.
+ */
+const HERO_CTA = "#242424";
+const BRAND_GREEN = "#0E3228";
+const NEUTRAL_BODY = "#6B7280";
+/** Panel fill — slightly darker than page cream (#FFF7F4). */
+const PANEL_TOP = "#E8E8E8";
+const PANEL_BOTTOM = "#F0F0F0";
+/** Cards / chips — lighter than panel for contrast. */
+const NEUTRAL_SURFACE = "#FAFAFA";
+const NEUTRAL_BUBBLE = "#F5F5F5";
+const NEUTRAL_HUMAN = "#EBEBEB";
+
+/**
+ * Code-owned widget customization — premium neutral layer on the warm landing page.
  *
  * Do NOT set branding.logoUrl, branding.font, or layout —
  * those are controlled from the Neylon dashboard.
@@ -11,25 +26,22 @@ import { defineWidgetCustomization } from "@neylonai/sdk/embed";
 export const neylonWidgetCustomization = defineWidgetCustomization({
   branding: {
     name: "Neylon AI",
-    // Near-black primary (#242424) — hero heading + CTA button colour
-    primaryTextColor: "#242424",
-    // Warm dark brown — hero subtitle colour (#45413F)
-    secondaryTextColor: "#45413F",
-    // CTA launcher / Ask button fill
-    primaryTextBackground: "#242424",
+    // Brand green headings (distinct from hero near-black)
+    primaryTextColor: BRAND_GREEN,
+    // Cool neutral body (not hero warm brown)
+    secondaryTextColor: NEUTRAL_BODY,
+    // Launcher + Ask CTA — hero filled button colour, visible on cream bg
+    primaryTextBackground: HERO_CTA,
     askButtonTextColor: "#ffffff",
-    // FAQ chip / suggestion card surface
-    secondaryTextBackground: "#ffffff",
-    // Active tab (deep green used for all section headings)
-    tabActiveColor: "#0E3228",
-    // Inactive tab — same warm muted tone as secondary text
-    accentColor: "#45413F",
-    // Header gradient mirrors the hero section background
-    gradientFrom: "#FFF7F4",
-    gradientTo: "#ffffff",
-    // Chat bubbles
-    aiMessageBackground: "transparent",
-    humanMessageBackground: "#FFE8D9",
+    // Gray cards on darker panel (not cream-tinted surfaces)
+    secondaryTextBackground: NEUTRAL_SURFACE,
+    tabActiveColor: BRAND_GREEN,
+    accentColor: "#9CA3AF",
+    // Slightly darker panel — separates from page cream (#FFF7F4)
+    gradientFrom: PANEL_TOP,
+    gradientTo: PANEL_BOTTOM,
+    aiMessageBackground: NEUTRAL_BUBBLE,
+    humanMessageBackground: NEUTRAL_HUMAN,
   },
   messages: {
     welcomeGreeting: "Hi {name} 👋",
@@ -82,6 +94,7 @@ export const neylonWidgetCustomization = defineWidgetCustomization({
   proactive: {
     enabled: true,
     soundEnabled: true,
+    initialIdleMs: 800,
   },
   website: {
     visiblePathPrefixes: [],

@@ -31,3 +31,4 @@ export {
   findKnowledgePageSection,
   type StoredPageSection,
 } from "./page-sections";
+export { listKnowledgePageSuggestions } from "./list-page-suggestions";

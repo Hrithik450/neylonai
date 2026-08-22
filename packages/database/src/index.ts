@@ -27,6 +27,7 @@ export {
   resolveDevKnowledgeScope,
   listKnowledgeSuggestionSeeds,
   findKnowledgePageSection,
+  listKnowledgePageSuggestions,
   type KnowledgeSearchHit,
   type VectorSearchInput,
   type KeywordSearchHit,

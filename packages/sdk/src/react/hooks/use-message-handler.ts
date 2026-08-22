@@ -143,8 +143,8 @@ export function useWidgetMessageHandler() {
 
       const writer = createSmoothStreamWriter({
         onFlush: paint,
-        charsPerSecond: 42,
-        maxCharsPerFrame: 4,
+        charsPerSecond: 180,
+        maxCharsPerFrame: 12,
       });
       writerRef.current = writer;
 
@@ -172,17 +172,21 @@ export function useWidgetMessageHandler() {
           writer.push(pendingFence);
           pendingFence = "";
         }
-        try {
-          await writer.drain();
-        } catch {
-          // Writer may already be disposed by stopStreaming.
-        }
         if (writerRef.current === writer) {
-          writer.dispose();
-          writerRef.current = null;
-        }
-        if (!opts?.skipUiReset && !isStale()) {
-          resetUiAfterStream();
+          if (!opts?.skipUiReset && !isStale()) {
+            resetUiAfterStream();
+          }
+          void writer
+            .drain()
+            .catch(() => {
+              // Writer may already be disposed by stopStreaming.
+            })
+            .finally(() => {
+              if (writerRef.current === writer) {
+                writer.dispose();
+                writerRef.current = null;
+              }
+            });
         }
         if (opts?.reportError && !isStale()) {
           onError(opts.reportError);

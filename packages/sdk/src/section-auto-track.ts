@@ -44,7 +44,10 @@ function shouldTrackSectionId(sectionId: string): boolean {
   return true;
 }
 
-function sectionLabelFor(element: Element, sectionId: string): string | undefined {
+function sectionLabelFor(
+  element: Element,
+  sectionId: string,
+): string | undefined {
   const aria = element.getAttribute("aria-label")?.trim();
   if (aria) return aria.slice(0, 160);
 

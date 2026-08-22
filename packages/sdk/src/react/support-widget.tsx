@@ -20,7 +20,10 @@ import { WidgetScreens, WidgetTabs } from "./constants";
 import { WidgetHostProvider, useWidgetHost } from "./context/widget-host";
 import { useWidgetNavigation } from "./hooks/use-widget-navigation";
 import { useThreadMessageStore, useThreadStore } from "./store/thread-store";
-import { useWidgetNavigationStore, useWidgetToggleStore } from "./store/widget-store";
+import {
+  useWidgetNavigationStore,
+  useWidgetToggleStore,
+} from "./store/widget-store";
 import { Widget } from "./widget/widget";
 import {
   LauncherSuggestionBubble,
@@ -31,7 +34,6 @@ import {
 import { useWidgetFont } from "./hooks/use-widget-font";
 import { getLatestHumanReply } from "../retention";
 import { getOrCreateVisitorId } from "../visitor";
-import { initNeylonSectionAutoTrack } from "../section-auto-track";
 
 const LAUNCHER_SIZE_PX = {
   sm: 48,
@@ -88,8 +90,7 @@ function mergeRuntimeAndAppearance(
     presentation: opts.presentation ?? "fixed",
     className: opts.className,
     defaultOpen:
-      Boolean(host?.defaultOpen) ||
-      shouldAutoOpenOnPath(host?.pagePath, base),
+      Boolean(host?.defaultOpen) || shouldAutoOpenOnPath(host?.pagePath, base),
   };
 }
 
@@ -116,13 +117,6 @@ function SupportWidgetInner({
   useWidgetAudio(displayedSuggestion?.id ?? null, suggestionVisible);
   const onOpenChangeRef = React.useRef(onOpenChange);
   onOpenChangeRef.current = onOpenChange;
-
-  useEffect(() => {
-    if (typeof document === "undefined") return;
-    return initNeylonSectionAutoTrack({
-      pagePath: config.pagePath ?? undefined,
-    });
-  }, [config.pagePath]);
 
   useEffect(() => {
     if (config.presentation === "inline" || config.staticDemo) return;
@@ -342,6 +336,7 @@ export function SupportWidget({
 
   const [remote, setRemote] = useState<StoredWidgetConfig | null>(null);
   const loadRemote = Boolean(config?.apiKey);
+
   // Wait for remote appearance so branding/copy don't flash from defaults.
   const [appearanceReady, setAppearanceReady] = useState(!loadRemote);
 
@@ -430,12 +425,9 @@ export function SupportWidget({
     }
   }, [appearanceReady, merged.defaultOpen]);
 
-  const handleOpenChange = React.useCallback(
-    (open: boolean) => {
-      onOpenChangeRef.current?.(open);
-    },
-    [],
-  );
+  const handleOpenChange = React.useCallback((open: boolean) => {
+    onOpenChangeRef.current?.(open);
+  }, []);
 
   if (!appearanceReady) {
     return null;
@@ -447,7 +439,10 @@ export function SupportWidget({
 
   return (
     <WidgetHostProvider config={merged} onError={onError}>
-      <SupportWidgetInner onOpenChange={handleOpenChange} className={className} />
+      <SupportWidgetInner
+        onOpenChange={handleOpenChange}
+        className={className}
+      />
     </WidgetHostProvider>
   );
 }

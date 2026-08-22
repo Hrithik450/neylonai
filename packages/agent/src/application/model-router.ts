@@ -244,21 +244,75 @@ export function buildFallbackRoute(
   });
 }
 
-export function buildHeuristicRoute(question: string): ModelRoute | null {
+export type HeuristicRouteOptions = {
+  availableToolNames?: string[];
+  chunkCount?: number;
+};
+
+function isLikelySimpleKnowledgeQuestion(question: string): boolean {
+  const q = question.trim();
+  const words = q.split(/\s+/).filter(Boolean).length;
+  if (words === 0 || words > 18) return false;
+  if (
+    /\b(analy[sz]e|compare|versus|vs\.|sql|schema|database|debug|implement|write code|step by step)\b/i.test(
+      q,
+    )
+  ) {
+    return false;
+  }
+  if (
+    /\?/.test(q) ||
+    /^(what|how|who|when|where|why|is|are|can|does|do|will|should|tell me|explain)\b/i.test(
+      q,
+    )
+  ) {
+    return true;
+  }
+  return words <= 10;
+}
+
+export function buildHeuristicRoute(
+  question: string,
+  options: HeuristicRouteOptions = {},
+): ModelRoute | null {
   const heuristic = classifyComplexityHeuristic(question);
-  if (!heuristic) return null;
-  const klass = classForComplexityTier(heuristic);
-  return routeFromClass(klass, {
-    billable: !isNonBillableSocialQuery(question),
-    source: "heuristic",
-    likelyTools: [],
-    expectedSearchRounds: 0,
-    expectedToolRounds: 0,
-    expectedInputTokensBand: "xs",
-    expectedOutputTokensBand: "xs",
-    confidence: 0.92,
-    reason: "Greeting or lightweight conversational turn",
-  });
+  if (heuristic) {
+    const klass = classForComplexityTier(heuristic);
+    return routeFromClass(klass, {
+      billable: !isNonBillableSocialQuery(question),
+      source: "heuristic",
+      likelyTools: [],
+      expectedSearchRounds: 0,
+      expectedToolRounds: 0,
+      expectedInputTokensBand: "xs",
+      expectedOutputTokensBand: "xs",
+      confidence: 0.92,
+      reason: "Greeting or lightweight conversational turn",
+    });
+  }
+
+  const { availableToolNames = [], chunkCount } = options;
+  if (
+    chunkCount != null &&
+    chunkCount <= 30 &&
+    availableToolNames.includes("semantic_search") &&
+    isLikelySimpleKnowledgeQuestion(question) &&
+    !isNonBillableSocialQuery(question)
+  ) {
+    return routeFromClass("simple", {
+      billable: true,
+      source: "heuristic",
+      likelyTools: ["semantic_search"],
+      expectedSearchRounds: 1,
+      expectedToolRounds: 1,
+      expectedInputTokensBand: "s",
+      expectedOutputTokensBand: "s",
+      confidence: 0.88,
+      reason: "Short knowledge question on a small corpus",
+    });
+  }
+
+  return null;
 }
 
 export function parseCreditClassifierDecision(
@@ -359,7 +413,10 @@ export async function routeModel(
   input: CreditEstimatorInput,
 ): Promise<ModelRoute> {
   const availableToolNames = input.availableTools.map((tool) => tool.name);
-  const heuristic = buildHeuristicRoute(input.question);
+  const heuristic = buildHeuristicRoute(input.question, {
+    availableToolNames,
+    chunkCount: input.workload.chunkCount,
+  });
   if (heuristic) return heuristic;
 
   try {

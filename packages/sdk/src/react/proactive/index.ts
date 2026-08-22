@@ -6,8 +6,7 @@ export { PROACTIVE_CONFIG } from "./config";
 export {
   EMPTY_SUGGESTION_QUEUE,
   dequeueNextSuggestion,
-  enqueueSectionSuggestions,
-  enqueueSessionSuggestions,
+  enqueueSuggestions,
   type QueuedSuggestion,
   type SuggestionQueue,
 } from "./suggestion-queue";

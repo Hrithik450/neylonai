@@ -14,6 +14,8 @@ export type AgentTurnContextStore = {
   requestId?: string;
   apiKeyId?: string;
   pagePath?: string;
+  /** Org knowledge size — used to skip expensive RAG paths on tiny corpora. */
+  knowledgeChunkCount?: number;
   /** Accumulated RAG hits for this turn (dashboard provenance). */
   provenanceHits?: ProvenanceChunkHit[];
   /** Credit / rollup signals for this turn. */
