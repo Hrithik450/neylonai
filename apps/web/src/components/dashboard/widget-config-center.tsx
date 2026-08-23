@@ -1052,6 +1052,7 @@ export function WidgetConfigCenter({
                   ["initialIdleMs", "First suggestion delay (ms)"],
                   ["displayMs", "Bubble display time (ms)"],
                   ["rotateGapMs", "Cooldown between bubbles (ms)"],
+                  ["rotateGapJitterMs", "Random extra cooldown (ms)"],
                   ["postChatDelayMs", "Delay after closing chat (ms)"],
                   ["poolLimit", "Max suggestions per refresh"],
                 ] as const

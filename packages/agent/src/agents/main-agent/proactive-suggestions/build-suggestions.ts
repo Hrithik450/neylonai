@@ -19,6 +19,15 @@ import {
   PAGE_SUGGESTION_LIMIT,
   WELCOME_BACK_MESSAGES,
 } from "./page-suggestions";
+import { generateProactiveCandidates } from "./generate-candidates";
+import {
+  bubbleDedupeKey,
+  cleanQuestion,
+  cleanWelcome,
+  normalizeExcerpt,
+  stableId,
+  wordCount,
+} from "./text";
 
 export type SuggestionSource =
   | "welcome"
@@ -42,7 +51,7 @@ export interface BuildSuggestionsInput {
   pageUrl?: string | null;
   recentMessages?: Array<{ role: string; content: string }>;
   mode?: "idle" | "post_chat" | "fallback";
-  /** Final personalized pool size (clamped 3–5 for idle, exactly 2 for post_chat). */
+  /** Final personalized pool size (clamped 3–5 for idle, exactly 1 for post_chat). */
   limit?: number;
   /** Anonymous visitor id (localStorage). */
   visitorId?: string | null;
@@ -56,18 +65,19 @@ export interface BuildSuggestionsInput {
   isReturningSession?: boolean;
 }
 
-const BLOCKED =
-  /\b(api[_ ]?key|password|secret|token|system prompt|internal only|ssn|credit card)\b/i;
-
-const BUBBLE_EMOJIS = ["✨", "👀", "🤔", "🚀", "💡", "😊", "🔥", "💬", "👋", "⚡"];
-
 /** Page suggestions delivered per tab session (excluding welcome bubbles). */
 const SESSION_BATCH_SIZE = 4;
-const POST_CHAT_SUGGESTION_COUNT = 2;
+/** One bubble per completed support-widget interaction. */
+const POST_CHAT_SUGGESTION_COUNT = 1;
 const FALLBACK_BATCH_SIZE = 5;
 
 const PERSONALIZED_CACHE_TTL_SEC = 90;
 const SEED_CANDIDATE_LIMIT = 28;
+
+/** Ranking bonuses by provenance — model-written, grounded lines lead. */
+const BONUS_MODEL = 6;
+const BONUS_CRAWLED_PAGE = 5;
+const BONUS_BUILT_IN_PAGE = 2;
 
 function requireTenantId(name: string, value: string): string {
   const trimmed = value.trim();
@@ -77,78 +87,12 @@ function requireTenantId(name: string, value: string): string {
   return trimmed;
 }
 
-function stableId(text: string): string {
-  return createHash("sha256").update(text).digest("hex").slice(0, 16);
-}
-
-function normalizeExcerpt(raw: string): string {
-  return raw
-    .replace(/^content:\s*/i, "")
-    .replace(/â€”|â€™/g, "'")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function wordCount(q: string): number {
-  return q
-    .replace(/\p{Extended_Pictographic}/gu, "")
-    .replace(/[?!.,]+$/g, "")
-    .split(/\s+/)
-    .filter(Boolean).length;
-}
-
-function pickEmoji(seed: string): string {
-  const n = parseInt(stableId(seed).slice(0, 2), 16);
-  return BUBBLE_EMOJIS[n % BUBBLE_EMOJIS.length]!;
-}
-
-function withEmoji(text: string, seed = text): string {
-  const base = text.replace(/\p{Extended_Pictographic}/gu, "").trim();
-  const existing = text.match(/\p{Extended_Pictographic}/gu)?.[0];
-  return `${base} ${existing ?? pickEmoji(seed)}`.trim();
-}
-
-function cleanWelcome(raw: string): string | null {
-  let q = normalizeExcerpt(raw);
-  q = q.replace(/^["']|["']$/g, "");
-  if (BLOCKED.test(q)) return null;
-  if (!/[a-zA-Z]/.test(q)) return null;
-
-  const emojiMatch = q.match(/(\p{Extended_Pictographic})\s*$/u);
-  const emoji = emojiMatch?.[1] ?? "";
-  q = q.replace(/\p{Extended_Pictographic}/gu, "").trim();
-  q = q.replace(/[.!?]+$/g, "");
-  if (!q) return null;
-  q = `${q}!`;
-  q = withEmoji(emoji ? `${q} ${emoji}` : q, raw);
-
-  const words = wordCount(q);
-  if (words < 2 || words > 10) return null;
-  if (q.length > 72) return null;
-  return q;
-}
-
-function cleanQuestion(raw: string): string | null {
-  let q = normalizeExcerpt(raw);
-  q = q.replace(/^[-*•\d.)\s]+/, "");
-  q = q.replace(/^["']|["']$/g, "");
-  q = q.replace(/^(q|question)\s*[:.)\-]\s*/i, "");
-  if (BLOCKED.test(q)) return null;
-  if (!/[a-zA-Z]/.test(q)) return null;
-  if (/navigation path|^\s*\/|https?:/i.test(q)) return null;
-
-  const emojiMatch = q.match(/(\p{Extended_Pictographic})\s*$/u);
-  const emoji = emojiMatch?.[1] ?? "";
-  q = q.replace(/\p{Extended_Pictographic}/gu, "").trim();
-  q = q.replace(/[.!]+$/g, "");
-  if (!/[?]$/.test(q)) q = `${q}?`;
-  q = withEmoji(emoji ? `${q} ${emoji}` : q, raw);
-
-  const words = wordCount(q);
-  if (words < 3 || words > 10) return null;
-  if (q.length > 72) return null;
-  if (/\b(of|the|and|a|an|to|for|in|with|our)\?\s*$/i.test(q)) return null;
-  return q;
+/**
+ * Ids are derived from the bubble text alone, so the same question can never
+ * reappear under a second id after the visitor has already seen it.
+ */
+function suggestionId(text: string): string {
+  return stableId(bubbleDedupeKey(text) || text);
 }
 
 function makeWelcome(
@@ -342,8 +286,8 @@ function conversationTokens(
   return pathTokens(blob).slice(0, 24);
 }
 
-function visitorJitter(visitorKey: string, suggestionId: string): number {
-  const n = parseInt(stableId(`${visitorKey}:${suggestionId}`).slice(0, 6), 16);
+function visitorJitter(visitorKey: string, candidateId: string): number {
+  const n = parseInt(stableId(`${visitorKey}:${candidateId}`).slice(0, 6), 16);
   return (n % 1000) / 1000;
 }
 
@@ -357,12 +301,7 @@ function uniqueSuggestions(
     const key =
       item.source === "welcome" || item.source === "welcome_back"
         ? item.source
-        : item.text
-            .replace(/\p{Extended_Pictographic}/gu, "")
-            .replace(/[^\p{L}\p{N}\s]/gu, "")
-            .toLowerCase()
-            .replace(/\s+/g, " ")
-            .trim();
+        : bubbleDedupeKey(item.text);
     if (!key || seen.has(key)) continue;
     seen.add(key);
     out.push(item);
@@ -371,40 +310,62 @@ function uniqueSuggestions(
   return out;
 }
 
+interface Candidate {
+  suggestion: ProactiveSuggestion;
+  /** Text the page/conversation token scores are matched against. */
+  seedHaystack: string;
+  /** Provenance bonus — grounded, model-written lines outrank templates. */
+  bonus: number;
+}
+
 type RankedCandidate = ProactiveSuggestion & { score: number };
 
-function seedsToCandidates(
-  seeds: KnowledgeSuggestionSeed[],
-): Array<{ suggestion: ProactiveSuggestion; seedHaystack: string }> {
-  const out: Array<{ suggestion: ProactiveSuggestion; seedHaystack: string }> =
-    [];
-
-  for (const hook of BRAND_CATCHY_HOOKS) {
-    const cleaned = cleanQuestion(hook);
+function textsToCandidates(
+  texts: string[],
+  options: {
+    source: SuggestionSource;
+    bonus: number;
+    pagePath?: string | null;
+    extraHaystack?: string;
+  },
+): Candidate[] {
+  const out: Candidate[] = [];
+  for (const text of texts) {
+    const cleaned = cleanQuestion(text);
     if (!cleaned) continue;
     out.push({
       suggestion: {
-        id: stableId(cleaned),
+        id: suggestionId(cleaned),
         text: cleaned,
-        source: "knowledge",
+        source: options.source,
+        ...(options.pagePath ? { contextKey: options.pagePath } : {}),
       },
-      seedHaystack: cleaned,
+      seedHaystack: `${cleaned} ${options.extraHaystack ?? ""}`.trim(),
+      bonus: options.bonus,
     });
   }
+  return out;
+}
+
+function seedsToCandidates(seeds: KnowledgeSuggestionSeed[]): Candidate[] {
+  const out: Candidate[] = [
+    ...textsToCandidates(BRAND_CATCHY_HOOKS, {
+      source: "knowledge",
+      bonus: 0,
+    }),
+  ];
+  const brandKeys = new Set(
+    out.map((candidate) => bubbleDedupeKey(candidate.suggestion.text)),
+  );
 
   for (const seed of seeds) {
-    for (const text of seedToCandidateTexts(seed)) {
-      const cleaned = cleanQuestion(text);
-      if (!cleaned) continue;
-      if (BRAND_CATCHY_HOOKS.some((h) => cleanQuestion(h) === cleaned)) continue;
-      out.push({
-        suggestion: {
-          id: stableId(cleaned),
-          text: cleaned,
-          source: "knowledge",
-        },
-        seedHaystack: `${cleaned} ${seed.title ?? ""} ${seed.excerpt}`,
-      });
+    for (const candidate of textsToCandidates(seedToCandidateTexts(seed), {
+      source: "knowledge",
+      bonus: 0,
+      extraHaystack: `${seed.title ?? ""} ${seed.excerpt}`,
+    })) {
+      if (brandKeys.has(bubbleDedupeKey(candidate.suggestion.text))) continue;
+      out.push(candidate);
     }
   }
 
@@ -412,7 +373,7 @@ function seedsToCandidates(
 }
 
 function rankCandidatesForVisitor(params: {
-  candidates: Array<{ suggestion: ProactiveSuggestion; seedHaystack: string }>;
+  candidates: Candidate[];
   pagePath?: string | null;
   pageUrl?: string | null;
   recentMessages: Array<{ role: string; content: string }>;
@@ -423,16 +384,17 @@ function rankCandidatesForVisitor(params: {
   const convToks = conversationTokens(params.recentMessages);
   const ranked: RankedCandidate[] = [];
 
-  for (const { suggestion, seedHaystack } of params.candidates) {
+  for (const { suggestion, seedHaystack, bonus } of params.candidates) {
     if (params.excludeIds.has(suggestion.id)) continue;
     const pageScore = scoreForPage(seedHaystack, pageToks);
     const convScore = scoreForPage(seedHaystack, convToks);
     const source: SuggestionSource =
-      pageScore > 0 ? "page" : suggestion.source;
+      suggestion.source === "page" || pageScore > 0 ? "page" : suggestion.source;
     ranked.push({
       ...suggestion,
       source,
       score:
+        bonus +
         pageScore * 4 +
         convScore * 2 +
         catchyScore(suggestion.text) +
@@ -458,7 +420,7 @@ async function aiFollowUps(
     const response = await withGoogleApiRetry(async (apiKey) => {
       const llm = new ChatGoogleGenerativeAI({
         model: utilityModel,
-        temperature: 0.4,
+        temperature: 0.6,
         maxRetries: 0,
         maxOutputTokens: 180,
         json: true,
@@ -509,7 +471,7 @@ function historyFollowUps(
       const cleaned = cleanQuestion(text);
       if (!cleaned) continue;
       out.push({
-        id: stableId(`conv:${cleaned}`),
+        id: suggestionId(`conv:${cleaned}`),
         text: cleaned,
         source: "recent_conversation",
       });
@@ -542,7 +504,7 @@ function personalizedCacheKey(input: {
     String(input.limit),
   ].join("|");
   const digest = createHash("sha256").update(payload).digest("hex").slice(0, 32);
-  return `proactive-suggestions:v3:${digest}`;
+  return `proactive-suggestions:v4:${digest}`;
 }
 
 function messageFingerprint(
@@ -560,45 +522,98 @@ function messageFingerprint(
     .slice(0, 16);
 }
 
-function pageSuggestionsToDtos(
-  texts: string[],
-  pagePath: string,
-  excludeIds: Set<string>,
-): ProactiveSuggestion[] {
-  return texts
-    .map((text) => cleanQuestion(text))
-    .filter((text): text is string => Boolean(text))
-    .map((text) => ({
-      id: stableId(`page:${pagePath}:${text}`),
-      text,
-      source: "page" as const,
-      contextKey: pagePath,
-    }))
-    .filter((suggestion) => !excludeIds.has(suggestion.id));
+interface PageCatalog {
+  /** Suggestions generated for this page during the website crawl. */
+  crawled: string[];
+  /** Hand-written per-path fallbacks shipped with the agent. */
+  builtIn: string[];
 }
 
 async function resolvePageCatalog(
   organizationId: string,
   pagePath: string,
-): Promise<string[]> {
+): Promise<PageCatalog> {
   const builtIn = getBuiltInPageSuggestions(pagePath);
   const sourceIds = await listAllowedSourceIds(organizationId, "main-agent");
-  if (!sourceIds.length) return builtIn;
+  if (!sourceIds.length) return { crawled: [], builtIn };
 
   try {
-    const fromKnowledge = await listKnowledgePageSuggestions({
+    const crawled = await listKnowledgePageSuggestions({
       organizationId,
       sourceIds,
       canonicalPath: pagePath,
     });
-    if (fromKnowledge.length >= 4) {
-      return fromKnowledge.slice(0, PAGE_SUGGESTION_LIMIT);
-    }
-    const merged = [...new Set([...fromKnowledge, ...builtIn])];
-    return merged.slice(0, PAGE_SUGGESTION_LIMIT);
+    return { crawled: crawled.slice(0, PAGE_SUGGESTION_LIMIT), builtIn };
   } catch {
-    return builtIn;
+    return { crawled: [], builtIn };
   }
+}
+
+/**
+ * The visitor-facing pool for idle/fallback modes: model-written bubbles
+ * grounded in the org's knowledge base, then crawled page suggestions, then
+ * deterministic hooks as backfill — all ranked for this visitor and page.
+ */
+async function buildContextualPool(params: {
+  organizationId: string;
+  pagePath: string;
+  pageUrl?: string | null;
+  rawPagePath?: string | null;
+  recentMessages: Array<{ role: string; content: string }>;
+  excludeIds: Set<string>;
+  visitorKey: string;
+  limit: number;
+}): Promise<ProactiveSuggestion[]> {
+  const [catalog, seeds] = await Promise.all([
+    resolvePageCatalog(params.organizationId, params.pagePath),
+    listKnowledgeSuggestionSeeds({
+      organizationId: params.organizationId,
+      limit: SEED_CANDIDATE_LIMIT,
+    }),
+  ]);
+
+  const modelTexts = await generateProactiveCandidates({
+    organizationId: params.organizationId,
+    pagePath: params.pagePath,
+    pageUrl: params.pageUrl,
+    seeds,
+    // Crawled topics only — the built-in catalog is this product's own copy and
+    // must never ground another tenant's bubbles.
+    pageCatalog: catalog.crawled.slice(0, 10),
+  });
+
+  const candidates: Candidate[] = [
+    ...textsToCandidates(modelTexts, {
+      source: "knowledge",
+      bonus: BONUS_MODEL,
+      pagePath: params.pagePath,
+    }),
+    ...textsToCandidates(catalog.crawled, {
+      source: "page",
+      bonus: BONUS_CRAWLED_PAGE,
+      pagePath: params.pagePath,
+    }),
+    ...textsToCandidates(catalog.builtIn, {
+      source: "page",
+      bonus: BONUS_BUILT_IN_PAGE,
+      pagePath: params.pagePath,
+    }),
+    ...seedsToCandidates(seeds),
+  ];
+
+  const ranked = rankCandidatesForVisitor({
+    candidates,
+    pagePath: params.rawPagePath,
+    pageUrl: params.pageUrl,
+    recentMessages: params.recentMessages,
+    excludeIds: params.excludeIds,
+    visitorKey: params.visitorKey,
+  });
+
+  return uniqueSuggestions(
+    ranked.map(({ score: _score, ...suggestion }) => suggestion),
+    params.limit,
+  );
 }
 
 export interface ProactiveSuggestionsResult {
@@ -677,14 +692,15 @@ export async function buildProactiveSuggestions(
   if (mode === "post_chat") {
     const conversationSuggestions: ProactiveSuggestion[] = [];
     if (recentMessages.length >= 2) {
-      const ai = await aiFollowUps(recentMessages);
-      for (const text of ai) {
-        conversationSuggestions.push({
-          id: stableId(`conv:${text}`),
+      for (const text of await aiFollowUps(recentMessages)) {
+        const suggestion: ProactiveSuggestion = {
+          id: suggestionId(`conv:${text}`),
           text,
           source: "recent_conversation",
           contextKey: pagePath,
-        });
+        };
+        if (excludeIds.has(suggestion.id)) continue;
+        conversationSuggestions.push(suggestion);
       }
     }
     if (conversationSuggestions.length < POST_CHAT_SUGGESTION_COUNT) {
@@ -705,77 +721,30 @@ export async function buildProactiveSuggestions(
     return { suggestions: result };
   }
 
-  if (mode === "fallback") {
-    const pageCatalog = await resolvePageCatalog(organizationId, pagePath);
-    const pageSuggestions = pageSuggestionsToDtos(
-      pageCatalog,
-      pagePath,
-      excludeIds,
-    );
-
-    const seeds = await listKnowledgeSuggestionSeeds({
-      organizationId,
-      limit: SEED_CANDIDATE_LIMIT,
-    });
-    const kbCandidates = seedsToCandidates(seeds);
-    const ranked = rankCandidatesForVisitor({
-      candidates: kbCandidates,
-      pagePath: input.pagePath,
-      pageUrl: input.pageUrl,
-      recentMessages,
-      excludeIds,
-      visitorKey,
-    });
-    const rankedSuggestions = ranked.map(({ score: _s, ...restItem }) => restItem);
-
-    const result = uniqueSuggestions(
-      [...pageSuggestions, ...rankedSuggestions],
-      FALLBACK_BATCH_SIZE,
-    );
-
-    if (cacheKey) {
-      await cacheSet(cacheKey, JSON.stringify(result), PERSONALIZED_CACHE_TTL_SEC);
-    }
-
-    return { suggestions: result };
-  }
-
-  const pageCatalog = await resolvePageCatalog(organizationId, pagePath);
-  const pageSuggestions = pageSuggestionsToDtos(
-    pageCatalog,
-    pagePath,
-    excludeIds,
-  );
-
-  const seeds = await listKnowledgeSuggestionSeeds({
+  const contextual = await buildContextualPool({
     organizationId,
-    limit: SEED_CANDIDATE_LIMIT,
-  });
-  const kbCandidates = seedsToCandidates(seeds);
-  const ranked = rankCandidatesForVisitor({
-    candidates: kbCandidates,
-    pagePath: input.pagePath,
+    pagePath,
     pageUrl: input.pageUrl,
+    rawPagePath: input.pagePath,
     recentMessages,
     excludeIds,
     visitorKey,
+    limit: mode === "fallback" ? FALLBACK_BATCH_SIZE : Math.max(limit, SESSION_BATCH_SIZE),
   });
-  const rankedSuggestions = ranked.map(({ score: _s, ...restItem }) => restItem);
-
-  const batchSize = Math.max(limit, SESSION_BATCH_SIZE);
-  const contextual = uniqueSuggestions(
-    [...pageSuggestions, ...rankedSuggestions],
-    batchSize,
-  );
 
   const prefix: ProactiveSuggestion[] = [];
-  if (input.isFirstVisit) {
-    prefix.push(makeWelcome(visitorKey, pagePath));
-  } else if (input.isReturningSession) {
-    prefix.push(makeWelcomeBack(visitorKey));
+  if (mode === "idle") {
+    if (input.isFirstVisit) {
+      prefix.push(makeWelcome(visitorKey, pagePath));
+    } else if (input.isReturningSession) {
+      prefix.push(makeWelcomeBack(visitorKey));
+    }
   }
 
-  const result = uniqueSuggestions([...prefix, ...contextual], prefix.length + contextual.length);
+  const result = uniqueSuggestions(
+    [...prefix, ...contextual],
+    prefix.length + contextual.length,
+  );
 
   if (cacheKey) {
     await cacheSet(cacheKey, JSON.stringify(result), PERSONALIZED_CACHE_TTL_SEC);

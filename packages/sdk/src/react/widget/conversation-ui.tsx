@@ -1,6 +1,13 @@
 "use client";
 
-import React, { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import React, {
+  memo,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { cn } from "../../ui";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
@@ -12,27 +19,28 @@ import { useWidgetHost } from "../context/widget-host";
 import type { ThreadMessage } from "../..";
 import { DynamicAssistantTyping } from "./assistant-typing";
 import { contrastForeground } from "../color-contrast";
-import {
-  getOrCreateVisitorId,
-  submitMessageFeedback,
-} from "../..";
-const mkEl = (tag: string, cls: string) => (props: any) => React.createElement(tag, { className: cls, ...props });
+import { getOrCreateVisitorId, submitMessageFeedback } from "../..";
+const mkEl = (tag: string, cls: string) => (props: any) =>
+  React.createElement(tag, { className: cls, ...props });
 
-const MemoizedMarkdown = memo(function MemoizedMarkdown({
-  content,
-  remarkPlugins,
-  components,
-}: {
-  content: string;
-  remarkPlugins: any[];
-  components: any;
-}) {
-  return (
-    <ReactMarkdown remarkPlugins={remarkPlugins} components={components}>
-      {content}
-    </ReactMarkdown>
-  );
-}, (prev, next) => prev.content === next.content);
+const MemoizedMarkdown = memo(
+  function MemoizedMarkdown({
+    content,
+    remarkPlugins,
+    components,
+  }: {
+    content: string;
+    remarkPlugins: any[];
+    components: any;
+  }) {
+    return (
+      <ReactMarkdown remarkPlugins={remarkPlugins} components={components}>
+        {content}
+      </ReactMarkdown>
+    );
+  },
+  (prev, next) => prev.content === next.content,
+);
 
 const markdownComponents = {
   h1: mkEl("h1", "text-2xl md:text-3xl font-bold mb-4 mt-5"),
@@ -44,7 +52,10 @@ const markdownComponents = {
   ul: mkEl("ul", "my-2 list-disc space-y-1 pl-5"),
   ol: mkEl("ol", "my-2 list-decimal space-y-1 pl-5"),
   li: mkEl("li", "mb-1 pl-0.5"),
-  p: mkEl("p", "mb-2 leading-relaxed last:mb-0 break-words [overflow-wrap:anywhere]"),
+  p: mkEl(
+    "p",
+    "mb-2 leading-relaxed last:mb-0 break-words [overflow-wrap:anywhere]",
+  ),
   a: mkEl("a", "text-blue-500 hover:underline"),
 };
 
@@ -112,17 +123,15 @@ const MessageBubble = memo(
 
     const aiBg = aiMessageBackground.trim() || "transparent";
     const aiTransparent = /^transparent$/i.test(aiBg);
-    const aiText = aiTransparent
-      ? "#000000"
-      : contrastForeground(aiBg);
+    const aiText = aiTransparent ? "#000000" : contrastForeground(aiBg);
 
     return (
       <div
         className={cn(
           "max-w-full min-w-0 [content-visibility:auto]",
           groupedWithPrevious
-            ? "mt-0.5 pt-0 px-3 md:px-4"
-            : "mt-2.5 px-3 py-2 md:px-4",
+            ? "mt-0.5 pt-0 px-3 md:px-2"
+            : "mt-2.5 px-3 py-2 md:px-2",
         )}
       >
         <div
@@ -216,7 +225,8 @@ const MessageBubble = memo(
   },
   (prev, next) => {
     // Only re-render if content actually changed
-    const contentChanged = prev.conversation.content !== next.conversation.content;
+    const contentChanged =
+      prev.conversation.content !== next.conversation.content;
     // Or if any of these props changed
     const propsChanged =
       prev.isStreaming !== next.isStreaming ||
@@ -237,7 +247,7 @@ const MessageBubble = memo(
 
     // Same message, but something changed, re-render
     return false;
-  }
+  },
 );
 
 export function ConversationUI({
@@ -283,7 +293,6 @@ export function ConversationUI({
     });
   }, [stopSmoothScroll]);
 
-  /** Ease toward bottom — premium follow while tokens stream. */
   const smoothFollowBottom = useCallback(() => {
     const el = scrollRef.current;
     if (!el || userScrolledUpRef.current) return;
@@ -308,7 +317,6 @@ export function ConversationUI({
         return;
       }
 
-      // Ease-out follow (feels like manual fling, not a hard snap).
       node.scrollTop = current + dist * 0.22;
       scrollRafRef.current = requestAnimationFrame(tick);
     };
@@ -352,13 +360,7 @@ export function ConversationUI({
 
     // After a turn settles, land exactly on the bottom once.
     jumpToBottom();
-  }, [
-    lastContent,
-    lastId,
-    assistantTyping,
-    isStreaming,
-    jumpToBottom,
-  ]);
+  }, [lastContent, lastId, assistantTyping, isStreaming, jumpToBottom]);
 
   useEffect(() => () => stopSmoothScroll(), [stopSmoothScroll]);
 
@@ -384,10 +386,7 @@ export function ConversationUI({
             isLast && conversation.role === "assistant" && isStreaming;
 
           return (
-            <div
-              key={conversation.id}
-              className={cn("text-sm md:text-base")}
-            >
+            <div key={conversation.id} className={cn("text-sm md:text-base")}>
               <MessageBubble
                 conversation={conversation}
                 isStreaming={showCursor}

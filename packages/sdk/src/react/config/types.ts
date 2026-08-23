@@ -77,6 +77,8 @@ export interface WidgetProactiveConfig {
   initialIdleMs?: number;
   displayMs?: number;
   rotateGapMs?: number;
+  /** Random extra delay added to `rotateGapMs` so pacing feels human. */
+  rotateGapJitterMs?: number;
   postChatDelayMs?: number;
   poolLimit?: number;
 }

@@ -150,7 +150,8 @@ Only `@neylonai/agent` uses explicit domain / application / infrastructure layer
 - `application/` — model router, thinking tips, graph builder, query reframe, stream orchestrator
 - **Proactive suggestions (first-party engagement — not an external integration):**
   - Build: `packages/agent/src/agents/main-agent/proactive-suggestions/` (`buildProactiveSuggestions`, owned by Main Agent)
-  - Flow: org/KB `listKnowledgeSuggestionSeeds` (candidates) → visitor/page/session ranking → 3–5 suggestions
+  - Flow: org/KB `listKnowledgeSuggestionSeeds` + crawled page suggestions → model-written candidate pool (`generate-candidates.ts`, utility model, cached per org+page) → visitor/page/conversation ranking → 3–5 suggestions
+  - Delivery rules (pacing, per-session cap, on-demand bubbles): `PROACTIVE_SUGGESTIONS.md`
   - API: `apps/web/src/app/orchestration/api/v1/suggestions` (thin route → `@neylonai/agent`)
   - Widget UI: `packages/sdk/src/react/proactive/` (bubbles, idle/cooldown, sound; anonymous visitor/session ids)
   - May call Gemini via `@neylonai/integrations/gemini`

@@ -68,6 +68,7 @@ export interface WidgetHostValue {
         initialIdleMs: number;
         displayMs: number;
         rotateGapMs: number;
+        rotateGapJitterMs: number;
         postChatDelayMs: number;
         poolLimit: number;
       };
@@ -185,6 +186,9 @@ export function WidgetHostProvider({
       displayMs: config?.proactive?.displayMs ?? PROACTIVE_CONFIG.displayMs,
       rotateGapMs:
         config?.proactive?.rotateGapMs ?? PROACTIVE_CONFIG.rotateGapMs,
+      rotateGapJitterMs:
+        config?.proactive?.rotateGapJitterMs ??
+        PROACTIVE_CONFIG.rotateGapJitterMs,
       postChatDelayMs:
         config?.proactive?.postChatDelayMs ?? PROACTIVE_CONFIG.postChatDelayMs,
       poolLimit: config?.proactive?.poolLimit ?? PROACTIVE_CONFIG.poolLimit,

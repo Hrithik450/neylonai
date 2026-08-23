@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   fetchSuggestions,
-  getOrCreateSessionId,
   trackProactiveTrigger,
   type ProactiveSuggestionDto,
   type ProactiveTriggerType,
@@ -13,22 +12,26 @@ import { useThreadMessageStore } from "../store/thread-store";
 import { useWidgetHost } from "../context/widget-host";
 import { PROACTIVE_CONFIG } from "./config";
 import {
-  claimProactiveSessionBatch,
   countsTowardSessionLimit,
   loadProactiveState,
   saveProactiveState,
+  sessionBudgetRemaining,
   type ProactivePersistedState,
 } from "./persistence";
-import { dequeueNextSuggestion, enqueueSuggestions } from "./suggestion-queue";
+import {
+  dequeueNextSuggestion,
+  enqueueSuggestions,
+  type QueuedSuggestion,
+} from "./suggestion-queue";
 import {
   hasUnreadConversationContext,
   messageContextFingerprint,
 } from "./context-fingerprint";
-import { hasTriggerCooldownExpired, markTriggerFired } from "./trigger-state";
 
-const SESSION_SUGGESTION_LIMIT = PROACTIVE_CONFIG.sessionSuggestionLimit;
+/** One deeply personalized bubble per completed support-widget interaction. */
+const ON_DEMAND_BATCH_SIZE = 1;
 const FALLBACK_BATCH_SIZE = 5;
-const POST_CHAT_BATCH_SIZE = 2;
+const MAX_SHOWN_IDS = 120;
 
 export interface ActiveProactiveSuggestion {
   id: string;
@@ -53,63 +56,54 @@ export function useProactiveSuggestions() {
   const [visible, setVisible] = useState(false);
   const [tabVisible, setTabVisible] = useState(true);
 
-  const sessionIdRef = useRef(getOrCreateSessionId());
-  const sessionBatchActiveRef = useRef<boolean | null>(null);
   const isNewSessionRef = useRef(false);
-
   const [initialPersistedState] = useState<ProactivePersistedState>(() => {
-    const state = loadProactiveState();
-    const sameSession = state.sessionBatchId === sessionIdRef.current;
-    isNewSessionRef.current = !sameSession;
-    const spent = sameSession ? state.sessionSuggestionCount : 0;
-    sessionBatchActiveRef.current = claimProactiveSessionBatch(
-      sessionIdRef.current,
-      SESSION_SUGGESTION_LIMIT - spent,
-    );
-    if (sessionBatchActiveRef.current && !sameSession) {
-      const next = {
-        ...state,
-        sessionBatchId: sessionIdRef.current,
-        sessionSuggestionCount: 0,
-      };
-      saveProactiveState(next);
-      return next;
-    }
+    const { state, isNewSession } = loadProactiveState();
+    isNewSessionRef.current = isNewSession;
     return state;
   });
 
-  if (sessionBatchActiveRef.current === null) {
-    sessionBatchActiveRef.current = false;
-  }
-
   const stateRef = useRef<ProactivePersistedState>(initialPersistedState);
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const visibleRef = useRef(false);
   const rotateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const visibleRef = useRef(false);
   const hadOpenRef = useRef(false);
   const fetchingRef = useRef(false);
   const showNextMutexRef = useRef(Promise.resolve());
   const userMessageCountRef = useRef(0);
   const openUserMessageCountRef = useRef(0);
   const activeTriggerRef = useRef<ProactiveTriggerType>("idle");
-  const postChatPendingRef = useRef(false);
   const showNextRef = useRef<
     (triggerType?: ProactiveTriggerType) => Promise<void>
   >(async () => undefined);
 
+  // Read through refs so streaming/open churn never rebuilds the schedulers.
+  const isOpenRef = useRef(isOpen);
+  isOpenRef.current = isOpen;
+  const busyRef = useRef(false);
+  busyRef.current = isStreaming || assistantTyping;
+
   const persist = useCallback(() => saveProactiveState(stateRef.current), []);
 
-  const sessionBatchPending = useCallback(
-    () =>
-      Boolean(sessionBatchActiveRef.current) &&
-      stateRef.current.sessionBatchId === sessionIdRef.current &&
-      stateRef.current.sessionSuggestionCount < SESSION_SUGGESTION_LIMIT,
-    [],
+  /** Bubble lifetime, floored so a bad dashboard value can't flash bubbles. */
+  const displayMs = useCallback(
+    () => Math.max(PROACTIVE_CONFIG.minDisplayMs, proactive.displayMs),
+    [proactive.displayMs],
   );
 
-  const queueHasItems = useCallback(
-    () => stateRef.current.suggestionQueue.items.length > 0,
+  /** Quiet gap after a bubble closes, plus jitter so pacing feels human. */
+  const gapMs = useCallback(() => {
+    const base = Math.max(PROACTIVE_CONFIG.minRotateGapMs, proactive.rotateGapMs);
+    const jitter = Math.max(0, proactive.rotateGapJitterMs);
+    return base + Math.floor(Math.random() * (jitter + 1));
+  }, [proactive.rotateGapMs, proactive.rotateGapJitterMs]);
+
+  /** Anything left to deliver: an earned on-demand bubble, or session budget. */
+  const hasWork = useCallback(
+    () =>
+      stateRef.current.pendingOnDemand ||
+      sessionBudgetRemaining(stateRef.current) > 0,
     [],
   );
 
@@ -123,12 +117,14 @@ export function useProactiveSuggestions() {
       : [];
   }, []);
 
-  const hasPendingContext = useCallback(() => {
-    return hasUnreadConversationContext(
-      getRecentMessages(),
-      stateRef.current.lastConsumedContextFingerprint,
-    );
-  }, [getRecentMessages]);
+  const hasPendingContext = useCallback(
+    () =>
+      hasUnreadConversationContext(
+        getRecentMessages(),
+        stateRef.current.lastConsumedContextFingerprint,
+      ),
+    [getRecentMessages],
+  );
 
   const markContextConsumed = useCallback(() => {
     const fingerprint = messageContextFingerprint(getRecentMessages());
@@ -156,123 +152,131 @@ export function useProactiveSuggestions() {
   const canShow = useCallback(
     () =>
       proactiveEnabled &&
-      !isOpen &&
+      !isOpenRef.current &&
       !visibleRef.current &&
-      !isStreaming &&
-      !assistantTyping &&
+      !busyRef.current &&
       isTabVisible(),
-    [assistantTyping, isOpen, isStreaming, proactiveEnabled],
-  );
-
-  const triggerAllowed = useCallback(
-    (triggerType: ProactiveTriggerType): boolean => {
-      return hasTriggerCooldownExpired(triggerType, pathname, 0);
-    },
-    [pathname],
+    [proactiveEnabled],
   );
 
   const scheduleNext = useCallback((delayMs: number) => {
     if (rotateTimerRef.current) clearTimeout(rotateTimerRef.current);
     rotateTimerRef.current = setTimeout(() => {
+      rotateTimerRef.current = null;
       void showNextRef.current("idle");
     }, delayMs);
   }, []);
 
-  const fetchAndEnqueue = useCallback(
-    async (mode: "idle" | "post_chat" | "fallback") => {
-      if (fetchingRef.current) return false;
+  const fetchBatch = useCallback(
+    async (
+      mode: "idle" | "post_chat" | "fallback",
+    ): Promise<ProactiveSuggestionDto[]> => {
+      if (fetchingRef.current) return [];
       fetchingRef.current = true;
       try {
-        const recentMessages = getRecentMessages();
-        const excludeIds = stateRef.current.shownIds.slice(-40);
-
         const result = await fetchSuggestions({
           pagePath: pathname,
           mode,
-          recentMessages: mode === "post_chat" ? recentMessages : undefined,
+          // Sent in every mode: the server ranks candidates against the
+          // visitor's own conversation, not just the page.
+          recentMessages: getRecentMessages(),
           limit:
             mode === "post_chat"
-              ? POST_CHAT_BATCH_SIZE
+              ? ON_DEMAND_BATCH_SIZE
               : mode === "fallback"
                 ? FALLBACK_BATCH_SIZE
                 : Math.min(Math.max(proactive.poolLimit, 4), 5),
-          excludeIds,
+          excludeIds: stateRef.current.shownIds.slice(-40),
           isFirstVisit: !stateRef.current.hasVisitedBefore,
           isReturningSession:
             stateRef.current.hasVisitedBefore && isNewSessionRef.current,
         });
-
-        if (result.success && result.data.length > 0) {
-          if (mode === "post_chat") {
-            markContextConsumed();
-          }
-          stateRef.current = {
-            ...stateRef.current,
-            suggestionQueue: enqueueSuggestions(
-              stateRef.current.suggestionQueue,
-              result.data,
-            ),
-            queuePagePath: pathname,
-          };
-          persist();
-          return true;
-        }
-        return false;
+        if (!result.success) return [];
+        const shown = new Set(stateRef.current.shownIds);
+        return result.data.filter(
+          (s) =>
+            s?.id &&
+            s?.text &&
+            // Greetings reuse a fixed id every session — never filter them out.
+            (s.source === "welcome" ||
+              s.source === "welcome_back" ||
+              !shown.has(s.id)),
+        );
       } finally {
         fetchingRef.current = false;
       }
     },
-    [
-      getRecentMessages,
-      markContextConsumed,
-      pathname,
-      persist,
-      proactive.poolLimit,
-    ],
+    [getRecentMessages, pathname, proactive.poolLimit],
   );
 
-  const refillQueue = useCallback(async () => {
-    if (postChatPendingRef.current || hasPendingContext()) {
-      const fetched = await fetchAndEnqueue("post_chat");
-      postChatPendingRef.current = false;
-      return fetched;
-    }
-    return fetchAndEnqueue("fallback");
-  }, [fetchAndEnqueue, hasPendingContext]);
+  /** The reward for one completed interaction — uncapped, freshly generated. */
+  const takeOnDemand =
+    useCallback(async (): Promise<ProactiveSuggestionDto | null> => {
+      const data = await fetchBatch("post_chat");
+      // Consume the context either way so one interaction earns one bubble.
+      markContextConsumed();
+      return data[0] ?? null;
+    }, [fetchBatch, markContextConsumed]);
+
+  const refillSessionQueue = useCallback(async (): Promise<boolean> => {
+    let data = await fetchBatch("idle");
+    if (!data.length) data = await fetchBatch("fallback");
+    if (!data.length) return false;
+    stateRef.current = {
+      ...stateRef.current,
+      suggestionQueue: enqueueSuggestions(
+        stateRef.current.suggestionQueue,
+        data,
+      ),
+      queuePagePath: pathname,
+    };
+    persist();
+    return stateRef.current.suggestionQueue.items.length > 0;
+  }, [fetchBatch, pathname, persist]);
+
+  const takeFromQueue = useCallback((): QueuedSuggestion | null => {
+    if (!stateRef.current.suggestionQueue.items.length) return null;
+    const { suggestion, updatedQueue } = dequeueNextSuggestion(
+      stateRef.current.suggestionQueue,
+    );
+    stateRef.current = {
+      ...stateRef.current,
+      suggestionQueue: updatedQueue,
+    };
+    persist();
+    return suggestion;
+  }, [persist]);
 
   const presentSuggestion = useCallback(
-    (
-      next: ActiveProactiveSuggestion,
-      triggerType: ProactiveTriggerType,
-      options: { countsTowardLimit: boolean },
-    ) => {
-      const nextState: ProactivePersistedState = {
+    (next: ActiveProactiveSuggestion, triggerType: ProactiveTriggerType) => {
+      const spendsBudget = countsTowardSessionLimit(next.source);
+
+      stateRef.current = {
         ...stateRef.current,
         shownIds: stateRef.current.shownIds.includes(next.id)
           ? stateRef.current.shownIds
-          : [...stateRef.current.shownIds, next.id],
+          : [...stateRef.current.shownIds, next.id].slice(-MAX_SHOWN_IDS),
         hasVisitedBefore:
-          stateRef.current.hasVisitedBefore || next.source === "welcome",
-        sessionSuggestionCount:
-          options.countsTowardLimit && countsTowardSessionLimit(next.source)
-            ? Math.min(
-                SESSION_SUGGESTION_LIMIT,
-                stateRef.current.sessionSuggestionCount + 1,
-              )
-            : stateRef.current.sessionSuggestionCount,
+          stateRef.current.hasVisitedBefore ||
+          next.source === "welcome" ||
+          next.source === "welcome_back",
+        sessionSuggestionCount: spendsBudget
+          ? Math.min(
+              PROACTIVE_CONFIG.sessionSuggestionLimit,
+              stateRef.current.sessionSuggestionCount + 1,
+            )
+          : stateRef.current.sessionSuggestionCount,
+        // Delivering the on-demand bubble settles the earned credit.
+        pendingOnDemand: spendsBudget
+          ? stateRef.current.pendingOnDemand
+          : false,
       };
-
-      stateRef.current = nextState;
       if (next.source === "welcome" || next.source === "welcome_back") {
         isNewSessionRef.current = false;
       }
       persist();
 
-      setActive({
-        id: next.id,
-        text: next.text,
-        source: next.source,
-      });
+      setActive(next);
       visibleRef.current = true;
       setVisible(true);
 
@@ -284,21 +288,14 @@ export function useProactiveSuggestions() {
       });
 
       hideTimerRef.current = setTimeout(() => {
+        hideTimerRef.current = null;
         visibleRef.current = false;
         setVisible(false);
         setActive(null);
-        scheduleNext(proactive.rotateGapMs);
-      }, proactive.displayMs);
+        if (hasWork()) scheduleNext(gapMs());
+      }, displayMs());
     },
-    [
-      pathname,
-      persist,
-      proactive.displayMs,
-      proactive.rotateGapMs,
-      queueHasItems,
-      scheduleNext,
-      sessionBatchPending,
-    ],
+    [displayMs, gapMs, hasWork, pathname, persist, scheduleNext],
   );
 
   const showNext = useCallback(
@@ -314,111 +311,86 @@ export function useProactiveSuggestions() {
         if (!canShow()) return;
         activeTriggerRef.current = triggerType;
 
-        if (queueHasItems()) {
-          const { suggestion, updatedQueue } = dequeueNextSuggestion(
-            stateRef.current.suggestionQueue,
-          );
-          stateRef.current = {
-            ...stateRef.current,
-            suggestionQueue: updatedQueue,
-          };
-          persist();
-
-          if (suggestion) {
+        // 1. An earned on-demand bubble outranks everything and ignores the cap.
+        if (stateRef.current.pendingOnDemand) {
+          const onDemand = await takeOnDemand();
+          if (!canShow()) return;
+          if (onDemand) {
             presentSuggestion(
               {
-                id: suggestion.id,
-                text: suggestion.text,
-                source: suggestion.source,
+                id: onDemand.id,
+                text: onDemand.text,
+                // Force the exempt source so the cap is never charged for it.
+                source: "recent_conversation",
               },
               triggerType,
-              {
-                countsTowardLimit: sessionBatchPending(),
-              },
             );
             return;
           }
+          stateRef.current = { ...stateRef.current, pendingOnDemand: false };
+          persist();
         }
 
-        if (postChatPendingRef.current) {
-          const fetched = await refillQueue();
-          if (!canShow() || !fetched) return;
-          void showNextRef.current(triggerType);
-          return;
-        }
+        // 2. Session cap reached — stay silent until the visitor chats again.
+        if (sessionBudgetRemaining(stateRef.current) <= 0) return;
 
-        if (sessionBatchPending()) {
-          const fetched = await fetchAndEnqueue("idle");
-          if (!canShow()) return;
-          if (fetched && queueHasItems()) {
-            void showNextRef.current(triggerType);
-          } else if (!queueHasItems()) {
-            stateRef.current = {
-              ...stateRef.current,
-              sessionSuggestionCount: SESSION_SUGGESTION_LIMIT,
-            };
-            persist();
-            const refilled = await refillQueue();
-            if (canShow() && refilled && queueHasItems()) {
-              void showNextRef.current(triggerType);
-            }
-          }
-          return;
+        let next = takeFromQueue();
+        if (!next) {
+          const refilled = await refillSessionQueue();
+          if (!canShow() || !refilled) return;
+          next = takeFromQueue();
         }
+        if (!next) return;
 
-        const fetched = await refillQueue();
-        if (!canShow() || !fetched) return;
-        if (queueHasItems()) {
-          void showNextRef.current(triggerType);
-        }
+        presentSuggestion(
+          { id: next.id, text: next.text, source: next.source },
+          triggerType,
+        );
       } finally {
         releaseMutex();
       }
     },
     [
       canShow,
-      fetchAndEnqueue,
       persist,
       presentSuggestion,
-      queueHasItems,
-      refillQueue,
-      sessionBatchPending,
+      refillSessionQueue,
+      takeFromQueue,
+      takeOnDemand,
     ],
   );
 
   showNextRef.current = showNext;
 
+  /**
+   * Arms the next bubble. The first bubble of a session comes quickly; every
+   * later one waits a full quiet gap, including after a reload or SPA nav.
+   */
   const scheduleIdleShow = useCallback(() => {
-    clearTimers();
-    if (!canShow() || !triggerAllowed("idle")) return;
+    if (visibleRef.current) return;
+    if (!canShow() || !hasWork()) return;
+    if (idleTimerRef.current || rotateTimerRef.current) return;
+
+    const isFirstOfSession =
+      stateRef.current.sessionSuggestionCount === 0 &&
+      !stateRef.current.pendingOnDemand;
+    const delay = isFirstOfSession ? proactive.initialIdleMs : gapMs();
+
     idleTimerRef.current = setTimeout(() => {
-      markTriggerFired("idle", pathname);
+      idleTimerRef.current = null;
       void showNextRef.current("idle");
-    }, proactive.initialIdleMs);
-  }, [canShow, clearTimers, pathname, proactive.initialIdleMs, triggerAllowed]);
+    }, delay);
+  }, [canShow, gapMs, hasWork, proactive.initialIdleMs]);
+
+  // Lock this session's budget in immediately so a reload cannot refund it.
+  useEffect(() => {
+    persist();
+  }, [persist]);
 
   useEffect(() => {
-    const userMessageCount =
+    userMessageCountRef.current =
       messages?.filter((message) => message.role === "user").length ?? 0;
-    userMessageCountRef.current = userMessageCount;
   }, [messages]);
-
-  useEffect(() => {
-    if (!pathname) return;
-    if (
-      stateRef.current.queuePagePath &&
-      stateRef.current.queuePagePath !== pathname
-    ) {
-      stateRef.current = {
-        ...stateRef.current,
-        suggestionQueue: { items: [] },
-        queuePagePath: null,
-      };
-      persist();
-      hideBubble();
-      clearTimers();
-    }
-  }, [clearTimers, hideBubble, pathname, persist]);
 
   useEffect(() => {
     const onVisibility = () => {
@@ -453,48 +425,58 @@ export function useProactiveSuggestions() {
 
     if (hadOpenRef.current) {
       hadOpenRef.current = false;
+      clearTimers();
       const chatted =
         userMessageCountRef.current > openUserMessageCountRef.current;
-      postChatPendingRef.current = chatted;
-      clearTimers();
-      if (!chatted) {
-        scheduleNext(proactive.rotateGapMs);
+
+      // Open → chatted → closed is one complete interaction, and every
+      // interaction earns one extra personalized bubble beyond the cap.
+      if (chatted && hasPendingContext()) {
+        stateRef.current = { ...stateRef.current, pendingOnDemand: true };
+        persist();
+        scheduleNext(proactive.postChatDelayMs);
         return;
       }
-      idleTimerRef.current = setTimeout(() => {
-        void showNextRef.current("idle");
-      }, proactive.postChatDelayMs);
+      if (hasWork()) scheduleNext(gapMs());
       return;
     }
 
     scheduleIdleShow();
   }, [
     clearTimers,
+    gapMs,
+    hasPendingContext,
+    hasWork,
     hideBubble,
     isOpen,
+    persist,
     proactive.postChatDelayMs,
-    proactive.rotateGapMs,
     proactiveEnabled,
-    queueHasItems,
     scheduleIdleShow,
     scheduleNext,
-    sessionBatchPending,
-    hasPendingContext,
     tabVisible,
   ]);
 
   useEffect(() => {
-    if (isOpen || !proactiveEnabled || !tabVisible) return;
+    if (!pathname) return;
+    if (
+      stateRef.current.queuePagePath &&
+      stateRef.current.queuePagePath !== pathname
+    ) {
+      stateRef.current = {
+        ...stateRef.current,
+        suggestionQueue: { items: [] },
+        queuePagePath: null,
+      };
+      persist();
+    }
+    if (isOpenRef.current || !proactiveEnabled || !isTabVisible()) return;
     clearTimers();
     hideBubble();
     scheduleIdleShow();
   }, [pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
-    return () => {
-      clearTimers();
-    };
-  }, [clearTimers]);
+  useEffect(() => clearTimers, [clearTimers]);
 
   const dismissActive = useCallback(() => {
     if (active) {
@@ -505,9 +487,10 @@ export function useProactiveSuggestions() {
         suggestionId: active.id,
       });
     }
+    clearTimers();
     hideBubble();
-    scheduleNext(proactive.rotateGapMs);
-  }, [active, hideBubble, pathname, proactive.rotateGapMs, scheduleNext]);
+    if (hasWork()) scheduleNext(gapMs());
+  }, [active, clearTimers, gapMs, hasWork, hideBubble, pathname, scheduleNext]);
 
   const clickActive = useCallback(() => {
     if (active) {

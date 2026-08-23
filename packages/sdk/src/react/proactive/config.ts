@@ -1,20 +1,31 @@
 /** Timing for proactive launcher suggestions. */
 export const PROACTIVE_CONFIG = {
   storageKey: "neylonai.proactive.suggestions.v1",
-  /** Quiet delay before the first bubble. */
-  initialIdleMs: 1000,
+  /** Quiet delay before the very first bubble of a session. */
+  initialIdleMs: 1_000,
   /** How long a bubble stays visible. */
-  displayMs: 6_500,
-  /** Gap after auto-hide before the next bubble. */
-  rotateGapMs: 7_500,
-  /** Bubbles delivered per tab session, excluding the one-time welcome. */
+  displayMs: 8_000,
+  /** Quiet gap after a bubble closes before the next one may appear. */
+  rotateGapMs: 10_000,
+  /** Random extra gap on top of `rotateGapMs` so pacing never feels mechanical. */
+  rotateGapJitterMs: 2_000,
+  /**
+   * Enforced minimums. Dashboard/stored overrides may only make bubbles
+   * *rarer* than this — never more frequent — so a stale published config
+   * can't bring bubble spam back.
+   */
+  minDisplayMs: 8_000,
+  minRotateGapMs: 10_000,
+  /**
+   * Bubbles delivered per tab session, welcome included. Reloading the tab
+   * re-enters the same session, so the budget is not refunded. On-demand
+   * bubbles earned by chatting are exempt (see `countsTowardSessionLimit`).
+   */
   sessionSuggestionLimit: 10,
-  /** After widget closes, wait before post-chat suggestions. */
+  /** After the widget closes on a real chat, wait before the on-demand bubble. */
   postChatDelayMs: 2_000,
   /** Personalized suggestions requested per pool refresh (3–5). */
   poolLimit: 5,
-  /** Refresh pool after this age so content stays fresh while looping. */
-  poolTtlMs: 2 * 60 * 1000,
   /**
    * Master switch for suggestion pops.
    * Users can also mute via widgetAudioManager.setEnabled(false).

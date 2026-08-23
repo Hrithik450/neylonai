@@ -101,6 +101,8 @@ export type StoredWidgetConfig = {
     initialIdleMs?: number;
     displayMs?: number;
     rotateGapMs?: number;
+    /** Random extra delay added to `rotateGapMs` (default 2000). */
+    rotateGapJitterMs?: number;
     postChatDelayMs?: number;
     poolLimit?: number;
     behavioralTriggers?: {
@@ -218,8 +220,9 @@ const DEFAULT_PROACTIVE = {
   soundEnabled: true,
   volume: 0.22,
   initialIdleMs: 800,
-  displayMs: 6_500,
-  rotateGapMs: 4_500,
+  displayMs: 8_000,
+  rotateGapMs: 10_000,
+  rotateGapJitterMs: 2_000,
   postChatDelayMs: 2_000,
   poolLimit: 5,
   behavioralTriggers: {

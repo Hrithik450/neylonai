@@ -1,6 +1,6 @@
 import type { ProactiveSuggestionDto } from "../..";
 import { PROACTIVE_CONFIG } from "./config";
-import { getOrCreateVisitorId } from "../../visitor";
+import { getOrCreateSessionId, getOrCreateVisitorId } from "../../visitor";
 import {
   EMPTY_SUGGESTION_QUEUE,
   parseSuggestionQueue,
@@ -9,126 +9,220 @@ import {
 
 export interface ProactivePersistedState {
   visitorId: string;
+  sessionId: string;
+  /** Visitor-durable: suggestion ids already delivered (localStorage). */
   shownIds: string[];
   /** True after the visitor has seen their first welcome bubble. */
   hasVisitedBefore: boolean;
-  sessionBatchId: string | null;
+  /** Conversation fingerprint already used for an on-demand suggestion. */
+  lastConsumedContextFingerprint: string | null;
+  /** Session-scoped: capped bubbles already delivered this session. */
   sessionSuggestionCount: number;
+  /**
+   * Session-scoped: a completed support-widget interaction has earned an
+   * on-demand bubble that has not been delivered yet.
+   */
+  pendingOnDemand: boolean;
   /** Path the current queue was seeded for (cleared on navigation). */
   queuePagePath: string | null;
-  /** Conversation fingerprint already used for context-based suggestions. */
-  lastConsumedContextFingerprint: string | null;
   suggestionQueue: SuggestionQueue;
 }
 
-const EMPTY = (visitorId: string): ProactivePersistedState => ({
-  visitorId,
-  shownIds: [],
-  hasVisitedBefore: false,
-  sessionBatchId: null,
-  sessionSuggestionCount: 0,
-  queuePagePath: null,
-  lastConsumedContextFingerprint: null,
-  suggestionQueue: { ...EMPTY_SUGGESTION_QUEUE },
-});
-
-function canUseStorage(): boolean {
-  return typeof window !== "undefined" && typeof localStorage !== "undefined";
+/** Visitor-durable half — survives tab close, shared across tabs. */
+interface VisitorState {
+  shownIds: string[];
+  hasVisitedBefore: boolean;
+  lastConsumedContextFingerprint: string | null;
 }
 
-function storageKey(visitorId: string): string {
+/** Session half — survives reload of this tab, dies with the tab. */
+interface SessionState {
+  sessionSuggestionCount: number;
+  pendingOnDemand: boolean;
+  queuePagePath: string | null;
+  suggestionQueue: SuggestionQueue;
+}
+
+const EMPTY_VISITOR: VisitorState = {
+  shownIds: [],
+  hasVisitedBefore: false,
+  lastConsumedContextFingerprint: null,
+};
+
+const EMPTY_SESSION: SessionState = {
+  sessionSuggestionCount: 0,
+  pendingOnDemand: false,
+  queuePagePath: null,
+  suggestionQueue: { ...EMPTY_SUGGESTION_QUEUE },
+};
+
+function canUseStorage(kind: "local" | "session"): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const store = kind === "local" ? window.localStorage : window.sessionStorage;
+    const probe = "__neylonai_proactive_probe__";
+    store.setItem(probe, "1");
+    store.removeItem(probe);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function visitorKey(visitorId: string): string {
   return `${PROACTIVE_CONFIG.storageKey}.${visitorId}`;
 }
 
-export function loadProactiveState(): ProactivePersistedState {
-  const visitorId = getOrCreateVisitorId();
-  if (!canUseStorage()) return EMPTY(visitorId);
+function sessionKey(sessionId: string): string {
+  return `${PROACTIVE_CONFIG.storageKey}.s.${sessionId}`;
+}
+
+function readVisitorState(visitorId: string): VisitorState {
+  if (!canUseStorage("local")) return { ...EMPTY_VISITOR };
   try {
-    const raw = localStorage.getItem(storageKey(visitorId));
-    if (!raw) return EMPTY(visitorId);
+    const raw = localStorage.getItem(visitorKey(visitorId));
+    if (!raw) return { ...EMPTY_VISITOR };
     const parsed = JSON.parse(raw) as Partial<ProactivePersistedState> & {
       welcomeShown?: boolean;
     };
     if (parsed.visitorId && parsed.visitorId !== visitorId) {
-      return EMPTY(visitorId);
+      return { ...EMPTY_VISITOR };
     }
+    const shownIds = Array.isArray(parsed.shownIds)
+      ? parsed.shownIds.filter((id): id is string => typeof id === "string")
+      : [];
     return {
-      visitorId,
-      shownIds: Array.isArray(parsed.shownIds)
-        ? parsed.shownIds.filter((id): id is string => typeof id === "string")
-        : [],
+      shownIds: shownIds.slice(-120),
       hasVisitedBefore:
         parsed.hasVisitedBefore === true ||
         parsed.welcomeShown === true ||
-        (Array.isArray(parsed.shownIds) &&
-          (parsed.shownIds.includes("welcome") ||
-            parsed.shownIds.includes("welcome-back"))),
-      sessionBatchId:
-        typeof parsed.sessionBatchId === "string"
-          ? parsed.sessionBatchId
-          : null,
-      sessionSuggestionCount:
-        typeof parsed.sessionSuggestionCount === "number"
-          ? Math.min(
-              Math.max(parsed.sessionSuggestionCount, 0),
-              PROACTIVE_CONFIG.sessionSuggestionLimit,
-            )
-          : 0,
-      queuePagePath:
-        typeof parsed.queuePagePath === "string" ? parsed.queuePagePath : null,
+        shownIds.includes("welcome") ||
+        shownIds.includes("welcome-back"),
       lastConsumedContextFingerprint:
         typeof parsed.lastConsumedContextFingerprint === "string"
           ? parsed.lastConsumedContextFingerprint
           : null,
-      suggestionQueue: parseSuggestionQueue(parsed.suggestionQueue),
     };
   } catch {
-    return EMPTY(visitorId);
+    return { ...EMPTY_VISITOR };
   }
 }
 
-const claimedSessionBatches = new Set<string>();
+function readSessionState(sessionId: string): {
+  state: SessionState;
+  isNewSession: boolean;
+} {
+  if (!canUseStorage("session")) {
+    return { state: { ...EMPTY_SESSION }, isNewSession: true };
+  }
+  try {
+    const raw = sessionStorage.getItem(sessionKey(sessionId));
+    if (!raw) return { state: { ...EMPTY_SESSION }, isNewSession: true };
+    const parsed = JSON.parse(raw) as Partial<SessionState>;
+    if (!parsed || typeof parsed !== "object") {
+      return { state: { ...EMPTY_SESSION }, isNewSession: true };
+    }
+    return {
+      state: {
+        sessionSuggestionCount:
+          typeof parsed.sessionSuggestionCount === "number"
+            ? Math.min(
+                Math.max(Math.trunc(parsed.sessionSuggestionCount), 0),
+                PROACTIVE_CONFIG.sessionSuggestionLimit,
+              )
+            : 0,
+        pendingOnDemand: parsed.pendingOnDemand === true,
+        queuePagePath:
+          typeof parsed.queuePagePath === "string" ? parsed.queuePagePath : null,
+        suggestionQueue: parseSuggestionQueue(parsed.suggestionQueue),
+      },
+      isNewSession: false,
+    };
+  } catch {
+    return { state: { ...EMPTY_SESSION }, isNewSession: true };
+  }
+}
 
 /**
- * Claims the batch for this tab session. The in-memory claim survives SPA
- * remounts, and a reload re-enters the same session, so the claim is granted
- * again while the session still has unshown prompts left in its budget.
+ * "Is this a new session?" is decided once per page load, so SPA remounts and
+ * React strict-mode double mounts don't lose the welcome-back greeting.
  */
-export function claimProactiveSessionBatch(
-  sessionId: string,
-  budgetRemaining: number,
-): boolean {
-  if (claimedSessionBatches.has(sessionId)) return true;
-  if (typeof sessionStorage === "undefined") {
-    claimedSessionBatches.add(sessionId);
-    return true;
+let newSessionVerdict: { sessionId: string; isNewSession: boolean } | null = null;
+
+/**
+ * Loads proactive state for this visitor + tab session.
+ *
+ * The session budget lives in sessionStorage, so a reload re-enters the same
+ * session with the same remaining budget, while a brand-new tab starts fresh.
+ */
+export function loadProactiveState(): {
+  state: ProactivePersistedState;
+  isNewSession: boolean;
+} {
+  const visitorId = getOrCreateVisitorId();
+  const sessionId = getOrCreateSessionId();
+  const visitor = readVisitorState(visitorId);
+  const { state: session, isNewSession } = readSessionState(sessionId);
+
+  if (newSessionVerdict?.sessionId !== sessionId) {
+    newSessionVerdict = { sessionId, isNewSession };
   }
-  const key = `${PROACTIVE_CONFIG.storageKey}.session.${sessionId}`;
-  try {
-    if (sessionStorage.getItem(key) && budgetRemaining <= 0) return false;
-    sessionStorage.setItem(key, "1");
-  } catch {
-    // Private mode: best effort for this document.
-  }
-  claimedSessionBatches.add(sessionId);
-  return true;
+
+  return {
+    state: { visitorId, sessionId, ...visitor, ...session },
+    isNewSession: newSessionVerdict.isNewSession,
+  };
 }
 
 export function saveProactiveState(state: ProactivePersistedState): void {
-  if (!canUseStorage()) return;
-  try {
-    localStorage.setItem(storageKey(state.visitorId), JSON.stringify(state));
-  } catch {
-    // Quota / private mode — ignore.
+  if (canUseStorage("local")) {
+    try {
+      localStorage.setItem(
+        visitorKey(state.visitorId),
+        JSON.stringify({
+          visitorId: state.visitorId,
+          shownIds: state.shownIds.slice(-120),
+          hasVisitedBefore: state.hasVisitedBefore,
+          lastConsumedContextFingerprint: state.lastConsumedContextFingerprint,
+        } satisfies VisitorState & { visitorId: string }),
+      );
+    } catch {
+      // Quota / private mode — ignore.
+    }
+  }
+
+  if (canUseStorage("session")) {
+    try {
+      sessionStorage.setItem(
+        sessionKey(state.sessionId),
+        JSON.stringify({
+          sessionSuggestionCount: state.sessionSuggestionCount,
+          pendingOnDemand: state.pendingOnDemand,
+          queuePagePath: state.queuePagePath,
+          suggestionQueue: state.suggestionQueue,
+        } satisfies SessionState),
+      );
+    } catch {
+      // Quota / private mode — ignore.
+    }
   }
 }
 
+/**
+ * On-demand bubbles are the reward for a completed support-widget interaction
+ * and are unlimited; every other bubble spends the session budget.
+ */
 export function countsTowardSessionLimit(
   source: ProactiveSuggestionDto["source"],
 ): boolean {
-  return (
-    source !== "welcome" &&
-    source !== "welcome_back" &&
-    source !== "recent_conversation"
+  return source !== "recent_conversation";
+}
+
+export function sessionBudgetRemaining(
+  state: Pick<ProactivePersistedState, "sessionSuggestionCount">,
+): number {
+  return Math.max(
+    0,
+    PROACTIVE_CONFIG.sessionSuggestionLimit - state.sessionSuggestionCount,
   );
 }

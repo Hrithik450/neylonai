@@ -22,6 +22,9 @@ interface WidgetMessagesProps {
   title?: string;
 }
 
+/** Cadence for catching a human agent's reply in an open thread. */
+const THREAD_POLL_MS = 4_000;
+
 export function WidgetMessages({ threadId, title }: WidgetMessagesProps) {
   const [loading, setLoading] = React.useState(Boolean(threadId));
 
@@ -134,14 +137,40 @@ export function WidgetMessages({ threadId, title }: WidgetMessagesProps) {
 
     // While a human may be handling the same thread, poll so visitor sees replies
     // without websockets (Intercom/Zendesk use realtime; polling is enough here).
-    const pollId = window.setInterval(() => {
+    // A hidden tab polls nothing and catches up the moment it comes back.
+    let pollId: number | null = null;
+
+    const stopPolling = () => {
+      if (pollId === null) return;
+      window.clearInterval(pollId);
+      pollId = null;
+    };
+
+    const startPolling = () => {
+      if (pollId !== null) return;
+      pollId = window.setInterval(() => {
+        if (cancelled) return;
+        void fetchThreadMessages({ silent: true });
+      }, THREAD_POLL_MS);
+    };
+
+    const onVisibility = () => {
       if (cancelled) return;
-      void fetchThreadMessages({ silent: true });
-    }, 4000);
+      if (document.visibilityState === "visible") {
+        void fetchThreadMessages({ silent: true });
+        startPolling();
+      } else {
+        stopPolling();
+      }
+    };
+
+    if (document.visibilityState === "visible") startPolling();
+    document.addEventListener("visibilitychange", onVisibility);
 
     return () => {
       cancelled = true;
-      window.clearInterval(pollId);
+      stopPolling();
+      document.removeEventListener("visibilitychange", onVisibility);
       stopStreamingRef.current();
     };
   }, [threadId, setCurrentThreadId, setMessages, config.staticDemo, user?.id]);

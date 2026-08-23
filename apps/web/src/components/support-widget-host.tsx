@@ -7,10 +7,6 @@ import { useSessionView } from "@/components/session-view";
 import { useErrorStore } from "@/store/error-store";
 import { neylonWidgetCustomization } from "@/lib/neylon-customization";
 
-/**
- * First-party site adapter: session user + publishable API key from env.
- * Branding loads for that key’s org — same path as any customer embed.
- */
 export function SupportWidgetHost({
   apiKey: apiKeyProp = null,
 }: {
@@ -57,7 +53,6 @@ export function SupportWidgetHost({
       apiKey,
       pagePath: pathname,
       user: widgetUser,
-      customization: neylonWidgetCustomization,
       // Force-open after failed auth redirect (?auth=false).
       defaultOpen: authFlag === "false",
     }),
