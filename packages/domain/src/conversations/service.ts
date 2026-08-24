@@ -279,12 +279,30 @@ export async function submitHandoffContact(input: {
   threadId: string;
   participantExternalId: string;
   name: string;
-  email: string;
+  /** Legacy email-only field. Prefer `contact` for new callers. */
+  email?: string;
+  /** The single contact the visitor chose — any one of email / phone / linkedin. */
+  contact?: { type: "email" | "phone" | "linkedin"; value: string };
 }): Promise<{
   escalated: true;
   status: "human_pending" | "human_active";
   customerMessage: string;
 }> {
+  // Resolve the one contact the visitor provided. Prefer the structured
+  // `contact`; fall back to the legacy `email` field for older SDK callers.
+  const contactType: "email" | "phone" | "linkedin" | null =
+    input.contact?.type ?? (input.email?.trim() ? "email" : null);
+  const contactValue = (input.contact?.value ?? input.email ?? "").trim();
+  if (!contactType || !contactValue) {
+    throw new Error("A contact (email, phone, or LinkedIn) is required");
+  }
+  const contactLabel =
+    contactType === "phone"
+      ? "Phone"
+      : contactType === "linkedin"
+        ? "LinkedIn"
+        : "Email";
+
   const [owned] = await db
     .select({
       participantId: threads.participant_id,
@@ -306,15 +324,30 @@ export async function submitHandoffContact(input: {
     .limit(1);
   if (!owned?.participantId) throw new Error("Conversation not found");
 
-  const identified = await ParticipantsService.identifyParticipant({
-    id: owned.participantId,
-    organizationId: input.organizationId,
-    name: input.name,
-    email: input.email,
-  });
-  if (!identified.success) {
-    throw new Error(identified.error ?? "Invalid contact details");
+  // Email is stored structurally on the participant (drives the inbox email
+  // column). Phone / LinkedIn have no column, so we only record the name here
+  // and surface the actual contact via a thread message + alert below.
+  if (contactType === "email") {
+    const identified = await ParticipantsService.identifyParticipant({
+      id: owned.participantId,
+      organizationId: input.organizationId,
+      name: input.name,
+      email: contactValue,
+    });
+    if (!identified.success) {
+      throw new Error(identified.error ?? "Invalid contact details");
+    }
+  } else {
+    const named = await ParticipantsService.setDisplayName({
+      id: owned.participantId,
+      organizationId: input.organizationId,
+      name: input.name,
+    });
+    if (!named.success) {
+      throw new Error(named.error ?? "Invalid contact details");
+    }
   }
+
   if (owned.status === "human_pending" || owned.status === "human_active") {
     return {
       escalated: true,
@@ -375,8 +408,22 @@ export async function submitHandoffContact(input: {
       organizationId: input.organizationId,
       threadId: input.threadId,
       reason: pending?.reason ?? "Human handoff requested",
-      summary: null,
+      summary: `Visitor contact — ${contactLabel}: ${contactValue}`,
     });
+
+    // Phone / LinkedIn aren't stored on the participant, so drop a system note
+    // into the thread — this is what the team sees in the dashboard they reply
+    // from, and it shows in the conversation-list preview.
+    if (contactType !== "email") {
+      const contactNote = await ThreadMessagesService.createMessage({
+        thread_id: input.threadId,
+        role: "system",
+        content: `Visitor shared contact — ${contactLabel}: ${contactValue}`,
+      });
+      if (!contactNote.success) {
+        throw new Error(contactNote.error ?? "Failed to record contact");
+      }
+    }
 
     const created = await ThreadMessagesService.createMessage({
       thread_id: input.threadId,

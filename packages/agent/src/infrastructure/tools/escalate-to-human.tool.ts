@@ -30,12 +30,12 @@ export const escalateToHumanTool = tool(
       });
 
       if (result.contactRequired) {
-        return "Handoff started — the conversation is now flagged for the team and a contact form has opened for the visitor. In your reply: confirm you're connecting them with a person, and ask them to share an email (or another way to reach them, e.g. LinkedIn or GitHub). Do NOT try to answer their original request yourself, and do NOT claim a human is online right now.";
+        return "Handoff started — the conversation is now flagged for the team and a contact form has opened for the visitor. In your reply: confirm you're connecting them with a person, and ask them to share their name plus an email or another way to reach them, such as LinkedIn or GitHub. Do NOT try to answer their original request yourself, and do NOT claim a human is online right now.";
       }
       return "Handoff complete — the conversation has been routed to the human team with the visitor's context. In your reply: let them know a person will review the conversation and follow up shortly. Do NOT keep trying to answer the request yourself, and do NOT claim a human is chatting live right now.";
     } catch (error) {
       console.error("escalate_to_human failed:", error);
-      return "The handoff could not be completed due to a system error. Apologize briefly, ask the visitor to leave an email so the team can reach them, and do NOT claim a human has been notified.";
+      return "The handoff could not be completed due to a system error. Apologize briefly, ask the visitor to leave their name and an email so the team can reach them, and do NOT claim a human has been notified.";
     }
   },
   {

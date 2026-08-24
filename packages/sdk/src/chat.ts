@@ -22,6 +22,8 @@ export interface StreamChatInput {
   /** Current page metadata only; page body content is never sent. */
   pagePath?: string | null;
   pageQuery?: Record<string, string>;
+  /** True when the turn was started by tapping a proactive suggestion (a teaser), not typed. */
+  proactive?: boolean;
   /** When aborted, fetch and stream parsing stop; callers should treat as cancel, not error. */
   signal?: AbortSignal;
 }
@@ -55,6 +57,7 @@ export async function* streamChat(
         threadId: payload.threadId,
         pagePath: payload.pagePath,
         pageQuery: payload.pageQuery,
+        proactive: payload.proactive,
       }),
       signal: payload.signal,
     });

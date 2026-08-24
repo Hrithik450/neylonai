@@ -137,6 +137,32 @@ export class ParticipantsRepository {
     return row ? rowToParticipant(row) : null;
   }
 
+  /**
+   * Set only the visitor's display name — used when they hand off with a
+   * non-email contact (phone/LinkedIn). Leaves `email` and `is_anonymous`
+   * untouched, since there is no email to identify them by.
+   */
+  static async setDisplayName(input: {
+    id: string;
+    organizationId: string;
+    name: string;
+  }): Promise<ParticipantRecord | null> {
+    const [row] = await db
+      .update(organizationParticipants)
+      .set({
+        display_name: input.name.trim().slice(0, 255),
+        updated_at: new Date(),
+      })
+      .where(
+        and(
+          eq(organizationParticipants.id, input.id),
+          eq(organizationParticipants.organization_id, input.organizationId),
+        ),
+      )
+      .returning();
+    return row ? rowToParticipant(row) : null;
+  }
+
   /** GDPR-style anonymization — preserves threads without PII. */
   static async anonymizeParticipant(id: string): Promise<ParticipantRecord | null> {
     const [row] = await db

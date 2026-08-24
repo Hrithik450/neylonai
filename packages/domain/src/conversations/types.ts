@@ -33,4 +33,4 @@ export const ESCALATION_CUSTOMER_MESSAGE =
   "I’ve sent your request to our team. A human will review this conversation and contact you shortly.";
 
 export const ESCALATION_CONTACT_MESSAGE =
-  "Before I hand this to the team, please share your name and email so they can contact you.";
+  "Before I hand this to the team, please share your name and a way to contact you so they can follow up.";

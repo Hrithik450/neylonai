@@ -161,6 +161,12 @@ export interface StreamConversationInput {
   /** Correlates all model/tool usage for this HTTP request. */
   requestId?: string | null;
   apiKeyId?: string | null;
+  /**
+   * True when the visitor started this turn by tapping a proactive suggestion
+   * (a marketing-style teaser), not by typing. The agent then treats the
+   * message as an information request instead of role-playing as the visitor.
+   */
+  proactive?: boolean;
   conversationHistory: ConversationMessage[];
 }
 

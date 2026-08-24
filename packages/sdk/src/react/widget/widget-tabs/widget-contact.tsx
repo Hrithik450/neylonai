@@ -13,14 +13,24 @@ import {
 } from "../../..";
 import { useThreadStore } from "../../store/thread-store";
 
+type ContactType = "email" | "phone" | "linkedin";
+
+const CONTACT_TYPES: { key: ContactType; label: string }[] = [
+  { key: "email", label: "Email" },
+  { key: "phone", label: "Phone" },
+  { key: "linkedin", label: "LinkedIn" },
+];
+
 export function WidgetContact() {
   const { config, user } = useWidgetHost();
   const { navigate } = useWidgetNavigation();
   const { currentThreadId, setCurrentThreadId, setThreads } = useThreadStore();
   const branding = config.branding;
   const secondary = branding.secondaryTextColor;
+  const primary = branding.primaryTextColor;
   const [name, setName] = React.useState(user?.name ?? "");
-  const [email, setEmail] = React.useState(user?.email ?? "");
+  const [contactType, setContactType] = React.useState<ContactType>("email");
+  const [contact, setContact] = React.useState(user?.email ?? "");
   const [threadId, setThreadId] = React.useState(currentThreadId);
   const [state, setState] = React.useState<
     "loading" | "contact" | "success" | "error"
@@ -47,6 +57,7 @@ export function WidgetContact() {
       contactRequired?: boolean;
       status: string;
     }) => {
+      const hasName = name.trim().length >= 2;
       setThreadId(data.threadId);
       setCurrentThreadId(data.threadId);
       setThreads({
@@ -58,9 +69,9 @@ export function WidgetContact() {
           data.status === "human_pending" ? "human_pending" : "awaiting_contact",
         created_at: new Date().toISOString(),
       });
-      setState(data.contactRequired ? "contact" : "success");
+      setState(data.contactRequired || !hasName ? "contact" : "success");
     },
-    [chatUser.id, setCurrentThreadId, setThreads],
+    [chatUser.id, name, setCurrentThreadId, setThreads],
   );
 
   React.useEffect(() => {
@@ -83,15 +94,53 @@ export function WidgetContact() {
     });
   }, [applyResult, chatUser, config.staticDemo, currentThreadId]);
 
+  const selectType = (type: ContactType) => {
+    setContactType(type);
+    // Don't carry a value across kinds — an email in the phone box is confusing.
+    setContact(type === "email" ? (user?.email ?? "") : "");
+    setError("");
+  };
+
+  /** Returns an error message for the active contact type, or null if valid. */
+  const validateContact = (value: string): string | null => {
+    if (!value) return "Please add a way for us to reach you";
+    if (contactType === "email") {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+        ? null
+        : "Please enter a valid email address";
+    }
+    if (contactType === "phone") {
+      const digits = value.replace(/\D/g, "");
+      return /^[+\d][\d\s()-]*$/.test(value) && digits.length >= 7
+        ? null
+        : "Please enter a valid phone number";
+    }
+    return /linkedin\.com\/.+/i.test(value) || /^[a-zA-Z0-9._-]{2,}$/.test(value)
+      ? null
+      : "Enter your LinkedIn URL or handle";
+  };
+
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (name.trim().length < 2) {
+      setError("Please enter your name");
+      return;
+    }
+    const value = contact.trim();
+    const invalid = validateContact(value);
+    if (invalid) {
+      setError(invalid);
+      return;
+    }
     setState("loading");
     setError("");
     const result = await requestHumanHandoff({
       threadId,
       user: chatUser,
       name,
-      email,
+      // Keep sending `email` for back-compat when email is the chosen type.
+      email: contactType === "email" ? value : undefined,
+      contact: { type: contactType, value },
       reason: "Customer requested human support",
     });
     if (!result.success || !result.data) {
@@ -101,6 +150,34 @@ export function WidgetContact() {
     }
     applyResult(result.data);
   };
+
+  // Input adapts to the chosen contact type (keyboard, placeholder, autofill).
+  // LinkedIn uses type=text (not url) so a bare handle doesn't trip native
+  // URL validation before our own check runs.
+  const contactInputProps: React.InputHTMLAttributes<HTMLInputElement> =
+    contactType === "email"
+      ? {
+          type: "email",
+          inputMode: "email",
+          maxLength: 254,
+          autoComplete: "email",
+          placeholder: "you@company.com",
+        }
+      : contactType === "phone"
+        ? {
+            type: "tel",
+            inputMode: "tel",
+            maxLength: 32,
+            autoComplete: "tel",
+            placeholder: "+1 555 123 4567",
+          }
+        : {
+            type: "text",
+            inputMode: "url",
+            maxLength: 255,
+            autoComplete: "url",
+            placeholder: "linkedin.com/in/yourname",
+          };
 
   return (
     <div className="flex flex-col h-full overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
@@ -141,18 +218,45 @@ export function WidgetContact() {
                 autoComplete="name"
               />
             </label>
-            <label className="block space-y-1">
-              <span className="text-xs font-medium">Email</span>
+
+            <div className="space-y-1.5">
+              <span className="text-xs font-medium">How should we reach you?</span>
+              <div
+                role="group"
+                aria-label="Contact method"
+                className="flex gap-1 rounded-lg border border-black/10 p-1"
+              >
+                {CONTACT_TYPES.map((opt) => {
+                  const selected = contactType === opt.key;
+                  return (
+                    <button
+                      key={opt.key}
+                      type="button"
+                      onClick={() => selectType(opt.key)}
+                      aria-pressed={selected}
+                      className="flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors cursor-pointer"
+                      style={
+                        selected
+                          ? { background: primary, color: "#fff" }
+                          : { background: "transparent", color: secondary }
+                      }
+                    >
+                      {opt.label}
+                    </button>
+                  );
+                })}
+              </div>
               <input
                 required
-                type="email"
-                maxLength={254}
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
+                value={contact}
+                onChange={(event) => setContact(event.target.value)}
                 className="w-full rounded-lg border border-black/15 bg-white px-3 py-2.5 text-sm outline-none focus:border-black/35"
-                autoComplete="email"
+                {...contactInputProps}
               />
-            </label>
+              <p className="text-[11px]" style={{ color: secondary }}>
+                We just need one — pick whichever you prefer.
+              </p>
+            </div>
             {error ? <p className="text-xs text-red-600">{error}</p> : null}
             <Button type="submit" className="w-full cursor-pointer">
               Send to the team

@@ -11,6 +11,7 @@ import {
   canAiRespond,
   escalateConversation,
   getConversationStatus,
+  submitHandoffContact,
 } from "@neylonai/domain/conversations";
 import { resolveKnowledgeScope } from "@neylonai/database";
 import { getAgent, getDefaultAgent } from "../domain/registry";
@@ -147,6 +148,62 @@ function extractLastAssistantText(messages: unknown): string {
   return "";
 }
 
+function extractEmail(text: string): string | null {
+  const match = text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+  return match?.[0]?.trim() ?? null;
+}
+
+function extractPhone(text: string): string | null {
+  const matches = text.match(/(?:\+?\d[\d\s().-]{6,}\d)/g);
+  if (!matches?.length) return null;
+  const best = matches
+    .map((value) => value.trim())
+    .find((value) => value.replace(/\D/g, "").length >= 7);
+  return best ?? null;
+}
+
+function extractLinkedIn(text: string): string | null {
+  const url = text.match(/(?:https?:\/\/)?(?:www\.)?linkedin\.com\/[^\s,]+/i);
+  if (url?.[0]) return url[0].trim();
+  const handle = text.match(/(?:linkedin|li)[\s:@-]+([a-z0-9._-]{2,})/i);
+  return handle?.[1]?.trim() ?? null;
+}
+
+function extractNameCandidate(text: string): string | null {
+  const cleaned = text
+    .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, " ")
+    .replace(/(?:https?:\/\/)?(?:www\.)?linkedin\.com\/[^\s,]+/gi, " ")
+    .replace(/(?:linkedin|li)[\s:@-]+[a-z0-9._-]{2,}/gi, " ")
+    .replace(/(?:\+?\d[\d\s().-]{6,}\d)/g, " ")
+    .replace(/\b(my name is|name is|i am|i'm|this is|reach me at|email is)\b/gi, " ")
+    .replace(/[<>{}[\]|]/g, " ")
+    .replace(/[,\n\r\t]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (cleaned.length < 2 || cleaned.length > 255) return null;
+  if (!/[A-Za-z]/.test(cleaned)) return null;
+  if (!/^[A-Za-z][A-Za-z .'-]*[A-Za-z.]$/.test(cleaned)) return null;
+  return cleaned;
+}
+
+function extractHandoffContactFromMessage(text: string): {
+  name: string;
+  email?: string;
+  contact?: { type: "phone" | "linkedin"; value: string };
+} | null {
+  const email = extractEmail(text);
+  const phone = extractPhone(text);
+  const linkedin = extractLinkedIn(text);
+  const name = extractNameCandidate(text);
+  if (!name) return null;
+  if (email) return { name, email };
+  if (phone) return { name, contact: { type: "phone", value: phone } };
+  if (linkedin) {
+    return { name, contact: { type: "linkedin", value: linkedin } };
+  }
+  return null;
+}
+
 async function persistUserMessage(input: {
   id?: string;
   threadId: string;
@@ -258,6 +315,7 @@ function buildAgentState(
   conversationHistory: Array<{ role: string; content: string }>,
   pagePath?: string | null,
   pageQuery?: Record<string, string>,
+  proactive?: boolean,
 ) {
   // Gemini requires a single system message and it must be first.
   // Fold page context into that message instead of appending another SystemMessage.
@@ -273,6 +331,17 @@ function buildAgentState(
         : []),
       "Use this only to understand intent and prefer knowledge retrieved from this page.",
       "Do not claim to have read live page content; rely on the knowledge search tool.",
+    ].join("\n");
+  }
+
+  if (proactive) {
+    // The visitor tapped a suggested prompt (a teaser/hook), not typed a question.
+    // Without this the model reads the hook as an offer and role-plays the
+    // visitor ("That sounds great, I'd love to learn more!") instead of answering.
+    systemContent = [
+      systemContent,
+      "",
+      "Conversation origin: this turn was started by the visitor tapping a suggested prompt in the chat launcher rather than typing it. Such prompts are worded as short teasers or hooks. Treat it as a sincere request for that information: read the underlying intent and answer it directly and specifically using the knowledge search tool. Do not respond as though you were the visitor, do not merely express interest or enthusiasm, and never ask the visitor to provide the very details they tapped to learn.",
     ].join("\n");
   }
 
@@ -388,6 +457,7 @@ async function* streamConversationTurn(
     participantEmail,
     pagePath,
     pageQuery,
+    proactive,
     conversationHistory,
   } = input;
 
@@ -448,11 +518,54 @@ async function* streamConversationTurn(
       }
 
       const conversationStatus = await getConversationStatus(currentThreadId);
+      if (
+        conversationStatus === "awaiting_contact" &&
+        participantExternalId
+      ) {
+        const handoffDetails = extractHandoffContactFromMessage(userInput);
+        if (handoffDetails) {
+          const result = await submitHandoffContact({
+            organizationId,
+            threadId: currentThreadId,
+            participantExternalId,
+            name: handoffDetails.name,
+            email: handoffDetails.email,
+            contact: handoffDetails.contact,
+          });
+
+          deliveredResponse = true;
+          yield sseEvent({
+            event: "assistantResponse",
+            data: result.customerMessage,
+          });
+          yield sseEvent({
+            event: "conversationEscalated",
+            data: {
+              escalated: result.escalated,
+              status: result.status,
+              threadId: currentThreadId,
+            },
+          });
+          yield sseEvent({ event: "done", data: "end" });
+          return;
+        }
+      }
+
       if (!canAiRespond(conversationStatus)) {
         // Visitor message is persisted; AI must not respond while escalated.
         yield sseEvent({
-          event: "conversationEscalated",
-          data: { escalated: true },
+          event:
+            conversationStatus === "awaiting_contact"
+              ? "handoffContactRequired"
+              : "conversationEscalated",
+          data:
+            conversationStatus === "awaiting_contact"
+              ? {
+                  escalated: false,
+                  status: "awaiting_contact",
+                  threadId: currentThreadId,
+                }
+              : { escalated: true, status: conversationStatus, threadId: currentThreadId },
         });
         yield sseEvent({ event: "done", data: "end" });
         return;
@@ -469,20 +582,6 @@ async function* streamConversationTurn(
           summary,
         });
 
-        assistantPersisted = await persistAssistantMessage({
-          id: assistantMessageId,
-          threadId: currentThreadId,
-          assistantMessage: result.customerMessage,
-          inReplyToMessageId: userMessageId,
-          ...engagementContext,
-        });
-        deliveredResponse = true;
-
-        yield sseEvent({
-          event: "assistantResponse",
-          data: result.customerMessage,
-        });
-
         yield sseEvent({
           event: result.contactRequired
             ? "handoffContactRequired"
@@ -493,13 +592,6 @@ async function* streamConversationTurn(
             threadId: currentThreadId,
           },
         });
-
-        if (assistantPersisted) {
-          yield sseEvent({
-            event: "messagePersisted",
-            data: { userMessageId, assistantMessageId },
-          });
-        }
 
         yield sseEvent({ event: "done", data: "end" });
         return;
@@ -684,6 +776,7 @@ async function* streamConversationTurn(
       conversationHistory,
       pagePath,
       pageQuery,
+      proactive,
     );
     /** Prefer final graph output; fall back to tokens streamed to the client. */
     let assistantMessage = "";

@@ -49,7 +49,7 @@ export function Hero() {
           color: TEXT_PRIMARY,
         }}
       >
-        Know why visitors leave. Engage them sooner.
+        Turn anonymous visitors into qualified leads.
       </motion.h1>
 
       {/* ── Subtitle ─────────────────────────────────────── */}
@@ -66,8 +66,9 @@ export function Hero() {
         }}
         className="md:px-4"
       >
-        Neylon AI watches visitors in real time, starts conversations at the
-        right moment, and turns traffic into engagement.
+        Neylon&apos;s proactive AI opens the right conversation at the right
+        moment — then qualifies each visitor and captures their contact, so
+        your team gets leads instead of lost traffic.
       </motion.p>
 
       {/* ── Email / CTA form ─────────────────────────────── */}

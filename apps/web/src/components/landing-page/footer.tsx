@@ -11,8 +11,8 @@ const GREEN = "#0E3228";
 
 const LINKS = {
   Product: [
-    { label: "Features", href: "#product-showcase" },
-    { label: "Engagement", href: "#features-overview" },
+    { label: "Proactive AI", href: "#product-showcase" },
+    { label: "Features", href: "#features-overview" },
     { label: "Comparison", href: "#comparison-table" },
   ],
   Company: [
@@ -35,7 +35,7 @@ export function Footer() {
             className="landing-strong text-3xl md:text-4xl xl:text-5xl leading-tight"
             style={{ color: GREEN }}
           >
-            Stop losing visitors you&apos;ve already earned.
+            Stop letting qualified leads slip away.
           </h2>
           <p className="text-gray-500 text-base mt-4 max-w-sm mx-auto">
             Free to start. Live in minutes.
@@ -71,8 +71,8 @@ export function Footer() {
               Neylon AI
             </h3>
             <p className="text-gray-500 text-sm leading-relaxed max-w-[220px]">
-              Visitor engagement and retention for websites that want more from
-              their traffic.
+              Proactive lead capture and qualification for websites that want
+              more from their traffic.
             </p>
           </div>
 
@@ -82,16 +82,26 @@ export function Footer() {
                 {group}
               </h3>
               <ul className="space-y-2.5">
-                {items.map((item) => (
-                  <li key={item.label}>
-                    <Link
-                      href={item.href}
-                      className="text-gray-500 text-sm hover:text-gray-900 transition-colors"
-                    >
-                      {item.label}
-                    </Link>
-                  </li>
-                ))}
+                {items.map((item) => {
+                  // mailto:/tel:/external hrefs must be plain anchors — next/link
+                  // intercepts navigation and won't hand these to the browser.
+                  const isExternal = /^(mailto:|tel:|https?:)/.test(item.href);
+                  const linkClass =
+                    "text-gray-500 text-sm hover:text-gray-900 transition-colors";
+                  return (
+                    <li key={item.label}>
+                      {isExternal ? (
+                        <a href={item.href} className={linkClass}>
+                          {item.label}
+                        </a>
+                      ) : (
+                        <Link href={item.href} className={linkClass}>
+                          {item.label}
+                        </Link>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           ))}

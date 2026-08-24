@@ -30,6 +30,7 @@ type HandoffBody = {
   };
   name?: string;
   email?: string;
+  contact?: { type?: string; value?: string };
   reason?: string;
 };
 
@@ -106,14 +107,25 @@ export async function POST(req: NextRequest) {
 
     const name = body.name?.trim();
     const email = body.email?.trim();
+    // Accept any one of email / phone / linkedin. Sanitize the type so only
+    // known kinds reach the domain; fall back to the legacy `email` field.
+    const CONTACT_TYPES = ["email", "phone", "linkedin"] as const;
+    const contactType =
+      CONTACT_TYPES.find((t) => t === body.contact?.type) ?? null;
+    const rawValue = body.contact?.value?.trim();
+    const contact =
+      contactType && rawValue
+        ? { type: contactType, value: rawValue }
+        : undefined;
     const result =
-      name || email
+      name && (email || contact)
         ? await submitHandoffContact({
             organizationId: auth.organizationId,
             threadId,
             participantExternalId: externalId,
-            name: name ?? "",
-            email: email ?? "",
+            name,
+            email,
+            contact,
           })
         : await escalateConversation({
             organizationId: auth.organizationId,

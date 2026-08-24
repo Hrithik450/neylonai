@@ -25,7 +25,7 @@ const ROWS: {
   },
 
   {
-    label: "Proactive visitor engagement",
+    label: "Proactive lead capture",
     neylon: true,
     intercom: "Paid add-on",
     chatbase: false,
@@ -39,7 +39,7 @@ const ROWS: {
   },
 
   {
-    label: "Human escalation & inbox",
+    label: "Lead handoff to your inbox",
     neylon: true,
     intercom: true,
     chatbase: false,
@@ -53,7 +53,7 @@ const ROWS: {
   },
 
   {
-    label: "Visitor retention insights",
+    label: "Lead & conversion insights",
     neylon: true,
     intercom: false,
     chatbase: false,

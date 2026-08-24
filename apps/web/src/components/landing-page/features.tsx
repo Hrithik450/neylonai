@@ -8,35 +8,35 @@ const FEATURES = [
   {
     title: "Start the conversation first",
     description:
-      "Neylon reaches out to visitors at the right moment when they're browsing, hesitating, or about to leave so you don't lose them to silence.",
+      "Proactive suggestions reach out the moment a visitor is browsing, hesitating, or about to leave — so no lead is lost to silence.",
     bg: "#FFF3D6",
     video: "/videos/Chat Message.mp4",
-    tag: "Engagement",
+    tag: "Proactive",
   },
   {
-    title: "Answer every question, any time",
+    title: "Answer instantly, qualify as it goes",
     description:
-      "Your site stays helpful 24/7. Visitors get instant, accurate answers no wait times, no drop-offs, no missed opportunities.",
+      "Your assistant answers accurately from your own content while it learns what each visitor actually wants.",
     bg: "#E8E4FF",
     video: "/videos/AI Robot chatbot.mp4",
-    tag: "Support",
+    tag: "Qualify",
   },
   {
-    title: "Win back visitors before they're gone",
+    title: "Capture contact, alert your team",
     description:
-      "When someone goes idle or moves toward the exit, Neylon sends a timely nudge to keep them engaged.",
+      "When a visitor is ready, Neylon collects their email or handle and pings your team live — a contact-ready lead, not a missed chat.",
     bg: "#D6F0F5",
     video: "/videos/Notification Bell.mp4",
-    tag: "Retention",
+    tag: "Capture",
   },
   {
-    title: "See where visitors drop off",
+    title: "See what actually converts",
     description:
-      "Find out which pages lose visitors, what questions go unanswered, and which conversations actually convert.",
+      "Know which pages, questions, and conversations turn visitors into leads — and double down on them.",
     bg: "#D6F5E3",
     video: "/videos/Market increase graph hand.mp4",
     cover: true,
-    tag: "Analytics",
+    tag: "Insights",
   },
 ];
 
@@ -67,15 +67,15 @@ export function Features() {
       <div className="pl-6 sm:pl-10 md:pl-20 lg:pl-28 pr-6 sm:pr-10 md:pr-20 lg:pr-28 flex flex-col sm:flex-row sm:items-end sm:justify-between mb-10 gap-4 sm:gap-6">
         <div>
           <p className="text-xs uppercase tracking-widest text-gray-400 mb-2 font-medium">
-            Our Features
+            Why Neylon
           </p>
           <h2
             className="landing-strong text-2xl md:text-3xl xl:text-4xl leading-tight"
             style={{ color: GREEN }}
           >
-            Catch visitors before
+            From anonymous click
             <br />
-            they click away.
+            to qualified lead.
           </h2>
         </div>
         <div className="flex gap-3 flex-shrink-0 self-end sm:self-auto">

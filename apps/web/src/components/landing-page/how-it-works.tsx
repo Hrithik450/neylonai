@@ -9,9 +9,9 @@ const GREEN = "#0E3228";
 const STEPS = [
   {
     number: 1,
-    title: "Install the SDK",
+    title: "Add Neylon to your site",
     description:
-      "Add the SDK manually or let your coding agent install it using our setup file.",
+      "Drop in one snippet, or let your coding agent install the SDK for you.",
     illustration: "/images/how-it-works-illustration-1.png",
     accent: "#FF806D",
     iconBackground: "#FFF1EC",
@@ -20,9 +20,9 @@ const STEPS = [
   },
   {
     number: 2,
-    title: "Tell it about your business",
+    title: "Teach it your business",
     description:
-      "Share your website, documents, or FAQs so the assistant learns your business. Configure everything from your dashboard.",
+      "Share your website, documents, or FAQs so Neylon answers accurately and qualifies every lead. Configure it all from your dashboard.",
     illustration: "/images/how-it-works-illustration-2.png",
     accent: "#AEEAD6",
     iconBackground: "#EAF9F3",
@@ -31,9 +31,9 @@ const STEPS = [
   },
   {
     number: 3,
-    title: "Start engaging visitors",
+    title: "Watch leads land in your inbox",
     description:
-      "Your assistant goes live greeting visitors, answering questions, and flagging anything that needs a human.",
+      "Proactive suggestions engage visitors, qualify their intent, and drop contact-ready leads straight into your conversations.",
     illustration: "/images/how-it-works-illustration-3.png",
     accent: "#C9BDF4",
     iconBackground: "#F1EEFC",
@@ -223,7 +223,7 @@ export function HowItWorks() {
             boxShadow: "-2px 3px 0 #0E3228",
           }}
         >
-          Start engaging your visitors
+          Start capturing leads
           <MoveRight aria-hidden="true" className="h-4 w-4" />
         </a>
       </div>

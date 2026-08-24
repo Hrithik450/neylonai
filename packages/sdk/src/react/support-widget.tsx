@@ -44,18 +44,6 @@ const LAUNCHER_SIZE_PX = {
 /** Narrow screens have less room, so the launcher sits closer to the edge. */
 const MOBILE_OFFSET_X_PX = 10;
 
-/**
- * A human reply is a nudge, not a live feed — the open widget polls the thread
- * itself every few seconds, so this only has to cover the closed launcher.
- */
-const HUMAN_REPLY_POLL_MS = 30_000;
-
-/**
- * Shared across mounts so SPA remounts and dev Fast Refresh can't turn the
- * "check once on mount" into a burst of requests.
- */
-let lastHumanReplyCheckAt = 0;
-
 /** Runtime fields from the host + remote appearance + code-owned overrides. */
 function mergeRuntimeAndAppearance(
   host: SupportWidgetConfig | undefined,
@@ -133,18 +121,15 @@ function SupportWidgetInner({
   useEffect(() => {
     if (config.presentation === "inline" || config.staticDemo) return;
     // Nothing to nudge about while the visitor is already inside the widget
-    // (the thread view polls for human replies itself), or while a reply
-    // bubble is still on screen.
+    // or while a reply bubble is still on screen.
     if (isOpen || humanReply) return;
 
     let cancelled = false;
-    let interval: number | null = null;
     const visitorId = config.user?.id?.trim() || getOrCreateVisitorId();
     const storageKey = `neylonai:last-human-reply:${visitorId}`;
 
     const check = async () => {
       if (cancelled || document.visibilityState !== "visible") return;
-      lastHumanReplyCheckAt = Date.now();
       const result = await getLatestHumanReply(visitorId);
       const reply = result.success ? result.data : null;
       if (!reply || cancelled) return;
@@ -168,39 +153,22 @@ function SupportWidgetInner({
       }
     };
 
-    const stopPolling = () => {
-      if (interval === null) return;
-      window.clearInterval(interval);
-      interval = null;
-    };
-
-    const startPolling = () => {
-      if (interval !== null) return;
-      interval = window.setInterval(() => void check(), HUMAN_REPLY_POLL_MS);
-    };
-
     // A hidden tab runs no timer at all; coming back checks immediately, so
-    // the visitor still sees the reply the moment they return.
+    // the visitor still sees the reply the moment they return, without
+    // background polling.
     const onVisibility = () => {
       if (document.visibilityState === "visible") {
         void check();
-        startPolling();
-      } else {
-        stopPolling();
       }
     };
 
     if (document.visibilityState === "visible") {
-      if (Date.now() - lastHumanReplyCheckAt > HUMAN_REPLY_POLL_MS / 2) {
-        void check();
-      }
-      startPolling();
+      void check();
     }
     document.addEventListener("visibilitychange", onVisibility);
 
     return () => {
       cancelled = true;
-      stopPolling();
       document.removeEventListener("visibilitychange", onVisibility);
     };
   }, [

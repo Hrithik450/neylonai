@@ -8,17 +8,15 @@ import type { Metadata } from "next";
 import { sharedOpenGraph } from "../shared-metadata";
 
 export const metadata: Metadata = {
-  title: "Neylon AI - AI-Powered Customer Engagement & Real-Time Visitor Insights",
+  title: "Neylon AI - Turn Website Visitors into Qualified Leads",
   description:
-    "Know why visitors leave. Engage them sooner. Neylon AI watches visitors in real time, starts conversations at the right moment, and turns traffic into engagement.",
+    "Neylon AI's proactive assistant engages every visitor, qualifies their intent, and captures their contact — turning anonymous traffic into qualified leads for your team.",
   openGraph: {
-    // Spread first: this object replaces the root layout's openGraph wholesale,
-    // so the image has to be re-declared here or the page ships without one.
     ...sharedOpenGraph,
     url: "/",
-    title: "Neylon AI - Know Why Visitors Leave. Engage Them Sooner.",
+    title: "Neylon AI - Turn Anonymous Visitors into Qualified Leads",
     description:
-      "Real-time visitor tracking and proactive AI conversations that convert. Transform website traffic into meaningful customer engagement.",
+      "Proactive AI suggestions that start the conversation, qualify each visitor, and capture their contact. Turn website traffic into leads.",
   },
 };
 

@@ -32,6 +32,8 @@ export function requestHumanHandoff(input: {
   user: StreamChatUser;
   name?: string;
   email?: string;
+  /** The one contact the visitor chose — any of email / phone / linkedin. */
+  contact?: { type: "email" | "phone" | "linkedin"; value: string };
   reason?: string;
 }) {
   return jsonRequest<{

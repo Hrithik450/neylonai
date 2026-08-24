@@ -62,10 +62,11 @@ export async function POST(req: NextRequest) {
     if (!isApiKeyAuthContext(auth)) return auth;
 
     const body = (await req.json()) as Record<string, unknown>;
-    const { input, user, threadId } = body as {
+    const { input, user, threadId, proactive } = body as {
       input: string;
       user?: unknown;
       threadId?: string;
+      proactive?: boolean;
     };
 
     if (!input) {
@@ -164,6 +165,7 @@ export async function POST(req: NextRequest) {
             participantEmail: chatUser?.email ?? null,
             pagePath: pageContext.pagePath,
             pageQuery: pageContext.pageQuery,
+            proactive: Boolean(proactive),
             requestId,
             apiKeyId: auth.apiKeyId,
             conversationHistory,

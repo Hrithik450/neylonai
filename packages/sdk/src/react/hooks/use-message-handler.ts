@@ -71,7 +71,7 @@ export function useWidgetMessageHandler() {
   }, []);
 
   const sendMessage = useCallback(
-    async (overrideText?: string) => {
+    async (overrideText?: string, opts?: { proactive?: boolean }) => {
       const text = (overrideText ?? useInputStore.getState().input).trim();
       if (!text) return;
 
@@ -221,6 +221,7 @@ export function useWidgetMessageHandler() {
             config.pagePath ??
             (typeof window === "undefined" ? null : window.location.pathname),
           pageQuery,
+          proactive: opts?.proactive,
           signal: controller.signal,
         })) {
           if (isStale()) return;

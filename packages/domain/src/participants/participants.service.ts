@@ -77,4 +77,36 @@ export class ParticipantsService {
       };
     }
   }
+
+  /**
+   * Record the visitor's name when they hand off with a non-email contact
+   * (phone / LinkedIn). Email is captured separately via `identifyParticipant`.
+   */
+  static async setDisplayName(input: {
+    id: string;
+    organizationId: string;
+    name: string;
+  }): Promise<ParticipantResponse> {
+    const name = input.name.trim();
+    if (name.length < 2 || name.length > 255) {
+      return { success: false, error: "A valid name is required" };
+    }
+    try {
+      const participant = await ParticipantsRepository.setDisplayName({
+        ...input,
+        name,
+      });
+      return participant
+        ? { success: true, data: participant }
+        : { success: false, error: "Participant not found" };
+    } catch (error) {
+      return {
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to update participant",
+      };
+    }
+  }
 }
