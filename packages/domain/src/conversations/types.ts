@@ -13,6 +13,12 @@ export interface EscalateConversationInput {
   reason: string;
   trigger?: EscalationTrigger;
   summary?: string;
+  /**
+   * A contact detail the visitor gave in chat (email, LinkedIn, GitHub, phone…).
+   * When present it completes the handoff even if the participant is anonymous,
+   * and is included in the team alert.
+   */
+  providedContact?: string;
 }
 
 export type ConversationStatus =

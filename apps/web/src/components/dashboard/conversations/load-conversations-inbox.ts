@@ -5,7 +5,6 @@ import {
   aggregateKnowledgeGaps,
   loadCitationsForMessages,
 } from "@neylonai/domain/engagement";
-import type { OrgSession } from "@/server/auth-guards";
 import type {
   ConversationsInboxPayload,
   InboxThread,
@@ -39,7 +38,7 @@ function toIso(value: unknown): string {
  * Last-message preview is one DISTINCT ON query for all threads.
  */
 export async function loadConversationsInbox(
-  member: OrgSession,
+  member: { organizationId: string },
 ): Promise<ConversationsInboxPayload> {
   try {
     const threadRows = await db

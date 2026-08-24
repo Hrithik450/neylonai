@@ -5,13 +5,16 @@ import { webSearchTool } from "../../infrastructure/tools/web-search.tool";
 import { scrapeUrlTool } from "../../infrastructure/tools/scrape-url.tool";
 import { relationalQueryTool } from "../../infrastructure/tools/relational-query.tool";
 import { notifyTeamTool } from "../../infrastructure/tools/notify-team.tool";
+import { escalateToHumanTool } from "../../infrastructure/tools/escalate-to-human.tool";
 import { provideMeetingLinkTool } from "../../infrastructure/tools/provide-meeting-link.tool";
 
 /**
  * Main Agent — single conversational entry point for the MVP.
  *
  * Capabilities are tools (knowledge, meeting link, notifications), not separate agents.
- * Human escalation is an application-level action, never a model-selected tool.
+ * Human handoff runs through escalate_to_human, which performs the real action:
+ * it flags the thread, records it in the inbox, and stops the AI. Deterministic
+ * detection in application/stream-conversation stays as a fast backstop.
  * Model selection stays in application/model-router (independent of this definition).
  */
 export const mainAgent: AgentDefinition = {
@@ -56,6 +59,7 @@ export const mainAgent: AgentDefinition = {
     scrapeUrlTool,
     webSearchTool,
     provideMeetingLinkTool,
+    escalateToHumanTool,
     notifyTeamTool,
   ],
 };

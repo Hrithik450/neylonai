@@ -104,6 +104,18 @@ function MessageCitations({ citations }: { citations: InboxMessage["citations"] 
   );
 }
 
+/**
+ * Merge a freshly-polled thread list into current state without dropping
+ * messages we already loaded — the list payload carries empty message arrays.
+ */
+function mergeThreads(prev: InboxThread[], next: InboxThread[]): InboxThread[] {
+  const prevById = new Map(prev.map((t) => [t.id, t] as const));
+  return next.map((t) => {
+    const old = prevById.get(t.id);
+    return old && old.messages.length > 0 ? { ...t, messages: old.messages } : t;
+  });
+}
+
 export function ConversationsInbox({
   payload,
 }: {
@@ -118,9 +130,9 @@ export function ConversationsInbox({
         : "all",
   );
   const [query, setQuery] = useState("");
-  const [users] = useState<InboxUser[]>(payload.users);
+  const [users, setUsers] = useState<InboxUser[]>(payload.users);
   const [threads, setThreads] = useState<InboxThread[]>(payload.threads);
-  const [knowledgeGaps] = useState<KnowledgeGapInboxRow[]>(
+  const [knowledgeGaps, setKnowledgeGaps] = useState<KnowledgeGapInboxRow[]>(
     payload.knowledgeGaps ?? [],
   );
   const [selectedUserId, setSelectedUserId] = useState<string | null>(
@@ -144,7 +156,71 @@ export function ConversationsInbox({
     setThreads(payload.threads);
   }, [payload.threads]);
 
+  // Live-refresh the whole inbox so a conversation that just escalated (and any
+  // status/preview changes) surface here within seconds — no manual reload.
+  // Keeps already-loaded message bodies intact and leaves the selection alone.
+  useEffect(() => {
+    let cancelled = false;
+    const tick = async () => {
+      try {
+        const res = await fetch("/api/v1/conversations/inbox");
+        const json = (await res.json()) as {
+          success: boolean;
+          data?: ConversationsInboxPayload;
+        };
+        if (cancelled || !json.success || !json.data) return;
+        const data = json.data;
+        setThreads((prev) => mergeThreads(prev, data.threads));
+        setUsers(data.users);
+        setKnowledgeGaps(data.knowledgeGaps ?? []);
+      } catch {
+        // Transient network error — keep the current view and retry next tick.
+      }
+    };
+    const id = setInterval(tick, 8000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, []);
+
+  // Live-refresh the open conversation so a visitor's new message appears while
+  // the human is reading or drafting a reply.
+  useEffect(() => {
+    if (!selectedThreadId) return;
+    let cancelled = false;
+    const threadId = selectedThreadId;
+    const tick = async () => {
+      try {
+        const res = await fetch(`/api/v1/conversations/${threadId}/messages`);
+        const json = (await res.json()) as {
+          success: boolean;
+          data?: { messages: InboxMessage[] };
+        };
+        if (cancelled || !json.success || !json.data) return;
+        const messages = json.data.messages;
+        setThreads((prev) =>
+          prev.map((t) => (t.id === threadId ? { ...t, messages } : t)),
+        );
+      } catch {
+        // Transient — keep last known messages.
+      }
+    };
+    const id = setInterval(tick, 5000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [selectedThreadId]);
+
   const q = query.trim().toLowerCase();
+
+  // Conversations handed to a human and still awaiting the first human reply.
+  const awaitingCount = useMemo(
+    () =>
+      threads.filter((t) => t.conversationStatus === "human_pending").length,
+    [threads],
+  );
 
   const filteredKnowledgeGaps = useMemo(() => {
     if (!q) return knowledgeGaps;
@@ -323,7 +399,14 @@ export function ConversationsInbox({
   return (
     <div id="conversations-inbox" className="flex flex-col gap-3 h-[52rem] max-h-[52rem] min-h-[52rem] mb-10 sm:mb-12 lg:mb-14">
       <header className="shrink-0 space-y-1 min-w-0">
-        <h1 id="conversations-heading" className="text-3xl sm:text-4xl">Conversations</h1>
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 id="conversations-heading" className="text-3xl sm:text-4xl">Conversations</h1>
+          {awaitingCount > 0 ? (
+            <span className="sticker sticker-lowercase text-[0.65rem] bg-[var(--red)]/10 text-[var(--red)]">
+              {awaitingCount} awaiting your reply
+            </span>
+          ) : null}
+        </div>
         <p className="caption text-sm">
           Visitors and their chat threads. Search, filter, then take over when
           human needed.

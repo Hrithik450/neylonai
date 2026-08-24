@@ -182,11 +182,15 @@ export async function escalateConversation(
     .limit(1);
   if (!context) throw new Error("Thread not found");
 
-  const hasContact =
+  const providedContact = input.providedContact?.trim();
+  const participantHasContact =
     Boolean(context.email?.trim()) &&
     Boolean(context.displayName?.trim()) &&
     context.displayName !== "Guest" &&
     context.anonymous === false;
+  // A contact handle the visitor gave in chat (email, LinkedIn, GitHub, …) is
+  // enough to complete the handoff even when the participant record is anonymous.
+  const hasContact = participantHasContact || Boolean(providedContact);
   const nextStatus: ConversationStatus = hasContact
     ? "human_pending"
     : "awaiting_contact";
@@ -238,11 +242,16 @@ export async function escalateConversation(
   });
 
   if (hasContact && !alreadyActive) {
+    const escalationSummary = providedContact
+      ? [input.summary, `Visitor contact: ${providedContact}`]
+          .filter(Boolean)
+          .join("\n")
+      : input.summary ?? null;
     void notifyEscalation({
       organizationId: input.organizationId,
       threadId: input.threadId,
       reason,
-      summary: input.summary ?? null,
+      summary: escalationSummary,
     });
   }
 
