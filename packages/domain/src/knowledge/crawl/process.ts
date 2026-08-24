@@ -12,7 +12,6 @@ import {
   hashPageContent,
   processWebsitePages,
   scrapeWebsitePageRaw,
-  type WebsitePageSection,
 } from "@neylonai/integrations/website";
 import {
   consumeWebsiteCrawlBudget,
@@ -432,8 +431,6 @@ export async function processWebsiteCrawlJob(jobId: string): Promise<void> {
         provider: Awaited<
           ReturnType<typeof scrapeWebsitePageRaw>
         >["provider"];
-        sections: WebsitePageSection[];
-        sectioner: "dom" | "overview";
       };
       contentHash: string;
     };
@@ -529,8 +526,6 @@ export async function processWebsiteCrawlJob(jobId: string): Promise<void> {
           title: item.scraped.title,
           text,
           provider: item.scraped.provider,
-          sections: processed.sections,
-          sectioner: processed.usedDomSections ? "dom" : "overview",
         },
         contentHash,
       };
@@ -550,11 +545,9 @@ export async function processWebsiteCrawlJob(jobId: string): Promise<void> {
           url: item.scraped.finalUrl,
           path: item.page.canonical_path,
           provider: item.scraped.provider,
-          sectioner: item.scraped.sectioner,
           text: item.scraped.text,
           lastmod: item.page.lastmod,
           contentHash: item.contentHash,
-          sections: item.scraped.sections,
         });
         await db
           .update(websiteCrawlPages)

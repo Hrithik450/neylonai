@@ -23,6 +23,8 @@ const CANDIDATE_CACHE_TTL_SEC = 6 * 60 * 60;
 const TARGET_CANDIDATES = 14;
 const MAX_SEEDS_IN_PROMPT = 12;
 const SEED_EXCERPT_CHARS = 220;
+/** Page text budget in the prompt — enough for topics, small enough to stay cheap. */
+const PAGE_TEXT_CHARS = 2_000;
 
 export interface GenerateProactiveCandidatesInput {
   organizationId: string;
@@ -30,8 +32,8 @@ export interface GenerateProactiveCandidatesInput {
   pageUrl?: string | null;
   /** Knowledge-base samples for this org. */
   seeds: KnowledgeSuggestionSeed[];
-  /** Crawled per-page suggestions — topic hints, not verbatim output. */
-  pageCatalog: string[];
+  /** Crawled text of this exact page — the page-specific grounding. */
+  pageText: string;
 }
 
 function candidatesCacheKey(input: {
@@ -74,15 +76,12 @@ function buildBrief(input: GenerateProactiveCandidatesInput): string {
     lines.push("", "What this company publishes:", ...seedLines);
   }
 
-  const topics = input.pageCatalog
-    .map((text) => normalizeExcerpt(text))
-    .filter(Boolean)
-    .slice(0, 10);
-  if (topics.length) {
+  const pageText = normalizeExcerpt(input.pageText).slice(0, PAGE_TEXT_CHARS);
+  if (pageText) {
     lines.push(
       "",
-      "Topics this page already covers (inspiration, do not copy verbatim):",
-      ...topics.map((t) => `- ${t}`),
+      "What this exact page says (ground the questions in this):",
+      pageText,
     );
   }
 
@@ -125,7 +124,7 @@ export async function generateProactiveCandidates(
   input: GenerateProactiveCandidatesInput,
 ): Promise<string[]> {
   const brief = buildBrief(input);
-  if (!input.seeds.length && !input.pageCatalog.length) return [];
+  if (!input.seeds.length && !input.pageText.trim()) return [];
 
   const cacheKey = candidatesCacheKey({
     organizationId: input.organizationId,

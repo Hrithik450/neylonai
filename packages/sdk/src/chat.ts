@@ -5,7 +5,6 @@ import {
 } from "./client";
 import { apiUrl } from "./network";
 import type { AgentStreamEvent } from "./types";
-import type { TrackedPageSection } from "./page-context";
 
 /** Participant sent on each chat turn (host user or anonymous widget visitor). */
 export type StreamChatUser = {
@@ -23,7 +22,6 @@ export interface StreamChatInput {
   /** Current page metadata only; page body content is never sent. */
   pagePath?: string | null;
   pageQuery?: Record<string, string>;
-  pageSection?: TrackedPageSection | null;
   /** When aborted, fetch and stream parsing stop; callers should treat as cancel, not error. */
   signal?: AbortSignal;
 }
@@ -57,7 +55,6 @@ export async function* streamChat(
         threadId: payload.threadId,
         pagePath: payload.pagePath,
         pageQuery: payload.pageQuery,
-        pageSection: payload.pageSection,
       }),
       signal: payload.signal,
     });

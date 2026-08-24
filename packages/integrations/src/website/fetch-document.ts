@@ -19,7 +19,7 @@ export async function fetchPublicDocument(
       signal: controller.signal,
       headers: {
         Accept: accept,
-        "User-Agent": "NeylonAI-Crawler/1.0 (+https://neylon.ai)",
+        "User-Agent": "NeylonAI-Crawler/1.0 (+https://neylonai.mhrithik.com)",
       },
     });
     if (!res.ok) {

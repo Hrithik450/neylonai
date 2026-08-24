@@ -1,9 +1,7 @@
 import {
   cleanHeading,
   deterministicCleanPageText,
-  withFallbackSuggestions,
-  type WebsitePageSection,
-} from "./sections";
+} from "./page-text";
 
 export type WebsiteProcessingInput = {
   pageKey: string;
@@ -20,21 +18,21 @@ export type WebsiteProcessingInput = {
 
 export type ProcessedWebsitePage = {
   pageKey: string;
+  /**
+   * Cleaned page text, with DOM headings kept inline as `## Heading` so the
+   * token chunker breaks on real topic boundaries and retrieval keeps context.
+   */
   cleanedText: string;
-  sections: WebsitePageSection[];
   usedDomSections: boolean;
 };
 
 function buildDomProcessedPage(page: WebsiteProcessingInput): ProcessedWebsitePage {
-  const sections = withFallbackSuggestions(
-    (page.domSections ?? []).map((section) => ({
-      sectionId: section.sectionId,
+  const cleanedText = (page.domSections ?? [])
+    .map((section) => ({
       heading: cleanHeading(section.heading) || section.sectionId,
       content: section.content.trim(),
-      suggestions: [],
-    })),
-  );
-  const cleanedText = sections
+    }))
+    .filter((section) => Boolean(section.content))
     .map((section) => `## ${section.heading}\n${section.content}`)
     .join("\n\n")
     .trim();
@@ -42,7 +40,6 @@ function buildDomProcessedPage(page: WebsiteProcessingInput): ProcessedWebsitePa
   return {
     pageKey: page.pageKey,
     cleanedText: cleanedText || page.text.trim(),
-    sections,
     usedDomSections: true,
   };
 }
@@ -50,28 +47,16 @@ function buildDomProcessedPage(page: WebsiteProcessingInput): ProcessedWebsitePa
 function buildOverviewProcessedPage(
   page: WebsiteProcessingInput,
 ): ProcessedWebsitePage {
-  const cleanedText = deterministicCleanPageText(page.text) || page.text.trim();
-  const heading = cleanHeading(page.title) || "Page overview";
-  const sections = withFallbackSuggestions([
-    {
-      sectionId: "page-overview",
-      heading,
-      content: cleanedText,
-      suggestions: [],
-    },
-  ]);
-
   return {
     pageKey: page.pageKey,
-    cleanedText,
-    sections,
+    cleanedText: deterministicCleanPageText(page.text) || page.text.trim(),
     usedDomSections: false,
   };
 }
 
 /**
- * Deterministic website page processing. Section boundaries come from DOM
- * element ids; pages without landmark ids fall back to a single overview block.
+ * Deterministic website page processing. Pages with landmark element ids keep
+ * their heading structure; pages without fall back to cleaned page text.
  */
 export function processWebsitePages(
   pages: WebsiteProcessingInput[],

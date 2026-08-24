@@ -50,19 +50,19 @@ Place these in `apps/web/public/`:
 ## 🔧 Configuration Required
 
 ### 1. Environment Variables
-Add to your `.env.local`:
+Add to your `.env`:
 
 ```bash
 # Your production site URL
-NEXT_PUBLIC_SITE_URL=https://neylon.ai
+NEXT_PUBLIC_SITE_URL=https://neylonai.mhrithik.com
 
 # Or for staging/development
-# NEXT_PUBLIC_SITE_URL=https://staging.neylon.ai
+# NEXT_PUBLIC_SITE_URL=https://staging.neylonai.mhrithik.com
 ```
 
 ### 2. Google Search Console Verification
 1. Go to [Google Search Console](https://search.google.com/search-console)
-2. Add your property (https://neylon.ai)
+2. Add your property (https://neylonai.mhrithik.com)
 3. Get your verification meta tag code
 4. Update `apps/web/src/app/layout.tsx` line with verification code:
    ```typescript
@@ -150,7 +150,7 @@ Use Figma, Canva, or Photoshop with this template:
    - [Google Rich Results Test](https://search.google.com/test/rich-results)
 
 6. **Submit sitemap to Google Search Console:**
-   - URL: `https://neylon.ai/sitemap.xml`
+   - URL: `https://neylonai.mhrithik.com/sitemap.xml`
 
 ---
 

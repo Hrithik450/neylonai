@@ -158,10 +158,6 @@ export interface StreamConversationInput {
   participantEmail?: string | null;
   pagePath?: string | null;
   pageQuery?: Record<string, string>;
-  pageSection?: {
-    sectionId: string;
-    sectionLabel?: string | null;
-  } | null;
   /** Correlates all model/tool usage for this HTTP request. */
   requestId?: string | null;
   apiKeyId?: string | null;

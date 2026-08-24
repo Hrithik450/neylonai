@@ -27,9 +27,11 @@ export function WidgetCodingAgentConfig() {
         <h2 className="text-xl font-medium">Configure with coding agent</h2>
         <p className="caption text-sm max-w-2xl">
           Your agent reuses the installed SDK when present, installs it when
-          missing, then configures colors, copy, and behavior from the current
-          application. After Website import it adds stable element{" "}
-          <code className="text-xs">id</code> values on major page blocks.
+          missing, then wires up the API key, the signed-in user, and the live
+          page path. Appearance, copy, and behavior stay on this page — the
+          widget loads them from your dashboard at runtime. After Website import
+          it adds stable element <code className="text-xs">id</code> values on
+          major page blocks.
         </p>
       </div>
 

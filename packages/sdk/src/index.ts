@@ -27,23 +27,6 @@ export {
   type ProactiveSuggestionDto,
 } from "./suggestions";
 export {
-  getTrackedPageSection,
-  subscribeToPageSection,
-  type TrackedPageSection,
-} from "./page-context";
-export {
-  observePageSection,
-  qualifyPageSection,
-  subscribeToQualifiedPageSection,
-  type SectionObserveOptions,
-} from "./section-dwell";
-export {
-  discoverDomSectionKeys,
-  initNeylonSectionAutoTrack,
-  SECTION_TRACK_SELECTOR,
-  type NeylonSectionAutoTrackOptions,
-} from "./section-auto-track";
-export {
   getOrCreateVisitorId,
   getOrCreateSessionId,
   getChatParticipantId,

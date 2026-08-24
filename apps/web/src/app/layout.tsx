@@ -3,12 +3,13 @@ import "./globals.css";
 import type { Metadata } from "next";
 import React from "react";
 import { appFontClassName } from "@/assets/fonts";
+import { OG_IMAGE_PATH, sharedOpenGraph } from "./shared-metadata";
 
 // Avoid Next 15 App Router static prerender of /_not-found (React dispatcher null).
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://neylon.ai"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://neylonai.mhrithik.com"),
   title: {
     default: "Neylon AI - AI-Powered Customer Engagement & Real-Time Visitor Insights",
     template: "%s | Neylon AI",
@@ -38,28 +39,18 @@ export const metadata: Metadata = {
     telephone: false,
   },
   openGraph: {
-    type: "website",
-    locale: "en_US",
+    ...sharedOpenGraph,
     url: "/",
-    siteName: "Neylon AI",
     title: "Neylon AI - AI-Powered Customer Engagement Platform",
     description:
       "Know why visitors leave. Engage them sooner. Real-time visitor insights and proactive AI conversations that turn traffic into engagement.",
-    images: [
-      {
-        url: "/images/opengraph-neylonai.png",
-        width: 1200,
-        height: 630,
-        alt: "Neylon AI - AI-Powered Customer Engagement",
-      },
-    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Neylon AI - AI-Powered Customer Engagement Platform",
     description:
       "Know why visitors leave. Engage them sooner. Real-time visitor insights and proactive AI conversations.",
-    images: ["/images/opengraph-neylonai.png"],
+    images: [OG_IMAGE_PATH],
     creator: "@neylonai",
   },
   robots: {

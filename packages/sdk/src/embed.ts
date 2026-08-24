@@ -2,14 +2,6 @@ import type { SupportWidgetProps } from "./react/config/types";
 import { WIDGET_STYLES } from "./widget-styles";
 
 export {
-  getTrackedPageSection,
-  type TrackedPageSection,
-} from "./page-context";
-export {
-  observePageSection,
-  type SectionObserveOptions,
-} from "./section-dwell";
-export {
   defineWidgetCustomization,
   type WidgetFontConfig,
 } from "./widget-config";

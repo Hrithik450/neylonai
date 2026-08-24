@@ -138,42 +138,6 @@ export const knowledgeChunks = pgTable(
   ],
 );
 
-/** Page sections and their page-specific proactive prompts. */
-export const knowledgePageSections = pgTable(
-  "knowledge_page_sections",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    organization_id: uuid("organization_id")
-      .notNull()
-      .references(() => organizations.id, { onDelete: "cascade" }),
-    document_id: uuid("document_id")
-      .notNull()
-      .references(() => knowledgeDocuments.id, { onDelete: "cascade" }),
-    section_key: varchar("section_key", { length: 96 }).notNull(),
-    content: text("content").notNull(),
-    /** Scraper that produced the source page for this section. */
-    provider: varchar("provider", { length: 32 }).notNull().default("unknown"),
-    /** Who produced the section split: dom (element id) or overview fallback. */
-    sectioner: varchar("sectioner", { length: 32 })
-      .notNull()
-      .default("unknown"),
-    suggestions: jsonb("suggestions").$type<string[]>().notNull().default([]),
-    position: integer("position").notNull().default(0),
-    created_at: timestamp("created_at", { withTimezone: true }).defaultNow(),
-    updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow(),
-  },
-  (t) => [
-    uniqueIndex("knowledge_page_sections_document_key_uidx").on(
-      t.document_id,
-      t.section_key,
-    ),
-    index("knowledge_page_sections_org_document_idx").on(
-      t.organization_id,
-      t.document_id,
-    ),
-  ],
-);
-
 export function toHalfvecLiteral(values: number[]): string {
   return `[${values.join(",")}]`;
 }

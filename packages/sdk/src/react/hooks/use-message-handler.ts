@@ -13,7 +13,6 @@ import { flushStreamToken } from "./stream-token-buffer";
 import { createSmoothStreamWriter } from "./smooth-stream-writer";
 import {
   getOrCreateVisitorId,
-  getTrackedPageSection,
   isAbortError,
   streamChat,
 } from "../..";
@@ -222,7 +221,6 @@ export function useWidgetMessageHandler() {
             config.pagePath ??
             (typeof window === "undefined" ? null : window.location.pathname),
           pageQuery,
-          pageSection: getTrackedPageSection(),
           signal: controller.signal,
         })) {
           if (isStale()) return;

@@ -11,16 +11,12 @@ import {
   db,
   knowledgeChunks,
   knowledgeDocuments,
-  knowledgePageSections,
   KNOWLEDGE_EMBEDDING_DIMENSIONS,
 } from "@neylonai/database";
 import { withGoogleApiRetry } from "@neylonai/integrations";
 import {
-  enforceSectionSizeLimit,
   hashPageContent,
-  withFallbackSuggestions,
   type ScrapeProvider,
-  type WebsitePageSection,
 } from "@neylonai/integrations/website";
 import {
   catalogIntegrationIdForSource,
@@ -28,37 +24,6 @@ import {
   setSourceAgents,
 } from "./service";
 import { MAIN_AGENT_KEY } from "../agents/org-agents.types";
-
-export type WebsiteSectioner = "dom" | "overview";
-
-/**
- * Page-section rows must keep DOM tracker ids so dwell can resolve seeds.
- * Size merging is only for embedding chunks ({@link buildWebsiteChunkParts}).
- */
-export function prepareWebsitePageSections(
-  sections: WebsitePageSection[],
-  sectioner: WebsiteSectioner,
-): WebsitePageSection[] {
-  if (sectioner === "dom") {
-    return withFallbackSuggestions(
-      sections
-        .map((section) => {
-          const content = section.content.replace(/\n{3,}/g, "\n\n").trim();
-          if (!content) return null;
-          const sectionId = section.sectionId.trim().slice(0, 96);
-          if (!sectionId) return null;
-          return {
-            sectionId,
-            heading: section.heading.trim() || sectionId,
-            content,
-            suggestions: section.suggestions.slice(0, 4),
-          };
-        })
-        .filter((section): section is WebsitePageSection => section != null),
-    );
-  }
-  return enforceSectionSizeLimit(sections);
-}
 
 const APPROX_CHARS_PER_TOKEN = 4;
 /** Target chunk length in tokens (approx via chars). */
@@ -277,47 +242,10 @@ export type WebsitePageIngestInput = {
   url: string;
   path: string;
   provider: ScrapeProvider;
-  sectioner: WebsiteSectioner;
   text: string;
   lastmod: string | null;
   contentHash: string;
-  sections: WebsitePageSection[];
 };
-
-export function buildWebsiteChunkParts(
-  sections: WebsitePageSection[],
-): Array<{ sectionId: string; content: string }> {
-  return enforceSectionSizeLimit(sections).map((section) => ({
-    sectionId: section.sectionId,
-    content: section.content,
-  }));
-}
-
-async function replacePageSections(input: {
-  organizationId: string;
-  documentId: string;
-  provider: WebsitePageIngestInput["provider"];
-  sectioner: WebsiteSectioner;
-  sections: WebsitePageSection[];
-}): Promise<void> {
-  const sections = input.sections.map((section, position) => ({
-    organization_id: input.organizationId,
-    document_id: input.documentId,
-    section_key: section.sectionId,
-    content: section.content,
-    provider: input.provider,
-    sectioner: input.sectioner,
-    suggestions: section.suggestions.slice(0, 4),
-    position,
-  }));
-
-  await db
-    .delete(knowledgePageSections)
-    .where(eq(knowledgePageSections.document_id, input.documentId));
-  if (sections.length) {
-    await db.insert(knowledgePageSections).values(sections);
-  }
-}
 
 /**
  * Upsert one canonical website page. Embeds first so a failed refresh
@@ -327,13 +255,10 @@ export async function ingestWebsitePage(
   input: WebsitePageIngestInput,
 ): Promise<{ skipped: boolean; reason?: "hash"; chunkCount: number }> {
   const path = input.path.trim() || "/";
-  // Keep DOM tracker keys intact for proactive dwell. Chunk merging stays separate.
-  const pageSections = prepareWebsitePageSections(
-    input.sections,
-    input.sectioner,
-  );
-  if (pageSections.length === 0) {
-    throw new Error("No ingestible website sections found.");
+  // Website pages use the same token-window chunker as uploads; DOM headings
+  // survive inline in the text, so chunks still break on topic boundaries.
+  if (!input.text.trim()) {
+    throw new Error("No ingestible website content found.");
   }
   const [existing] = await db
     .select({
@@ -361,7 +286,7 @@ export async function ingestWebsitePage(
     typeof existing?.rawContent === "string" &&
     existing.rawContent.length > 0
   ) {
-    const chunkParts = buildWebsiteChunkParts(pageSections);
+    const chunkParts = chunkPlainText(input.text);
     const storedChunks = await db
       .select({ content: knowledgeChunks.content })
       .from(knowledgeChunks)
@@ -370,36 +295,10 @@ export async function ingestWebsitePage(
     const chunksAligned =
       storedChunks.length === chunkParts.length &&
       storedChunks.every(
-        (chunk, index) => chunk.content === chunkParts[index]?.content,
+        (chunk, index) => chunk.content === chunkParts[index],
       );
 
-    const storedSectionRows = await db
-      .select({
-        sectionKey: knowledgePageSections.section_key,
-      })
-      .from(knowledgePageSections)
-      .where(eq(knowledgePageSections.document_id, existing.id));
-    const storedKeys = storedSectionRows
-      .map((row) => row.sectionKey)
-      .sort()
-      .join("|");
-    const nextKeys = pageSections
-      .map((section) => section.sectionId)
-      .sort()
-      .join("|");
-    const sectionsAligned =
-      storedKeys === nextKeys && storedSectionRows.length > 0;
-
     if (chunksAligned) {
-      if (!sectionsAligned) {
-        await replacePageSections({
-          organizationId: input.organizationId,
-          documentId: existing.id,
-          provider: input.provider,
-          sectioner: input.sectioner,
-          sections: pageSections,
-        });
-      }
       await db
         .update(knowledgeDocuments)
         .set({
@@ -411,8 +310,8 @@ export async function ingestWebsitePage(
     // Content hash matched but chunk layout changed — rewrite below.
   }
 
-  const chunkParts = buildWebsiteChunkParts(pageSections);
-  const vectors = await embedDocuments(chunkParts.map((part) => part.content));
+  const chunkParts = chunkPlainText(input.text);
+  const vectors = await embedDocuments(chunkParts);
   const externalDocId =
     `website:${Buffer.from(input.url).toString("base64url").slice(0, 80)}`.slice(
       0,
@@ -451,32 +350,13 @@ export async function ingestWebsitePage(
     }
 
     await tx.insert(knowledgeChunks).values(
-      chunkParts.map((part, idx) => ({
+      chunkParts.map((content, idx) => ({
         organization_id: input.organizationId,
         document_id: documentId,
-        external_chunk_id: `${externalDocId}:s:${part.sectionId}`.slice(
-          0,
-          255,
-        ),
+        external_chunk_id: `${externalDocId}:c${idx}`.slice(0, 255),
         chunk_index: idx,
-        content: part.content,
+        content,
         embedding: vectors[idx]!,
-      })),
-    );
-
-    await tx
-      .delete(knowledgePageSections)
-      .where(eq(knowledgePageSections.document_id, documentId));
-    await tx.insert(knowledgePageSections).values(
-      pageSections.map((section, position) => ({
-        organization_id: input.organizationId,
-        document_id: documentId,
-        section_key: section.sectionId,
-        content: section.content,
-        provider: input.provider,
-        sectioner: input.sectioner,
-        suggestions: section.suggestions.slice(0, 4),
-        position,
       })),
     );
   });

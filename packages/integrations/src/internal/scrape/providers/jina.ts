@@ -29,7 +29,7 @@ export async function scrapeWithJina(
       signal: controller.signal,
       headers: {
         Accept: "text/plain",
-        "User-Agent": "NeylonAI-Scraper/1.0 (+https://neylon.ai)",
+        "User-Agent": "NeylonAI-Scraper/1.0 (+https://neylonai.mhrithik.com)",
         "X-Return-Format": "markdown",
         ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
       },

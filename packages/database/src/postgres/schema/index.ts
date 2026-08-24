@@ -11,7 +11,6 @@ import {
 import {
   knowledgeDocuments,
   knowledgeChunks,
-  knowledgePageSections,
   knowledgeSources,
   knowledgeSourceAgents,
 } from "./knowledge";
@@ -62,7 +61,6 @@ export type { OrganizationPrivacyPrefs } from "./organizations";
 export {
   knowledgeDocuments,
   knowledgeChunks,
-  knowledgePageSections,
   knowledgeSources,
   knowledgeSourceAgents,
   KNOWLEDGE_EMBEDDING_DIMENSIONS,

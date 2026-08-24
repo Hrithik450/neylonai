@@ -142,7 +142,7 @@ async function probe(url: string, signal?: AbortSignal): Promise<Response> {
       signal: controller.signal,
       headers: {
         Accept: "text/html,application/xhtml+xml;q=0.9,*/*;q=0.8",
-        "User-Agent": "NeylonAI-Scraper/1.0 (+https://neylon.ai)",
+        "User-Agent": "NeylonAI-Scraper/1.0 (+https://neylonai.mhrithik.com)",
       },
     });
   } finally {

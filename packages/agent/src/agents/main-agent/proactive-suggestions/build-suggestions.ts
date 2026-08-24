@@ -1,5 +1,5 @@
 import {
-  listKnowledgePageSuggestions,
+  getKnowledgePageText,
   listKnowledgeSuggestionSeeds,
   cacheGet,
   cacheSet,
@@ -16,7 +16,6 @@ import { meterModelResponse } from "../../../infrastructure/metering";
 import {
   getBuiltInPageSuggestions,
   getBuiltInPageWelcomeMessages,
-  PAGE_SUGGESTION_LIMIT,
   WELCOME_BACK_MESSAGES,
 } from "./page-suggestions";
 import { generateProactiveCandidates } from "./generate-candidates";
@@ -76,7 +75,6 @@ const SEED_CANDIDATE_LIMIT = 28;
 
 /** Ranking bonuses by provenance — model-written, grounded lines lead. */
 const BONUS_MODEL = 6;
-const BONUS_CRAWLED_PAGE = 5;
 const BONUS_BUILT_IN_PAGE = 2;
 
 function requireTenantId(name: string, value: string): string {
@@ -522,30 +520,21 @@ function messageFingerprint(
     .slice(0, 16);
 }
 
-interface PageCatalog {
-  /** Suggestions generated for this page during the website crawl. */
-  crawled: string[];
-  /** Hand-written per-path fallbacks shipped with the agent. */
-  builtIn: string[];
-}
-
-async function resolvePageCatalog(
+/** The crawled text of this exact page — grounds page-specific bubbles. */
+async function resolvePageText(
   organizationId: string,
   pagePath: string,
-): Promise<PageCatalog> {
-  const builtIn = getBuiltInPageSuggestions(pagePath);
-  const sourceIds = await listAllowedSourceIds(organizationId, "main-agent");
-  if (!sourceIds.length) return { crawled: [], builtIn };
-
+): Promise<string> {
   try {
-    const crawled = await listKnowledgePageSuggestions({
+    const sourceIds = await listAllowedSourceIds(organizationId, "main-agent");
+    if (!sourceIds.length) return "";
+    return await getKnowledgePageText({
       organizationId,
       sourceIds,
       canonicalPath: pagePath,
     });
-    return { crawled: crawled.slice(0, PAGE_SUGGESTION_LIMIT), builtIn };
   } catch {
-    return { crawled: [], builtIn };
+    return "";
   }
 }
 
@@ -564,8 +553,8 @@ async function buildContextualPool(params: {
   visitorKey: string;
   limit: number;
 }): Promise<ProactiveSuggestion[]> {
-  const [catalog, seeds] = await Promise.all([
-    resolvePageCatalog(params.organizationId, params.pagePath),
+  const [pageText, seeds] = await Promise.all([
+    resolvePageText(params.organizationId, params.pagePath),
     listKnowledgeSuggestionSeeds({
       organizationId: params.organizationId,
       limit: SEED_CANDIDATE_LIMIT,
@@ -577,9 +566,9 @@ async function buildContextualPool(params: {
     pagePath: params.pagePath,
     pageUrl: params.pageUrl,
     seeds,
-    // Crawled topics only — the built-in catalog is this product's own copy and
-    // must never ground another tenant's bubbles.
-    pageCatalog: catalog.crawled.slice(0, 10),
+    // The page's own crawled text — never the built-in catalog, which is this
+    // product's own copy and must not ground another tenant's bubbles.
+    pageText,
   });
 
   const candidates: Candidate[] = [
@@ -588,12 +577,7 @@ async function buildContextualPool(params: {
       bonus: BONUS_MODEL,
       pagePath: params.pagePath,
     }),
-    ...textsToCandidates(catalog.crawled, {
-      source: "page",
-      bonus: BONUS_CRAWLED_PAGE,
-      pagePath: params.pagePath,
-    }),
-    ...textsToCandidates(catalog.builtIn, {
+    ...textsToCandidates(getBuiltInPageSuggestions(params.pagePath), {
       source: "page",
       bonus: BONUS_BUILT_IN_PAGE,
       pagePath: params.pagePath,

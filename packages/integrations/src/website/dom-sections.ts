@@ -1,4 +1,4 @@
-import { sectionIdFromHeading } from "./sections";
+import { sectionIdFromHeading } from "./page-text";
 
 /** Elements whose `id` is treated as a public section key. */
 export const SECTION_TRACK_TAGS = [

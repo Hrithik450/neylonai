@@ -4,7 +4,6 @@ import { scrapePublicUrl, type ScrapeProvider } from "../internal/scrape";
 import { discoverWebsitePages } from "./discover";
 import { processWebsitePages } from "./process-pages";
 import { websiteManifest } from "./manifest";
-import type { WebsitePageSection } from "./sections";
 
 export { websiteManifest } from "./manifest";
 export type { ScrapeProvider } from "../internal/scrape";
@@ -20,15 +19,10 @@ export {
 export { parseRobotsTxt, isDisallowedByRobots } from "./robots";
 export { parseSitemapXml } from "./sitemap";
 export {
-  enforceSectionSizeLimit,
-  estimateTokenCount,
+  cleanHeading,
+  deterministicCleanPageText,
   sectionIdFromHeading,
-  withFallbackSuggestions,
-  fallbackSectionSuggestions,
-  SECTION_MAX_TOKENS,
-  SECTION_MIN_TOKENS,
-  type WebsitePageSection,
-} from "./sections";
+} from "./page-text";
 export {
   extractDomPageSections,
   htmlToPlainText,
@@ -120,7 +114,6 @@ export async function scrapeWebsitePage(
   text: string;
   provider: ScrapeProvider;
   creditsUsed: number;
-  sections: WebsitePageSection[];
 }> {
   const scraped = await scrapeWebsitePageRaw(url, options);
   const processed = await processWebsitePages([
@@ -137,7 +130,6 @@ export async function scrapeWebsitePage(
   return {
     ...scraped,
     text,
-    sections: page.sections,
   };
 }
 

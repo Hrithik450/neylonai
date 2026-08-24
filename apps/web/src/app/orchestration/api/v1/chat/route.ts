@@ -20,7 +20,6 @@ export const maxDuration = 60;
 function normalizePageContext(body: Record<string, unknown>): {
   pagePath: string | null;
   pageQuery: Record<string, string>;
-  pageSection: { sectionId: string; sectionLabel?: string | null } | null;
 } {
   const rawPath = typeof body.pagePath === "string" ? body.pagePath.trim() : "";
   let pagePath: string | null = null;
@@ -54,27 +53,7 @@ function normalizePageContext(body: Record<string, unknown>): {
       if (/^[a-zA-Z0-9 _.,/-]{1,120}$/.test(safe)) pageQuery[key] = safe;
     }
   }
-  let pageSection: {
-    sectionId: string;
-    sectionLabel?: string | null;
-  } | null = null;
-  if (
-    body.pageSection &&
-    typeof body.pageSection === "object" &&
-    !Array.isArray(body.pageSection)
-  ) {
-    const raw = body.pageSection as Record<string, unknown>;
-    const sectionId =
-      typeof raw.sectionId === "string" ? raw.sectionId.trim().slice(0, 96) : "";
-    if (/^[a-z0-9_.:/-]+$/.test(sectionId)) {
-      const sectionLabel =
-        typeof raw.sectionLabel === "string"
-          ? raw.sectionLabel.replace(/\s+/g, " ").trim().slice(0, 160)
-          : "";
-      pageSection = { sectionId, sectionLabel: sectionLabel || null };
-    }
-  }
-  return { pagePath, pageQuery, pageSection };
+  return { pagePath, pageQuery };
 }
 
 export async function POST(req: NextRequest) {
@@ -185,7 +164,6 @@ export async function POST(req: NextRequest) {
             participantEmail: chatUser?.email ?? null,
             pagePath: pageContext.pagePath,
             pageQuery: pageContext.pageQuery,
-            pageSection: pageContext.pageSection,
             requestId,
             apiKeyId: auth.apiKeyId,
             conversationHistory,

@@ -6,7 +6,7 @@
  * Optional override: NEXT_PUBLIC_NEYLONAI_API_ORIGIN (first-party / ops only).
  */
 
-const NEYLONAI_API_ORIGIN = "https://api.neylon.ai";
+const NEYLONAI_API_ORIGIN = "https://neylonai.mhrithik.com";
 
 function envOrigin(): string | null {
   if (typeof process === "undefined") return null;
