@@ -83,11 +83,11 @@ else
   info "Repository already cloned — skipping."
 fi
 
-# ── 6. Create .env.local if missing ──────────────────────────────────────────
-if [ ! -f "$APP_DIR/.env.local" ]; then
-  warn ".env.local not found — copying from .env.example."
-  warn ">>> EDIT $APP_DIR/.env.local with your real secrets before deploying! <<<"
-  cp "$APP_DIR/.env.example" "$APP_DIR/.env.local"
+# ── 6. Create .env if missing ──────────────────────────────────────────
+if [ ! -f "$APP_DIR/.env" ]; then
+  warn ".env not found — copying from .env.example."
+  warn ">>> EDIT $APP_DIR/.env with your real secrets before deploying! <<<"
+  cp "$APP_DIR/.env.example" "$APP_DIR/.env"
 fi
 
 # ── 7. Wire Nginx config ──────────────────────────────────────────────────────
@@ -159,7 +159,7 @@ info "========================================================"
 echo ""
 echo -e "${YELLOW}Next steps:${NC}"
 echo ""
-echo "  1. Edit your secrets:  nano $APP_DIR/.env.local"
+echo "  1. Edit your secrets:  nano $APP_DIR/.env"
 echo ""
 echo "  2. Add these 3 GitHub Actions secrets to your repo:"
 echo "     (Settings → Secrets and variables → Actions)"

@@ -24,7 +24,6 @@ function loadRootEnv(fileName: string, override = false) {
 }
 
 loadRootEnv(".env");
-loadRootEnv(".env.local", true);
 
 const sdkSrc = path.join(__dirname, "../../packages/sdk/src");
 

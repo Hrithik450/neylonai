@@ -1,6 +1,6 @@
 /**
  * Gemini model IDs — single source of truth in `@neylonai/agent`.
- * Edit here (and `.env.local`) when Google retires a model.
+ * Edit here (and `.env`) when Google retires a model.
  */
 
 export const MODEL_DEFAULTS = {

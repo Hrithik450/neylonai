@@ -83,11 +83,11 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for dependency boundaries.
 
 ```bash
 pnpm install
-cp .env.example .env.local
+cp .env.example .env
 ```
 
-**One env file:** edit **repo root** `.env.local` only.  
-`apps/web/.env.local` is a symlink to the root file (Next.js loads env from the app directory).
+**One env file:** edit **repo root** `.env` only.  
+`apps/web/next.config.ts` loads it from the repo root, so no per-app copy is needed.
 
 ### Database
 
@@ -99,7 +99,7 @@ Optional: Postgres + Redis only in Docker while using `pnpm dev` on the host:
 
 ```bash
 docker compose up postgres redis -d
-# .env.local → DATABASE_URL=postgresql://neylonai:neylonai@localhost:5432/neylonai
+# .env → DATABASE_URL=postgresql://neylonai:neylonai@localhost:5432/neylonai
 #            REDIS_URL=redis://localhost:6379  DATABASE_SSL=false
 ```
 
@@ -138,7 +138,7 @@ The site layout auto-provisions a **publishable** client API key (`nk_live_…`)
 for the admin user’s organization (or `PLATFORM_ADMIN_EMAIL` /
 `KNOWLEDGE_ORGANIZATION_SLUG` fallback). No seed script required.
 
-Optional override in `.env.local`:
+Optional override in `.env`:
 
 ```bash
 NEXT_PUBLIC_NEYLONAI_API_KEY=nk_live_…
@@ -265,7 +265,7 @@ Production widget/API requests resolve the organization from the authenticated A
 ### Full local stack (bundled Postgres + Redis)
 
 ```bash
-# .env.local (compose network hostnames):
+# .env (compose network hostnames):
 # DATABASE_URL=postgresql://neylonai:neylonai@postgres:5432/neylonai
 # REDIS_URL=redis://redis:6379
 # DATABASE_SSL=false
@@ -277,7 +277,7 @@ pnpm db:migrate   # from host against localhost:5432
 ### Cloud DB + Redis
 
 ```bash
-# .env.local → Supabase transaction pooler as DATABASE_URL (:6543),
+# .env → Supabase transaction pooler as DATABASE_URL (:6543),
 #             Direct as DATABASE_DIRECT_URL (:5432), REDIS_URL, DATABASE_SSL=true
 pnpm db:migrate   # uses DATABASE_DIRECT_URL
 pnpm docker:cloud

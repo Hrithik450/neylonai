@@ -5,7 +5,7 @@
 # Deploy / update:          bash scripts/deploy.sh
 #
 # Manual steps:
-#   1. cp .env.example .env.local  (fill in real secrets)
+#   1. cp .env.example .env  (fill in real secrets)
 #   2. docker compose up --build -d
 
 name: neylonai
@@ -48,7 +48,7 @@ services:
       dockerfile: Dockerfile
       target: migrator
     env_file:
-      - path: .env.local
+      - path: .env
         required: false
     environment:
       DATABASE_URL: postgresql://neylonai:neylonai@postgres:5432/neylonai
@@ -68,8 +68,9 @@ services:
       target: runner
       args:
         NEXT_PUBLIC_NEYLONAI_API_ORIGIN: ${NEXT_PUBLIC_NEYLONAI_API_ORIGIN:-}
+        NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID:-}
     env_file:
-      - path: .env.local
+      - path: .env
         required: false
     environment:
       NODE_ENV: production
@@ -93,7 +94,7 @@ services:
       dockerfile: Dockerfile
       target: crawler
     env_file:
-      - path: .env.local
+      - path: .env
         required: false
     environment:
       NODE_ENV: production

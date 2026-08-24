@@ -2,7 +2,7 @@
 
 ## Commands
 
-From repo root (loads `.env.local`):
+From repo root (loads `.env`):
 
 - `pnpm db:migrate` — apply pending SQL migrations (requires `DATABASE_DIRECT_URL`, port `:5432`)
 - `pnpm db:generate` — diff Drizzle schema → new migration file

@@ -30,6 +30,7 @@ COPY --from=pruner /app/out/full/ .
 # Placeholders satisfy any remaining eager env reads during `next build` page collection.
 # Real DATABASE_URL / REDIS_URL are injected at container runtime via compose env_file.
 ARG NEXT_PUBLIC_NEYLONAI_API_ORIGIN
+ARG NEXT_PUBLIC_GOOGLE_CLIENT_ID
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV DATABASE_URL=postgresql://build:build@127.0.0.1:5432/build
@@ -46,6 +47,7 @@ ENV ROUTER_CLASSIFIER_MODEL=gemini-3.1-flash-lite
 ENV UTILITY_MODEL=gemini-3.5-flash-lite
 ENV EMBEDDING_MODEL=gemini-embedding-001
 ENV NEXT_PUBLIC_NEYLONAI_API_ORIGIN=${NEXT_PUBLIC_NEYLONAI_API_ORIGIN}
+ENV NEXT_PUBLIC_GOOGLE_CLIENT_ID=${NEXT_PUBLIC_GOOGLE_CLIENT_ID}
 RUN pnpm turbo run build --filter=web
 
 # ─── Slim runtime (Next.js standalone) ────────────────────────────────────────

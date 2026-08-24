@@ -1,7 +1,7 @@
 # App-only stack for VPS/EC2 when Postgres + Redis are managed in the cloud
 # (Neon, RDS, Upstash, etc.). No local DB containers.
 #
-# 1. Point DATABASE_URL / REDIS_URL / DATABASE_SSL at your cloud providers in .env.local
+# 1. Point DATABASE_URL / REDIS_URL / DATABASE_SSL at your cloud providers in .env
 # 2. Migrate from the host:  pnpm db:migrate
 # 3. docker compose -f docker-compose.cloud.yml up --build
 
@@ -14,7 +14,7 @@ services:
       dockerfile: Dockerfile
       target: runner
     env_file:
-      - .env.local
+      - .env
     environment:
       NODE_ENV: production
       PORT: "3000"
@@ -29,7 +29,7 @@ services:
       dockerfile: Dockerfile
       target: crawler
     env_file:
-      - .env.local
+      - .env
     environment:
       NODE_ENV: production
     restart: unless-stopped

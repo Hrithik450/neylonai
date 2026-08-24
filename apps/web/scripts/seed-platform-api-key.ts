@@ -3,7 +3,7 @@
  * First-party SupportWidget reads that env (same as external embeds) — it does not
  * call private billing/domain code.
  *
- *   pnpm exec dotenv -e .env.local -- pnpm --filter @neylonai/database exec tsx ../../apps/web/scripts/seed-platform-api-key.ts
+ *   pnpm exec dotenv -e .env -- pnpm --filter @neylonai/database exec tsx ../../apps/web/scripts/seed-platform-api-key.ts
  */
 import { eq } from "drizzle-orm";
 import {
@@ -78,7 +78,7 @@ async function main() {
 
   const created = await createApiKeyForOrg(org.id, "Platform");
   console.log("\nNEXT_PUBLIC_NEYLONAI_API_KEY=" + created.rawKey);
-  console.log("\nAdd the line above to apps/web .env.local (and restart).");
+  console.log("\nAdd the line above to the repo root .env (and restart).");
 }
 
 main().catch((e) => {
