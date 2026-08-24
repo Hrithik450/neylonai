@@ -34,7 +34,10 @@ jobs:
             docker compose down --remove-orphans
 
             echo "==> Building images..."
-            docker compose build
+            # `migrator` sits behind `profiles: [migration]`, so a bare
+            # `docker compose build` skips it and `run --rm migrator` below
+            # silently reuses a stale image. Build it explicitly.
+            COMPOSE_PROFILES=migration docker compose build
 
             echo "==> Starting services..."
             docker compose up -d
@@ -43,7 +46,7 @@ jobs:
             docker compose exec -T postgres bash -c \
               'until pg_isready -U neylonai -d neylonai; do sleep 1; done'
 
-            echo "==> Running database schema push..."
+            echo "==> Applying database migrations..."
             COMPOSE_PROFILES=migration docker compose run --rm migrator
 
             echo "==> Pruning unused Docker images..."

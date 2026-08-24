@@ -84,10 +84,16 @@ COPY --from=migrator-pruner /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
 COPY --from=migrator-pruner /app/out/pnpm-workspace.yaml ./pnpm-workspace.yaml
 RUN pnpm install --frozen-lockfile --ignore-scripts
 COPY --from=migrator-pruner /app/out/full/ .
-# Use a push wrapper that bypasses the interactive TTY requirement
-COPY scripts/db-push.cjs /app/db-push.cjs
 WORKDIR /app/packages/database
-CMD ["node", "--require", "/app/db-push.cjs", "/app/node_modules/.pnpm/drizzle-kit@0.31.10/node_modules/drizzle-kit/bin.cjs", "push", "--config", "/app/packages/database/drizzle.config.ts"]
+# Apply the numbered SQL files in migrations/ and record each one in
+# drizzle.__drizzle_migrations, so hand-written SQL (backfills, staged FK /
+# NOT NULL steps) actually runs in production.
+#
+# Do NOT use `drizzle-kit push` here. push ignores migrations/ entirely: it
+# diffs the schema baked into THIS image against the live DB and makes the DB
+# match, auto-approving drops via the db-push.cjs shim. If the image is ever
+# stale, that silently reverts production to the image's schema.
+CMD ["pnpm", "run", "migrate"]
 
 # ─── Crawler worker (BullMQ) ──────────────────────────────────────────────────
 FROM base AS crawler-pruner

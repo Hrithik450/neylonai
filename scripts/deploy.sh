@@ -23,7 +23,9 @@ info "Stopping existing containers..."
 docker compose down --remove-orphans
 
 info "Building images..."
-docker compose build
+# `migrator` sits behind `profiles: [migration]`, so a bare `docker compose
+# build` skips it and `run --rm migrator` below silently reuses a stale image.
+COMPOSE_PROFILES=migration docker compose build
 
 info "Starting services..."
 docker compose up -d
@@ -32,7 +34,7 @@ info "Waiting for Postgres to be healthy..."
 docker compose exec -T postgres bash -c \
   'until pg_isready -U neylonai -d neylonai; do sleep 1; done'
 
-info "Running database schema push..."
+info "Applying database migrations..."
 COMPOSE_PROFILES=migration docker compose run --rm migrator
 
 info "Pruning unused Docker images..."
