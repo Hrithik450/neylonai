@@ -192,6 +192,22 @@ export const apiKeyRelations = relations(apiKeys, ({ one }) => ({
   }),
 }));
 
+// `organizationRelations` declares many() for both of these, so each needs the
+// matching one() back or relation extraction fails.
+export const usageEventRelations = relations(usageEvents, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [usageEvents.organization_id],
+    references: [organizations.id],
+  }),
+}));
+
+export const billingEventRelations = relations(billingEvents, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [billingEvents.organization_id],
+    references: [organizations.id],
+  }),
+}));
+
 export const knowledgeSourceRelations = relations(
   knowledgeSources,
   ({ one, many }) => ({
