@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import {
   FieldHint,
@@ -21,7 +22,6 @@ type KeyRow = {
 
 export function ApiKeysSettingsSection() {
   const [keys, setKeys] = useState<KeyRow[]>([]);
-  const [originsDraft, setOriginsDraft] = useState("");
   const [onceKey, setOnceKey] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -35,8 +35,6 @@ export function ApiKeysSettingsSection() {
     };
     if (keysJson.success && keysJson.data) {
       setKeys(keysJson.data.apiKeys);
-      const active = keysJson.data.apiKeys.find((k) => !k.revoked);
-      setOriginsDraft((active?.allowedOrigins ?? []).join("\n"));
     } else setMessage(keysJson.error ?? "Failed to load keys");
   }, []);
 
@@ -45,6 +43,9 @@ export function ApiKeysSettingsSection() {
   }, [load]);
 
   const activeKeys = keys.filter((k) => !k.revoked);
+  // One org = one website = one domain. The allowlist is owned by Integrations →
+  // Website now; here it's read-only context.
+  const allowedDomain = activeKeys[0]?.allowedOrigins?.[0] ?? null;
 
   const rotateKey = async () => {
     if (
@@ -58,10 +59,9 @@ export function ApiKeysSettingsSection() {
     setOnceKey(null);
     setMessage(null);
     try {
-      const origins = originsDraft
-        .split(/[\n,]/)
-        .map((s) => s.trim())
-        .filter(Boolean);
+      // Preserve the domain the connected website set, so rotating never wipes
+      // the allowlist.
+      const origins = activeKeys[0]?.allowedOrigins ?? [];
       const res = await fetch("/api/v1/api-keys", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -80,31 +80,6 @@ export function ApiKeysSettingsSection() {
       await load();
     } catch (e) {
       setMessage(e instanceof Error ? e.message : "Rotate failed");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const saveOrigins = async () => {
-    const active = activeKeys[0];
-    if (!active) return;
-    setBusy(true);
-    try {
-      const origins = originsDraft
-        .split(/[\n,]/)
-        .map((s) => s.trim())
-        .filter(Boolean);
-      const res = await fetch("/api/v1/api-keys", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ apiKeyId: active.id, allowedOrigins: origins }),
-      });
-      const json = (await res.json()) as { success: boolean; error?: string };
-      if (!json.success) throw new Error(json.error ?? "Update failed");
-      setMessage("Allowed domains updated.");
-      await load();
-    } catch (e) {
-      setMessage(e instanceof Error ? e.message : "Update failed");
     } finally {
       setBusy(false);
     }
@@ -134,15 +109,15 @@ export function ApiKeysSettingsSection() {
     <SettingsSectionFrame
       headingId="api-keys-heading"
       title="API keys"
-      description="Publishable keys for the browser widget, restricted by allowed domains."
+      description="Publishable keys for the browser widget, limited to your connected website's domain."
     >
       <section id="api-keys-card" className="ink-card p-6 space-y-4">
         <div className="space-y-1">
           <h3 className="text-lg font-medium">API Keys</h3>
           <p className="caption text-sm">
-            These identify your embed in the browser. They are restricted by
-            allowed domains. The full key is shown only once when created or
-            rotated.
+            These identify your embed in the browser. Most people never touch
+            this — your key is minted the first time you copy the install script.
+            The full key is shown only once when created or rotated.
           </p>
         </div>
 
@@ -167,7 +142,7 @@ export function ApiKeysSettingsSection() {
             disabled={busy}
             onClick={() => void rotateKey()}
           >
-            Create / rotate key
+            {activeKeys.length === 0 ? "Create key" : "Rotate key"}
           </SettingsButton>
         </div>
 
@@ -202,24 +177,26 @@ export function ApiKeysSettingsSection() {
       </section>
 
       <section className="ink-card p-6 space-y-3">
-        <h3 className="text-lg font-medium">Allowed widget domains</h3>
+        <h3 className="text-lg font-medium">Allowed domain</h3>
         <FieldHint>
-          Restrict which websites may use your widget key. One host per line
-          (example.com or https://app.example.com). Empty means unrestricted.
+          Your widget key only works on your connected website. Set or change it
+          under Integrations → Website — not here.
         </FieldHint>
-        <textarea
-          className="ink-input min-h-28"
-          value={originsDraft}
-          onChange={(e) => setOriginsDraft(e.target.value)}
-          placeholder={"example.com\napp.example.com"}
-        />
-        <SettingsButton
-          className="bg-white"
-          disabled={busy || activeKeys.length === 0}
-          onClick={() => void saveOrigins()}
-        >
-          Save domains
-        </SettingsButton>
+        {allowedDomain ? (
+          <p className="text-sm">
+            <span className="mono font-semibold">{allowedDomain}</span>
+            <span className="caption"> — from your connected website</span>
+          </p>
+        ) : (
+          <p className="caption text-sm">
+            No domain set yet — the key works everywhere until you connect a
+            website under{" "}
+            <Link className="underline" href="/dashboard/integrations">
+              Integrations → Website
+            </Link>
+            .
+          </p>
+        )}
       </section>
 
       {message ? <p className="caption text-sm">{message}</p> : null}

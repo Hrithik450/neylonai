@@ -6,6 +6,7 @@ import React from "react";
 import { cn } from "../../../ui";
 import { Button } from "../../../ui";
 
+import { contrastForeground } from "../../color-contrast";
 import { WidgetScreens, WidgetTabs } from "../../constants";
 import { WidgetIntroText } from "../widget-intro-texts";
 import { WidgetChromeActions } from "../widget-header";
@@ -75,7 +76,10 @@ export function WidgetHome() {
       className="h-full min-h-0 overflow-y-auto overscroll-contain [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden px-2 lg:px-3"
       style={{ fontFamily }}
     >
-      <div className="py-2 pb-3 px-2 text-white max-md:rounded-none rounded-b-2xl">
+      <div
+        className="py-2 pb-3 px-2 max-md:rounded-none rounded-b-2xl"
+        style={{ color: branding.primaryTextColor }}
+      >
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2 min-w-0">
             {branding.logoUrl ? (
@@ -87,8 +91,11 @@ export function WidgetHome() {
               />
             ) : (
               <div
-                className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-semibold shrink-0"
-                style={{ backgroundColor: branding.primaryTextColor }}
+                className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold shrink-0"
+                style={{
+                  backgroundColor: branding.primaryTextColor,
+                  color: contrastForeground(branding.primaryTextColor),
+                }}
               >
                 {(branding.name?.trim() || "?").slice(0, 1)}
               </div>
@@ -130,10 +137,11 @@ export function WidgetHome() {
           type="button"
           variant="ghost"
           onClick={openChat}
-          className="group h-auto w-full cursor-pointer rounded-xl px-4 pr-5 py-4 flex justify-between items-center gap-3 shadow-sm border border-black/10 hover:opacity-95 hover:bg-transparent"
+          className="group h-auto w-full cursor-pointer rounded-xl px-4 pr-5 py-4 flex justify-between items-center gap-3 shadow-sm border hover:opacity-95 hover:bg-transparent"
           style={{
             backgroundColor: branding.primaryTextBackground,
             color: branding.askButtonTextColor,
+            borderColor: branding.borderColor,
           }}
         >
           <span className="flex min-w-0 flex-1 items-center gap-3.5">
@@ -160,12 +168,21 @@ export function WidgetHome() {
           type="button"
           variant="outline"
           onClick={requestHuman}
-          className="group h-auto w-full cursor-pointer shadow-none border border-black/10 rounded-xl px-4 pr-5 py-3.5 flex justify-between items-center gap-3"
-          style={{ backgroundColor: branding.secondaryTextBackground }}
+          className="group h-auto w-full cursor-pointer shadow-none border rounded-xl px-4 pr-5 py-3.5 flex justify-between items-center gap-3"
+          style={{
+            backgroundColor: branding.secondaryTextBackground,
+            borderColor: branding.borderColor,
+          }}
         >
           <span className="flex min-w-0 flex-1 items-center gap-3.5">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-black">
-              <TeamIcon className="text-white w-7 h-7" />
+            <span
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
+              style={{
+                backgroundColor: branding.primaryTextBackground,
+                color: branding.askButtonTextColor,
+              }}
+            >
+              <TeamIcon className="w-7 h-7" />
             </span>
             <span className="flex min-w-0 flex-col items-start text-left">
               <span
@@ -182,7 +199,10 @@ export function WidgetHome() {
               </span>
             </span>
           </span>
-          <ArrowRight className="text-zinc-400 w-4 h-4 shrink-0 group-hover:-rotate-45 transition-transform duration-150 ease-in-out" />
+          <ArrowRight
+            className="w-4 h-4 shrink-0 group-hover:-rotate-45 transition-transform duration-150 ease-in-out"
+            style={{ color: branding.secondaryTextColor }}
+          />
         </Button>
       </div>
     </section>

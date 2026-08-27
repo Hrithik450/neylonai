@@ -25,6 +25,9 @@ const DEFAULT_BRANDING = {
   aiMessageBackground: DEFAULT_WIDGET_CONFIG.branding!.aiMessageBackground!,
   humanMessageBackground:
     DEFAULT_WIDGET_CONFIG.branding!.humanMessageBackground!,
+  surfaceColor: DEFAULT_WIDGET_CONFIG.branding!.surfaceColor!,
+  borderColor: DEFAULT_WIDGET_CONFIG.branding!.borderColor!,
+  themePreset: DEFAULT_WIDGET_CONFIG.branding!.themePreset!,
   tagline: "AI assistants for modern businesses",
 } as const;
 
@@ -44,6 +47,9 @@ export interface WidgetHostValue {
         secondaryTextBackground: string;
         aiMessageBackground: string;
         humanMessageBackground: string;
+        surfaceColor: string;
+        borderColor: string;
+        themePreset: string;
       };
       layout: Required<NonNullable<ResolvedWidgetConfig["layout"]>>;
       messages: Required<
@@ -139,6 +145,9 @@ export function WidgetHostProvider({
         b?.humanMessageBackground,
         DEFAULT_BRANDING.humanMessageBackground,
       ),
+      surfaceColor: pick(b?.surfaceColor, DEFAULT_BRANDING.surfaceColor),
+      borderColor: pick(b?.borderColor, DEFAULT_BRANDING.borderColor),
+      themePreset: b?.themePreset ?? DEFAULT_BRANDING.themePreset,
       font: b?.font,
     };
 
@@ -224,6 +233,9 @@ export function WidgetHostProvider({
     config?.branding?.secondaryTextBackground,
     config?.branding?.aiMessageBackground,
     config?.branding?.humanMessageBackground,
+    config?.branding?.surfaceColor,
+    config?.branding?.borderColor,
+    config?.branding?.themePreset,
     config?.branding?.name,
     config?.branding?.logoUrl,
     config?.branding?.font,

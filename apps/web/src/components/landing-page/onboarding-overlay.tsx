@@ -117,7 +117,7 @@ export function OnboardingOverlay() {
       transition={{ duration: 0.22 }}
     >
       {/* backdrop — four panels around the spotlight so the hero CTA below it
-          keeps receiving clicks; clicking any panel dismisses */}
+          keeps receiving clicks; no dismiss action on click to make it mandatory */}
       {[
         { top: 0, left: 0, right: 0, height: Math.max(spotTop, 0) },
         { top: spotTop + spotHeight, left: 0, right: 0, bottom: 0 },
@@ -128,7 +128,6 @@ export function OnboardingOverlay() {
           key={i}
           className="fixed z-[200] cursor-default"
           style={style}
-          onClick={dismiss}
         />
       ))}
 
@@ -160,14 +159,6 @@ export function OnboardingOverlay() {
             border: "1px solid rgba(0,0,0,0.07)",
           }}
         >
-          <button
-            className="absolute top-3.5 right-3.5 p-1 rounded-full cursor-pointer hover:bg-gray-100 transition-colors"
-            onClick={dismiss}
-            aria-label="Dismiss onboarding"
-          >
-            <X className="w-3.5 h-3.5 text-gray-400" />
-          </button>
-
           <p
             className="text-[10px] font-semibold uppercase tracking-widest mb-1.5"
             style={{ color: GREEN }}

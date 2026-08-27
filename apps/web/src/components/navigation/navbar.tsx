@@ -250,7 +250,7 @@ export function Navbar() {
       }}
     >
       {/* Main bar */}
-      <div className="flex items-center justify-between h-16 px-6 sm:px-10 md:px-20 lg:px-28">
+      <div className="flex items-center justify-between h-16 px-6 sm:px-10 md:px-20 xl:px-28">
         {/* Logo + nav links grouped left */}
         <div className="flex items-center gap-6">
           <Link

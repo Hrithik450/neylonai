@@ -69,6 +69,7 @@ services:
       args:
         NEXT_PUBLIC_NEYLONAI_API_ORIGIN: ${NEXT_PUBLIC_NEYLONAI_API_ORIGIN:-}
         NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID:-}
+        NEXT_PUBLIC_NEYLONAI_API_KEY: ${NEXT_PUBLIC_NEYLONAI_API_KEY:-}
     env_file:
       - path: .env
         required: false

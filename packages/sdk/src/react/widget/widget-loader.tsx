@@ -2,10 +2,11 @@
 
 import React from "react";
 import { cn } from "../../ui";
+import { useWidgetHost } from "../context/widget-host";
 
 interface WidgetLoaderProps {
   className?: string;
-  /** Spinner accent (defaults to near-black). */
+  /** Spinner accent (defaults to the theme's primary text color). */
   color?: string;
   label?: string;
 }
@@ -15,9 +16,11 @@ interface WidgetLoaderProps {
  */
 export function WidgetLoader({
   className,
-  color = "#0E3228",
+  color,
   label = "Loading",
 }: WidgetLoaderProps) {
+  const { config } = useWidgetHost();
+  const accent = color ?? config.branding.primaryTextColor;
   return (
     <div
       role="status"
@@ -29,8 +32,11 @@ export function WidgetLoader({
       )}
     >
       <span
-        className="block size-7 rounded-full border-2 border-black/10 animate-spin"
-        style={{ borderTopColor: color }}
+        className="block size-7 rounded-full border-2 animate-spin"
+        style={{
+          borderColor: config.branding.borderColor,
+          borderTopColor: accent,
+        }}
         aria-hidden
       />
       <span className="sr-only">{label}</span>

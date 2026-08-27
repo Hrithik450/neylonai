@@ -5,6 +5,10 @@
 import { tryGetAuthHeaders } from "./runtime-config";
 import { apiUrl } from "./network";
 import { DEFAULT_WIDGET_FONT } from "./font-catalog";
+import {
+  DEFAULT_THEME_PRESET_ID,
+  resolveThemePreset,
+} from "./widget-presets";
 
 export type WidgetFontConfig = {
   /** system | catalog | custom */
@@ -54,6 +58,12 @@ export type StoredWidgetConfig = {
     aiMessageBackground?: string;
     /** Human / visitor chat bubble fill (foreground auto-contrasts). */
     humanMessageBackground?: string;
+    /** Selected theme preset id (see `widget-presets`). Resolves the palette. */
+    themePreset?: string;
+    /** Neutral elevated surface: composer, inputs, FAB, mic, pucks, banners. */
+    surfaceColor?: string;
+    /** Every hairline border. */
+    borderColor?: string;
     tagline?: string;
     /** Widget typography — neutral by default (not Neylon marketing fonts). */
     font?: WidgetFontConfig;
@@ -81,6 +91,12 @@ export type StoredWidgetConfig = {
      * Before that, server may seed once from org knowledge.
      */
     faqsInitialized?: boolean;
+    /**
+     * One-way lock: once true, the whole messages block is user-owned.
+     * Set when the widget content is first AI-seeded from the crawl, or on the
+     * first dashboard publish — after that, no automatic re-seed ever runs.
+     */
+    contentInitialized?: boolean;
   };
   features?: {
     homeTab?: boolean;
@@ -130,11 +146,11 @@ export type StoredWidgetConfig = {
 /**
  * Define code-owned widget customization with full type checking.
  * Values passed through `SupportWidget.config.customization` override dashboard
- * values, which lets an integration match the host site's existing theme.
+ * values (except branding, which is managed via the dashboard).
  */
 export function defineWidgetCustomization(
-  customization: StoredWidgetConfig,
-): StoredWidgetConfig {
+  customization: Omit<StoredWidgetConfig, "branding">,
+): Omit<StoredWidgetConfig, "branding"> {
   return customization;
 }
 
@@ -200,17 +216,10 @@ export const DEFAULT_WIDGET_FEATURES = {
 const DEFAULT_BRANDING = {
   name: "",
   logoUrl: "",
-  primaryTextColor: "#0E3228",
-  secondaryTextColor: "rgba(0, 0, 0, 0.7)",
-  accentColor: "#71717a",
-  tabActiveColor: "#0E3228",
-  gradientFrom: "rgb(144, 238, 144)",
-  gradientTo: "#ffffff",
-  primaryTextBackground: "#0E3228",
-  askButtonTextColor: "#ffffff",
-  secondaryTextBackground: "#ffffff",
-  aiMessageBackground: "transparent",
-  humanMessageBackground: "#e4e4e7",
+  // Color tokens come from the default (Evergreen) preset — single source of
+  // truth. Values are identical to the historical defaults, so nothing shifts.
+  ...resolveThemePreset(DEFAULT_THEME_PRESET_ID).colors,
+  themePreset: DEFAULT_THEME_PRESET_ID,
   tagline: "AI assistants for modern businesses",
   font: { ...DEFAULT_WIDGET_FONT },
 };
@@ -252,32 +261,27 @@ export const DEFAULT_WIDGET_CONFIG: StoredWidgetConfig = {
 };
 
 /** Platform branding color schema version (bump when default roles/values change). */
-export const BRANDING_COLORS_VERSION = 1;
+export const BRANDING_COLORS_VERSION = 2;
 
 /**
- * Replace color fields with the current platform palette (Reset), keeping
- * name / logo / font / tagline. Used for one-time load migration.
+ * Reset a stored config to the default theme preset, keeping identity fields
+ * (name / logo / font / tagline). Used for one-time load migration: it strips
+ * any legacy per-field custom colors so the palette is preset-driven from now
+ * on (the product no longer supports custom individual colors).
  */
 export function withPlatformBrandingColors(
   config: StoredWidgetConfig,
 ): StoredWidgetConfig {
-  const d = DEFAULT_WIDGET_CONFIG.branding!;
   const b = config.branding ?? {};
   return {
     ...config,
     branding: {
-      ...b,
-      primaryTextColor: d.primaryTextColor,
-      secondaryTextColor: d.secondaryTextColor,
-      accentColor: d.accentColor,
-      tabActiveColor: d.tabActiveColor,
-      gradientFrom: d.gradientFrom,
-      gradientTo: d.gradientTo,
-      primaryTextBackground: d.primaryTextBackground,
-      askButtonTextColor: d.askButtonTextColor,
-      secondaryTextBackground: d.secondaryTextBackground,
-      aiMessageBackground: d.aiMessageBackground,
-      humanMessageBackground: d.humanMessageBackground,
+      // Keep only identity — legacy color fields are intentionally dropped.
+      name: b.name,
+      logoUrl: b.logoUrl,
+      tagline: b.tagline,
+      font: b.font,
+      themePreset: DEFAULT_THEME_PRESET_ID,
       colorsVersion: BRANDING_COLORS_VERSION,
     },
   };
@@ -295,39 +299,21 @@ const trimOr = (val: string | undefined, fallback: string) =>
 
 const mergeBranding = (stored: any) => {
   const def = DEFAULT_WIDGET_CONFIG.branding!;
+  const s = stored ?? {};
+  const preset = resolveThemePreset(s.themePreset);
   return {
     ...def,
-    ...stored,
-    font: { ...DEFAULT_WIDGET_FONT, ...def.font, ...stored.font },
-    primaryTextColor: trimOr(stored.primaryTextColor, def.primaryTextColor!),
-    secondaryTextColor: trimOr(
-      stored.secondaryTextColor,
-      def.secondaryTextColor!,
-    ),
-    tabActiveColor: trimOr(stored.tabActiveColor, def.tabActiveColor!),
-    accentColor: trimOr(stored.accentColor, def.accentColor!),
-    gradientFrom: trimOr(stored.gradientFrom, def.gradientFrom!),
-    gradientTo: trimOr(stored.gradientTo, def.gradientTo!),
-    primaryTextBackground:
-      trimOr(stored.primaryTextBackground, stored.primaryTextColor) ||
-      def.primaryTextBackground,
-    askButtonTextColor: trimOr(
-      stored.askButtonTextColor,
-      def.askButtonTextColor!,
-    ),
-    secondaryTextBackground: trimOr(
-      stored.secondaryTextBackground,
-      def.secondaryTextBackground!,
-    ),
-    aiMessageBackground: trimOr(
-      stored.aiMessageBackground,
-      def.aiMessageBackground!,
-    ),
-    humanMessageBackground: trimOr(
-      stored.humanMessageBackground,
-      def.humanMessageBackground!,
-    ),
-    colorsVersion: stored.colorsVersion,
+    ...s,
+    // The selected preset owns every color token and wins over any stored
+    // per-field colors — this is what strips legacy custom palettes.
+    ...preset.colors,
+    themePreset: preset.id,
+    // Identity fields still come from stored config.
+    name: trimOr(s.name, def.name ?? ""),
+    logoUrl: trimOr(s.logoUrl, def.logoUrl ?? ""),
+    tagline: trimOr(s.tagline, def.tagline ?? ""),
+    font: { ...DEFAULT_WIDGET_FONT, ...def.font, ...s.font },
+    colorsVersion: BRANDING_COLORS_VERSION,
   };
 };
 
@@ -370,6 +356,7 @@ export function mergeWidgetConfig(
         : def.messages?.suggestedQuestions,
       faqs: cleanFaqs(sm.faqs),
       faqsInitialized: sm.faqsInitialized === true,
+      contentInitialized: sm.contentInitialized === true,
       feedbackTitle:
         !feedbackTitle || feedbackTitle === "Share Your Feedback"
           ? def.messages?.feedbackTitle

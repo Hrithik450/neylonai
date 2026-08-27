@@ -118,17 +118,25 @@ export function InputForm({ sendMessage, stopStreaming }: InputFormProps) {
       <PromptInput
         value={input}
         onValueChange={(value) => setInput(value)}
-        className="flex w-full min-w-0 max-w-full items-end rounded-2xl border border-black/60 bg-white px-2 py-1"
+        className="flex w-full min-w-0 max-w-full items-end rounded-2xl border px-2 py-1"
+        style={{
+          backgroundColor: config.branding.surfaceColor,
+          borderColor: config.branding.borderColor,
+          color: config.branding.primaryTextColor,
+        }}
       >
         <div className="flex w-full min-w-0 flex-1 items-end gap-2">
           {showVisualizer ? (
             <div className="flex min-w-0 flex-1 items-center gap-2.5 self-center px-1">
               <AudioVisualizer
                 stream={recorder.stream}
-                color="rgb(161 161 170)"
+                color={config.branding.accentColor}
                 className="flex-1"
               />
-              <span className="shrink-0 text-[11px] font-medium tracking-wide text-zinc-400">
+              <span
+                className="shrink-0 text-[11px] font-medium tracking-wide"
+                style={{ color: config.branding.secondaryTextColor }}
+              >
                 Listening…
               </span>
             </div>

@@ -32,6 +32,12 @@ export interface WidgetBranding {
   aiMessageBackground?: string;
   /** Human / visitor chat bubble fill (foreground auto-contrasts). */
   humanMessageBackground?: string;
+  /** Selected theme preset id (see `widget-presets`). Resolves the palette. */
+  themePreset?: string;
+  /** Neutral elevated surface: composer, inputs, FAB, mic, pucks, banners. */
+  surfaceColor?: string;
+  /** Every hairline border. */
+  borderColor?: string;
   /** Applied when present on remote/preview config (e.g. first-party mocks). */
   fontClassName?: string;
   headingClassName?: string;
@@ -115,8 +121,9 @@ export interface SupportWidgetConfig {
   /**
    * Optional code-owned customization. Use `defineWidgetCustomization` from
    * `@neylonai/sdk` for type checking. These values override dashboard config.
+   * Theme/branding customization is restricted to the dashboard backend.
    */
-  customization?: StoredWidgetConfig;
+  customization?: Omit<StoredWidgetConfig, "branding">;
 }
 
 /** Resolved runtime + appearance after remote fetch. */

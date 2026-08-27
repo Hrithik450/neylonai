@@ -62,6 +62,11 @@ export const organizationSettings = pgTable(
       .notNull()
       .references(() => organizations.id, { onDelete: "cascade" }),
     timezone: varchar("timezone", { length: 64 }).notNull().default("UTC"),
+    /**
+     * Site builder chosen during onboarding: coded | wordpress | wix | framer
+     * | webflow. Nullable until the user picks one in the onboarding wizard.
+     */
+    website_platform: varchar("website_platform", { length: 32 }),
     privacy: jsonb("privacy")
       .$type<OrganizationPrivacyPrefs>()
       .notNull()

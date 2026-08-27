@@ -18,7 +18,7 @@ import { bubbleDedupeKey, cleanQuestion, normalizeExcerpt } from "./text";
  */
 
 /** Bump when the prompt or shaping rules change, to invalidate warm caches. */
-const CANDIDATE_PROMPT_VERSION = "v1";
+const CANDIDATE_PROMPT_VERSION = "v3";
 const CANDIDATE_CACHE_TTL_SEC = 6 * 60 * 60;
 const TARGET_CANDIDATES = 14;
 const MAX_SEEDS_IN_PROMPT = 12;
@@ -34,6 +34,13 @@ export interface GenerateProactiveCandidatesInput {
   seeds: KnowledgeSuggestionSeed[];
   /** Crawled text of this exact page — the page-specific grounding. */
   pageText: string;
+  /**
+   * This visitor's recent questions, oldest→newest. When present, the pool is
+   * generated to anticipate their NEXT question (and cached per conversation
+   * state, since the brief — and therefore the cache key — now varies by it);
+   * absent, generation stays org+page-shared and cheap.
+   */
+  recentUserAsks?: string[];
 }
 
 function candidatesCacheKey(input: {
@@ -85,6 +92,18 @@ function buildBrief(input: GenerateProactiveCandidatesInput): string {
     );
   }
 
+  const asks = (input.recentUserAsks ?? [])
+    .map((ask) => normalizeExcerpt(ask).slice(0, 160))
+    .filter(Boolean)
+    .slice(-3);
+  if (asks.length) {
+    lines.push(
+      "",
+      "What this visitor has already asked (anticipate their NEXT question — build on these, never repeat them):",
+      ...asks.map((ask) => `- ${ask}`),
+    );
+  }
+
   return lines.join("\n");
 }
 
@@ -124,7 +143,12 @@ export async function generateProactiveCandidates(
   input: GenerateProactiveCandidatesInput,
 ): Promise<string[]> {
   const brief = buildBrief(input);
-  if (!input.seeds.length && !input.pageText.trim()) return [];
+  if (
+    !input.seeds.length &&
+    !input.pageText.trim() &&
+    !(input.recentUserAsks ?? []).some((ask) => ask.trim())
+  )
+    return [];
 
   const cacheKey = candidatesCacheKey({
     organizationId: input.organizationId,

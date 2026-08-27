@@ -73,8 +73,19 @@ export const apiKeys = pgTable(
     key_prefix: varchar("key_prefix", { length: 16 }).notNull(),
     /** SHA-256 hex digest of the full API key. */
     key_hash: text("key_hash").notNull(),
+    /**
+     * The raw publishable key (nk_live_…), stored so the dashboard can show and
+     * re-copy the exact install snippet without rotating. Safe at rest: this is a
+     * *publishable* client key embedded in the site's HTML (à la Stripe pk_live) —
+     * the `allowed_domains` allowlist, not secrecy, is the security boundary.
+     * `key_hash` stays the auth source of truth. Null for keys created before
+     * this column existed (they must be rotated to become copyable).
+     */
+    public_key: text("public_key"),
     /** Last 4 chars for dashboard display (never enough to reconstruct). */
     last_four: varchar("last_four", { length: 4 }).notNull(),
+    /** List of allowed domains for CORS validation (e.g. ['example.com']). Empty = allow all. */
+    allowed_domains: jsonb("allowed_domains").$type<string[]>().default([]),
     revoked_at: timestamp("revoked_at", { withTimezone: true }),
     last_used_at: timestamp("last_used_at", { withTimezone: true }),
     created_at: timestamp("created_at", { withTimezone: true }).defaultNow(),

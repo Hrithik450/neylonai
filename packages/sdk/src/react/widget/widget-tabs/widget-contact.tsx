@@ -12,6 +12,7 @@ import {
   requestHumanHandoff,
 } from "../../..";
 import { useThreadStore } from "../../store/thread-store";
+import { contrastForeground } from "../../color-contrast";
 
 type ContactType = "email" | "phone" | "linkedin";
 
@@ -28,6 +29,8 @@ export function WidgetContact() {
   const branding = config.branding;
   const secondary = branding.secondaryTextColor;
   const primary = branding.primaryTextColor;
+  const surface = branding.surfaceColor;
+  const border = branding.borderColor;
   const [name, setName] = React.useState(user?.name ?? "");
   const [contactType, setContactType] = React.useState<ContactType>("email");
   const [contact, setContact] = React.useState(user?.email ?? "");
@@ -199,7 +202,10 @@ export function WidgetContact() {
         </div>
 
         {state === "loading" ? (
-          <div className="rounded-xl border border-black/10 bg-white px-4 py-3.5 text-sm text-zinc-600">
+          <div
+            className="rounded-xl border px-4 py-3.5 text-sm"
+            style={{ backgroundColor: surface, borderColor: border, color: secondary }}
+          >
             Preparing your conversation…
           </div>
         ) : null}
@@ -207,24 +213,30 @@ export function WidgetContact() {
         {state === "contact" ? (
           <form onSubmit={submit} className="space-y-3">
             <label className="block space-y-1">
-              <span className="text-xs font-medium">Name</span>
+              <span className="text-xs font-medium" style={{ color: primary }}>
+                Name
+              </span>
               <input
                 required
                 minLength={2}
                 maxLength={255}
                 value={name}
                 onChange={(event) => setName(event.target.value)}
-                className="w-full rounded-lg border border-black/15 bg-white px-3 py-2.5 text-sm outline-none focus:border-black/35"
+                className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none"
+                style={{ backgroundColor: surface, borderColor: border, color: primary }}
                 autoComplete="name"
               />
             </label>
 
             <div className="space-y-1.5">
-              <span className="text-xs font-medium">How should we reach you?</span>
+              <span className="text-xs font-medium" style={{ color: primary }}>
+                How should we reach you?
+              </span>
               <div
                 role="group"
                 aria-label="Contact method"
-                className="flex gap-1 rounded-lg border border-black/10 p-1"
+                className="flex gap-1 rounded-lg border p-1"
+                style={{ borderColor: border }}
               >
                 {CONTACT_TYPES.map((opt) => {
                   const selected = contactType === opt.key;
@@ -237,7 +249,7 @@ export function WidgetContact() {
                       className="flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors cursor-pointer"
                       style={
                         selected
-                          ? { background: primary, color: "#fff" }
+                          ? { background: primary, color: contrastForeground(primary) }
                           : { background: "transparent", color: secondary }
                       }
                     >
@@ -250,7 +262,8 @@ export function WidgetContact() {
                 required
                 value={contact}
                 onChange={(event) => setContact(event.target.value)}
-                className="w-full rounded-lg border border-black/15 bg-white px-3 py-2.5 text-sm outline-none focus:border-black/35"
+                className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none"
+                style={{ backgroundColor: surface, borderColor: border, color: primary }}
                 {...contactInputProps}
               />
               <p className="text-[11px]" style={{ color: secondary }}>
@@ -258,7 +271,14 @@ export function WidgetContact() {
               </p>
             </div>
             {error ? <p className="text-xs text-red-600">{error}</p> : null}
-            <Button type="submit" className="w-full cursor-pointer">
+            <Button
+              type="submit"
+              className="w-full cursor-pointer"
+              style={{
+                backgroundColor: branding.primaryTextBackground,
+                color: branding.askButtonTextColor,
+              }}
+            >
               Send to the team
             </Button>
           </form>
@@ -275,6 +295,11 @@ export function WidgetContact() {
                 type="button"
                 variant="outline"
                 className="w-full cursor-pointer"
+                style={{
+                  backgroundColor: surface,
+                  borderColor: border,
+                  color: primary,
+                }}
                 onClick={() =>
                   navigate(
                     WidgetTabs.Messages,

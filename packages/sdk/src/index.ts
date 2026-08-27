@@ -61,6 +61,13 @@ export {
   type WidgetFontConfig,
 } from "./widget-config";
 export {
+  WIDGET_THEME_PRESETS,
+  DEFAULT_THEME_PRESET_ID,
+  resolveThemePreset,
+  type ThemePreset,
+  type ThemePresetColors,
+} from "./widget-presets";
+export {
   WIDGET_FONT_CATALOG,
   DEFAULT_WIDGET_FONT,
   SYSTEM_UI_FONT_STACK,

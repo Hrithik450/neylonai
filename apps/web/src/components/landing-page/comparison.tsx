@@ -15,71 +15,48 @@ const ROWS: {
   intercom: CellVal;
   chatbase: CellVal;
 }[] = [
-  { label: "Free plan", neylon: true, intercom: false, chatbase: "Limited" },
-
   {
-    label: "Starting price",
+    label: "Reactive Q&A",
+    neylon: true,
+    intercom: true,
+    chatbase: true,
+  },
+  {
+    label: "Proactive engagement (teasers, triggers)",
+    neylon: "✅ core",
+    intercom: "Partial (paid)",
+    chatbase: false,
+  },
+  {
+    label: "Lead capture / visitor to lead",
+    neylon: "✅ core",
+    intercom: "Add-ons",
+    chatbase: "Limited",
+  },
+  {
+    label: "Live human handoff to inbox",
+    neylon: true,
+    intercom: "✅ (pricey)",
+    chatbase: "Limited",
+  },
+  {
+    label: "Multi-channel (WhatsApp, Cal.com)",
+    neylon: true,
+    intercom: "✅ (pricey)",
+    chatbase: "Limited",
+  },
+  {
+    label: "No-code install",
+    neylon: true,
+    intercom: true,
+    chatbase: true,
+  },
+  {
+    label: "Entry price",
     neylon: "$19 / mo",
-    intercom: "$39+ / seat",
-    chatbase: "$19 / mo",
+    intercom: "$85 / seat",
+    chatbase: "$40 / mo",
   },
-
-  {
-    label: "Proactive lead capture",
-    neylon: true,
-    intercom: "Paid add-on",
-    chatbase: false,
-  },
-
-  {
-    label: "Answers from your own content",
-    neylon: true,
-    intercom: "Fin AI tier",
-    chatbase: true,
-  },
-
-  {
-    label: "Lead handoff to your inbox",
-    neylon: true,
-    intercom: true,
-    chatbase: false,
-  },
-
-  {
-    label: "Conversation memory",
-    neylon: true,
-    intercom: true,
-    chatbase: false,
-  },
-
-  {
-    label: "Lead & conversion insights",
-    neylon: true,
-    intercom: false,
-    chatbase: false,
-  },
-
-  {
-    label: "Slack / CRM notifications",
-    neylon: "Pro+",
-    intercom: true,
-    chatbase: false,
-  },
-
-  {
-    label: "Full widget customization",
-    neylon: "Starter+",
-    intercom: true,
-    chatbase: true,
-  },
-
-  {
-    label: "India payments (Razorpay)",
-    neylon: true,
-    intercom: false,
-    chatbase: false,
-  },
-  { label: "Embeddable SDK", neylon: true, intercom: false, chatbase: false },
 ];
 
 export function Comparison() {
@@ -89,7 +66,7 @@ export function Comparison() {
       className="py-10 sm:py-12 lg:py-20 overflow-hidden"
     >
       {/* Heading — padded both sides */}
-      <div className="px-6 sm:px-10 md:px-20 lg:px-28 text-center mb-8 sm:mb-10">
+      <div className="px-6 sm:px-10 md:px-20 xl:px-28 mb-8 sm:mb-10">
         <p className="text-xs uppercase tracking-widest text-gray-400 mb-2 font-medium">
           Comparison
         </p>
@@ -97,16 +74,19 @@ export function Comparison() {
           className="landing-strong text-2xl md:text-3xl xl:text-4xl leading-tight"
           style={{ color: GREEN }}
         >
-          More for less, compared to the rest.
+          Why choose Neylon AI?
         </h2>
+        <p className="text-gray-500 text-base leading-relaxed mt-4 max-w-xl">
+          Get a proactive AI assistant that captures leads and engages visitors — without the enterprise price tag.
+        </p>
       </div>
 
       {/* Mobile: left-padded only, bleeds right with 3px buffer. md+: symmetric padding, no bleed */}
       <div
-        className="overflow-x-auto [&::-webkit-scrollbar]:hidden pl-6 pr-[3px] py-[3px] sm:pl-10 md:px-20 md:py-2 lg:px-28"
+        className="overflow-x-auto [&::-webkit-scrollbar]:hidden pl-6 pr-[3px] py-[3px] sm:pl-10 md:px-20 md:py-2 xl:px-28"
         style={{ scrollbarWidth: "none" }}
       >
-        <div className="min-w-[520px]">
+        <div className="min-w-[600px]">
           {/* Table card */}
           <div
             className="bg-white rounded-3xl overflow-hidden"
@@ -120,7 +100,7 @@ export function Comparison() {
               <div className="py-5 px-5 md:py-6 md:px-8" />
               {/* Neylon — highlighted */}
               <div
-                className="py-5 px-4 md:py-6 md:px-6 flex flex-col items-center gap-1 border-l border-black/[0.07]"
+                className="py-5 px-4 md:py-6 md:px-6 flex flex-col items-center justify-center gap-1 border-l border-black/[0.07]"
                 style={{ background: "rgba(14,50,40,0.04)" }}
               >
                 <span
@@ -128,12 +108,6 @@ export function Comparison() {
                   style={{ color: GREEN }}
                 >
                   Neylon AI
-                </span>
-                <span
-                  className="text-[10px] md:text-[11px] px-2 py-0.5 rounded-full font-semibold"
-                  style={{ background: LIME, color: GREEN }}
-                >
-                  Best value
                 </span>
               </div>
               <div className="py-5 px-4 md:py-6 md:px-6 flex items-center justify-center border-l border-black/[0.07]">
@@ -157,7 +131,7 @@ export function Comparison() {
                   i < ROWS.length - 1 && "border-b border-black/[0.06]",
                 )}
               >
-                <div className="py-3.5 px-5 md:py-4 md:px-8 flex items-center text-xs md:text-sm text-gray-600">
+                <div className="py-3.5 px-5 md:py-4 md:px-8 flex items-center text-xs md:text-sm text-gray-600 font-medium">
                   {row.label}
                 </div>
                 <div
@@ -166,10 +140,10 @@ export function Comparison() {
                 >
                   <Cell val={row.neylon} highlight />
                 </div>
-                <div className="py-3.5 px-4 md:py-4 md:px-6 flex items-center justify-center border-l border-black/[0.07]">
+                <div className="py-3.5 px-4 md:py-4 md:px-6 flex items-center justify-center text-center border-l border-black/[0.07]">
                   <Cell val={row.intercom} />
                 </div>
-                <div className="py-3.5 px-4 md:py-4 md:px-6 flex items-center justify-center border-l border-black/[0.07]">
+                <div className="py-3.5 px-4 md:py-4 md:px-6 flex items-center justify-center text-center border-l border-black/[0.07]">
                   <Cell val={row.chatbase} />
                 </div>
               </div>
@@ -200,9 +174,22 @@ function Cell({ val, highlight }: { val: CellVal; highlight?: boolean }) {
       </span>
     );
   }
+  
+  if (typeof val === "string" && val.startsWith("✅")) {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-medium" style={{ color: highlight ? GREEN : "inherit" }}>
+        <Check
+          className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0"
+          style={{ color: highlight ? GREEN : "#16a34a" }}
+          strokeWidth={2.5}
+        />
+        {val.replace("✅", "").trim()}
+      </span>
+    );
+  }
+  
   return (
-    <span className="inline-flex items-center gap-1.5 text-sm text-gray-500">
-      <X className="w-4 h-4 flex-shrink-0 text-amber-500" strokeWidth={2.5} />
+    <span className="inline-flex items-center gap-1.5 text-[0.7rem] sm:text-[0.8rem] text-gray-500 font-medium">
       {val}
     </span>
   );

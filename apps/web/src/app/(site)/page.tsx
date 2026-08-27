@@ -8,15 +8,15 @@ import type { Metadata } from "next";
 import { sharedOpenGraph } from "../shared-metadata";
 
 export const metadata: Metadata = {
-  title: "Neylon AI - Turn Website Visitors into Qualified Leads",
+  title: "Neylon AI - Automated Support & Lead Capture for SaaS",
   description:
-    "Neylon AI's proactive assistant engages every visitor, qualifies their intent, and captures their contact — turning anonymous traffic into qualified leads for your team.",
+    "Neylon AI answers customer questions directly from your docs, engages visitors proactively, and captures qualified leads — providing 24/7 support coverage without the headcount.",
   openGraph: {
     ...sharedOpenGraph,
     url: "/",
-    title: "Neylon AI - Turn Anonymous Visitors into Qualified Leads",
+    title: "Neylon AI - Automated Support & Lead Capture",
     description:
-      "Proactive AI suggestions that start the conversation, qualify each visitor, and capture their contact. Turn website traffic into leads.",
+      "The AI support team you don't have to hire. Neylon engages visitors, answers questions, and captures leads for your SaaS.",
   },
 };
 

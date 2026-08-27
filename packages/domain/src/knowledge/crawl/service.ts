@@ -12,6 +12,7 @@ import { verifyWebsiteUrl } from "@neylonai/integrations/website";
 import { ApiAuthError } from "../../billing/keys";
 import { clampWebsiteMaxPages, getPlanEntitlements } from "../../billing/plans";
 import { assertCanEnableIntegration } from "../../billing/checks";
+import { setOrgKeyAllowedDomainFromUrl } from "../../billing/entitlements";
 import {
   getWebsiteCrawlBudgetUsage,
   releaseWebsiteCrawlBudget,
@@ -267,6 +268,20 @@ export async function startWebsiteCrawl(input: {
       reimportAvailableAt: null,
     },
   });
+
+  // One org = one website = one allowed domain. Connecting the site binds the
+  // widget key's allowlist to this site's registrable apex. Best-effort: a
+  // domain-write hiccup must never block the crawl, and if the org has no key
+  // yet (lazy — user hasn't copied the snippet), /api-keys/ensure derives the
+  // same apex from config.url at mint time. Either path converges on [apex].
+  await setOrgKeyAllowedDomainFromUrl(input.organizationId, url).catch(
+    (error) => {
+      console.warn(
+        "[startWebsiteCrawl] failed to set allowed domain from url:",
+        error,
+      );
+    },
+  );
 
   const source = await createWebsiteSource({
     organizationId: input.organizationId,

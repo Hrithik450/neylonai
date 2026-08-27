@@ -1,4 +1,5 @@
-import "dotenv/config";
+import { config as loadEnv } from "dotenv";
+import { resolve } from "node:path";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { getPostgresSsl } from "./postgres/ssl";
@@ -10,6 +11,15 @@ import {
 import { Pool } from "pg";
 
 async function main() {
+  // Load env before reading DATABASE_URL. `pnpm --filter @neylonai/database
+  // migrate` runs with the package dir as cwd, so the monorepo-root .env must be
+  // resolved explicitly — a bare dotenv/config reads only ./.env from cwd, which
+  // doesn't exist in the package. dotenv never overrides vars already set in the
+  // environment, so CI/prod (where DATABASE_URL is set directly) is unaffected,
+  // and a missing file is silently ignored.
+  loadEnv({ path: resolve(process.cwd(), "../../.env") });
+  loadEnv();
+
   const connectionString = getDirectDatabaseUrl();
 
   if (isTransactionPoolerUrl(connectionString)) {

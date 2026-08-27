@@ -1,10 +1,10 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { Suspense, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { requireUser } from "@/server/auth-guards";
 import { clearSessionCookie } from "@/server/auth-cookies";
 import { DashboardNav } from "@/components/dashboard/nav";
-import { DashboardOnboardingOverlay } from "@/components/dashboard/onboarding/dashboard-onboarding-overlay";
+import { OnboardingWizard } from "@/components/dashboard/onboarding/onboarding-wizard";
 import { UsersRepository } from "@neylonai/domain/users";
 import { redirect } from "next/navigation";
 import { landingFontClassName } from "@/assets/fonts";
@@ -87,12 +87,10 @@ export default async function DashboardLayout({
         <div className={SHELL}>{children}</div>
       </main>
 
-      <Suspense fallback={null}>
-        <DashboardOnboardingOverlay
-          hasBeenOnboarded={row?.has_been_onboarded ?? true}
-          onboardingStep={row?.onboarding_step ?? 1}
-        />
-      </Suspense>
+      <OnboardingWizard
+        hasBeenOnboarded={row?.has_been_onboarded ?? true}
+        onboardingStep={row?.onboarding_step ?? 1}
+      />
     </div>
   );
 }

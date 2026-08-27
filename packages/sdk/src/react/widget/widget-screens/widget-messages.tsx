@@ -181,8 +181,11 @@ export function WidgetMessages({ threadId, title }: WidgetMessagesProps) {
                     type="button"
                     variant="outline"
                     onClick={() => void sendMessage(question)}
-                    className="h-auto cursor-pointer justify-between gap-3 rounded-xl border border-black/10 px-3.5 py-2.5 text-left shadow-none hover:opacity-95"
-                    style={{ backgroundColor: surface }}
+                    className="h-auto cursor-pointer justify-between gap-3 rounded-xl border px-3.5 py-2.5 text-left shadow-none hover:opacity-95"
+                    style={{
+                      backgroundColor: surface,
+                      borderColor: config.branding.borderColor,
+                    }}
                   >
                     <span
                       className="text-sm font-medium leading-snug"
@@ -208,7 +211,13 @@ export function WidgetMessages({ threadId, title }: WidgetMessagesProps) {
 
       <div className="relative min-w-0 shrink-0">
         {humanOwned ? (
-          <div className="border-t border-black/10 px-4 py-3 text-center text-xs text-zinc-500">
+          <div
+            className="border-t px-4 py-3 text-center text-xs"
+            style={{
+              borderColor: config.branding.borderColor,
+              color: secondary,
+            }}
+          >
             This conversation is with the support team. AI replies are paused.
           </div>
         ) : (

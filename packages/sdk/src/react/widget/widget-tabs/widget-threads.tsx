@@ -29,28 +29,41 @@ function ThreadPreview({
   timestamp,
   action,
 }: ThreadPreviewProps): React.JSX.Element {
+  const { config } = useWidgetHost();
+  const { primaryTextColor, secondaryTextColor, surfaceColor, borderColor } =
+    config.branding;
   return (
     <button
       type="button"
       onClick={action}
-      className="group flex items-center p-3 w-full text-left space-x-3 cursor-pointer hover:bg-black/[0.03] transition-colors border-b border-black/10"
+      className="group flex items-center p-3 w-full text-left space-x-3 cursor-pointer hover:opacity-80 transition-opacity border-b"
+      style={{ borderColor }}
     >
       <div className="shrink-0">
-        <div className="p-2 bg-gray-100 border border-gray-300 rounded-full shadow-sm">
-          <Icon className="w-6 h-6 text-gray-700" />
+        <div
+          className="p-2 border rounded-full shadow-sm"
+          style={{ backgroundColor: surfaceColor, borderColor }}
+        >
+          <Icon className="w-6 h-6" style={{ color: primaryTextColor }} />
         </div>
       </div>
 
       <div className="flex-1 min-w-0">
-        <p className="text-base font-medium text-slate-800 line-clamp-1">
+        <p
+          className="text-base font-medium line-clamp-1"
+          style={{ color: primaryTextColor }}
+        >
           {thread_title}
         </p>
-        <p className="text-sm text-slate-500 line-clamp-1">
+        <p className="text-sm line-clamp-1" style={{ color: secondaryTextColor }}>
           {sender_name} &bull; {timestamp}
         </p>
       </div>
 
-      <ChevronRight className="w-5 h-5 group-hover:-rotate-90 transition-transform duration-300 ease-in-out mr-2" />
+      <ChevronRight
+        className="w-5 h-5 group-hover:-rotate-90 transition-transform duration-300 ease-in-out mr-2"
+        style={{ color: secondaryTextColor }}
+      />
     </button>
   );
 }
@@ -64,18 +77,31 @@ function AskQuestionButton({
   onClick,
   className,
 }: AskQuestionButtonProps): React.JSX.Element {
+  const { config } = useWidgetHost();
+  const { primaryTextBackground, askButtonTextColor } = config.branding;
   return (
     <Button
       type="button"
       onClick={onClick}
       className={cn(
-        "h-auto cursor-pointer flex items-center justify-between gap-2 px-4 py-2 bg-black hover:bg-black/85 text-white rounded-lg shadow-lg transition-colors",
+        "h-auto cursor-pointer flex items-center justify-between gap-2 px-4 py-2 rounded-lg shadow-lg hover:opacity-90 transition-opacity",
         className,
       )}
+      style={{
+        backgroundColor: primaryTextBackground,
+        color: askButtonTextColor,
+      }}
     >
       <span className="text-base">Ask a question</span>
-      <span className="flex items-center justify-center w-6 h-6 rounded-full bg-white shadow-md">
-        <HelpCircle size={22} className="text-black" strokeWidth={2.5} />
+      <span
+        className="flex items-center justify-center w-6 h-6 rounded-full shadow-md"
+        style={{ backgroundColor: askButtonTextColor }}
+      >
+        <HelpCircle
+          size={22}
+          strokeWidth={2.5}
+          style={{ color: primaryTextBackground }}
+        />
       </span>
     </Button>
   );
@@ -167,7 +193,7 @@ export function WidgetThreads() {
           ))
         ) : (
           <div className="flex flex-col items-center justify-center min-h-[12rem] px-6 text-center">
-            <p className="text-sm text-zinc-500">
+            <p className="text-sm" style={{ color: config.branding.secondaryTextColor }}>
               No conversations yet. Ask a question to get started.
             </p>
           </div>

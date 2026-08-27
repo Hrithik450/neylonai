@@ -569,6 +569,13 @@ async function buildContextualPool(params: {
     // The page's own crawled text — never the built-in catalog, which is this
     // product's own copy and must not ground another tenant's bubbles.
     pageText,
+    // This visitor's own recent questions, so idle bubbles anticipate their
+    // next question — not just what the page says. Only present for returning/
+    // mid-session visitors, so brand-new visitors keep the shared org+page cache.
+    recentUserAsks: params.recentMessages
+      .filter((message) => message.role === "user")
+      .map((message) => message.content)
+      .slice(-3),
   });
 
   const candidates: Candidate[] = [

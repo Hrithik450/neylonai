@@ -56,7 +56,12 @@ const markdownComponents = {
     "p",
     "mb-2 leading-relaxed last:mb-0 break-words [overflow-wrap:anywhere]",
   ),
-  a: mkEl("a", "text-blue-500 hover:underline"),
+  a: (props: any) =>
+    React.createElement("a", {
+      className: "hover:underline",
+      style: { color: "var(--wg-link, #2563eb)" },
+      ...props,
+    }),
 };
 
 const MessageBubble = memo(
@@ -75,7 +80,15 @@ const MessageBubble = memo(
     aiMessageBackground: string;
     humanMessageBackground: string;
   }) {
-    const { user } = useWidgetHost();
+    const { user, config } = useWidgetHost();
+    const {
+      tabActiveColor,
+      secondaryTextColor,
+      borderColor,
+      surfaceColor,
+      primaryTextColor,
+      gradientTo,
+    } = config.branding;
     const [rating, setRating] = useState<"up" | "down" | null>(null);
     const [comment, setComment] = useState("");
     const copyToClipboard = useCallback(() => {
@@ -109,10 +122,11 @@ const MessageBubble = memo(
           )}
         >
           <p
-            className="py-3 px-3 border border-black/40 text-sm md:text-base leading-snug rounded-lg rounded-br-sm break-words [overflow-wrap:anywhere]"
+            className="py-3 px-3 border text-sm md:text-base leading-snug rounded-lg rounded-br-sm break-words [overflow-wrap:anywhere]"
             style={{
               backgroundColor: humanMessageBackground,
               color: humanText,
+              borderColor,
             }}
           >
             {conversation.content}
@@ -123,7 +137,9 @@ const MessageBubble = memo(
 
     const aiBg = aiMessageBackground.trim() || "transparent";
     const aiTransparent = /^transparent$/i.test(aiBg);
-    const aiText = aiTransparent ? "#000000" : contrastForeground(aiBg);
+    const aiText = aiTransparent
+      ? contrastForeground(gradientTo)
+      : contrastForeground(aiBg);
 
     return (
       <div
@@ -146,7 +162,7 @@ const MessageBubble = memo(
         >
           <div
             className="prose max-w-none min-w-0 w-full break-words text-sm md:text-base [overflow-wrap:anywhere]"
-            style={{ color: aiText }}
+            style={{ color: aiText, ["--wg-link" as any]: tabActiveColor }}
           >
             <MemoizedMarkdown
               content={conversation.content}
@@ -162,7 +178,8 @@ const MessageBubble = memo(
               variant="ghost"
               size="icon-sm"
               onClick={copyToClipboard}
-              className="text-gray-500 hover:text-gray-700 cursor-pointer"
+              className="cursor-pointer"
+              style={{ color: secondaryTextColor }}
               title="Copy"
               aria-label="Copy message"
             >
@@ -173,10 +190,8 @@ const MessageBubble = memo(
               variant="ghost"
               size="icon-sm"
               onClick={() => void sendFeedback(true)}
-              className={cn(
-                "cursor-pointer text-gray-500 hover:text-gray-700",
-                rating === "up" && "text-emerald-700",
-              )}
+              className="cursor-pointer"
+              style={{ color: rating === "up" ? "#047857" : secondaryTextColor }}
               title="Helpful"
               aria-label="Mark answer helpful"
               aria-pressed={rating === "up"}
@@ -188,10 +203,10 @@ const MessageBubble = memo(
               variant="ghost"
               size="icon-sm"
               onClick={() => void sendFeedback(false)}
-              className={cn(
-                "cursor-pointer text-gray-500 hover:text-gray-700",
-                rating === "down" && "text-red-600",
-              )}
+              className="cursor-pointer"
+              style={{
+                color: rating === "down" ? "#dc2626" : secondaryTextColor,
+              }}
               title="Not helpful"
               aria-label="Mark answer not helpful"
               aria-pressed={rating === "down"}
@@ -213,7 +228,12 @@ const MessageBubble = memo(
               maxLength={500}
               onChange={(event) => setComment(event.target.value)}
               placeholder="What was missing? (optional)"
-              className="min-w-0 flex-1 rounded-md border border-black/10 px-2 py-1.5 text-xs"
+              className="min-w-0 flex-1 rounded-md border px-2 py-1.5 text-xs"
+              style={{
+                backgroundColor: surfaceColor,
+                color: primaryTextColor,
+                borderColor,
+              }}
             />
             <Button type="submit" size="sm" variant="outline">
               Send
@@ -413,7 +433,12 @@ export function ConversationUI({
               userScrolledUpRef.current = false;
               jumpToBottom();
             }}
-            className="p-1 w-fit h-auto cursor-pointer rounded-full border border-black/50 bg-gray-200 shadow-md hover:bg-gray-300 transition"
+            className="p-1 w-fit h-auto cursor-pointer rounded-full border shadow-md transition"
+            style={{
+              backgroundColor: config.branding.surfaceColor,
+              borderColor: config.branding.borderColor,
+              color: config.branding.primaryTextColor,
+            }}
             aria-label="Scroll to bottom"
           >
             <ChevronsDown size={22} />

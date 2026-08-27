@@ -6,8 +6,10 @@ import { SmoothCollapse } from "@/components/dashboard/smooth-collapse";
 import { WidgetStaticPreview } from "@/components/dashboard/widget-static-preview";
 import {
   mergeWidgetConfig,
-  DEFAULT_WIDGET_CONFIG,
+  DEFAULT_THEME_PRESET_ID,
+  WIDGET_THEME_PRESETS,
   type StoredWidgetConfig,
+  type ThemePreset,
 } from "@/lib/widget-config-types";
 import {
   WidgetFontControls,
@@ -17,69 +19,134 @@ import {
   WidgetLogoControls,
   patchBrandingLogoUrl,
 } from "@/components/dashboard/widget-logo-controls";
-import { WidgetCodingAgentConfig } from "@/components/dashboard/widget-coding-agent-config";
 
-/** Platform default color palette (Appearance → Colors). */
-type WidgetColorPalette = {
-  gradientFrom: string;
-  gradientTo: string;
-  primaryTextColor: string;
-  secondaryTextColor: string;
-  primaryTextBackground: string;
-  askButtonTextColor: string;
-  secondaryTextBackground: string;
-  tabActiveColor: string;
-  accentColor: string;
-  aiMessageBackground: string;
-  humanMessageBackground: string;
-};
+/** One selectable theme card: a mini widget preview built from the preset's own tokens. */
+function ThemePresetCard({
+  preset,
+  selected,
+  onSelect,
+}: {
+  preset: ThemePreset;
+  selected: boolean;
+  onSelect: (id: string) => void;
+}) {
+  const c = preset.colors;
+  // AI bubble is `transparent` on light themes → show it sitting on the panel.
+  const aiBg =
+    c.aiMessageBackground === "transparent"
+      ? c.gradientTo
+      : c.aiMessageBackground;
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(preset.id)}
+      aria-pressed={selected}
+      className={`group flex cursor-pointer flex-col gap-2.5 rounded-xl border p-2.5 text-left transition-all ${
+        selected
+          ? "border-[var(--ink)] ring-1 ring-[var(--ink)]"
+          : "border-[var(--ink)]/15 hover:border-[var(--ink)]/40"
+      }`}
+    >
+      {/* Mini preview — gradient panel + heading dot, AI + human bubbles, CTA bar */}
+      <div
+        className="space-y-2 overflow-hidden rounded-lg border p-2.5"
+        style={{
+          background: `linear-gradient(to bottom, ${c.gradientFrom}, ${c.gradientTo})`,
+          borderColor: c.borderColor,
+        }}
+      >
+        <div className="flex items-center gap-1.5">
+          <span
+            className="h-4 w-4 shrink-0 rounded-full"
+            style={{ backgroundColor: c.primaryTextBackground }}
+          />
+          <span
+            className="h-1.5 w-14 rounded-full"
+            style={{ backgroundColor: c.primaryTextColor, opacity: 0.85 }}
+          />
+        </div>
+        <div
+          className="h-4 w-4/5 rounded-md rounded-bl-sm border"
+          style={{ backgroundColor: aiBg, borderColor: c.borderColor }}
+        />
+        <div
+          className="ml-auto h-4 w-3/5 rounded-md rounded-br-sm"
+          style={{ backgroundColor: c.humanMessageBackground }}
+        />
+        <div
+          className="flex items-center justify-between rounded-md px-2 py-1.5"
+          style={{ backgroundColor: c.primaryTextBackground }}
+        >
+          <span
+            className="h-1.5 w-10 rounded-full"
+            style={{ backgroundColor: c.askButtonTextColor, opacity: 0.9 }}
+          />
+          <span
+            className="h-2 w-2 shrink-0 rounded-full"
+            style={{ backgroundColor: c.askButtonTextColor }}
+          />
+        </div>
+      </div>
 
-function platformColorPalette(): WidgetColorPalette {
-  const d = DEFAULT_WIDGET_CONFIG.branding!;
-  return {
-    gradientFrom: d.gradientFrom!,
-    gradientTo: d.gradientTo!,
-    primaryTextColor: d.primaryTextColor!,
-    secondaryTextColor: d.secondaryTextColor!,
-    primaryTextBackground: d.primaryTextBackground!,
-    askButtonTextColor: d.askButtonTextColor!,
-    secondaryTextBackground: d.secondaryTextBackground!,
-    tabActiveColor: d.tabActiveColor!,
-    accentColor: d.accentColor!,
-    aiMessageBackground: d.aiMessageBackground!,
-    humanMessageBackground: d.humanMessageBackground!,
-  };
+      {/* Label row */}
+      <div className="flex items-start justify-between gap-2 px-0.5">
+        <div className="min-w-0 space-y-0.5">
+          <div className="flex items-center gap-1.5">
+            <span className="truncate text-sm font-semibold">
+              {preset.label}
+            </span>
+            <span className="sticker shrink-0 bg-[var(--cream)] text-[0.5rem] uppercase tracking-wide">
+              {preset.group}
+            </span>
+          </div>
+          <p className="caption text-[0.7rem] leading-snug line-clamp-2">
+            {preset.description}
+          </p>
+        </div>
+        <span
+          aria-hidden
+          className={`mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded-full border text-[0.6rem] ${
+            selected
+              ? "border-[var(--ink)] bg-[var(--ink)] text-white"
+              : "border-[var(--ink)]/30 text-transparent"
+          }`}
+        >
+          ✓
+        </span>
+      </div>
+    </button>
+  );
 }
 
-function pickColorPalette(
-  branding: StoredWidgetConfig["branding"],
-): WidgetColorPalette {
-  const platform = platformColorPalette();
-  return {
-    gradientFrom:
-      branding?.gradientFrom ?? platform.gradientFrom,
-    gradientTo: branding?.gradientTo ?? platform.gradientTo,
-    primaryTextColor:
-      branding?.primaryTextColor ?? platform.primaryTextColor,
-    secondaryTextColor:
-      branding?.secondaryTextColor ?? platform.secondaryTextColor,
-    primaryTextBackground:
-      branding?.primaryTextBackground ?? platform.primaryTextBackground,
-    askButtonTextColor:
-      branding?.askButtonTextColor ?? platform.askButtonTextColor,
-    secondaryTextBackground:
-      branding?.secondaryTextBackground ?? platform.secondaryTextBackground,
-    tabActiveColor: branding?.tabActiveColor ?? platform.tabActiveColor,
-    accentColor: branding?.accentColor ?? platform.accentColor,
-    aiMessageBackground:
-      branding?.aiMessageBackground ?? platform.aiMessageBackground,
-    humanMessageBackground:
-      branding?.humanMessageBackground ?? platform.humanMessageBackground,
-  };
-}
-
-function colorPalettesEqual(a: WidgetColorPalette, b: WidgetColorPalette) {
-  return JSON.stringify(a) === JSON.stringify(b);
+/** Appearance → Theme: pick one of the curated presets (sets every widget color). */
+function ThemePresetGallery({
+  selectedId,
+  onSelect,
+}: {
+  selectedId: string;
+  onSelect: (id: string) => void;
+}) {
+  return (
+    <div className="space-y-3">
+      <div className="space-y-1">
+        <SectionLabel>Theme</SectionLabel>
+        <p className="caption text-xs">
+          Pick a curated palette — it sets every widget color at once, including
+          true dark themes. Font, logo, name, and layout stay separate.
+        </p>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {WIDGET_THEME_PRESETS.map((preset) => (
+          <ThemePresetCard
+            key={preset.id}
+            preset={preset}
+            selected={preset.id === selectedId}
+            onSelect={onSelect}
+          />
+        ))}
+      </div>
+    </div>
+  );
 }
 
 function SectionLabel({ children }: { children: ReactNode }) {
@@ -246,36 +313,6 @@ function configsEqual(a: StoredWidgetConfig, b: StoredWidgetConfig): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
 }
 
-/** Round native color picker swatch. */
-const COLOR_SWATCH_CLASS =
-  "h-10 w-10 shrink-0 cursor-pointer appearance-none rounded-full border border-[var(--ink)] bg-transparent p-0 overflow-hidden [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-full [&::-webkit-color-swatch]:border-0 [&::-moz-color-swatch]:rounded-full [&::-moz-color-swatch]:border-0";
-
-/** Normalize css colors for `<input type="color">` (needs #rrggbb). */
-function toColorInputValue(raw: string): string {
-  const v = raw.trim();
-  if (!v || /^transparent$/i.test(v)) return "#ffffff";
-  if (/^#[0-9a-fA-F]{6}$/.test(v)) return v;
-  if (/^#[0-9a-fA-F]{3}$/.test(v)) {
-    const r = v[1]!;
-    const g = v[2]!;
-    const b = v[3]!;
-    return `#${r}${r}${g}${g}${b}${b}`;
-  }
-  const rgb = v.match(
-    /^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)(?:\s*,\s*[\d.]+)?\s*\)$/i,
-  );
-  if (rgb) {
-    const hex = (n: string) =>
-      Math.max(0, Math.min(255, Number(n)))
-        .toString(16)
-        .padStart(2, "0");
-    return `#${hex(rgb[1]!)}${hex(rgb[2]!)}${hex(rgb[3]!)}`;
-  }
-  return "#000000";
-}
-
-type ConfigMode = "manual" | "agent";
-
 export function WidgetConfigCenter({
   initial,
   planId,
@@ -285,7 +322,6 @@ export function WidgetConfigCenter({
   planId: string;
   advancedProactive: boolean;
 }) {
-  const [configMode, setConfigMode] = useState<ConfigMode>("manual");
   const [saved, setSaved] = useState(() => mergeWidgetConfig(initial));
   const [draft, setDraft] = useState(() => mergeWidgetConfig(initial));
   const [saving, setSaving] = useState(false);
@@ -293,14 +329,6 @@ export function WidgetConfigCenter({
   const [previewOpen, setPreviewOpen] = useState(true);
 
   const dirty = !configsEqual(draft, saved);
-  const draftColors = useMemo(
-    () => pickColorPalette(draft.branding),
-    [draft.branding],
-  );
-  const colorsMatchPlatform = colorPalettesEqual(
-    draftColors,
-    platformColorPalette(),
-  );
 
   const patch = useCallback(
     (updater: (prev: StoredWidgetConfig) => StoredWidgetConfig) => {
@@ -309,21 +337,6 @@ export function WidgetConfigCenter({
     },
     [],
   );
-
-  const resetColors = useCallback(() => {
-    const platform = platformColorPalette();
-    setDraft((prev) =>
-      mergeWidgetConfig({
-        ...prev,
-        branding: {
-          ...prev.branding,
-          ...platform,
-          colorsVersion: 1,
-        },
-      }),
-    );
-    setMessage(null);
-  }, []);
 
   const publish = async () => {
     setSaving(true);
@@ -362,29 +375,7 @@ export function WidgetConfigCenter({
     setMessage("Discarded unsaved changes.");
   };
 
-  const draftAppearance = useMemo(
-    () =>
-      mergeWidgetConfig({
-        ...draft,
-        branding: {
-          ...draft.branding,
-          gradientFrom: draft.branding?.gradientFrom,
-          gradientTo: draft.branding?.gradientTo,
-          primaryTextColor: draft.branding?.primaryTextColor,
-          secondaryTextColor: draft.branding?.secondaryTextColor,
-          tabActiveColor: draft.branding?.tabActiveColor,
-          accentColor: draft.branding?.accentColor,
-          primaryTextBackground:
-            draft.branding?.primaryTextBackground ??
-            draft.branding?.primaryTextColor,
-          askButtonTextColor: draft.branding?.askButtonTextColor ?? "#ffffff",
-          secondaryTextBackground: draft.branding?.secondaryTextBackground,
-          aiMessageBackground: draft.branding?.aiMessageBackground,
-          humanMessageBackground: draft.branding?.humanMessageBackground,
-        },
-      }),
-    [draft],
-  );
+  const draftAppearance = useMemo(() => mergeWidgetConfig(draft), [draft]);
 
   return (
     <div className="space-y-6 pb-24">
@@ -393,8 +384,7 @@ export function WidgetConfigCenter({
           <h1 id="widget-config-heading" className="text-3xl sm:text-4xl">Widget</h1>
           <p className="caption text-sm max-w-2xl">
             Complete chatbot setup: appearance, behavior, proactive suggestions,
-            greeting, and launcher. Edit it here, or hand the setup to a coding
-            agent that matches your website&apos;s own theme.
+            greeting, and launcher.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2 sm:justify-end">
@@ -417,36 +407,6 @@ export function WidgetConfigCenter({
         </div>
       </header>
 
-      {/* Setup mode selector */}
-      <div
-        id="widget-mode-options"
-        className="inline-flex rounded-full border border-[var(--ink)] overflow-hidden text-sm"
-      >
-        {(
-          [
-            { id: "manual", label: "Manual" },
-            { id: "agent", label: "Configure with coding agent" },
-          ] as { id: ConfigMode; label: string }[]
-        ).map((opt) => (
-          <button
-            key={opt.id}
-            type="button"
-            onClick={() => setConfigMode(opt.id)}
-            className="cursor-pointer px-4 py-1.5 transition-colors whitespace-nowrap"
-            style={
-              configMode === opt.id
-                ? { background: "var(--ink)", color: "#fff" }
-                : { background: "#fff" }
-            }
-          >
-            {opt.label}
-          </button>
-        ))}
-      </div>
-
-      {configMode === "agent" ? (
-        <WidgetCodingAgentConfig />
-      ) : (
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(360px,460px)]">
         <div className="space-y-4 min-w-0">
           {/* 1. Appearance */}
@@ -481,425 +441,21 @@ export function WidgetConfigCenter({
                 }
               />
             </div>
-            <div className="space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <SectionLabel>Colors</SectionLabel>
-                <button
-                  type="button"
-                  className="btn-ink bg-white px-3 py-1.5 text-xs disabled:opacity-40"
-                  disabled={colorsMatchPlatform}
-                  onClick={resetColors}
-                  title="Restore the Neylon platform color palette"
-                >
-                  Reset
-                </button>
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="block space-y-1.5">
-                  <FieldLabel>Gradient top</FieldLabel>
-                  <div className="flex gap-2">
-                    <input
-                      type="color"
-                      className={COLOR_SWATCH_CLASS}
-                      value={toColorInputValue(
-                        draft.branding?.gradientFrom ?? "#90ee90",
-                      )}
-                      onChange={(e) =>
-                        patch((f) => ({
-                          ...f,
-                          branding: {
-                            ...f.branding,
-                            gradientFrom: e.target.value,
-                          },
-                        }))
-                      }
-                    />
-                    <input
-                      className="ink-input flex-1"
-                      value={draft.branding?.gradientFrom ?? ""}
-                      onChange={(e) =>
-                        patch((f) => ({
-                          ...f,
-                          branding: {
-                            ...f.branding,
-                            gradientFrom: e.target.value,
-                          },
-                        }))
-                      }
-                      placeholder="rgb(144, 238, 144)"
-                    />
-                  </div>
-                </label>
-                <label className="block space-y-1.5">
-                  <FieldLabel>Gradient bottom</FieldLabel>
-                  <div className="flex gap-2">
-                    <input
-                      type="color"
-                      className={COLOR_SWATCH_CLASS}
-                      value={toColorInputValue(
-                        draft.branding?.gradientTo ?? "#ffffff",
-                      )}
-                      onChange={(e) =>
-                        patch((f) => ({
-                          ...f,
-                          branding: {
-                            ...f.branding,
-                            gradientTo: e.target.value,
-                          },
-                        }))
-                      }
-                    />
-                    <input
-                      className="ink-input flex-1"
-                      value={draft.branding?.gradientTo ?? ""}
-                      onChange={(e) =>
-                        patch((f) => ({
-                          ...f,
-                          branding: {
-                            ...f.branding,
-                            gradientTo: e.target.value,
-                          },
-                        }))
-                      }
-                      placeholder="#ffffff"
-                    />
-                  </div>
-                </label>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="block space-y-1.5">
-                  <FieldLabel>Heading</FieldLabel>
-                  <div className="flex gap-2">
-                    <input
-                      type="color"
-                      className={COLOR_SWATCH_CLASS}
-                      value={toColorInputValue(
-                        draft.branding?.primaryTextColor ?? "#0E3228",
-                      )}
-                      onChange={(e) =>
-                        patch((f) => ({
-                          ...f,
-                          branding: {
-                            ...f.branding,
-                            primaryTextColor: e.target.value,
-                          },
-                        }))
-                      }
-                    />
-                    <input
-                      className="ink-input flex-1"
-                      value={draft.branding?.primaryTextColor ?? ""}
-                      onChange={(e) =>
-                        patch((f) => ({
-                          ...f,
-                          branding: {
-                            ...f.branding,
-                            primaryTextColor: e.target.value,
-                          },
-                        }))
-                      }
-                    />
-                  </div>
-                </label>
-                <label className="block space-y-1.5">
-                  <FieldLabel>Body</FieldLabel>
-                  <div className="flex gap-2">
-                    <input
-                      type="color"
-                      className={COLOR_SWATCH_CLASS}
-                      value={toColorInputValue(
-                        draft.branding?.secondaryTextColor ?? "#000000",
-                      )}
-                      onChange={(e) =>
-                        patch((f) => ({
-                          ...f,
-                          branding: {
-                            ...f.branding,
-                            secondaryTextColor: e.target.value,
-                          },
-                        }))
-                      }
-                    />
-                    <input
-                      className="ink-input flex-1"
-                      value={draft.branding?.secondaryTextColor ?? ""}
-                      onChange={(e) =>
-                        patch((f) => ({
-                          ...f,
-                          branding: {
-                            ...f.branding,
-                            secondaryTextColor: e.target.value,
-                          },
-                        }))
-                      }
-                      placeholder="rgba(0, 0, 0, 0.7)"
-                    />
-                  </div>
-                </label>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="block space-y-1.5">
-                  <FieldLabel>Ask button background</FieldLabel>
-                  <div className="flex gap-2">
-                    <input
-                      type="color"
-                      className={COLOR_SWATCH_CLASS}
-                      value={toColorInputValue(
-                        draft.branding?.primaryTextBackground ??
-                          draft.branding?.primaryTextColor ??
-                          "#0E3228",
-                      )}
-                      onChange={(e) =>
-                        patch((f) => ({
-                          ...f,
-                          branding: {
-                            ...f.branding,
-                            primaryTextBackground: e.target.value,
-                          },
-                        }))
-                      }
-                    />
-                    <input
-                      className="ink-input flex-1"
-                      value={draft.branding?.primaryTextBackground ?? ""}
-                      onChange={(e) =>
-                        patch((f) => ({
-                          ...f,
-                          branding: {
-                            ...f.branding,
-                            primaryTextBackground: e.target.value,
-                          },
-                        }))
-                      }
-                      placeholder="#0E3228"
-                    />
-                  </div>
-                </label>
-                <label className="block space-y-1.5">
-                  <FieldLabel>Ask button text</FieldLabel>
-                  <div className="flex gap-2">
-                    <input
-                      type="color"
-                      className={COLOR_SWATCH_CLASS}
-                      value={toColorInputValue(
-                        draft.branding?.askButtonTextColor ?? "#ffffff",
-                      )}
-                      onChange={(e) =>
-                        patch((f) => ({
-                          ...f,
-                          branding: {
-                            ...f.branding,
-                            askButtonTextColor: e.target.value,
-                          },
-                        }))
-                      }
-                    />
-                    <input
-                      className="ink-input flex-1"
-                      value={draft.branding?.askButtonTextColor ?? ""}
-                      onChange={(e) =>
-                        patch((f) => ({
-                          ...f,
-                          branding: {
-                            ...f.branding,
-                            askButtonTextColor: e.target.value,
-                          },
-                        }))
-                      }
-                      placeholder="#ffffff"
-                    />
-                  </div>
-                </label>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="block space-y-1.5">
-                  <FieldLabel>Tab active</FieldLabel>
-                  <div className="flex gap-2">
-                    <input
-                      type="color"
-                      className={COLOR_SWATCH_CLASS}
-                      value={toColorInputValue(
-                        draft.branding?.tabActiveColor ?? "#7c3aed",
-                      )}
-                      onChange={(e) =>
-                        patch((f) => ({
-                          ...f,
-                          branding: {
-                            ...f.branding,
-                            tabActiveColor: e.target.value,
-                          },
-                        }))
-                      }
-                    />
-                    <input
-                      className="ink-input flex-1"
-                      value={draft.branding?.tabActiveColor ?? ""}
-                      onChange={(e) =>
-                        patch((f) => ({
-                          ...f,
-                          branding: {
-                            ...f.branding,
-                            tabActiveColor: e.target.value,
-                          },
-                        }))
-                      }
-                      placeholder="#7c3aed"
-                    />
-                  </div>
-                </label>
-                <label className="block space-y-1.5">
-                  <FieldLabel>Tab inactive</FieldLabel>
-                  <div className="flex gap-2">
-                    <input
-                      type="color"
-                      className={COLOR_SWATCH_CLASS}
-                      value={toColorInputValue(
-                        draft.branding?.accentColor ?? "#71717a",
-                      )}
-                      onChange={(e) =>
-                        patch((f) => ({
-                          ...f,
-                          branding: {
-                            ...f.branding,
-                            accentColor: e.target.value,
-                          },
-                        }))
-                      }
-                    />
-                    <input
-                      className="ink-input flex-1"
-                      value={draft.branding?.accentColor ?? ""}
-                      onChange={(e) =>
-                        patch((f) => ({
-                          ...f,
-                          branding: {
-                            ...f.branding,
-                            accentColor: e.target.value,
-                          },
-                        }))
-                      }
-                      placeholder="#71717a"
-                    />
-                  </div>
-                </label>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="block space-y-1.5">
-                  <FieldLabel>AI message</FieldLabel>
-                  <div className="flex gap-2">
-                    <input
-                      type="color"
-                      className={COLOR_SWATCH_CLASS}
-                      value={toColorInputValue(
-                        draft.branding?.aiMessageBackground ?? "transparent",
-                      )}
-                      onChange={(e) =>
-                        patch((f) => ({
-                          ...f,
-                          branding: {
-                            ...f.branding,
-                            aiMessageBackground: e.target.value,
-                          },
-                        }))
-                      }
-                    />
-                    <input
-                      className="ink-input flex-1"
-                      value={draft.branding?.aiMessageBackground ?? ""}
-                      onChange={(e) =>
-                        patch((f) => ({
-                          ...f,
-                          branding: {
-                            ...f.branding,
-                            aiMessageBackground: e.target.value,
-                          },
-                        }))
-                      }
-                      placeholder="transparent"
-                    />
-                  </div>
-                </label>
-                <label className="block space-y-1.5">
-                  <FieldLabel>Human message</FieldLabel>
-                  <div className="flex gap-2">
-                    <input
-                      type="color"
-                      className={COLOR_SWATCH_CLASS}
-                      value={toColorInputValue(
-                        draft.branding?.humanMessageBackground ?? "#e4e4e7",
-                      )}
-                      onChange={(e) =>
-                        patch((f) => ({
-                          ...f,
-                          branding: {
-                            ...f.branding,
-                            humanMessageBackground: e.target.value,
-                          },
-                        }))
-                      }
-                    />
-                    <input
-                      className="ink-input flex-1"
-                      value={draft.branding?.humanMessageBackground ?? ""}
-                      onChange={(e) =>
-                        patch((f) => ({
-                          ...f,
-                          branding: {
-                            ...f.branding,
-                            humanMessageBackground: e.target.value,
-                          },
-                        }))
-                      }
-                      placeholder="#e4e4e7"
-                    />
-                  </div>
-                </label>
-              </div>
-
-              <label className="block space-y-1.5 max-w-md">
-                <FieldLabel>Card background</FieldLabel>
-                <div className="flex gap-2">
-                  <input
-                    type="color"
-                    className={COLOR_SWATCH_CLASS}
-                    value={toColorInputValue(
-                      draft.branding?.secondaryTextBackground ?? "#ffffff",
-                    )}
-                    onChange={(e) =>
-                      patch((f) => ({
-                        ...f,
-                        branding: {
-                          ...f.branding,
-                          secondaryTextBackground: e.target.value,
-                        },
-                      }))
-                    }
-                  />
-                  <input
-                    className="ink-input flex-1"
-                    value={draft.branding?.secondaryTextBackground ?? ""}
-                    onChange={(e) =>
-                      patch((f) => ({
-                        ...f,
-                        branding: {
-                          ...f.branding,
-                          secondaryTextBackground: e.target.value,
-                        },
-                      }))
-                    }
-                    placeholder="#ffffff"
-                  />
-                </div>
-              </label>
-            </div>
-
             <WidgetFontControls
               font={draft.branding?.font}
               onChange={(font) => patch((f) => patchBrandingFont(f, font))}
+            />
+
+            <ThemePresetGallery
+              selectedId={
+                draft.branding?.themePreset ?? DEFAULT_THEME_PRESET_ID
+              }
+              onSelect={(id) =>
+                patch((f) => ({
+                  ...f,
+                  branding: { ...f.branding, themePreset: id },
+                }))
+              }
             />
           </ConfigSection>
 
@@ -1206,8 +762,7 @@ export function WidgetConfigCenter({
                     className="ink-input"
                     value={draft.layout?.offsetX ?? 24}
                     onChange={(e) =>
-                      patch((f) => ({
-                        ...f,
+                      patch((f) => ({                        ...f,
                         layout: {
                           ...f.layout,
                           offsetX: Number(e.target.value) || 0,
@@ -1292,10 +847,8 @@ export function WidgetConfigCenter({
           </div>
         </aside>
       </div>
-      )}
 
       {/* Sticky publish bar */}
-      {configMode === "manual" ? (
       <div id="widget-publish-bar" className="fixed bottom-0 inset-x-0 z-40 border-t border-[var(--ink)] bg-[var(--cream)]/95 backdrop-blur-sm">
         <div className="mx-auto max-w-6xl px-4 py-3 flex flex-wrap items-center gap-3 justify-between">
           <p className="caption text-sm">
@@ -1324,7 +877,6 @@ export function WidgetConfigCenter({
           </div>
         </div>
       </div>
-      ) : null}
     </div>
   );
 }

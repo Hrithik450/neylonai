@@ -1,4 +1,5 @@
 import { and, eq, isNull, desc, inArray } from "drizzle-orm";
+import { getDomain } from "tldts";
 import {
   db,
   apiKeys,
@@ -48,6 +49,69 @@ function slugify(input: string): string {
   );
 }
 
+/**
+ * Reduce an Origin/Referer/host string to a bare lowercase hostname.
+ * Accepts "https://app.example.com/path", "example.com:3000", "example.com".
+ */
+function toHostname(value: string): string | null {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  try {
+    const withScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed)
+      ? trimmed
+      : `https://${trimmed}`;
+    return new URL(withScheme).hostname.toLowerCase() || null;
+  } catch {
+    return null;
+  }
+}
+
+/** Loopback / local-dev hosts, always allowed so the operator can verify the
+ * snippet on their own machine even after a real domain is set. Covers
+ * "localhost" + any "*.localhost", IPv4 loopback, and IPv6 "::1" (bracketed or
+ * not, as URL parsing may yield either). */
+function isLocalhost(host: string): boolean {
+  return (
+    host === "localhost" ||
+    host.endsWith(".localhost") ||
+    host === "127.0.0.1" ||
+    host === "::1" ||
+    host === "[::1]"
+  );
+}
+
+/**
+ * Per-key domain allowlist check. This is the real enforcement point for the
+ * `allowed_domains` the org configures in the dashboard — the widget's CORS
+ * headers stay wildcard (edge middleware can't read the DB), so authorization
+ * happens here instead.
+ *
+ * Rules, tuned to be forgiving for non-technical operators:
+ * - Localhost is always allowed, even against a non-empty allowlist, so local
+ *   verification never 403s.
+ * - Empty allowlist → unrestricted (matches the column's documented default;
+ *   this is the "lenient until the website is connected" state).
+ * - No request Origin/Referer → allowed. Browsers always send Origin on
+ *   cross-origin requests; its absence means a same-origin or non-browser
+ *   caller, which the allowlist isn't meant to police.
+ * - A listed host matches itself and any subdomain, so entering "example.com"
+ *   also covers "www.example.com" / "app.example.com".
+ */
+function isOriginAllowed(
+  origin: string | null | undefined,
+  allowed: string[],
+): boolean {
+  const host = origin ? toHostname(origin) : null;
+  if (host && isLocalhost(host)) return true;
+  if (!allowed || allowed.length === 0) return true;
+  if (!host) return true;
+  return allowed.some((entry) => {
+    const allowedHost = toHostname(entry);
+    if (!allowedHost) return false;
+    return host === allowedHost || host.endsWith(`.${allowedHost}`);
+  });
+}
+
 async function checkRateLimit(apiKeyId: string, perMinute: number): Promise<void> {
   const bucket = `neylonai:rl:apikey:${apiKeyId}:${Math.floor(Date.now() / 60_000)}`;
   try {
@@ -89,6 +153,7 @@ export async function authenticateApiKey(
       organizationId: apiKeys.organization_id,
       keyHash: apiKeys.key_hash,
       revokedAt: apiKeys.revoked_at,
+      allowedDomains: apiKeys.allowed_domains,
       orgSlug: organizations.slug,
       orgBlockedAt: organizations.blocked_at,
       subscriptionId: subscriptions.id,
@@ -118,6 +183,15 @@ export async function authenticateApiKey(
     throw new ApiAuthError(
       "organization_blocked",
       "This organization has been blocked.",
+      403,
+    );
+  }
+
+  const allowedOrigins = row.allowedDomains ?? [];
+  if (!isOriginAllowed(input.origin, allowedOrigins)) {
+    throw new ApiAuthError(
+      "origin_not_allowed",
+      "This website is not the connected domain for this API key. Connect it under Integrations → Website.",
       403,
     );
   }
@@ -168,7 +242,7 @@ export async function authenticateApiKey(
     subscriptionStatus: status,
     plan: row.plan ?? "free",
     periodStart: row.periodStart ?? null,
-    allowedOrigins: [],
+    allowedOrigins,
   };
 }
 
@@ -179,19 +253,24 @@ export async function listApiKeysForOrg(organizationId: string) {
       name: apiKeys.name,
       keyPrefix: apiKeys.key_prefix,
       lastFour: apiKeys.last_four,
+      publicKey: apiKeys.public_key,
+      allowedDomains: apiKeys.allowed_domains,
       revokedAt: apiKeys.revoked_at,
       lastUsedAt: apiKeys.last_used_at,
       createdAt: apiKeys.created_at,
     })
     .from(apiKeys)
     .where(eq(apiKeys.organization_id, organizationId));
-  return rows.map((row) => ({ ...row, allowedOrigins: [] as string[] }));
+  return rows.map(({ allowedDomains, ...row }) => ({
+    ...row,
+    allowedOrigins: (allowedDomains ?? []) as string[],
+  }));
 }
 
 export async function createApiKeyForOrg(
   organizationId: string,
   name = "Default",
-  _allowedOrigins: string[] = [],
+  allowedOrigins: string[] = [],
 ): Promise<{ rawKey: string; id: string; prefix: string; lastFour: string }> {
   const generated = generateApiKey();
   const [row] = await db
@@ -201,7 +280,9 @@ export async function createApiKeyForOrg(
       name,
       key_prefix: generated.prefix,
       key_hash: generated.hash,
+      public_key: generated.rawKey,
       last_four: generated.lastFour,
+      allowed_domains: allowedOrigins,
     })
     .returning({ id: apiKeys.id });
 
@@ -220,19 +301,88 @@ export async function createApiKeyForOrg(
 export async function updateApiKeyOrigins(
   organizationId: string,
   apiKeyId: string,
-  _allowedOrigins: string[],
+  allowedOrigins: string[],
 ): Promise<boolean> {
   const result = await db
-    .select({ id: apiKeys.id })
-    .from(apiKeys)
+    .update(apiKeys)
+    .set({ allowed_domains: allowedOrigins })
     .where(
       and(
         eq(apiKeys.id, apiKeyId),
         eq(apiKeys.organization_id, organizationId),
         isNull(apiKeys.revoked_at),
       ),
-    );
+    )
+    .returning({ id: apiKeys.id });
   return result.length > 0;
+}
+
+/**
+ * The org's active (non-revoked) publishable key in plaintext, for rendering
+ * the copy-paste install snippet. Returns null when the org has no key yet
+ * (lazy — user hasn't copied) or when the key predates the `public_key` column
+ * (must be rotated to become copyable). Picks the most recently created active
+ * key if somehow more than one exists.
+ */
+export async function getPublishableKeyForOrg(
+  organizationId: string,
+): Promise<string | null> {
+  const [row] = await db
+    .select({ publicKey: apiKeys.public_key })
+    .from(apiKeys)
+    .where(
+      and(
+        eq(apiKeys.organization_id, organizationId),
+        isNull(apiKeys.revoked_at),
+      ),
+    )
+    .orderBy(desc(apiKeys.created_at))
+    .limit(1);
+  return row?.publicKey ?? null;
+}
+
+/**
+ * Reduce any URL/host to its registrable apex domain (eTLD+1), the single value
+ * we store in `allowed_domains`. `www.acme.com` → `acme.com`,
+ * `blog.acme.co.uk` → `acme.co.uk` (public-suffix aware, so multi-label TLDs
+ * don't over-match). Falls back to a www-stripped hostname when tldts can't
+ * classify the input (e.g. an intranet host with no known suffix). Returns null
+ * for unparseable input.
+ */
+export function registrableDomainFromUrl(url: string): string | null {
+  const host = toHostname(url);
+  if (!host) return null;
+  const apex = getDomain(host);
+  if (apex) return apex.toLowerCase();
+  return host.startsWith("www.") ? host.slice(4) : host;
+}
+
+/**
+ * Bind the org's single connected website to its active key: derive the apex
+ * from `url` and overwrite the key's `allowed_domains` with `[apex]`. No-op
+ * (returns false) when the org has no active key yet — in that case the domain
+ * is applied later at mint time from the stored `config.url`. Best-effort:
+ * callers wrap this so a domain-write hiccup never blocks a crawl.
+ */
+export async function setOrgKeyAllowedDomainFromUrl(
+  organizationId: string,
+  url: string,
+): Promise<boolean> {
+  const apex = registrableDomainFromUrl(url);
+  if (!apex) return false;
+  const [active] = await db
+    .select({ id: apiKeys.id })
+    .from(apiKeys)
+    .where(
+      and(
+        eq(apiKeys.organization_id, organizationId),
+        isNull(apiKeys.revoked_at),
+      ),
+    )
+    .orderBy(desc(apiKeys.created_at))
+    .limit(1);
+  if (!active) return false;
+  return updateApiKeyOrigins(organizationId, active.id, [apex]);
 }
 
 export async function revokeApiKey(
@@ -282,7 +432,10 @@ export async function getSubscriptionForOrg(organizationId: string) {
 
 /**
  * Ensure the signed-in user has a solo-founder workspace:
- * one organization (named after them), free subscription, default agents, API key.
+ * one organization (named after them), free subscription, and default agents.
+ * No API key is minted here — keys are created lazily when the user first
+ * copies the install snippet (via `createApiKeyForOrg` / the `/api-keys/ensure`
+ * route), so a fresh org intentionally has zero keys.
  * Idempotent — concurrent first logins resolve via unique user_id membership.
  */
 export async function ensureOrganizationWorkspace(input: {
@@ -309,22 +462,13 @@ export async function ensureOrganizationWorkspace(input: {
     return membership ?? null;
   };
 
-  const withActiveKey = async (membership: {
-    organizationId: string;
-    slug: string;
-  }) => {
-    const keys = await listApiKeysForOrg(membership.organizationId);
-    if (!keys.some((k) => !k.revokedAt)) {
-      await createApiKeyForOrg(membership.organizationId);
-    }
-    return {
-      organizationId: membership.organizationId,
-      organizationSlug: membership.slug,
-    };
-  };
-
   const existing = await resolveExisting();
-  if (existing) return withActiveKey(existing);
+  if (existing) {
+    return {
+      organizationId: existing.organizationId,
+      organizationSlug: existing.slug,
+    };
+  }
 
   const displayName =
     input.name.trim() || input.email.split("@")[0] || "Workspace";
@@ -374,8 +518,6 @@ export async function ensureOrganizationWorkspace(input: {
     const { OrgAgentsService } = await import("../agents/org-agents.service");
     await OrgAgentsService.ensureMainAgent(org!.id);
 
-    await createApiKeyForOrg(org!.id);
-
     const { grantPlanCredits } = await import("./credits");
     await grantPlanCredits({
       organizationId: org!.id,
@@ -391,7 +533,12 @@ export async function ensureOrganizationWorkspace(input: {
   } catch (error) {
     // Unique user_id membership: another concurrent login created the workspace.
     const raced = await resolveExisting();
-    if (raced) return withActiveKey(raced);
+    if (raced) {
+      return {
+        organizationId: raced.organizationId,
+        organizationSlug: raced.slug,
+      };
+    }
     throw error;
   }
 }

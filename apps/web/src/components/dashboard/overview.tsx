@@ -114,74 +114,43 @@ export function DashboardOverview({ data }: { data: DashboardOverviewData }) {
         </section>
       ) : null}
 
-      {/* Primary next action */}
-      <section id="overview-next-step" className="ink-card bg-[var(--cream)] p-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="space-y-1">
-          <SectionLabel>Next step</SectionLabel>
-          <p className="text-xl font-medium">{data.primaryAction.label}</p>
-          <p className="caption text-sm">{data.primaryAction.reason}</p>
-        </div>
-        <Link
-          href={data.primaryAction.href}
-          className="btn-ink bg-[var(--blue)] text-white px-5 py-2.5 text-sm whitespace-nowrap"
-        >
-          Continue
-        </Link>
-      </section>
+      {/* Install and go-live now happen in the onboarding wizard; the snippet
+          also lives in Settings → Developer. */}
 
-      {/* 2. Widget status + 3. Primary metrics */}
-      <div id="overview-metrics-grid" className="grid gap-4 lg:grid-cols-5">
-        <section className="ink-card p-6 space-y-4 lg:col-span-2">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <SectionLabel>Widget</SectionLabel>
-              <h2 className="text-2xl mt-1">{data.widget.name}</h2>
+      {/* 2. Primary metrics */}
+      <div id="overview-metrics-grid" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="ink-card p-5 space-y-2">
+          <SectionLabel>Conversations</SectionLabel>
+          <p className="text-3xl font-medium tabular-nums">
+            {data.conversations.total.toLocaleString()}
+          </p>
+          <p className="caption text-sm">
+            {data.conversations.awaitingHuman.toLocaleString()} awaiting human
+          </p>
+          <div className="pt-2">
+            <Link
+              href="/dashboard/conversations"
+              className="caption text-sm underline underline-offset-4"
+            >
+              View conversations
+            </Link>
+          </div>
+        </div>
+          <div className="ink-card p-5 space-y-2">
+            <div className="flex items-start justify-between gap-2">
+              <SectionLabel>Proactive engagement</SectionLabel>
+              <StatusPill
+                label={data.proactive.enabled ? "Enabled" : "Disabled"}
+                tone={data.proactive.enabled ? "ok" : "warn"}
+              />
             </div>
-            <StatusPill
-              label={data.widget.activeKey ? "Key live" : "No key"}
-              tone={data.widget.activeKey ? "ok" : "bad"}
-            />
+            <p className="text-sm font-medium">Suggestion performance</p>
+            <p className="text-3xl font-medium tabular-nums">
+              {data.proactive.activityCount}
+            </p>
+            <p className="caption text-sm">Suggestion activity this period</p>
           </div>
 
-          <dl className="space-y-3 text-sm">
-            <div className="flex justify-between gap-4">
-              <dt className="caption">Proactive tips</dt>
-              <dd>{data.widget.proactiveEnabled ? "On" : "Off"}</dd>
-            </div>
-            <div className="flex justify-between gap-4">
-              <dt className="caption">Connected domains</dt>
-              <dd className="text-right">
-                {data.widget.domains.length > 0
-                  ? data.widget.domains.slice(0, 2).join(", ")
-                  : "Any (unrestricted)"}
-              </dd>
-            </div>
-            <div className="flex justify-between gap-4">
-              <dt className="caption">Last seen</dt>
-              <dd>{data.widget.lastSeenLabel}</dd>
-            </div>
-          </dl>
-
-          {!data.widget.activeKey || !data.widget.lastSeenAt ? (
-            <Link
-              href="/dashboard/settings?section=developer"
-              className="btn-ink bg-white px-4 py-2 text-xs inline-block"
-            >
-              {!data.widget.activeKey
-                ? "Fix API key"
-                : "Finish embedding"}
-            </Link>
-          ) : (
-            <Link
-              href="/dashboard/widget"
-              className="btn-ink bg-white px-4 py-2 text-xs inline-block"
-            >
-              Edit chatbot
-            </Link>
-          )}
-        </section>
-
-        <section className="lg:col-span-3 grid gap-4 sm:grid-cols-3">
           <div className="ink-card p-5 space-y-2">
             <SectionLabel>AI credits</SectionLabel>
             <p className="text-3xl font-medium tabular-nums">
@@ -217,21 +186,6 @@ export function DashboardOverview({ data }: { data: DashboardOverviewData }) {
           </div>
 
           <div className="ink-card p-5 space-y-2">
-            <div className="flex items-start justify-between gap-2">
-              <SectionLabel>Proactive engagement</SectionLabel>
-              <StatusPill
-                label={data.proactive.enabled ? "Enabled" : "Disabled"}
-                tone={data.proactive.enabled ? "ok" : "warn"}
-              />
-            </div>
-            <p className="text-sm font-medium">Suggestion performance</p>
-            <p className="text-3xl font-medium tabular-nums">
-              {data.proactive.activityCount}
-            </p>
-            <p className="caption text-sm">Suggestion activity this period</p>
-          </div>
-
-          <div className="ink-card p-5 space-y-2">
             <SectionLabel>Plan</SectionLabel>
             <p className="text-3xl font-medium">{data.metrics.planName}</p>
             <p className="caption text-sm">
@@ -244,7 +198,6 @@ export function DashboardOverview({ data }: { data: DashboardOverviewData }) {
               Billing details
             </Link>
           </div>
-        </section>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">

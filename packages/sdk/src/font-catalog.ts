@@ -12,9 +12,10 @@ export const SYSTEM_UI_FONT_STACK =
   'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
 export const DEFAULT_WIDGET_FONT = {
-  source: "system" as const,
-  family: SYSTEM_UI_FONT_STACK,
-  catalogId: "system",
+  source: "catalog" as const,
+  family: '"Bricolage Grotesque", ' + SYSTEM_UI_FONT_STACK,
+  catalogId: "bricolage-grotesque",
+  cssUrl: "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;600;700&display=swap",
 };
 
 const S = SYSTEM_UI_FONT_STACK;
@@ -28,6 +29,7 @@ const g = (id: string, label: string, name: string, weights: string, base = S): 
 
 export const WIDGET_FONT_CATALOG: WidgetFontCatalogEntry[] = [
   { id: "system", label: "System default", group: "system", family: S },
+  g("bricolage-grotesque", "Bricolage Grotesque", "Bricolage Grotesque", "400;500;600;700"),
   { id: "system-serif", label: "System serif", group: "system", family: 'ui-serif, Georgia, Cambria, "Times New Roman", Times, serif' },
   { id: "system-mono", label: "System mono", group: "system", family: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace' },
   g("inter", "Inter", "Inter", "400;500;600;700"),

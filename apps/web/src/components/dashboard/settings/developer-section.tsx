@@ -1,188 +1,207 @@
 "use client";
 
-import { Check, Copy } from "lucide-react";
-import { useState } from "react";
-import { SettingsSectionFrame } from "./settings-ui";
+import Link from "next/link";
+import { useCallback, useEffect, useState } from "react";
+import { SettingsSectionFrame, SettingsButton } from "./settings-ui";
 import { CodeBlock } from "./code-block";
-import { DEVELOPER_SDK_INSTALL_SKILL } from "./developer-sdk-install-skill";
-
-type Mode = "manual" | "agent";
+import { buildWidgetSnippet } from "@/lib/widget-script";
 
 export function DeveloperSettingsSection() {
-  const [mode, setMode] = useState<Mode>("manual");
-  const [copied, setCopied] = useState(false);
+  // The publishable key is stored retrievably (it ships inside client HTML, à
+  // la Stripe pk_live), so we pre-fill the snippet with the real key on load.
+  // `apiKey` holds a key freshly minted/rotated this session; `publicKey` is
+  // the retrievable value from the list read; `keyDisplay` is the masked
+  // prefix…last4 for context. Keys created before the retrievable column exist
+  // only as a hash — those must be rotated to become copyable.
+  const [apiKey, setApiKey] = useState<string | null>(null);
+  const [publicKey, setPublicKey] = useState<string | null>(null);
+  const [keyDisplay, setKeyDisplay] = useState<string | null>(null);
+  const [activeOrigins, setActiveOrigins] = useState<string[]>([]);
+  const [hasActiveKey, setHasActiveKey] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [keyError, setKeyError] = useState<string | null>(null);
 
-  const copySkill = async () => {
+  const loadKey = useCallback(async () => {
     try {
-      await navigator.clipboard.writeText(DEVELOPER_SDK_INSTALL_SKILL);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 2_000);
+      const res = await fetch("/api/v1/api-keys");
+      const json = (await res.json()) as {
+        success: boolean;
+        data?: {
+          apiKeys: Array<{
+            revoked: boolean;
+            display: string;
+            publicKey?: string | null;
+            allowedOrigins?: string[];
+          }>;
+        };
+      };
+      if (json.success && json.data) {
+        const active = json.data.apiKeys.find((k) => !k.revoked);
+        setHasActiveKey(Boolean(active));
+        setKeyDisplay(active?.display ?? null);
+        setActiveOrigins(active?.allowedOrigins ?? []);
+        setPublicKey(active?.publicKey ?? null);
+      }
     } catch {
-      setCopied(false);
+      // Non-fatal: the snippet still renders with a placeholder + a mint button.
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadKey();
+  }, [loadKey]);
+
+  // Idempotent, non-rotating mint (the same path as Copy on the Overview): mints
+  // a key only when the org has none, otherwise returns the existing one. A
+  // legacy hash-only key comes back as needsRotate → the user rotates instead.
+  const ensureKey = async () => {
+    setGenerating(true);
+    setKeyError(null);
+    try {
+      const res = await fetch("/api/v1/api-keys/ensure", { method: "POST" });
+      const json = (await res.json()) as {
+        success: boolean;
+        data?: { apiKey: string | null; created: boolean; needsRotate: boolean };
+        error?: string;
+      };
+      if (!json.success) {
+        throw new Error(json.error ?? "Could not create a key.");
+      }
+      if (json.data?.needsRotate) {
+        setKeyError(
+          "Your existing key predates copyable snippets. Rotate it to get one.",
+        );
+        return;
+      }
+      if (json.data?.apiKey) {
+        setApiKey(json.data.apiKey);
+        await loadKey();
+      }
+    } catch (e) {
+      setKeyError(e instanceof Error ? e.message : "Could not create a key.");
+    } finally {
+      setGenerating(false);
     }
   };
+
+  // Rotating preserves any domains the org already configured, so generating
+  // here never silently wipes their allowlist. This is the advanced action —
+  // it invalidates the current key and any embeds still using it.
+  const generateKey = async () => {
+    setGenerating(true);
+    setKeyError(null);
+    try {
+      const res = await fetch("/api/v1/api-keys", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: "Widget", allowedOrigins: activeOrigins }),
+      });
+      const json = (await res.json()) as {
+        success: boolean;
+        data?: { apiKey: string };
+        error?: string;
+      };
+      if (!json.success || !json.data?.apiKey) {
+        throw new Error(json.error ?? "Could not generate a key.");
+      }
+      setApiKey(json.data.apiKey);
+      await loadKey();
+    } catch (e) {
+      setKeyError(e instanceof Error ? e.message : "Could not generate a key.");
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const snippetKey = apiKey ?? publicKey ?? "nk_live_YOUR_API_KEY";
+  const hasCopyableKey = Boolean(apiKey ?? publicKey);
 
   return (
     <SettingsSectionFrame
       id="developer-section"
-      title="Developer"
-      description="Install the SDK. API keys and domains are under API keys."
+      title="Install Widget"
+      description="Add the widget to your site. Your key is limited to your connected website's domain, set under Integrations → Website."
     >
-      <div
-        id="sdk-mode-options"
-        className="inline-flex rounded-full border border-[var(--ink)] overflow-hidden text-sm"
-      >
-        {(
-          [
-            { id: "manual", label: "Manual" },
-            { id: "agent", label: "Install with coding agent" },
-          ] as { id: Mode; label: string }[]
-        ).map((opt) => (
-          <button
-            key={opt.id}
-            type="button"
-            onClick={() => setMode(opt.id)}
-            className="cursor-pointer px-4 py-1.5 transition-colors whitespace-nowrap"
-            style={
-              mode === opt.id
-                ? { background: "var(--ink)", color: "#fff" }
-                : { background: "#fff" }
-            }
-          >
-            {opt.label}
-          </button>
-        ))}
-      </div>
-
-      {mode === "manual" ? (
-        <div className="space-y-6">
-          <section className="ink-card p-6 space-y-4">
-            <div>
-              <h3 id="sdk-snippet-heading" className="text-lg font-medium mb-1">
-                1. Install the SDK
-              </h3>
-              <p className="caption text-sm text-[var(--muted)]">
-                Add @neylonai/sdk to your project using your package manager.
-              </p>
-            </div>
-            <CodeBlock
-              language="bash"
-              label="Install with npm or pnpm"
-              code={`npm install @neylonai/sdk
-# or
-pnpm add @neylonai/sdk`}
-            />
-          </section>
-
-          <section className="ink-card p-6 space-y-4">
-            <div>
-              <h3 className="text-lg font-medium mb-1">
-                2. Mount the support widget
-              </h3>
-              <p className="caption text-sm text-[var(--muted)]">
-                Initialize the widget once in your app shell. Mount it on
-                client-side only and call{" "}
-                <code className="text-xs bg-[var(--cream)]/40 px-1.5 py-0.5 rounded">
-                  unmount()
-                </code>{" "}
-                during cleanup. Use your public API key from the dashboard
-                (Settings → API keys).
-              </p>
-            </div>
-            <CodeBlock
-              language="typescript"
-              label="Main app setup"
-              code={`import { mountSupportWidget } from "@neylonai/sdk/embed";
-
-const widget = await mountSupportWidget({
-  config: {
-    apiKey: "nk_live_…",
-    pagePath: window.location.pathname,
-  },
-});
-
-// Update widget wherever user context changes: route changes, login/logout, user data updates
-widget.update({
-  config: {
-    apiKey: "nk_live_…",
-    pagePath: window.location.pathname,
-    user: currentUser
-      ? {
-          id: currentUser.id,
-          name: currentUser.name,
-          email: currentUser.email,
-          profile_image: currentUser.image,
-        }
-      : null,
-  },
-});`}
-            />
-          </section>
-
-          <section className="ink-card p-6 space-y-4">
-            <div>
-              <h3 className="text-lg font-medium mb-1">
-                3. Mark page sections
-              </h3>
-              <p className="caption text-sm text-[var(--muted)]">
-                Give major page blocks a stable <code className="text-xs">id</code>{" "}
-                on <code className="text-xs">&lt;section&gt;</code> or{" "}
-                <code className="text-xs">&lt;article&gt;</code> elements. After
-                your Website import, Neylon crawls those ids and the widget
-                auto-tracks them.
-              </p>
-            </div>
-
-            <CodeBlock
-              language="text"
-              label="Section markup"
-              code={`<section id="pricing">
-  <h2>Pricing</h2>
-  ...
-</section>`}
-            />
-          </section>
+      <section className="ink-card p-6 space-y-4">
+        <div>
+          <h3 className="text-lg font-medium mb-1">
+            Add the widget via Script Tag
+          </h3>
+          <p className="caption text-sm text-[var(--muted)]">
+            Paste this snippet into your site&apos;s <code>&lt;head&gt;</code> or footer. It works automatically with Webflow, Framer, WordPress, or any HTML site.
+          </p>
         </div>
-      ) : (
-        <section className="ink-card p-6 space-y-5">
-          <div className="space-y-1">
-            <h3 className="text-lg font-medium">Install with coding agent</h3>
-            <p className="caption text-sm max-w-2xl">
-              Your agent installs @neylonai/sdk, wires your publishable API key,
-              and marks major page blocks with stable element{" "}
-              <code className="text-xs">id</code> values after Website import.
+        <CodeBlock
+          language="html"
+          label="Script tag"
+          code={`<!-- Add this to your site's <head> or before </body> -->
+${buildWidgetSnippet(snippetKey)}`}
+        />
+
+        {hasCopyableKey ? (
+          <div className="space-y-2">
+            <p className="caption text-sm text-[var(--muted)]">
+              Your live key is filled into the snippet above — copy it and
+              paste it on your site.
+            </p>
+            <button
+              type="button"
+              className="caption text-xs underline underline-offset-4 disabled:opacity-60"
+              disabled={generating}
+              onClick={() => void generateKey()}
+            >
+              {generating
+                ? "Rotating…"
+                : "Rotate key (invalidates the current one)"}
+            </button>
+          </div>
+        ) : hasActiveKey ? (
+          <div className="space-y-2">
+            <SettingsButton
+              className="bg-[var(--blue)] text-white"
+              disabled={generating}
+              onClick={() => void generateKey()}
+            >
+              {generating ? "Rotating…" : "Rotate to get a copyable key"}
+            </SettingsButton>
+            <p className="caption text-xs text-[var(--muted)]">
+              Your current key
+              {keyDisplay ? ` (${keyDisplay})` : ""} predates copyable
+              snippets. Rotating issues a new key and fills it into the snippet
+              — embeds using the old key stop working.
             </p>
           </div>
-
-          <div className="overflow-hidden rounded-xl border border-[var(--ink)]/20 bg-white">
-            <div className="flex items-center justify-between gap-3 border-b border-[var(--ink)]/10 px-4 py-3">
-              <div>
-                <h4 className="font-medium">Coding agent instructions</h4>
-              </div>
-              <button
-                type="button"
-                className="btn-ink flex size-9 items-center justify-center bg-white p-0"
-                onClick={() => void copySkill()}
-                aria-label={
-                  copied
-                    ? "Coding agent instructions copied"
-                    : "Copy coding agent instructions"
-                }
-                title={copied ? "Copied" : "Copy instructions"}
-              >
-                {copied ? (
-                  <Check className="size-4" aria-hidden />
-                ) : (
-                  <Copy className="size-4" aria-hidden />
-                )}
-              </button>
-            </div>
-            <pre className="max-h-[28rem] overflow-auto whitespace-pre-wrap p-4 text-xs leading-relaxed">
-              {DEVELOPER_SDK_INSTALL_SKILL}
-            </pre>
+        ) : (
+          <div className="space-y-2">
+            <SettingsButton
+              className="bg-[var(--blue)] text-white"
+              disabled={generating}
+              onClick={() => void ensureKey()}
+            >
+              {generating ? "Creating…" : "Create my key & fill snippet"}
+            </SettingsButton>
+            <p className="caption text-xs text-[var(--muted)]">
+              Creates your publishable key and drops it straight into the
+              snippet above — the same key you get from Copy on the Overview.
+            </p>
           </div>
-        </section>
-      )}
+        )}
+
+        {keyError ? (
+          <p className="text-sm text-red-700" role="alert">
+            {keyError}
+          </p>
+        ) : null}
+
+        <p className="caption text-xs text-[var(--muted)]">
+          This key is limited to your connected website&apos;s domain. Connect
+          or change it under{" "}
+          <Link className="underline" href="/dashboard/integrations">
+            Integrations → Website
+          </Link>
+          .
+        </p>
+      </section>
     </SettingsSectionFrame>
   );
 }

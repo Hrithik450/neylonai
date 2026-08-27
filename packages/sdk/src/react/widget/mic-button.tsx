@@ -2,6 +2,7 @@
 
 import { Loader2, Mic, CircleStop } from "lucide-react";
 import { Button, PromptInputAction } from "../../ui";
+import { useWidgetHost } from "../context/widget-host";
 
 interface MicButtonProps {
   isRecording: boolean;
@@ -17,6 +18,8 @@ export function MicButton({
   onToggle,
 }: MicButtonProps) {
   const busy = isTranscribing;
+  const { config } = useWidgetHost();
+  const { surfaceColor, borderColor, primaryTextColor } = config.branding;
   const tooltip = busy
     ? "Transcribing…"
     : isRecording
@@ -32,11 +35,20 @@ export function MicButton({
         disabled={disabled || busy}
         aria-label={tooltip}
         aria-pressed={isRecording}
-        className={`h-8 w-8 rounded-full cursor-pointer border-black/20 bg-zinc-100 text-zinc-700 hover:bg-zinc-200 hover:text-zinc-900 ${
+        className={`h-8 w-8 rounded-full cursor-pointer border ${
           isRecording
             ? "border-red-200 bg-red-50 text-red-500 hover:bg-red-100 animate-pulse"
-            : ""
+            : "hover:opacity-90"
         }`}
+        style={
+          isRecording
+            ? undefined
+            : {
+                backgroundColor: surfaceColor,
+                borderColor,
+                color: primaryTextColor,
+              }
+        }
         onClick={(e) => {
           e.preventDefault();
           if (busy) return;

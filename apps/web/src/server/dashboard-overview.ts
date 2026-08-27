@@ -1,9 +1,10 @@
 import { count, eq } from "drizzle-orm";
-import { db, knowledgeDocuments } from "@neylonai/database";
+import { db, knowledgeDocuments, threads } from "@neylonai/database";
 import {
   countProductMetric,
   getOrgCreditSummary,
   getPlanEntitlements,
+  getPublishableKeyForOrg,
   getSubscriptionForOrg,
   isSubscriptionEligible,
   listApiKeysForOrg,
@@ -63,6 +64,19 @@ export type DashboardOverviewData = {
     lastSeenAt: Date | null;
     lastSeenLabel: string;
   };
+  conversations: {
+    total: number;
+    awaitingHuman: number;
+  };
+  /** Ready-to-paste install snippet for the Overview card. */
+  install: {
+    /**
+     * The org's publishable key in plaintext when one exists and is retrievable.
+     * Null when the org has no key yet (lazy — user hasn't copied) or the key
+     * predates the retrievable-key column; the Copy button mints/handles both.
+     */
+    publishableKey: string | null;
+  };
   metrics: {
     aiCreditsUsed: number;
     aiCreditsLimit: number;
@@ -114,10 +128,31 @@ export async function loadDashboardOverview(
   member: OrgSession,
 ): Promise<DashboardOverviewData> {
   const organizationId = member.organizationId;
-  const [subscription, config, keys] = await Promise.all([
+  let totalConversations = 0;
+  let awaitingHuman = 0;
+  try {
+    const threadRows = await db
+      .select({
+        status: threads.conversation_status,
+        c: count(),
+      })
+      .from(threads)
+      .where(eq(threads.organization_id, organizationId))
+      .groupBy(threads.conversation_status);
+    
+    for (const r of threadRows) {
+      totalConversations += Number(r.c);
+      if (r.status === "human_pending" || r.status === "human_active") {
+         awaitingHuman += Number(r.c);
+      }
+    }
+  } catch {}
+
+  const [subscription, config, keys, publishableKey] = await Promise.all([
     getSubscriptionForOrg(organizationId),
     getWidgetConfigForOrg(organizationId),
     listApiKeysForOrg(organizationId),
+    getPublishableKeyForOrg(organizationId),
   ]);
 
   const entitlements = getPlanEntitlements(subscription?.plan);
@@ -192,7 +227,7 @@ export async function loadDashboardOverview(
   const checklist: OverviewChecklistItem[] = [
     {
       id: "api_key",
-      label: "Create a client API key",
+      label: "Copy your install script",
       done: activeKeys.length > 0,
       href: "/dashboard/settings?section=developer",
     },
@@ -219,16 +254,7 @@ export async function loadDashboardOverview(
   const setupComplete = checklist.every((c) => c.done);
   const alerts: OverviewAlert[] = [];
 
-  if (activeKeys.length === 0) {
-    alerts.push({
-      id: "no_key",
-      tone: "critical",
-      title: "No active API key",
-      detail: "Your chatbot cannot load until a client key is provisioned.",
-      href: "/dashboard/settings?section=developer",
-      actionLabel: "Create API key",
-    });
-  }
+  // no_key alert removed as requested
 
   if (!eligible) {
     alerts.push({
@@ -277,7 +303,7 @@ export async function loadDashboardOverview(
       tone: "warning",
       title: "Widget not detected yet",
       detail:
-        "No API requests from your key yet. Embed the SDK or open a page with the widget.",
+        "No API requests from your key yet. Add the install script to your website.",
       href: "/dashboard/settings?section=developer",
       actionLabel: "View install steps",
     });
@@ -297,7 +323,7 @@ export async function loadDashboardOverview(
       "Key ready, but the widget has not been detected on a site yet.";
   } else if (eligible) {
     chatbotLabel = "Needs attention";
-    chatbotDetail = "Subscription is fine — finish API key setup to go live.";
+    chatbotDetail = "Subscription is fine — copy your install script to go live.";
   } else {
     chatbotLabel = "Inactive";
     chatbotDetail = `Subscription status: ${status}`;
@@ -355,6 +381,13 @@ export async function loadDashboardOverview(
       domains,
       lastSeenAt,
       lastSeenLabel: formatRelative(lastSeenAt),
+    },
+    conversations: {
+      total: totalConversations,
+      awaitingHuman,
+    },
+    install: {
+      publishableKey,
     },
     metrics: {
       aiCreditsUsed: creditAllowance.used,

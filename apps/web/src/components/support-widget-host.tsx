@@ -5,7 +5,6 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { SupportWidget } from "@neylonai/sdk/react";
 import { useSessionView } from "@/components/session-view";
 import { useErrorStore } from "@/store/error-store";
-import { neylonWidgetCustomization } from "@/lib/neylon-customization";
 
 export function SupportWidgetHost({
   apiKey: apiKeyProp = null,

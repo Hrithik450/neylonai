@@ -24,6 +24,18 @@ export {
   type ChartConfig,
 } from "./components/chart";
 export {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogOverlay,
+  DialogPortal,
+  DialogTitle,
+  DialogTrigger,
+} from "./components/dialog";
+export {
   useFormField,
   Form,
   FormItem,

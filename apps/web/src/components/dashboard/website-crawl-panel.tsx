@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { UpgradePrompt } from "@/components/dashboard/upgrade-prompt";
+import { websiteUrlIssue } from "@/lib/website-url";
 
 type CrawlJob = {
   id: string;
@@ -44,9 +45,6 @@ type Entitlements = {
 
 const ACTIVE = new Set(["queued", "discovering", "crawling", "cancelling"]);
 
-const DOMAIN_RE =
-  /^(?=.{1,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/i;
-
 /**
  * The page cap is a ceiling, not a target, so it is never used as a
  * denominator. A total only appears once discovery knows how many pages
@@ -68,31 +66,6 @@ function progressLabel(job: CrawlJob): string {
 function pageStatusLabel(status: string): string {
   if (status === "skipped_lastmod") return "already scraped";
   return status.replace(/_/g, " ");
-}
-
-/** Mirrors the server gate so obvious typos fail before a request. */
-function websiteUrlIssue(raw: string): string | null {
-  const trimmed = raw.trim();
-  if (!trimmed) return null;
-  if (/\s/.test(trimmed)) {
-    return "Website address can’t contain spaces.";
-  }
-  const scheme = trimmed
-    .match(/^([a-z][a-z0-9+.-]*):\/\//i)?.[1]
-    ?.toLowerCase();
-  if (scheme && scheme !== "http" && scheme !== "https") {
-    return "Only https:// website addresses can be imported.";
-  }
-  let parsed: URL;
-  try {
-    parsed = new URL(scheme ? trimmed : `https://${trimmed}`);
-  } catch {
-    return "Enter a valid website address, like https://acme.com.";
-  }
-  if (!DOMAIN_RE.test(parsed.hostname)) {
-    return `“${parsed.hostname}” is not a valid domain name.`;
-  }
-  return null;
 }
 
 export function WebsiteCrawlPanel({
@@ -122,6 +95,10 @@ export function WebsiteCrawlPanel({
   const [showCompletionNotice, setShowCompletionNotice] = useState(false);
   const [now, setNow] = useState(() => Date.now());
   const previousJobStatus = useRef<string | null>(null);
+  /** Flips once the visitor edits the URL field, so a pre-filled address never auto-imports. */
+  const userEditedRef = useRef(false);
+  /** Address we've already auto-triggered an import for — fire at most once per URL. */
+  const autoStartedUrlRef = useRef<string | null>(null);
 
   const configuredMax = entitlements?.maxPages;
   useEffect(() => {
@@ -211,44 +188,88 @@ export function WebsiteCrawlPanel({
     return () => window.clearInterval(timer);
   }, [reimportLocked]);
 
-  const startCrawl = async (mode?: "initial" | "refresh" | "retry_failed") => {
-    if (!url.trim()) {
-      setError("Enter a public website URL to crawl.");
-      return;
-    }
-    if (urlIssue) {
-      setError(urlIssue);
-      return;
-    }
-    setBusy("crawl");
-    setError(null);
-    setShowCompletionNotice(false);
-    try {
-      const res = await fetch("/api/v1/integrations/website/crawl", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          url: url.trim(),
-          maxPages,
-          ...(mode ? { mode } : {}),
-        }),
-      });
-      const json = (await res.json()) as {
-        success: boolean;
-        error?: string;
-        data?: { job: CrawlJob };
-      };
-      if (!json.success || !json.data) {
-        throw new Error(json.error ?? "Failed to start crawl.");
+  const startCrawl = useCallback(
+    async (mode?: "initial" | "refresh" | "retry_failed") => {
+      const trimmed = url.trim();
+      if (!trimmed) {
+        setError("Enter a public website URL to crawl.");
+        return;
       }
-      setJob(json.data.job);
-      await load();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to start crawl.");
-    } finally {
-      setBusy(null);
+      if (urlIssue) {
+        setError(urlIssue);
+        return;
+      }
+      // Any pending auto-import for this address is now redundant.
+      autoStartedUrlRef.current = trimmed;
+      setBusy("crawl");
+      setError(null);
+      setShowCompletionNotice(false);
+      try {
+        const res = await fetch("/api/v1/integrations/website/crawl", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            url: trimmed,
+            maxPages,
+            ...(mode ? { mode } : {}),
+          }),
+        });
+        const json = (await res.json()) as {
+          success: boolean;
+          error?: string;
+          data?: { job: CrawlJob };
+        };
+        if (!json.success || !json.data) {
+          throw new Error(json.error ?? "Failed to start crawl.");
+        }
+        setJob(json.data.job);
+        await load();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to start crawl.");
+      } finally {
+        setBusy(null);
+      }
+    },
+    [url, urlIssue, maxPages, load],
+  );
+
+  // First-run convenience: once the visitor types a valid address, kick off the
+  // initial import automatically — no separate button press. Only the *initial*
+  // import auto-fires (never a refresh, which would spend monthly quota); it
+  // waits for typing to settle, ignores pre-filled addresses, and fires at most
+  // once per address.
+  useEffect(() => {
+    const trimmed = url.trim();
+    if (
+      enabled ||
+      active ||
+      busy !== null ||
+      parentBusy ||
+      reimportLocked ||
+      !trimmed ||
+      urlIssue ||
+      !userEditedRef.current ||
+      autoStartedUrlRef.current === trimmed ||
+      (job !== null && job.status !== "failed")
+    ) {
+      return;
     }
-  };
+    const timer = window.setTimeout(() => {
+      if (autoStartedUrlRef.current === trimmed) return;
+      void startCrawl("initial");
+    }, 1200);
+    return () => window.clearTimeout(timer);
+  }, [
+    url,
+    enabled,
+    active,
+    busy,
+    parentBusy,
+    reimportLocked,
+    urlIssue,
+    job,
+    startCrawl,
+  ]);
 
   const cancel = async () => {
     if (!job) return;
@@ -296,6 +317,7 @@ export function WebsiteCrawlPanel({
           placeholder="https://example.com"
           value={url}
           onChange={(e) => {
+            userEditedRef.current = true;
             setUrl(e.target.value);
             setError(null);
           }}
@@ -303,7 +325,9 @@ export function WebsiteCrawlPanel({
         />
         <span className="caption text-[0.65rem] block">
           {urlIssue ??
-            "Only secure (https) websites that resolve can be imported."}
+            (enabled
+              ? "Only secure (https) websites that resolve can be imported."
+              : "Enter your address — importing starts automatically. Only secure (https) sites that resolve can be imported.")}
         </span>
       </label>
 

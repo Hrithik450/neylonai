@@ -31,6 +31,10 @@ COPY --from=pruner /app/out/full/ .
 # Real DATABASE_URL / REDIS_URL are injected at container runtime via compose env_file.
 ARG NEXT_PUBLIC_NEYLONAI_API_ORIGIN
 ARG NEXT_PUBLIC_GOOGLE_CLIENT_ID
+# Publishable client key for the first-party landing widget (nk_live_…, ships in
+# client HTML like a Stripe pk_live — domain allowlist is the security boundary).
+# Must be inlined at build time or the site widget resolves to "" and never auths.
+ARG NEXT_PUBLIC_NEYLONAI_API_KEY
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV DATABASE_URL=postgresql://build:build@127.0.0.1:5432/build
@@ -48,6 +52,7 @@ ENV UTILITY_MODEL=gemini-3.5-flash-lite
 ENV EMBEDDING_MODEL=gemini-embedding-001
 ENV NEXT_PUBLIC_NEYLONAI_API_ORIGIN=${NEXT_PUBLIC_NEYLONAI_API_ORIGIN}
 ENV NEXT_PUBLIC_GOOGLE_CLIENT_ID=${NEXT_PUBLIC_GOOGLE_CLIENT_ID}
+ENV NEXT_PUBLIC_NEYLONAI_API_KEY=${NEXT_PUBLIC_NEYLONAI_API_KEY}
 RUN pnpm turbo run build --filter=web
 
 # ─── Slim runtime (Next.js standalone) ────────────────────────────────────────

@@ -18,6 +18,7 @@ function mapSettings(
     organizationId: org.id,
     organizationName: org.name,
     timezone: row?.timezone ?? "UTC",
+    websitePlatform: row?.website_platform ?? null,
     privacy: {
       ...DEFAULT_PRIVACY,
       ...(row?.privacy ?? {}),
@@ -86,6 +87,8 @@ export async function saveOrganizationSettings(
   };
 
   if (patch.timezone !== undefined) values.timezone = patch.timezone;
+  if (patch.websitePlatform !== undefined)
+    values.website_platform = patch.websitePlatform;
   if (patch.privacy) {
     values.privacy = {
       ...DEFAULT_PRIVACY,

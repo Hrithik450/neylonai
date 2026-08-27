@@ -1,48 +1,18 @@
 import { defineWidgetCustomization } from "@neylonai/sdk/embed";
 
 /**
- * Hero: warm cream #FFF7F4, near-black #242424, brown-gray #45413F
+ * Code-owned widget customization for Neylon's own site — CONTENT only.
  *
- * Widget: crisp neutral panel + hero-black actions + forest-green brand accents.
- * Surfaces are cool gray (not cream/peach/coral) so the panel reads as its own layer.
- */
-const HERO_CTA = "#242424";
-const BRAND_GREEN = "#0E3228";
-const NEUTRAL_BODY = "#6B7280";
-/** Panel fill — slightly darker than page cream (#FFF7F4). */
-const PANEL_TOP = "#E8E8E8";
-const PANEL_BOTTOM = "#F0F0F0";
-/** Cards / chips — lighter than panel for contrast. */
-const NEUTRAL_SURFACE = "#FAFAFA";
-const NEUTRAL_BUBBLE = "#F5F5F5";
-const NEUTRAL_HUMAN = "#EBEBEB";
-
-/**
- * Code-owned widget customization — premium neutral layer on the warm landing page.
+ * Theme is deliberately absent. Colors, logo, font, gradients, launcher
+ * position and tagline are branding, and branding is a human's job in the
+ * Neylon dashboard — never code. The SDK enforces this: `defineWidgetCustomization`
+ * omits `branding` from its type, and the runtime merge always takes branding
+ * from the dashboard-fetched config, so a code-set theme can't win even if forced.
  *
- * Do NOT set branding.logoUrl, branding.font, or layout —
- * those are controlled from the Neylon dashboard.
+ * This is exactly what a customer's coding agent is told to do: write the
+ * widget's voice (`messages`) and behavior, and leave the look to the dashboard.
  */
 export const neylonWidgetCustomization = defineWidgetCustomization({
-  branding: {
-    name: "Neylon AI",
-    // Brand green headings (distinct from hero near-black)
-    primaryTextColor: BRAND_GREEN,
-    // Cool neutral body (not hero warm brown)
-    secondaryTextColor: NEUTRAL_BODY,
-    // Launcher + Ask CTA — hero filled button colour, visible on cream bg
-    primaryTextBackground: HERO_CTA,
-    askButtonTextColor: "#ffffff",
-    // Gray cards on darker panel (not cream-tinted surfaces)
-    secondaryTextBackground: NEUTRAL_SURFACE,
-    tabActiveColor: BRAND_GREEN,
-    accentColor: "#9CA3AF",
-    // Slightly darker panel — separates from page cream (#FFF7F4)
-    gradientFrom: PANEL_TOP,
-    gradientTo: PANEL_BOTTOM,
-    aiMessageBackground: NEUTRAL_BUBBLE,
-    humanMessageBackground: NEUTRAL_HUMAN,
-  },
   messages: {
     welcomeGreeting: "Hi {name} 👋",
     introMessages: [

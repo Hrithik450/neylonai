@@ -566,6 +566,10 @@ html {
   font-weight: 400;
 }
 
+.paper[data-slot="dialog-content"] {
+  font-family: var(--font-app);
+}
+
 .admin-shell h1,
 .admin-shell h2,
 .admin-shell h3 {

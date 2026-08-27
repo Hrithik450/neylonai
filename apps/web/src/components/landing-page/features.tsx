@@ -6,37 +6,37 @@ const GREEN = "#0E3228";
 
 const FEATURES = [
   {
-    title: "Start the conversation first",
+    title: "Answer instantly from your docs",
     description:
-      "Proactive suggestions reach out the moment a visitor is browsing, hesitating, or about to leave — so no lead is lost to silence.",
+      "Neylon learns your website and docs, then answers common questions instantly — so repetitive tickets stop landing on your plate.",
     bg: "#FFF3D6",
     video: "/videos/Chat Message.mp4",
+    tag: "Automate",
+  },
+  {
+    title: "Proactively engage visitors",
+    description:
+      "Don't wait for visitors to ask. Neylon reaches out on its own when someone stalls, hesitates, or lingers on a key page — turning quiet browsing into real conversations.",
+    bg: "#E8E4FF",
+    video: "/videos/AI Robot chatbot.mp4",
     tag: "Proactive",
   },
   {
-    title: "Answer instantly, qualify as it goes",
+    title: "Capture and qualify leads",
     description:
-      "Your assistant answers accurately from your own content while it learns what each visitor actually wants.",
-    bg: "#E8E4FF",
-    video: "/videos/AI Robot chatbot.mp4",
-    tag: "Qualify",
-  },
-  {
-    title: "Capture contact, alert your team",
-    description:
-      "When a visitor is ready, Neylon collects their email or handle and pings your team live — a contact-ready lead, not a missed chat.",
+      "When a conversation reveals a potential customer, Neylon captures their details and drops a qualified lead straight into your inbox.",
     bg: "#D6F0F5",
     video: "/videos/Notification Bell.mp4",
     tag: "Capture",
   },
   {
-    title: "See what actually converts",
+    title: "Scale without hiring",
     description:
-      "Know which pages, questions, and conversations turn visitors into leads — and double down on them.",
+      "Cover support 24/7 and keep capturing leads — without the cost, headcount, or complexity of a dedicated support team.",
     bg: "#D6F5E3",
     video: "/videos/Market increase graph hand.mp4",
     cover: true,
-    tag: "Insights",
+    tag: "Scale",
   },
 ];
 
@@ -64,7 +64,7 @@ export function Features() {
       className="py-10 sm:py-12 lg:py-20 overflow-hidden"
     >
       {/* Top row: heading + tag on first line, nav buttons below on mobile */}
-      <div className="pl-6 sm:pl-10 md:pl-20 lg:pl-28 pr-6 sm:pr-10 md:pr-20 lg:pr-28 flex flex-col sm:flex-row sm:items-end sm:justify-between mb-10 gap-4 sm:gap-6">
+      <div className="pl-6 sm:pl-10 md:pl-20 xl:pl-28 pr-6 sm:pr-10 md:pr-20 xl:pr-28 flex flex-col sm:flex-row sm:items-end sm:justify-between mb-10 gap-4 sm:gap-6">
         <div>
           <p className="text-xs uppercase tracking-widest text-gray-400 mb-2 font-medium">
             Why Neylon
@@ -73,9 +73,9 @@ export function Features() {
             className="landing-strong text-2xl md:text-3xl xl:text-4xl leading-tight"
             style={{ color: GREEN }}
           >
-            From anonymous click
+            Automate support.
             <br />
-            to qualified lead.
+            Capture leads.
           </h2>
         </div>
         <div className="flex gap-3 flex-shrink-0 self-end sm:self-auto">
@@ -115,7 +115,7 @@ export function Features() {
       {/* Scrollable cards — left-aligned with heading, bleeds to the right edge */}
       <div
         ref={scrollRef}
-        className="flex gap-4 sm:gap-6 overflow-x-auto scroll-smooth pb-4 pl-6 sm:pl-10 md:pl-20 lg:pl-28"
+        className="flex gap-4 sm:gap-6 overflow-x-auto scroll-smooth pb-4 pl-6 sm:pl-10 md:pl-20 xl:pl-28"
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         {FEATURES.map((f) => (
@@ -171,7 +171,7 @@ export function Features() {
         ))}
         {/* Trailing spacer — mirrors left padding so last card can rest centered */}
         <div
-          className="flex-none w-6 sm:w-10 md:w-20 lg:w-28"
+          className="flex-none w-6 sm:w-10 md:w-20 xl:w-28"
           aria-hidden="true"
         />
       </div>

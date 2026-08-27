@@ -62,7 +62,7 @@ const widgetPanelClassName = (isOpen: boolean, isCollapse: boolean, fontClassNam
       ? cn(
           "absolute left-1.5 right-1.5 top-2 z-10 overflow-hidden origin-bottom",
           "w-auto min-w-0 max-w-full",
-          "rounded-2xl border border-gray-400/40 shadow-2xl",
+          "rounded-2xl border shadow-2xl",
         )
       : cn(
           "fixed z-[110] overflow-hidden overscroll-contain",
@@ -76,7 +76,7 @@ const widgetPanelClassName = (isOpen: boolean, isCollapse: boolean, fontClassNam
           "origin-bottom-right",
           isLeft && "origin-bottom-left",
           "md:h-[65vh] lg:h-[85vh] md:max-h-187.5",
-          "md:rounded-2xl md:border md:border-gray-400/40 md:shadow-2xl",
+          "md:rounded-2xl md:border md:shadow-2xl",
           isCollapse ? "md:min-w-md md:max-w-md md:w-full" : "md:min-w-2xl md:max-w-2xl md:w-full",
         ),
     "md:pt-2 flex flex-col min-w-0",
@@ -130,6 +130,7 @@ export function Widget() {
         fontFamily,
         backgroundImage: `linear-gradient(to bottom, ${gradientFrom} 0%, ${gradientTo} 100%)`,
         backgroundColor: gradientTo,
+        borderColor: config.branding.borderColor,
         ...(inline ? { bottom: panelBottomPx } : ({ ["--neylonai-panel-bottom" as string]: `${panelBottomPx}px` } as React.CSSProperties)),
       }}
       onWheel={(e) => e.stopPropagation()}
@@ -142,7 +143,10 @@ export function Widget() {
       {isRootScreen && !onChatScreen ? <WidgetPoweredBy /> : null}
 
       {showTabBar ? (
-        <nav className="border-t flex justify-around px-1">
+        <nav
+          className="border-t flex justify-around px-1"
+          style={{ borderColor: config.branding.borderColor }}
+        >
           {enabledTabs.map((tab) => {
             const configTab = TabsRegistry[tab];
             const selected = tab === activeTab;
@@ -154,7 +158,7 @@ export function Widget() {
                 className={cn(
                   "flex-1 flex flex-col items-center justify-center gap-1 py-2.5 px-1 cursor-pointer rounded-none",
                   "bg-transparent border-0 outline-none",
-                  "hover:bg-black/[0.03] transition-colors",
+                  "transition-opacity hover:opacity-80",
                 )}
                 style={{ color: selected ? tabActiveColor : accentColor }}
               >

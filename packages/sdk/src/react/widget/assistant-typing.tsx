@@ -3,10 +3,14 @@
 import React from "react";
 import { Brain, Lightbulb } from "lucide-react";
 import { useWidgetStore } from "../store/widget-store";
+import { useWidgetHost } from "../context/widget-host";
 import { DEFAULT_THINKING_MESSAGES } from "../constants";
 
 export function DynamicAssistantTyping({ speed = 5200 }: { speed?: number }) {
   const { thinkingTips, assistantTyping } = useWidgetStore();
+  const { config } = useWidgetHost();
+  const { primaryTextColor, secondaryTextColor, surfaceColor, borderColor } =
+    config.branding;
 
   const [thoughts, setThoughts] = React.useState<string[]>([
     ...DEFAULT_THINKING_MESSAGES,
@@ -43,26 +47,38 @@ export function DynamicAssistantTyping({ speed = 5200 }: { speed?: number }) {
         <div className="relative flex items-center justify-center w-10 h-10 shrink-0">
           <div className="absolute rounded-full">
             <div className="flex flex-col items-center">
-              <div className="w-10 h-10 border-2 border-gray-300 border-t-black rounded-full animate-spin" />
+              <div
+                className="w-10 h-10 border-2 rounded-full animate-spin"
+                style={{ borderColor, borderTopColor: primaryTextColor }}
+              />
             </div>
           </div>
 
-          <div className="relative z-10 p-2 bg-white rounded-full flex items-center justify-center">
+          <div
+            className="relative z-10 p-2 rounded-full flex items-center justify-center"
+            style={{ backgroundColor: surfaceColor }}
+          >
             {isTip ? (
               <Lightbulb className="w-5 h-5 text-amber-600" />
             ) : (
-              <Brain className="w-5 h-5 text-gray-700" />
+              <Brain className="w-5 h-5" style={{ color: primaryTextColor }} />
             )}
           </div>
         </div>
 
         <div className="flex-1 min-w-0">
           {isTip && (
-            <p className="text-[11px] uppercase tracking-wide text-gray-500 mb-0.5">
+            <p
+              className="text-[11px] uppercase tracking-wide mb-0.5"
+              style={{ color: secondaryTextColor }}
+            >
               While you wait
             </p>
           )}
-          <span className="block text-sm md:text-base text-gray-800 font-medium truncate">
+          <span
+            className="block text-sm md:text-base font-medium truncate"
+            style={{ color: primaryTextColor }}
+          >
             {current}
           </span>
         </div>

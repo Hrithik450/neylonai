@@ -51,7 +51,7 @@ function toRecord(row: typeof organizationLogos.$inferSelect): OrgLogoRecord {
     byteSize: row.byte_size,
     storageKey: row.storage_key,
     createdAt: row.created_at?.toISOString() ?? new Date().toISOString(),
-    fileUrl: `/api/v1/org-logos/${row.id}/file`,
+    fileUrl: `${process.env.NEXT_PUBLIC_SITE_URL || "https://neylonai.mhrithik.com"}/api/v1/org-logos/${row.id}/file`,
   };
 }
 

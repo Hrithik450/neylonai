@@ -33,7 +33,7 @@ const STEPS = [
     number: 3,
     title: "Watch leads land in your inbox",
     description:
-      "Proactive suggestions engage visitors, qualify their intent, and drop contact-ready leads straight into your conversations.",
+      "Neylon provides instant support, qualifies potential customers, and drops contact-ready leads straight into your inbox.",
     illustration: "/images/how-it-works-illustration-3.png",
     accent: "#C9BDF4",
     iconBackground: "#F1EEFC",
@@ -44,7 +44,7 @@ const STEPS = [
 
 function StepCard({ step }: { step: (typeof STEPS)[number] }) {
   return (
-    <div className="relative p-4">
+    <div className="relative h-full p-4">
       {/* Rear Layer A — anti-clockwise, full height, peeks top & bottom */}
       <div
         aria-hidden="true"
@@ -73,7 +73,7 @@ function StepCard({ step }: { step: (typeof STEPS)[number] }) {
 
       {/* Foreground white card */}
       <article
-        className="relative flex flex-col items-center rounded-[1.75rem] border-2 border-black/80 bg-white px-6 pb-8 pt-7 text-center"
+        className="relative flex h-full flex-col items-center rounded-[1.75rem] border-2 border-black/80 bg-white px-6 pb-8 pt-7 text-center"
         style={{ zIndex: 2, minHeight: 300 }}
       >
         <div
@@ -122,7 +122,7 @@ export function HowItWorks() {
       id="how-it-works-steps"
       className="overflow-hidden py-12 sm:py-16 lg:py-24"
     >
-      <div className="px-6 sm:px-10 md:px-20 lg:px-28">
+      <div className="px-6 sm:px-10 md:px-20 xl:px-28">
         {/* Header row — with scroll buttons visible only on sm→lg */}
         <div className="mb-10 flex items-end justify-between sm:mb-14">
           <div className="text-left">
@@ -142,7 +142,7 @@ export function HowItWorks() {
           </div>
 
           {/* Scroll arrows — tablet only (sm→lg) */}
-          <div className="hidden flex-shrink-0 gap-3 sm:flex lg:hidden">
+          <div className="hidden flex-shrink-0 gap-3 sm:flex xl:hidden">
             <button
               onClick={() => scroll("left")}
               className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-black transition-colors hover:bg-gray-800"
@@ -187,7 +187,7 @@ export function HowItWorks() {
       {/* Tablet: horizontal scroll (sm→lg), bleeds to right edge */}
       <div
         ref={scrollRef}
-        className="hidden gap-6 overflow-x-auto scroll-smooth pb-4 pl-6 sm:flex sm:pl-10 md:pl-20 lg:hidden"
+        className="hidden gap-6 overflow-x-auto scroll-smooth pb-4 pl-6 sm:flex sm:pl-10 md:pl-20 xl:hidden"
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         {STEPS.map((step) => (
@@ -201,11 +201,11 @@ export function HowItWorks() {
           </div>
         ))}
         {/* Trailing spacer mirrors left padding */}
-        <div className="w-10 flex-none sm:w-10 lg:w-28" aria-hidden="true" />
+        <div className="w-10 flex-none sm:w-10 md:w-20" aria-hidden="true" />
       </div>
 
-      {/* Desktop: 3-column grid (lg+) */}
-      <div className="hidden px-6 sm:px-10 md:px-20 lg:block lg:px-28">
+      {/* Desktop: 3-column grid (xl+) */}
+      <div className="hidden px-6 sm:px-10 md:px-20 xl:block xl:px-28">
         <div className="grid grid-cols-3 gap-8 lg:gap-10">
           {STEPS.map((step) => (
             <StepCard key={step.number} step={step} />
@@ -214,7 +214,7 @@ export function HowItWorks() {
       </div>
 
       {/* CTA */}
-      <div className="mt-11 px-6 text-center sm:mt-14 sm:px-10 md:px-20 lg:px-28">
+      <div className="mt-11 px-6 text-center sm:mt-14 sm:px-10 md:px-20 xl:px-28">
         <a
           href="#footer"
           className="landing-strong inline-flex items-center gap-2 rounded-full border border-black/80 px-7 py-3 text-sm text-white transition-transform hover:-translate-y-0.5"

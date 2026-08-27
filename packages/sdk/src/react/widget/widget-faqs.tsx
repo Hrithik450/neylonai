@@ -89,11 +89,17 @@ export function WidgetFaqs() {
               type="button"
               onClick={() => setOpenFaqId(open ? null : id)}
               aria-expanded={open}
-              className="w-full text-left rounded-2xl border border-black/10 px-3.5 py-3 transition-opacity duration-300 ease-in-out hover:opacity-95"
-              style={{ backgroundColor: surface }}
+              className="w-full text-left rounded-2xl border px-3.5 py-3 transition-opacity duration-300 ease-in-out hover:opacity-95"
+              style={{
+                backgroundColor: surface,
+                borderColor: config.branding.borderColor,
+              }}
             >
               <div className="flex items-center gap-3">
-                <span className="shrink-0 text-sm font-bold text-black/30 tabular-nums leading-none">
+                <span
+                  className="shrink-0 text-sm font-bold tabular-nums leading-none"
+                  style={{ color: secondary }}
+                >
                   0{idx + 1}
                 </span>
                 <span
@@ -104,10 +110,13 @@ export function WidgetFaqs() {
                 </span>
                 <span
                   className={cn(
-                    "shrink-0 rounded-full border border-black/10 p-1.5 transition-transform duration-300 ease-in-out",
+                    "shrink-0 rounded-full border p-1.5 transition-transform duration-300 ease-in-out",
                     open && "-rotate-90",
                   )}
-                  style={{ backgroundColor: surface }}
+                  style={{
+                    backgroundColor: surface,
+                    borderColor: config.branding.borderColor,
+                  }}
                 >
                   <ArrowDownRight
                     className="w-3.5 h-3.5"

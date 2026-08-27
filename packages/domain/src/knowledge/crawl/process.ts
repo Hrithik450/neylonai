@@ -34,6 +34,7 @@ import {
   refreshSourceDocumentCount,
   updateKnowledgeSource,
 } from "../service";
+import { setOrgKeyAllowedDomainFromUrl } from "../../billing/entitlements";
 import { MAIN_AGENT_KEY } from "../../agents/org-agents.types";
 
 const CANCEL_POLL_MS = 1_000;
@@ -670,6 +671,20 @@ export async function processWebsiteCrawlJob(jobId: string): Promise<void> {
           failed: finished.failed_count,
         },
       },
+    });
+
+    // Belt-and-braces: re-assert the widget key's allowed domain from the
+    // crawled site. startWebsiteCrawl already did this at job start; this second
+    // write covers the case where the key was minted (via /api-keys/ensure)
+    // between crawl start and completion. Best-effort — never fail the crawl.
+    await setOrgKeyAllowedDomainFromUrl(
+      job.organization_id,
+      job.seed_url,
+    ).catch((error) => {
+      console.warn(
+        "[crawl.process] failed to set allowed domain from seed_url:",
+        error,
+      );
     });
   } catch (error) {
     const latest = await loadJob(jobId);

@@ -7,7 +7,7 @@ import { atomOneLight } from "react-syntax-highlighter/dist/cjs/styles/hljs";
 
 interface CodeBlockProps {
   code: string;
-  language?: "typescript" | "bash" | "javascript" | "json" | "text";
+  language?: "typescript" | "bash" | "javascript" | "json" | "text" | "html";
   label?: string;
 }
 

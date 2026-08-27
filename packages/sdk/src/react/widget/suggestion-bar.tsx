@@ -54,10 +54,11 @@ export function SuggestionBar() {
               type="button"
               variant="outline"
               size="sm"
-              className="h-7 shrink-0 rounded-full border border-black/15 px-2.5 py-0 text-xs font-medium shadow-none hover:opacity-90"
+              className="h-7 shrink-0 rounded-full border px-2.5 py-0 text-xs font-medium shadow-none hover:opacity-90"
               style={{
                 backgroundColor: surface,
                 color: secondary,
+                borderColor: config.branding.borderColor,
               }}
               onClick={() => setInput(suggestion)}
             >
@@ -66,7 +67,7 @@ export function SuggestionBar() {
           ))}
 
           {filterSuggestions.length === 0 && (
-            <span className="px-1 text-xs italic text-zinc-500">
+            <span className="px-1 text-xs italic" style={{ color: secondary }}>
               No suggestions found...
             </span>
           )}

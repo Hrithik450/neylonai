@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
 import { db, widgetConfigs } from "@neylonai/database";
+import { generateWidgetContent } from "@neylonai/domain/knowledge/widget-content";
 import {
   BRANDING_COLORS_VERSION,
   DEFAULT_WIDGET_CONFIG,
@@ -99,6 +100,15 @@ async function maybeSeedDefaultFaqs(
   return locked;
 }
 
+function absolutify(url?: string): string | undefined {
+  if (!url) return url;
+  if (url.startsWith("/")) {
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://neylonai.mhrithik.com";
+    return `${baseUrl}${url}`;
+  }
+  return url;
+}
+
 export async function getWidgetConfigForOrg(
   organizationId: string,
 ): Promise<StoredWidgetConfig> {
@@ -121,6 +131,14 @@ export async function getWidgetConfigForOrg(
     }
   }
 
+  if (config.branding) {
+    if (config.branding.logoUrl) {
+      config.branding.logoUrl = absolutify(config.branding.logoUrl);
+    }
+    if (config.branding.font?.customFontUrl) {
+      config.branding.font.customFontUrl = absolutify(config.branding.font.customFontUrl);
+    }
+  }
   return config;
 }
 
@@ -153,7 +171,46 @@ export async function saveWidgetConfigForOrg(
       ...patch.messages,
       faqs,
       faqsInitialized: true,
+      // A dashboard publish also permanently locks the messages block against
+      // any future automatic AI re-seed.
+      contentInitialized: true,
     },
   });
   return persistWidgetConfig(organizationId, next);
+}
+
+/**
+ * One-time AI seed of the widget's content (messages) from the org's crawled
+ * knowledge. Gated by the `contentInitialized` one-way lock so it runs at most
+ * once and never overwrites a user's edits.
+ *
+ * Called from the onboarding wizard's "getting ready" step after the initial
+ * crawl completes. The generated copy auto-publishes live with no review, so
+ * the anti-fabrication guardrail lives in `generateWidgetContent`; here we only
+ * merge + lock. Omitted generated fields fall back to the static defaults via
+ * `mergeWidgetConfig`, and a null generation leaves the defaults unlocked so a
+ * future re-crawl can retry.
+ */
+export async function seedWidgetContentFromKnowledge(
+  organizationId: string,
+): Promise<{ seeded: boolean }> {
+  const raw = await readRawWidgetConfig(organizationId);
+  if (raw?.messages?.contentInitialized === true) return { seeded: false };
+
+  const generated = await generateWidgetContent(organizationId);
+  if (!generated) return { seeded: false };
+
+  const next = mergeWidgetConfig({
+    ...(raw ?? {}),
+    messages: {
+      ...(raw?.messages ?? {}),
+      ...generated,
+      // Gate only on contentInitialized so AI content wins over any static FAQ
+      // a stray dashboard/public read may have locked first — then set both.
+      contentInitialized: true,
+      faqsInitialized: true,
+    },
+  });
+  await persistWidgetConfig(organizationId, next);
+  return { seeded: true };
 }

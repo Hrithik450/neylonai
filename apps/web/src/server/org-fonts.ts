@@ -56,7 +56,7 @@ function toRecord(row: typeof organizationFonts.$inferSelect): OrgFontRecord {
     byteSize: row.byte_size,
     storageKey: row.storage_key,
     createdAt: row.created_at?.toISOString() ?? new Date().toISOString(),
-    fileUrl: `/api/v1/org-fonts/${row.id}/file`,
+    fileUrl: `${process.env.NEXT_PUBLIC_SITE_URL || "https://neylonai.mhrithik.com"}/api/v1/org-fonts/${row.id}/file`,
   };
 }
 

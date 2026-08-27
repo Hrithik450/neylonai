@@ -53,6 +53,7 @@ export async function GET(req: NextRequest) {
           name: k.name,
           prefix: k.keyPrefix,
           lastFour: k.lastFour,
+          publicKey: k.publicKey ?? null,
           allowedOrigins: k.allowedOrigins ?? [],
           revoked: Boolean(k.revokedAt),
           lastUsedAt: k.lastUsedAt,

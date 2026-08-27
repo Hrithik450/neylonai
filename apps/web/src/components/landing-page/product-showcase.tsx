@@ -18,23 +18,22 @@ export function ProductShowcase() {
   return (
     <section
       id="product-showcase"
-      className="py-10 sm:py-12 lg:py-20 px-6 sm:px-10 md:px-20 lg:px-28"
+      className="py-10 sm:py-12 lg:py-20 px-6 sm:px-10 md:px-20 xl:px-28"
     >
-      {/* Heading — proactive suggestions is the lead engine */}
+      {/* Heading — the on-site widget experience */}
       <div className="mx-auto max-w-2xl text-center">
         <p className="text-xs uppercase tracking-widest text-gray-400 mb-2 font-medium">
-          Proactive Suggestions
+          See it in action
         </p>
         <h2
-          className="landing-strong text-2xl md:text-3xl xl:text-4xl leading-tight"
+          className="landing-strong text-2xl md:text-3xl xl:text-4xl leading-tight text-balance"
           style={{ color: GREEN }}
         >
-          Watch a visitor become a lead.
+          An always-on support rep,
+          <br className="hidden sm:block" /> right on your site.
         </h2>
         <p className="text-gray-500 text-base leading-relaxed mt-4">
-          The teaser bubbles above your chat launcher pull passive visitors into
-          a conversation — and Neylon turns that conversation into a qualified
-          lead.
+          Neylon runs in a chat widget on your site — greeting visitors, answering from your docs, and capturing leads, so repetitive questions never hit your inbox.
         </p>
       </div>
 
