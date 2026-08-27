@@ -24,7 +24,6 @@ export default async function SiteLayout({
 }>) {
   const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
 
-  // Same as a customer embed: publishable key for this deployment’s org.
   const siteApiKey = getSiteWidgetApiKey();
   const initialUser = await getLandingUser();
 
