@@ -30,6 +30,9 @@ apps/web  →  @neylonai/sdk (chatbot UI)  →  Neylon AI API
 - Website knowledge via Postgres/pgvector
 - Proactive suggestion bubbles + optional sound
 - Conversation threads and memory
+- Embedded Widget Customization (Logo, Bricolage Grotesque font, Curated themes)
+- Setup Wizard (1-click website crawling & AI persona generation)
+- Script-tag SDK installation
 - Specialized agents (plan-gated)
 - CRM / notification integrations (plan-gated)
 - Meeting-link sharing, team notifications
