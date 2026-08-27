@@ -4,29 +4,11 @@ import { usePathname } from "next/navigation";
 import Script from "next/script";
 import { useSessionView } from "@/components/session-view";
 
-export function SupportWidgetHost({
-  apiKey: apiKeyProp = null,
-}: {
-  apiKey?: string | null;
-} = {}) {
+export function SupportWidgetHost() {
   const pathname = usePathname();
   const { user } = useSessionView();
 
-  const apiKey =
-    apiKeyProp?.trim() ||
-    process.env.NEXT_PUBLIC_NEYLONAI_API_KEY?.trim() ||
-    null;
-
   if (pathname?.startsWith("/dashboard") || pathname?.startsWith("/admin")) {
-    return null;
-  }
-
-  if (!apiKey) {
-    if (process.env.NODE_ENV === "development") {
-      console.warn(
-        "[Neylon AI] No site API key — set NEXT_PUBLIC_NEYLONAI_API_KEY.",
-      );
-    }
     return null;
   }
 
@@ -34,7 +16,7 @@ export function SupportWidgetHost({
     <Script
       src="/v1/widget.js"
       strategy="afterInteractive"
-      data-key={apiKey}
+      data-key="nk_live_td_-B38dwvP5MsQeXqAFPvls4L9pxXAW"
       data-user-id={user?.id || ""}
       data-user-email={user?.email || ""}
       data-user-name={user?.name || ""}

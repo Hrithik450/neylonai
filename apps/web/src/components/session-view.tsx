@@ -38,8 +38,6 @@ export function SessionViewProvider({
   const seededRef = useRef(false);
 
   useEffect(() => {
-    // Seed once per document: later sign-in/sign-out must not be overwritten by
-    // a cached router payload carrying the original cookie state.
     if (seededRef.current) return;
     seededRef.current = true;
     setUser(initialUser);
@@ -59,7 +57,6 @@ export function SessionViewProvider({
   );
 }
 
-/** Session for rendering. Falls back to the store outside the site shell. */
 export function useSessionView(): SessionView {
   const provided = useContext(SessionViewContext);
   const storeUser = useSessionStore((state) => state.user);
