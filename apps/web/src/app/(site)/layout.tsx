@@ -2,7 +2,6 @@ import React, { Suspense } from "react";
 import { Navbar } from "@/components/navigation/navbar";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { SupportWidgetHost } from "@/components/support-widget-host";
-import { getSiteWidgetApiKey } from "@/server/site-widget";
 import { OnboardingOverlay } from "@/components/landing-page/onboarding-overlay";
 import { SessionViewProvider } from "@/components/session-view";
 import { getLandingUser } from "@/server/landing-user";
@@ -15,7 +14,6 @@ import {
 } from "../jsonld";
 
 import { LayoutWrapper } from "../layout-wrapper";
-import { TrackingProvider } from "@/components/landing-page/tracking-provider";
 
 export default async function SiteLayout({
   children,
@@ -23,8 +21,6 @@ export default async function SiteLayout({
   children: React.ReactNode;
 }>) {
   const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
-
-  const siteApiKey = getSiteWidgetApiKey();
   const initialUser = await getLandingUser();
 
   return (
@@ -36,17 +32,15 @@ export default async function SiteLayout({
         <FAQJsonLd />
 
         <SessionViewProvider initialUser={initialUser}>
-          <TrackingProvider>
-            <Suspense fallback={null}>
-              <div className={landingFontClassName}>
-                <Navbar />
-                {children}
-                <OnboardingOverlay />
-              </div>
+          <Suspense fallback={null}>
+            <div className={landingFontClassName}>
+              <Navbar />
+              {children}
+              <OnboardingOverlay />
+            </div>
 
-              <SupportWidgetHost apiKey={siteApiKey} />
-            </Suspense>
-          </TrackingProvider>
+            <SupportWidgetHost />
+          </Suspense>
         </SessionViewProvider>
       </LayoutWrapper>
     </GoogleOAuthProvider>

@@ -30,8 +30,6 @@ export function SupportWidgetHost({
     return null;
   }
 
-  // Example of using the new Script Tag Injection method securely on your own site!
-  // We pass the user attributes straight to the script tag (which we just built).
   return (
     <Script
       src="/v1/widget.js"
