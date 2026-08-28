@@ -67,7 +67,7 @@ export interface BuildSuggestionsInput {
 /** Page suggestions delivered per tab session (excluding welcome bubbles). */
 const SESSION_BATCH_SIZE = 4;
 /** One bubble per completed support-widget interaction. */
-const POST_CHAT_SUGGESTION_COUNT = 1;
+const POST_CHAT_SUGGESTION_COUNT = 4;
 const FALLBACK_BATCH_SIZE = 5;
 
 const PERSONALIZED_CACHE_TTL_SEC = 90;
@@ -584,11 +584,6 @@ async function buildContextualPool(params: {
       bonus: BONUS_MODEL,
       pagePath: params.pagePath,
     }),
-    ...textsToCandidates(getBuiltInPageSuggestions(params.pagePath), {
-      source: "page",
-      bonus: BONUS_BUILT_IN_PAGE,
-      pagePath: params.pagePath,
-    }),
     ...seedsToCandidates(seeds),
   ];
 
@@ -647,7 +642,7 @@ export async function buildProactiveSuggestions(
       ? POST_CHAT_SUGGESTION_COUNT
       : mode === "fallback"
         ? FALLBACK_BATCH_SIZE
-        : Math.min(Math.max(input.limit ?? SESSION_BATCH_SIZE, 4), 5);
+        : Math.min(Math.max(input.limit ?? SESSION_BATCH_SIZE, 1), 20);
 
   const canCachePersonalized = Boolean(
     input.visitorId?.trim() || input.sessionId?.trim(),

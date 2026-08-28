@@ -21,6 +21,7 @@ import {
 import {
   dequeueNextSuggestion,
   enqueueSuggestions,
+  prependSuggestions,
   type QueuedSuggestion,
 } from "./suggestion-queue";
 import {
@@ -29,7 +30,7 @@ import {
 } from "./context-fingerprint";
 
 /** One deeply personalized bubble per completed support-widget interaction. */
-const ON_DEMAND_BATCH_SIZE = 1;
+const ON_DEMAND_BATCH_SIZE = 4;
 const FALLBACK_BATCH_SIZE = 5;
 const MAX_SHOWN_IDS = 120;
 
@@ -103,7 +104,10 @@ export function useProactiveSuggestions() {
   const hasWork = useCallback(
     () =>
       stateRef.current.pendingOnDemand ||
-      sessionBudgetRemaining(stateRef.current) > 0,
+      sessionBudgetRemaining(stateRef.current) > 0 ||
+      stateRef.current.suggestionQueue.items.some(
+        (item) => item.source === "recent_conversation",
+      ),
     [],
   );
 
@@ -185,7 +189,7 @@ export function useProactiveSuggestions() {
               ? ON_DEMAND_BATCH_SIZE
               : mode === "fallback"
                 ? FALLBACK_BATCH_SIZE
-                : Math.min(Math.max(proactive.poolLimit, 4), 5),
+                : Math.min(Math.max(proactive.poolLimit, 1), 20),
           excludeIds: stateRef.current.shownIds.slice(-40),
           isFirstVisit: !stateRef.current.hasVisitedBefore,
           isReturningSession:
@@ -211,11 +215,11 @@ export function useProactiveSuggestions() {
 
   /** The reward for one completed interaction — uncapped, freshly generated. */
   const takeOnDemand =
-    useCallback(async (): Promise<ProactiveSuggestionDto | null> => {
+    useCallback(async (): Promise<ProactiveSuggestionDto[]> => {
       const data = await fetchBatch("post_chat");
       // Consume the context either way so one interaction earns one bubble.
       markContextConsumed();
-      return data[0] ?? null;
+      return data;
     }, [fetchBatch, markContextConsumed]);
 
   const refillSessionQueue = useCallback(async (): Promise<boolean> => {
@@ -313,26 +317,35 @@ export function useProactiveSuggestions() {
 
         // 1. An earned on-demand bubble outranks everything and ignores the cap.
         if (stateRef.current.pendingOnDemand) {
-          const onDemand = await takeOnDemand();
+          const onDemandBatch = await takeOnDemand();
           if (!canShow()) return;
-          if (onDemand) {
-            presentSuggestion(
-              {
-                id: onDemand.id,
-                text: onDemand.text,
-                // Force the exempt source so the cap is never charged for it.
-                source: "recent_conversation",
-              },
-              triggerType,
-            );
-            return;
+          
+          if (onDemandBatch.length > 0) {
+            // Force the exempt source so the cap is never charged for them.
+            const VIPBatch = onDemandBatch.map(s => ({
+              ...s,
+              source: "recent_conversation" as const
+            }));
+            
+            stateRef.current = {
+              ...stateRef.current,
+              pendingOnDemand: false,
+              suggestionQueue: prependSuggestions(
+                stateRef.current.suggestionQueue,
+                VIPBatch
+              )
+            };
+          } else {
+            stateRef.current = { ...stateRef.current, pendingOnDemand: false };
           }
-          stateRef.current = { ...stateRef.current, pendingOnDemand: false };
           persist();
         }
 
         // 2. Session cap reached — stay silent until the visitor chats again.
-        if (sessionBudgetRemaining(stateRef.current) <= 0) return;
+        // Exempt on-demand bubbles ("recent_conversation") bypass the cap.
+        const nextInQueue = stateRef.current.suggestionQueue.items[0];
+        const isNextExempt = nextInQueue?.source === "recent_conversation";
+        if (!isNextExempt && sessionBudgetRemaining(stateRef.current) <= 0) return;
 
         let next = takeFromQueue();
         if (!next) {

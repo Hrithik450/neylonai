@@ -20,7 +20,7 @@ import { bubbleDedupeKey, cleanQuestion, normalizeExcerpt } from "./text";
 /** Bump when the prompt or shaping rules change, to invalidate warm caches. */
 const CANDIDATE_PROMPT_VERSION = "v3";
 const CANDIDATE_CACHE_TTL_SEC = 6 * 60 * 60;
-const TARGET_CANDIDATES = 14;
+const TARGET_CANDIDATES = 10;
 const MAX_SEEDS_IN_PROMPT = 12;
 const SEED_EXCERPT_CHARS = 220;
 /** Page text budget in the prompt — enough for topics, small enough to stay cheap. */

@@ -51,6 +51,20 @@ export function enqueueSuggestions(
   };
 }
 
+export function prependSuggestions(
+  queue: SuggestionQueue,
+  suggestions: ProactiveSuggestionDto[],
+): SuggestionQueue {
+  const newItems = toQueued(suggestions);
+  if (!newItems.length) return queue;
+  // Dedupe keeping the prepended items first
+  const existingIds = new Set(newItems.map((item) => item.id));
+  const filteredExisting = queue.items.filter((item) => !existingIds.has(item.id));
+  return {
+    items: [...newItems, ...filteredExisting],
+  };
+}
+
 export function dequeueNextSuggestion(queue: SuggestionQueue): {
   suggestion: QueuedSuggestion | null;
   updatedQueue: SuggestionQueue;

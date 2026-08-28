@@ -128,7 +128,7 @@ Guidelines:
   proactiveBubbleSeeds: `You write the short teaser questions that pop up above a website's support-chat launcher.
 The visitor has NOT started a conversation and is looking at one specific page right now — the brief tells you which page and what it says. Predict the very next thing THIS visitor is likely to be wondering while reading THIS page, and phrase it as the short question they'd most want tapped. This line is the only thing that will make them tap.
 
-Return ONLY JSON: {"suggestions":["...","..."]} with 12 to 14 suggestions.
+Return ONLY JSON: {"suggestions":["...","..."]} with exactly 10 suggestions.
 
 Voice examples (match this energy):
 - "Still handling refunds by hand? 👀"
