@@ -118,11 +118,11 @@ const MessageBubble = memo(
         <div
           className={cn(
             "flex min-w-0 max-w-[75%] flex-col ml-auto",
-            groupedWithPrevious ? "mt-1" : "mt-3",
+            groupedWithPrevious ? "mt-0.5" : "mt-0",
           )}
         >
           <p
-            className="py-3 px-3 border text-sm md:text-base leading-snug rounded-lg rounded-br-sm break-words [overflow-wrap:anywhere]"
+            className="py-2.5 px-3 border text-sm md:text-base leading-snug rounded-2xl rounded-br-sm break-words [overflow-wrap:anywhere]"
             style={{
               backgroundColor: humanMessageBackground,
               color: humanText,
@@ -146,8 +146,8 @@ const MessageBubble = memo(
         className={cn(
           "max-w-full min-w-0 [content-visibility:auto]",
           groupedWithPrevious
-            ? "mt-0.5 pt-0 px-3 md:px-2"
-            : "mt-2.5 px-3 py-2 md:px-2",
+            ? "mt-0 pt-0 px-3 md:px-2"
+            : "mt-0 px-3 py-0 md:px-2",
         )}
       >
         <div
@@ -172,13 +172,13 @@ const MessageBubble = memo(
           </div>
         </div>
         {showActions && !isStreaming ? (
-          <div className="flex justify-start space-x-2 mt-1">
+          <div className="flex justify-start space-x-2 mt-2 -ml-1.5">
             <Button
               type="button"
               variant="ghost"
               size="icon-sm"
               onClick={copyToClipboard}
-              className="cursor-pointer"
+              className="cursor-pointer !bg-transparent !border-none !shadow-none hover:opacity-80 transition-opacity"
               style={{ color: secondaryTextColor }}
               title="Copy"
               aria-label="Copy message"
@@ -190,7 +190,7 @@ const MessageBubble = memo(
               variant="ghost"
               size="icon-sm"
               onClick={() => void sendFeedback(true)}
-              className="cursor-pointer"
+              className="cursor-pointer !bg-transparent !border-none !shadow-none hover:opacity-80 transition-opacity"
               style={{ color: rating === "up" ? "#047857" : secondaryTextColor }}
               title="Helpful"
               aria-label="Mark answer helpful"
@@ -203,12 +203,12 @@ const MessageBubble = memo(
               variant="ghost"
               size="icon-sm"
               onClick={() => void sendFeedback(false)}
-              className="cursor-pointer"
+              className="cursor-pointer !bg-transparent !border-none !shadow-none hover:opacity-80 transition-opacity"
               style={{
                 color: rating === "down" ? "#dc2626" : secondaryTextColor,
               }}
               title="Not helpful"
-              aria-label="Mark answer not helpful"
+              aria-label="Mark answer unhelpful"
               aria-pressed={rating === "down"}
             >
               <ThumbsDown size={17} />
@@ -346,21 +346,43 @@ export function ConversationUI({
 
   const jumpToBottom = useCallback(() => {
     stopSmoothScroll();
-    const el = scrollRef.current;
-    if (!el) {
-      bottomRef.current?.scrollIntoView({ behavior: "auto" });
-      return;
-    }
-    el.scrollTop = el.scrollHeight;
-    userScrolledUpRef.current = false;
-    setShowScrollButton(false);
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        const el = scrollRef.current;
+        if (!el) {
+          bottomRef.current?.scrollIntoView({ behavior: "auto" });
+          return;
+        }
+        el.scrollTop = el.scrollHeight;
+        
+        // Check if it's actually at the bottom now
+        const isAtBottom = el.scrollHeight - el.scrollTop <= el.clientHeight + 64;
+        setShowScrollButton(!isAtBottom);
+        userScrolledUpRef.current = false;
+      }, 0);
+    });
   }, [stopSmoothScroll]);
 
   const last = conversations?.[conversations.length - 1];
   const lastContent = last?.content ?? "";
   const lastId = last?.id ?? "";
 
+  const hasPopulatedRef = useRef(false);
+  const firstMessageIdRef = useRef(conversations?.[0]?.id);
+
+  if (conversations?.[0]?.id !== firstMessageIdRef.current) {
+    firstMessageIdRef.current = conversations?.[0]?.id;
+    hasPopulatedRef.current = false;
+  }
+
   useLayoutEffect(() => {
+    if (conversations && conversations.length > 0 && !hasPopulatedRef.current) {
+      hasPopulatedRef.current = true;
+      userScrolledUpRef.current = false; // Force reset ignoring rogue scrolls
+      jumpToBottom();
+      return;
+    }
+
     if (userScrolledUpRef.current) return;
 
     const el = scrollRef.current;
@@ -372,7 +394,7 @@ export function ConversationUI({
       // During streaming, jump immediately to keep content visible
       // But only if we're already near the bottom or content is actively updating
       if (isAtBottom || lastContent !== prevContentRef.current) {
-        el.scrollTop = el.scrollHeight;
+        jumpToBottom();
       }
       prevContentRef.current = lastContent;
       return;
@@ -380,7 +402,7 @@ export function ConversationUI({
 
     // After a turn settles, land exactly on the bottom once.
     jumpToBottom();
-  }, [lastContent, lastId, assistantTyping, isStreaming, jumpToBottom]);
+  }, [conversations, lastContent, lastId, assistantTyping, isStreaming, jumpToBottom]);
 
   useEffect(() => () => stopSmoothScroll(), [stopSmoothScroll]);
 

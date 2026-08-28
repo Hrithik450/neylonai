@@ -68,7 +68,7 @@ export function WidgetFaqs() {
   if (faqs.length === 0) return null;
 
   return (
-    <div className="space-y-2.5">
+    <div className="space-y-1">
       <div className="flex items-center gap-1.5 px-0.5">
         <HelpCircle className="w-3.5 h-3.5" style={{ color: accent }} aria-hidden />
         <h4

@@ -20,7 +20,7 @@ export function WidgetIntroText() {
   const rawGreeting = (
     config.messages.welcomeGreeting || "Hi {name} 👋"
   ).replace("{name}", name);
-  // Keep the classic wave on the headline even if a saved config omitted it.
+
   const greeting = /\p{Extended_Pictographic}/u.test(rawGreeting)
     ? rawGreeting.replace(/(\S)(\p{Extended_Pictographic})/gu, "$1 $2")
     : `${rawGreeting.trimEnd()} 👋`;
@@ -49,13 +49,13 @@ export function WidgetIntroText() {
       style={{ color: config.branding.primaryTextColor, fontFamily }}
     >
       <h2
-        className="text-2xl font-bold mb-1 min-h-[2rem] break-words"
+        className="text-2xl font-bold mb-0 leading-none min-h-[1em] break-words"
         style={{ fontFamily }}
       >
         <span>{introText}</span>
       </h2>
       <p
-        className="text-lg font-normal min-h-6 break-words line-clamp-2"
+        className="mt-4 text-lg font-normal leading-tight min-h-[1em] break-words line-clamp-2"
         style={{
           color: config.branding.secondaryTextColor,
           fontFamily,

@@ -36,13 +36,13 @@ function ThreadPreview({
     <button
       type="button"
       onClick={action}
-      className="group flex items-center p-3 w-full text-left space-x-3 cursor-pointer hover:opacity-80 transition-opacity border-b"
+      className="group flex items-center py-1 px-3 w-full text-left space-x-4 cursor-pointer !bg-transparent hover:opacity-80 transition-opacity border-b"
       style={{ borderColor }}
     >
       <div className="shrink-0">
         <div
-          className="p-2 border rounded-full shadow-sm"
-          style={{ backgroundColor: surfaceColor, borderColor }}
+          className="p-2 rounded-full"
+          style={{ backgroundColor: surfaceColor }}
         >
           <Icon className="w-6 h-6" style={{ color: primaryTextColor }} />
         </div>
@@ -50,12 +50,12 @@ function ThreadPreview({
 
       <div className="flex-1 min-w-0">
         <p
-          className="text-base font-medium line-clamp-1"
+          className="text-base font-medium line-clamp-1 leading-none"
           style={{ color: primaryTextColor }}
         >
           {thread_title}
         </p>
-        <p className="text-sm line-clamp-1" style={{ color: secondaryTextColor }}>
+        <p className="text-sm line-clamp-1 leading-none mt-0.5" style={{ color: secondaryTextColor }}>
           {sender_name} &bull; {timestamp}
         </p>
       </div>

@@ -1,11 +1,10 @@
 "use client";
 
-import { ArrowLeftIcon, X, Minimize2, Maximize2 } from "lucide-react";
-import { cn } from "../../ui";
 import React from "react";
-import { Button } from "../../ui";
-import { useWidgetToggleStore } from "../store/widget-store";
+import { cn } from "../../ui";
 import { useWidgetHost } from "../context/widget-host";
+import { useWidgetToggleStore } from "../store/widget-store";
+import { ArrowLeftIcon, X, Minimize2, Maximize2 } from "lucide-react";
 
 interface WidgetHeaderProps {
   header?: string;
@@ -14,15 +13,16 @@ interface WidgetHeaderProps {
   leading?: React.ReactNode;
 }
 
-/** Shared collapse + close controls used by every widget screen header. */
+
 export function WidgetChromeActions() {
   const { isOpen, setIsOpen, isCollapse, setCollapse } = useWidgetToggleStore();
 
   return (
-    <div className="flex justify-end items-center gap-2">
+    <div className="flex justify-end items-center gap-4">
       <button
         type="button"
-        className="hidden md:inline-flex cursor-pointer p-1 hover:opacity-70 transition-opacity" style={{ background: "transparent", border: "none", boxShadow: "none" }}
+        className="hidden md:inline-flex cursor-pointer p-1 hover:opacity-70 transition-opacity !bg-transparent !border-none !shadow-none" 
+        style={{ background: "transparent", border: "none", boxShadow: "none" }}
         onClick={() => setCollapse(!isCollapse)}
         aria-label={isCollapse ? "Expand widget" : "Collapse widget"}
       >
@@ -35,7 +35,8 @@ export function WidgetChromeActions() {
 
       <button
         type="button"
-        className="cursor-pointer p-1 hover:opacity-70 transition-opacity" style={{ background: "transparent", border: "none", boxShadow: "none" }}
+        className="cursor-pointer p-1 hover:opacity-70 transition-opacity !bg-transparent !border-none !shadow-none" 
+        style={{ background: "transparent", border: "none", boxShadow: "none" }}
         onClick={() => setIsOpen(!isOpen)}
         aria-label="Close widget"
         data-testid="widget-close"
@@ -56,7 +57,7 @@ export const WidgetHeader: React.FC<WidgetHeaderProps> = ({
   return (
     <nav
       className={cn(
-        "py-0 flex items-center border-b-2 border-black/10",
+        "py-2 flex items-center border-b-2 border-black/10",
         className,
       )}
       style={{ background: config.branding.gradientFrom }}
@@ -67,7 +68,8 @@ export const WidgetHeader: React.FC<WidgetHeaderProps> = ({
           {!leading && action && (
             <button
               type="button"
-              className="cursor-pointer p-1 hover:opacity-70 transition-opacity" style={{ background: "transparent", border: "none", boxShadow: "none" }}
+              className="cursor-pointer p-1 hover:opacity-70 transition-opacity !bg-transparent !border-none !shadow-none" 
+              style={{ background: "transparent", border: "none", boxShadow: "none" }}
               onClick={action}
               aria-label="Go back"
             >
@@ -80,7 +82,7 @@ export const WidgetHeader: React.FC<WidgetHeaderProps> = ({
           {header ? (
             <h3
               title={header}
-              className="max-w-full truncate text-center text-lg font-semibold"
+              className="m-0 p-0 max-w-full truncate text-center text-sm font-semibold leading-none"
             >
               {header}
             </h3>

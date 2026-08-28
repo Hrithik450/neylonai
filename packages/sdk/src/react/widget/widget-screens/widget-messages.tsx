@@ -10,6 +10,7 @@ import { ConversationUI } from "../conversation-ui";
 import { WidgetLoader } from "../widget-loader";
 
 import { useWidgetNavigation } from "../../hooks/use-widget-navigation";
+import { useWidgetFont } from "../../hooks/use-widget-font";
 import { useThreadMessageStore, useThreadStore } from "../../store/thread-store";
 import { useWidgetMessageHandler } from "../../hooks/use-message-handler";
 import { useWidgetHost } from "../../context/widget-host";
@@ -28,6 +29,7 @@ export function WidgetMessages({ threadId, title }: WidgetMessagesProps) {
   const { messages, setMessages } = useThreadMessageStore();
   const { threads, setCurrentThreadId } = useThreadStore();
   const { config, user } = useWidgetHost();
+  const { fontFamily } = useWidgetFont(config.branding.font);
 
   const { back } = useWidgetNavigation();
   const { sendMessage, stopStreaming } = useWidgetMessageHandler();
@@ -141,7 +143,10 @@ export function WidgetMessages({ threadId, title }: WidgetMessagesProps) {
   }, [threadId, setCurrentThreadId, setMessages, config.staticDemo, user?.id]);
 
   return (
-    <div className={cn("flex flex-col h-full min-h-0 min-w-0")}>
+    <div 
+      className={cn("flex flex-col h-full min-h-0 min-w-0")}
+      style={{ fontFamily }}
+    >
       <WidgetHeader
         className="sticky top-0 shrink-0"
         header={title || "New Chat"}
@@ -154,16 +159,16 @@ export function WidgetMessages({ threadId, title }: WidgetMessagesProps) {
         ) : null}
 
         {showEmpty ? (
-          <div className="w-full flex-1 min-h-0 overflow-y-auto flex flex-col items-center justify-center text-center px-5 gap-4">
-            <div className="space-y-1.5 max-w-sm">
+          <div className="w-full flex-1 min-h-0 overflow-y-auto flex flex-col items-center justify-center text-center px-5 gap-2">
+            <div className="space-y-0.5 w-full max-w-sm">
               <h2
-                className="text-lg font-semibold"
+                className="text-lg font-semibold leading-none"
                 style={{ color: accent }}
               >
                 Ask anything
               </h2>
               <p
-                className="text-sm flex items-center justify-center gap-1.5"
+                className="text-sm flex items-center justify-center gap-1.5 leading-tight"
                 style={{ color: secondary }}
               >
                 <BookOpen className="w-3.5 h-3.5 shrink-0" aria-hidden />
@@ -181,14 +186,14 @@ export function WidgetMessages({ threadId, title }: WidgetMessagesProps) {
                     type="button"
                     variant="outline"
                     onClick={() => void sendMessage(question)}
-                    className="h-auto cursor-pointer justify-between gap-3 rounded-xl border px-3.5 py-2.5 text-left shadow-none hover:opacity-95"
+                    className="h-auto w-full cursor-pointer justify-between gap-3 rounded-xl border px-3 py-1.5 text-left shadow-none hover:opacity-95"
                     style={{
                       backgroundColor: surface,
                       borderColor: config.branding.borderColor,
                     }}
                   >
                     <span
-                      className="text-sm font-medium leading-snug"
+                      className="text-sm font-medium leading-tight break-words whitespace-normal flex-1"
                       style={{ color: accent }}
                     >
                       {question}

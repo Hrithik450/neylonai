@@ -248,6 +248,7 @@ function SupportWidgetInner({
   return (
     <div
       className={cn(
+        "neylon-widget-root",
         inline
           ? "relative z-10 flex flex-col items-end w-full h-full min-w-0 max-w-full overflow-hidden justify-end"
           : "fixed z-[110] flex flex-col",

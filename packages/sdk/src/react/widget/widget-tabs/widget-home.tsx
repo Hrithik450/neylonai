@@ -77,7 +77,7 @@ export function WidgetHome() {
       style={{ fontFamily }}
     >
       <div
-        className="py-2 pb-3 px-2 max-md:rounded-none rounded-b-2xl"
+        className="py-2 pb-1 px-2 max-md:rounded-none rounded-b-2xl"
         style={{ color: branding.primaryTextColor }}
       >
         <div className="flex justify-between items-center">
@@ -119,7 +119,7 @@ export function WidgetHome() {
         <WidgetIntroText />
 
         <p
-          className="mt-3 px-1 text-xs flex items-center gap-1.5"
+          className="mt-6.5 px-1 text-xs flex items-center gap-1.5"
           style={{ color: branding.secondaryTextColor }}
         >
           <BookOpen className="w-3.5 h-3.5 shrink-0" aria-hidden />
@@ -132,7 +132,7 @@ export function WidgetHome() {
         </p>
       </div>
 
-      <div className="pb-5 px-2 space-y-5">
+      <div className="pb-5 px-2 space-y-2">
         <Button
           type="button"
           variant="ghost"

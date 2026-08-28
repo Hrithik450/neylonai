@@ -2,3 +2,15 @@
 @import "tailwindcss/theme.css" layer(theme);
 @import "tailwindcss/utilities.css" layer(utilities);
 @source "./react";
+
+.neylon-widget-root, .neylon-widget-root * {
+  box-sizing: border-box;
+}
+
+.neylon-widget-root button,
+.neylon-widget-root input,
+.neylon-widget-root textarea,
+.neylon-widget-root select {
+  font-family: inherit;
+  color: inherit;
+}

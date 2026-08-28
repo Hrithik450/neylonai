@@ -52,7 +52,7 @@ export function LauncherSuggestionBubble({
           onClick={() => onSelect?.(suggestion.text)}
           className={cn(
             "relative block w-full text-left rounded-2xl border",
-            "backdrop-blur-sm shadow-lg px-3.5 py-3",
+            "backdrop-blur-sm shadow-lg px-3.5 pt-0.5 pb-2.5",
             "cursor-pointer hover:shadow-xl transition-shadow",
           )}
           style={{ backgroundColor: surfaceColor, borderColor }}
@@ -64,7 +64,7 @@ export function LauncherSuggestionBubble({
             {suggestion.text}
           </p>
           <span
-            className="mt-1.5 block text-[11px] font-medium"
+            className="mt-0.5 block text-[11px] font-medium"
             style={{ color: secondaryTextColor }}
           >
             Tap to ask
@@ -84,7 +84,7 @@ export function LauncherSuggestionBubble({
           data-testid="suggestion-bubble"
           className={cn(
             "relative rounded-2xl border",
-            "backdrop-blur-sm shadow-lg px-3.5 py-3",
+            "backdrop-blur-sm shadow-lg px-3.5 pt-0.5 pb-1.5",
           )}
           style={{ backgroundColor: surfaceColor, borderColor }}
         >
