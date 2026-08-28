@@ -11,7 +11,7 @@ async function jsonRequest<T>(
   try {
     const response = await fetch(apiUrl(path), {
       ...init,
-      credentials: "include",
+      
       headers: { ...auth.headers, ...(init.headers ?? {}) },
     });
     return (await response.json()) as {
@@ -82,7 +82,7 @@ export function getLatestHumanReply(visitorId: string): Promise<{
     apiUrl(
       `/api/v1/conversations/human-replies/latest?visitorId=${encodeURIComponent(visitorId)}`,
     ),
-    { credentials: "include", headers: auth.headers },
+    {  headers: auth.headers },
   )
     .then(
       (response) =>

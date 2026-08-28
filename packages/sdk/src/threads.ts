@@ -10,7 +10,7 @@ export async function listThreads(userId: string): Promise<ThreadsResponse> {
 
   try {
     const response = await fetch(apiUrl(`/api/v1/threads/user/${userId}`), {
-      credentials: "include",
+      
       headers: auth.headers,
     });
     return (await response.json()) as ThreadsResponse;
@@ -38,7 +38,7 @@ export async function listMessages(
         `/api/v1/thread_messages/${threadId}?visitorId=${encodeURIComponent(visitorId)}`,
       ),
       {
-        credentials: "include",
+        
         headers: auth.headers,
       },
     );
