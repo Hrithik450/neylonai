@@ -58,13 +58,13 @@ export function LauncherSuggestionBubble({
           style={{ backgroundColor: surfaceColor, borderColor }}
         >
           <p
-            className="text-sm leading-snug whitespace-normal break-words line-clamp-2"
+            className="m-0 p-0 text-sm leading-snug whitespace-normal break-words line-clamp-2"
             style={{ color: primaryTextColor }}
           >
             {suggestion.text}
           </p>
           <span
-            className="mt-1.5 block text-[11px] font-medium"
+            className="m-0 p-0 mt-1.5 block text-[11px] font-medium"
             style={{ color: secondaryTextColor }}
           >
             Tap to ask
@@ -89,7 +89,7 @@ export function LauncherSuggestionBubble({
           style={{ backgroundColor: surfaceColor, borderColor }}
         >
           <p
-            className="text-sm leading-snug whitespace-normal break-words line-clamp-2"
+            className="m-0 p-0 text-sm leading-snug whitespace-normal break-words line-clamp-2"
             style={{ color: primaryTextColor }}
           >
             {suggestion.text}
