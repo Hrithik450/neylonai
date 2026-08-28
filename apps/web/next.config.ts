@@ -65,6 +65,17 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "images.unsplash.com", port: "" },
     ],
   },
+  async headers() {
+    return [
+      {
+        source: "/sounds/(.*)",
+        headers: [
+          { key: "Access-Control-Allow-Origin", value: "*" },
+          { key: "Access-Control-Allow-Methods", value: "GET, OPTIONS" },
+        ],
+      },
+    ];
+  },
   reactStrictMode: false,
 };
 
