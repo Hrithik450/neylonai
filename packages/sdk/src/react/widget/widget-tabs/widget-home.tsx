@@ -16,7 +16,6 @@ import { useWidgetHost } from "../../context/widget-host";
 import { useThreadStore } from "../../store/thread-store";
 import { useWidgetFont } from "../../hooks/use-widget-font";
 
-/** Three-person team glyph (lucide has no UsersThree). */
 function TeamIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -119,10 +118,10 @@ export function WidgetHome() {
         <WidgetIntroText />
 
         <p
-          className="mt-6.5 px-1 text-xs flex items-center gap-1.5"
+          className="mt-4.5 px-1 text-[13px] flex items-center gap-1.5"
           style={{ color: branding.secondaryTextColor }}
         >
-          <BookOpen className="w-3.5 h-3.5 shrink-0" aria-hidden />
+          <BookOpen className="w-4 h-4 shrink-0" aria-hidden />
           <span>
             {branding.name?.trim()
               ? `Answers from ${branding.name.trim()}'s knowledge`
@@ -132,7 +131,7 @@ export function WidgetHome() {
         </p>
       </div>
 
-      <div className="pb-5 px-2 space-y-2">
+      <div className="pb-5 px-2 space-y-4">
         <Button
           type="button"
           variant="ghost"

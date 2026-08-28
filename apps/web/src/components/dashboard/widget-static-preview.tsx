@@ -115,7 +115,7 @@ export function WidgetStaticPreview({
 
   return (
     <WidgetHostProvider config={resolved}>
-      <div className="relative z-10 flex flex-col items-end w-full h-full min-w-0 max-w-full overflow-hidden justify-end">
+      <div className="dashboard-widget-mock relative z-10 flex flex-col items-end w-full h-full min-w-0 max-w-full overflow-hidden justify-end">
         <Widget />
         <PreviewLauncher />
       </div>

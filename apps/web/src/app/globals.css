@@ -646,3 +646,31 @@ html {
   50% { transform: translateX(4px); opacity: 1; }
 }
 
+@layer base {
+  /* The SDK preview intentionally renders without Tailwind Preflight on host
+     sites, so restore browser defaults inside the dashboard mock only. */
+  .dashboard-widget-mock :where(
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6,
+    p,
+    ul,
+    ol,
+    menu,
+    dl,
+    blockquote,
+    figure,
+    pre,
+    hr
+  ) {
+    margin: revert;
+  }
+
+  .dashboard-widget-mock :where(ul, ol, menu) {
+    padding-inline-start: revert;
+    list-style: revert;
+  }
+}
