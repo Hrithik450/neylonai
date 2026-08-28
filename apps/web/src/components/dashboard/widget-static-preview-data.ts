@@ -21,7 +21,7 @@ export const STATIC_DEMO_MESSAGES: ThreadMessage[] = [
   {
     id: "demo-m1",
     thread_id: "demo-thread-1",
-    role: "human",
+    role: "user",
     content: "How do I customize the widget colors?",
     created_at: "2026-08-11T10:00:00.000Z",
   },
@@ -36,7 +36,7 @@ export const STATIC_DEMO_MESSAGES: ThreadMessage[] = [
   {
     id: "demo-m3",
     thread_id: "demo-thread-1",
-    role: "human",
+    role: "user",
     content: "Can visitors escalate to a person?",
     created_at: "2026-08-11T10:00:18.000Z",
   },

@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2, Mic, CircleStop } from "lucide-react";
+import { Loader2, Mic, Square } from "lucide-react";
 import { Button, PromptInputAction } from "../../ui";
 import { useWidgetHost } from "../context/widget-host";
 
@@ -54,7 +54,7 @@ export function MicButton({
         {busy ? (
           <Loader2 className="size-4 animate-spin" />
         ) : isRecording ? (
-          <CircleStop className="size-4" style={{ fill: "currentColor" }} />
+          <Square className="size-4" style={{ fill: "currentColor" }} />
         ) : (
           <Mic className="size-4" />
         )}

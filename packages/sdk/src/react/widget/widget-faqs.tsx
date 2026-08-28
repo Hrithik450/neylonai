@@ -44,7 +44,7 @@ function FaqAnswer({
         transition: `height ${EXPAND_MS}ms cubic-bezier(0.22, 1, 0.36, 1), opacity ${Math.round(EXPAND_MS * 0.75)}ms ease`,
       }}
     >
-      <div ref={innerRef} className="pt-2">
+      <div ref={innerRef} className="pt-1">
         {children}
       </div>
     </div>
@@ -127,7 +127,7 @@ export function WidgetFaqs() {
 
               <FaqAnswer open={open}>
                 <p
-                  className="pl-7 pr-1 text-sm leading-relaxed"
+                  className="m-0 pl-7 pr-1 text-sm leading-relaxed"
                   style={{ color: secondary }}
                 >
                   {faq.answer}

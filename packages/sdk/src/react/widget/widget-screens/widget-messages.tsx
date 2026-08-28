@@ -186,7 +186,7 @@ export function WidgetMessages({ threadId, title }: WidgetMessagesProps) {
                     type="button"
                     variant="outline"
                     onClick={() => void sendMessage(question)}
-                    className="h-auto w-full cursor-pointer justify-between gap-3 rounded-xl border px-3 py-1.5 text-left shadow-none hover:opacity-95"
+                    className="h-auto w-full cursor-pointer justify-between gap-3 rounded-xl border px-3 py-2.5 text-left shadow-none hover:opacity-95"
                     style={{
                       backgroundColor: surface,
                       borderColor: config.branding.borderColor,
