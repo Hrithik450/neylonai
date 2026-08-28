@@ -23,6 +23,7 @@ type PlanRow = {
   websites: number;
   websitePagesPerSync: number;
   websitePagesPerMonth: number;
+  proactiveSuggestionsPerDay: number;
   classQuotas?: { simple: number; standard: number; complex: number };
 };
 
@@ -354,6 +355,9 @@ export function BillingPanel({ embedded = false }: { embedded?: boolean }) {
             <li>
               {ent ? plural(ent.websitePagesPerMonth, "refresh") : "—"} / month
             </li>
+            <li>
+              {ent ? plural(ent.proactiveSuggestionsPerDay, "proactive suggestion") : "—"} / day
+            </li>
           </ul>
         </div>
         <div className="ink-card p-6 space-y-4">
@@ -439,6 +443,9 @@ export function BillingPanel({ embedded = false }: { embedded?: boolean }) {
                   <li>{plural(plan.websitePagesPerSync, "website page")}</li>
                   <li>
                     {plural(plan.websitePagesPerMonth, "refresh")} / month
+                  </li>
+                  <li>
+                    {plural(plan.proactiveSuggestionsPerDay, "proactive suggestion")} / day
                   </li>
                 </ul>
                 <button

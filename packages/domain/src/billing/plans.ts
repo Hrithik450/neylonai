@@ -83,7 +83,7 @@ export const PLAN_CATALOG: Record<PlanId, PlanEntitlements> = {
     websites: 1,
     websitePagesPerSync: 8,
     websitePagesPerMonth: 1,
-    proactiveSuggestionsPerDay: 20,
+    proactiveSuggestionsPerDay: 50,
     proactiveEnabled: true,
     advancedProactive: false,
     integrationsLimit: 1,
