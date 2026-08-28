@@ -480,6 +480,7 @@ export function useProactiveSuggestions() {
         ...stateRef.current,
         suggestionQueue: { items: [] },
         queuePagePath: null,
+        sessionSuggestionCount: 0,
       };
       persist();
     }
