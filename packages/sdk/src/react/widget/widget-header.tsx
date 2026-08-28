@@ -22,7 +22,7 @@ export function WidgetChromeActions() {
     <div className="flex justify-end items-center gap-2">
       <button
         type="button"
-        className="hidden md:inline-flex cursor-pointer bg-transparent border-none outline-none p-1 hover:opacity-70 transition-opacity"
+        className="hidden md:inline-flex cursor-pointer p-1 hover:opacity-70 transition-opacity" style={{ background: "transparent", border: "none", boxShadow: "none" }}
         onClick={() => setCollapse(!isCollapse)}
         aria-label={isCollapse ? "Expand widget" : "Collapse widget"}
       >
@@ -35,7 +35,7 @@ export function WidgetChromeActions() {
 
       <button
         type="button"
-        className="cursor-pointer bg-transparent border-none outline-none p-1 hover:opacity-70 transition-opacity"
+        className="cursor-pointer p-1 hover:opacity-70 transition-opacity" style={{ background: "transparent", border: "none", boxShadow: "none" }}
         onClick={() => setIsOpen(!isOpen)}
         aria-label="Close widget"
         data-testid="widget-close"
@@ -67,7 +67,7 @@ export const WidgetHeader: React.FC<WidgetHeaderProps> = ({
           {!leading && action && (
             <button
               type="button"
-              className="cursor-pointer bg-transparent border-none outline-none p-1 hover:opacity-70 transition-opacity"
+              className="cursor-pointer p-1 hover:opacity-70 transition-opacity" style={{ background: "transparent", border: "none", boxShadow: "none" }}
               onClick={action}
               aria-label="Go back"
             >

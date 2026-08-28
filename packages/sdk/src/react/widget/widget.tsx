@@ -68,7 +68,7 @@ const widgetPanelClassName = (isOpen: boolean, isCollapse: boolean, fontClassNam
           "fixed z-[110] overflow-hidden overscroll-contain",
           "max-md:inset-0 max-md:h-dvh max-md:max-h-dvh max-md:w-full max-md:min-w-0 max-md:max-w-none",
           "max-md:rounded-none max-md:border-0 max-md:shadow-none",
-          "max-md:pt-[max(0.5rem,env(safe-area-inset-top,0px))]",
+          "pt-0 max-md:pt-0",
           "md:bottom-[var(--neylonai-panel-bottom,5rem)]",
           isLeft ? "md:left-5 md:right-auto" : "md:right-5",
           "2xl:right-[max(1.2rem,calc((100vw-120rem)/2+2rem))]",
