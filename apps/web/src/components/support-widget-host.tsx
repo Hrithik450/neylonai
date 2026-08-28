@@ -16,8 +16,8 @@ export function SupportWidgetHost() {
     <Script
       src="/v1/widget.js"
       strategy="afterInteractive"
-      data-key="nk_live_td_-B38dwvP5MsQeXqAFPvls4L9pxXAW"
-      // data-key="nk_live_Pyaqb5jhCyjxNgZKdKRvHK14898HTxx0"
+      // data-key="nk_live_td_-B38dwvP5MsQeXqAFPvls4L9pxXAW"
+      data-key="nk_live_Pyaqb5jhCyjxNgZKdKRvHK14898HTxx0"
       data-user-id={user?.id || ""}
       data-user-email={user?.email || ""}
       data-user-name={user?.name || ""}

@@ -647,6 +647,24 @@ html {
 }
 
 @layer base {
+  .dashboard-widget-mock {
+    /* Keep the SDK preview on light dashboard tokens even when the app shell
+       is inside `.dark`; real embeds should not inherit the dashboard theme. */
+    --background: oklch(1 0 0);
+    --foreground: oklch(0.141 0.005 285.823);
+    --primary: oklch(0.21 0.006 285.885);
+    --primary-foreground: oklch(0.985 0 0);
+    --secondary: oklch(0.967 0.001 286.375);
+    --secondary-foreground: oklch(0.21 0.006 285.885);
+    --muted: oklch(0.967 0.001 286.375);
+    --muted-foreground: oklch(0.552 0.016 285.938);
+    --accent: oklch(0.967 0.001 286.375);
+    --accent-foreground: oklch(0.21 0.006 285.885);
+    --border: oklch(0.92 0.004 286.32);
+    --input: oklch(0.92 0.004 286.32);
+    --ring: oklch(0.705 0.015 286.067);
+  }
+
   /* The SDK preview intentionally renders without Tailwind Preflight on host
      sites, so restore browser defaults inside the dashboard mock only. */
   .dashboard-widget-mock :where(
@@ -672,5 +690,18 @@ html {
   .dashboard-widget-mock :where(ul, ol, menu) {
     padding-inline-start: revert;
     list-style: revert;
+  }
+
+  .dashboard-widget-mock :where(nav, [aria-label="Go back"], [aria-label="Close widget"], [aria-label="Expand widget"], [aria-label="Collapse widget"]) {
+    color: var(--dashboard-widget-control-color);
+  }
+
+  .dashboard-widget-mock :where(
+    [aria-label="Go back"] svg,
+    [aria-label="Close widget"] svg,
+    [aria-label="Expand widget"] svg,
+    [aria-label="Collapse widget"] svg
+  ) {
+    color: var(--dashboard-widget-control-color) !important;
   }
 }

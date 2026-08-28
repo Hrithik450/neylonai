@@ -15,7 +15,9 @@ interface WidgetHeaderProps {
 
 
 export function WidgetChromeActions() {
+  const { config } = useWidgetHost();
   const { isOpen, setIsOpen, isCollapse, setCollapse } = useWidgetToggleStore();
+  const iconColor = config.branding.primaryTextColor;
 
   return (
     <div className="flex justify-end items-center gap-4">
@@ -27,9 +29,9 @@ export function WidgetChromeActions() {
         aria-label={isCollapse ? "Expand widget" : "Collapse widget"}
       >
         {isCollapse ? (
-          <Maximize2 className="w-5 h-5 text-black" />
+          <Maximize2 className="w-5 h-5" style={{ color: iconColor }} />
         ) : (
-          <Minimize2 className="w-5 h-5 text-black" />
+          <Minimize2 className="w-5 h-5" style={{ color: iconColor }} />
         )}
       </button>
 
@@ -41,7 +43,7 @@ export function WidgetChromeActions() {
         aria-label="Close widget"
         data-testid="widget-close"
       >
-        <X className="w-5 h-5 text-black" />
+        <X className="w-5 h-5" style={{ color: iconColor }} />
       </button>
     </div>
   );
@@ -57,10 +59,14 @@ export const WidgetHeader: React.FC<WidgetHeaderProps> = ({
   return (
     <nav
       className={cn(
-        "py-2 flex items-center border-b-2 border-black/10",
+        "py-2 flex items-center border-b-2",
         className,
       )}
-      style={{ background: config.branding.gradientFrom }}
+      style={{
+        background: config.branding.gradientFrom,
+        borderColor: config.branding.borderColor,
+        color: config.branding.primaryTextColor,
+      }}
     >
       <div className="w-full grid grid-cols-6 md:grid-cols-4 items-center px-4">
         <div className="flex items-center">
@@ -73,7 +79,10 @@ export const WidgetHeader: React.FC<WidgetHeaderProps> = ({
               onClick={action}
               aria-label="Go back"
             >
-              <ArrowLeftIcon className="w-5 h-5 text-black" />
+              <ArrowLeftIcon
+                className="w-5 h-5"
+                style={{ color: config.branding.primaryTextColor }}
+              />
             </button>
           )}
         </div>

@@ -9,6 +9,7 @@ import {
 } from "../config/types";
 import { DEFAULT_WIDGET_CONFIG } from "../../widget-config";
 import { PROACTIVE_CONFIG } from "../proactive/config";
+import { contrastForeground } from "../color-contrast";
 
 const DEFAULT_BRANDING = {
   name: "",
@@ -23,8 +24,10 @@ const DEFAULT_BRANDING = {
   secondaryTextBackground:
     DEFAULT_WIDGET_CONFIG.branding!.secondaryTextBackground!,
   aiMessageBackground: DEFAULT_WIDGET_CONFIG.branding!.aiMessageBackground!,
+  aiText: DEFAULT_WIDGET_CONFIG.branding!.aiText!,
   humanMessageBackground:
     DEFAULT_WIDGET_CONFIG.branding!.humanMessageBackground!,
+  humanText: DEFAULT_WIDGET_CONFIG.branding!.humanText!,
   surfaceColor: DEFAULT_WIDGET_CONFIG.branding!.surfaceColor!,
   borderColor: DEFAULT_WIDGET_CONFIG.branding!.borderColor!,
   themePreset: DEFAULT_WIDGET_CONFIG.branding!.themePreset!,
@@ -46,7 +49,9 @@ export interface WidgetHostValue {
         askButtonTextColor: string;
         secondaryTextBackground: string;
         aiMessageBackground: string;
+        aiText: string;
         humanMessageBackground: string;
+        humanText: string;
         surfaceColor: string;
         borderColor: string;
         themePreset: string;
@@ -145,6 +150,27 @@ export function WidgetHostProvider({
         b?.humanMessageBackground,
         DEFAULT_BRANDING.humanMessageBackground,
       ),
+      aiText:
+        pickColor(b?.aiText) ??
+        (() => {
+          const aiBackground =
+            pickColor(b?.aiMessageBackground) ??
+            DEFAULT_BRANDING.aiMessageBackground;
+          return aiBackground.trim().toLowerCase() === "transparent"
+            ? pick(
+                b?.primaryTextColor,
+                DEFAULT_BRANDING.primaryTextColor,
+              )
+            : contrastForeground(aiBackground);
+        })(),
+      humanText:
+        pickColor(b?.humanText) ??
+        contrastForeground(
+          pick(
+            b?.humanMessageBackground,
+            DEFAULT_BRANDING.humanMessageBackground,
+          ),
+        ),
       surfaceColor: pick(b?.surfaceColor, DEFAULT_BRANDING.surfaceColor),
       borderColor: pick(b?.borderColor, DEFAULT_BRANDING.borderColor),
       themePreset: b?.themePreset ?? DEFAULT_BRANDING.themePreset,
@@ -232,7 +258,9 @@ export function WidgetHostProvider({
     config?.branding?.askButtonTextColor,
     config?.branding?.secondaryTextBackground,
     config?.branding?.aiMessageBackground,
+    config?.branding?.aiText,
     config?.branding?.humanMessageBackground,
+    config?.branding?.humanText,
     config?.branding?.surfaceColor,
     config?.branding?.borderColor,
     config?.branding?.themePreset,

@@ -18,7 +18,6 @@ import { useWidgetStore } from "../store/widget-store";
 import { useWidgetHost } from "../context/widget-host";
 import type { ThreadMessage } from "../..";
 import { DynamicAssistantTyping } from "./assistant-typing";
-import { contrastForeground } from "../color-contrast";
 import { getOrCreateVisitorId, submitMessageFeedback } from "../..";
 const mkEl = (tag: string, cls: string) => (props: any) =>
   React.createElement(tag, { className: cls, ...props });
@@ -87,7 +86,8 @@ const MessageBubble = memo(
       borderColor,
       surfaceColor,
       primaryTextColor,
-      gradientTo,
+      aiText,
+      humanText,
     } = config.branding;
     const [rating, setRating] = useState<"up" | "down" | null>(null);
     const [comment, setComment] = useState("");
@@ -113,7 +113,6 @@ const MessageBubble = memo(
     const isTeamMessage =
       conversation.role === "assistant" || conversation.role === "human";
     if (!isTeamMessage) {
-      const humanText = contrastForeground(humanMessageBackground);
       return (
         <div
           className={cn(
@@ -137,9 +136,6 @@ const MessageBubble = memo(
 
     const aiBg = aiMessageBackground.trim() || "transparent";
     const aiTransparent = /^transparent$/i.test(aiBg);
-    const aiText = aiTransparent
-      ? contrastForeground(gradientTo)
-      : contrastForeground(aiBg);
 
     return (
       <div

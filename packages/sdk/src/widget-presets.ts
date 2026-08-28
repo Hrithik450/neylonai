@@ -32,8 +32,12 @@ export interface ThemePresetColors {
   secondaryTextBackground: string;
   /** AI bubble fill (`transparent` sits on the panel; solid for dark themes). */
   aiMessageBackground: string;
+  /** AI bubble foreground. */
+  aiText: string;
   /** Human bubble fill. */
   humanMessageBackground: string;
+  /** Human bubble foreground. */
+  humanText: string;
   /** Neutral elevated surface: composer, inputs, FAB, mic, pucks, banners. */
   surfaceColor: string;
   /** Every hairline border. */
@@ -73,7 +77,9 @@ export const WIDGET_THEME_PRESETS: ThemePreset[] = [
       askButtonTextColor: "#ffffff",
       secondaryTextBackground: "#ffffff",
       aiMessageBackground: "transparent",
+      aiText: "#0E3228",
       humanMessageBackground: "#e4e4e7",
+      humanText: "#000000",
       surfaceColor: "#ffffff",
       borderColor: "rgba(0, 0, 0, 0.1)",
     },
@@ -94,7 +100,9 @@ export const WIDGET_THEME_PRESETS: ThemePreset[] = [
       askButtonTextColor: "#ffffff",
       secondaryTextBackground: "#ffffff",
       aiMessageBackground: "transparent",
+      aiText: "#0B2447",
       humanMessageBackground: "#dbeafe",
+      humanText: "#000000",
       surfaceColor: "#ffffff",
       borderColor: "rgba(37, 99, 235, 0.15)",
     },
@@ -115,7 +123,9 @@ export const WIDGET_THEME_PRESETS: ThemePreset[] = [
       askButtonTextColor: "#ffffff",
       secondaryTextBackground: "#ffffff",
       aiMessageBackground: "transparent",
+      aiText: "#2E1065",
       humanMessageBackground: "#ede9fe",
+      humanText: "#000000",
       surfaceColor: "#ffffff",
       borderColor: "rgba(124, 58, 237, 0.15)",
     },
@@ -136,7 +146,9 @@ export const WIDGET_THEME_PRESETS: ThemePreset[] = [
       askButtonTextColor: "#ffffff",
       secondaryTextBackground: "#ffffff",
       aiMessageBackground: "transparent",
+      aiText: "#4C1D12",
       humanMessageBackground: "#FBE1D6",
+      humanText: "#000000",
       surfaceColor: "#ffffff",
       borderColor: "rgba(194, 65, 12, 0.15)",
     },
@@ -157,7 +169,9 @@ export const WIDGET_THEME_PRESETS: ThemePreset[] = [
       askButtonTextColor: "#18181B",
       secondaryTextBackground: "#111113",
       aiMessageBackground: "#1C1C1F",
+      aiText: "#F4F4F5",
       humanMessageBackground: "#2A2A2E",
+      humanText: "#F4F4F5",
       surfaceColor: "#1C1C1F",
       borderColor: "rgba(255, 255, 255, 0.12)",
     },
@@ -178,7 +192,9 @@ export const WIDGET_THEME_PRESETS: ThemePreset[] = [
       askButtonTextColor: "#ffffff",
       secondaryTextBackground: "#16132A",
       aiMessageBackground: "#211E3D",
+      aiText: "#E8EAF2",
       humanMessageBackground: "#312E52",
+      humanText: "#E8EAF2",
       surfaceColor: "#211E3D",
       borderColor: "rgba(129, 140, 248, 0.18)",
     },

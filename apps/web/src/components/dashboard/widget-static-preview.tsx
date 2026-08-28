@@ -1,5 +1,6 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import { useEffect, useMemo } from "react";
 import { ChevronRight, Sparkles } from "lucide-react";
 import {
@@ -22,6 +23,48 @@ const LAUNCHER_SIZE_PX = {
   md: 56,
   lg: 64,
 } as const;
+
+function contrastForeground(background: string): "#000000" | "#ffffff" {
+  const value = background.trim();
+  const hex = value.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+
+  let rgb: [number, number, number] | null = null;
+  if (hex) {
+    const raw = hex[1]!;
+    rgb =
+      raw.length === 3
+        ? [
+            parseInt(raw[0]! + raw[0]!, 16),
+            parseInt(raw[1]! + raw[1]!, 16),
+            parseInt(raw[2]! + raw[2]!, 16),
+          ]
+        : [
+            parseInt(raw.slice(0, 2), 16),
+            parseInt(raw.slice(2, 4), 16),
+            parseInt(raw.slice(4, 6), 16),
+          ];
+  }
+
+  if (!rgb) {
+    const rgba = value.match(
+      /^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)(?:\s*,\s*[\d.]+)?\s*\)$/i,
+    );
+    if (rgba) {
+      rgb = [Number(rgba[1]), Number(rgba[2]), Number(rgba[3])];
+    }
+  }
+
+  if (!rgb) return "#000000";
+
+  const [r, g, b] = rgb.map((channel) => {
+    const normalized = channel / 255;
+    return normalized <= 0.03928
+      ? normalized / 12.92
+      : ((normalized + 0.055) / 1.055) ** 2.4;
+  }) as [number, number, number];
+  const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  return luminance > 0.45 ? "#000000" : "#ffffff";
+}
 
 /** Same launcher as SupportWidgetInner — draft colors, no proactive bubble. */
 function PreviewLauncher() {
@@ -103,6 +146,16 @@ export function WidgetStaticPreview({
     };
   }, [appearance]);
 
+  const previewStyle = useMemo(
+    () =>
+      ({
+        "--dashboard-widget-control-color": contrastForeground(
+          resolved.branding.gradientFrom,
+        ),
+      }) as CSSProperties,
+    [resolved.branding.gradientFrom],
+  );
+
   useEffect(() => {
     useWidgetToggleStore.getState().setIsOpen(open);
   }, [open]);
@@ -115,7 +168,10 @@ export function WidgetStaticPreview({
 
   return (
     <WidgetHostProvider config={resolved}>
-      <div className="dashboard-widget-mock relative z-10 flex flex-col items-end w-full h-full min-w-0 max-w-full overflow-hidden justify-end">
+      <div
+        className="dashboard-widget-mock relative z-10 flex flex-col items-end w-full h-full min-w-0 max-w-full overflow-hidden justify-end"
+        style={previewStyle}
+      >
         <Widget />
         <PreviewLauncher />
       </div>

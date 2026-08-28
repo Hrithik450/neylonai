@@ -56,8 +56,12 @@ export type StoredWidgetConfig = {
     secondaryTextBackground?: string;
     /** AI / assistant chat bubble fill (foreground auto-contrasts). */
     aiMessageBackground?: string;
+    /** AI / assistant chat bubble foreground. */
+    aiText?: string;
     /** Human / visitor chat bubble fill (foreground auto-contrasts). */
     humanMessageBackground?: string;
+    /** Human / visitor chat bubble foreground. */
+    humanText?: string;
     /** Selected theme preset id (see `widget-presets`). Resolves the palette. */
     themePreset?: string;
     /** Neutral elevated surface: composer, inputs, FAB, mic, pucks, banners. */
