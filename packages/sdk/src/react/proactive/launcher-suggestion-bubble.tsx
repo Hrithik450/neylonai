@@ -34,7 +34,7 @@ export function LauncherSuggestionBubble({
   return (
     <div
       className={cn(
-        "absolute bottom-full mb-2 w-max max-w-[min(18.5rem,calc(100vw-2rem))]",
+        "absolute bottom-full mb-3 w-max max-w-[min(18.5rem,calc(100vw-2rem))]",
         isLeft ? "left-0" : "right-0",
         "transition-all duration-200 ease-out",
         visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1",
@@ -52,19 +52,19 @@ export function LauncherSuggestionBubble({
           onClick={() => onSelect?.(suggestion.text)}
           className={cn(
             "relative block w-full text-left rounded-2xl border",
-            "backdrop-blur-sm shadow-lg px-3.5 pt-2.5 pb-3",
+            "backdrop-blur-sm shadow-lg px-3.5 py-3",
             "cursor-pointer hover:shadow-xl transition-shadow",
           )}
           style={{ backgroundColor: surfaceColor, borderColor }}
         >
           <p
-            className="m-0 p-0 text-sm leading-snug whitespace-normal break-words line-clamp-2"
+            className="text-sm leading-snug whitespace-normal break-words line-clamp-2"
             style={{ color: primaryTextColor }}
           >
             {suggestion.text}
           </p>
           <span
-            className="m-0 p-0 mt-1.5 block text-[11px] font-medium"
+            className="mt-1.5 block text-[11px] font-medium"
             style={{ color: secondaryTextColor }}
           >
             Tap to ask
@@ -84,12 +84,12 @@ export function LauncherSuggestionBubble({
           data-testid="suggestion-bubble"
           className={cn(
             "relative rounded-2xl border",
-            "backdrop-blur-sm shadow-lg px-3.5 pt-2.5 pb-3",
+            "backdrop-blur-sm shadow-lg px-3.5 py-3",
           )}
           style={{ backgroundColor: surfaceColor, borderColor }}
         >
           <p
-            className="m-0 p-0 text-sm leading-snug whitespace-normal break-words line-clamp-2"
+            className="text-sm leading-snug whitespace-normal break-words line-clamp-2"
             style={{ color: primaryTextColor }}
           >
             {suggestion.text}
