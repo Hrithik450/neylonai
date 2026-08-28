@@ -349,8 +349,7 @@ export function BillingPanel({ embedded = false }: { embedded?: boolean }) {
             </li>
             <li>{ent ? plural(ent.websites, "website") : "—"}</li>
             <li>
-              {ent ? plural(ent.websitePagesPerSync, "website page") : "—"} /
-              crawl
+              {ent ? plural(ent.websitePagesPerSync, "website page") : "—"}
             </li>
             <li>
               {ent ? plural(ent.websitePagesPerMonth, "refresh") : "—"} / month
