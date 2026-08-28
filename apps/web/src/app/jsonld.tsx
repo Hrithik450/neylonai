@@ -85,7 +85,7 @@ export function SoftwareApplicationJsonLd() {
     description:
       "AI-powered customer engagement platform that watches visitors in real time and starts conversations at the right moment.",
     url: baseUrl,
-    screenshot: `${baseUrl}/images/opengraph-neylonai.png`,
+    screenshot: `${baseUrl}/images/opengraph-image.jpg`,
     featureList: [
       "Real-time visitor tracking",
       "Proactive AI conversations",
