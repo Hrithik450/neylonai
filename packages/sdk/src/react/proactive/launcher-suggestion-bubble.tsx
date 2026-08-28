@@ -34,7 +34,7 @@ export function LauncherSuggestionBubble({
   return (
     <div
       className={cn(
-        "absolute bottom-full mb-3 w-max max-w-[min(18.5rem,calc(100vw-2rem))]",
+        "absolute bottom-full mb-2 w-max max-w-[min(18.5rem,calc(100vw-2rem))]",
         isLeft ? "left-0" : "right-0",
         "transition-all duration-200 ease-out",
         visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1",
@@ -52,7 +52,7 @@ export function LauncherSuggestionBubble({
           onClick={() => onSelect?.(suggestion.text)}
           className={cn(
             "relative block w-full text-left rounded-2xl border",
-            "backdrop-blur-sm shadow-lg px-3.5 py-3",
+            "backdrop-blur-sm shadow-lg px-3.5 pt-2.5 pb-3",
             "cursor-pointer hover:shadow-xl transition-shadow",
           )}
           style={{ backgroundColor: surfaceColor, borderColor }}
@@ -84,7 +84,7 @@ export function LauncherSuggestionBubble({
           data-testid="suggestion-bubble"
           className={cn(
             "relative rounded-2xl border",
-            "backdrop-blur-sm shadow-lg px-3.5 py-3",
+            "backdrop-blur-sm shadow-lg px-3.5 pt-2.5 pb-3",
           )}
           style={{ backgroundColor: surfaceColor, borderColor }}
         >
