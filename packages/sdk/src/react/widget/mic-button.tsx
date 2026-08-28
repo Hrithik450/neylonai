@@ -19,7 +19,7 @@ export function MicButton({
 }: MicButtonProps) {
   const busy = isTranscribing;
   const { config } = useWidgetHost();
-  const { surfaceColor, borderColor, primaryTextColor } = config.branding;
+  const { surfaceColor, borderColor, primaryTextColor, primaryTextBackground, askButtonTextColor } = config.branding;
   const tooltip = busy
     ? "Transcribing…"
     : isRecording
@@ -37,18 +37,14 @@ export function MicButton({
         aria-pressed={isRecording}
         className={`h-8 w-8 rounded-full cursor-pointer border ${
           isRecording
-            ? "border-red-200 bg-red-50 text-red-500 hover:bg-red-100 animate-pulse"
+            ? "animate-pulse hover:opacity-90"
             : "hover:opacity-90"
         }`}
-        style={
-          isRecording
-            ? undefined
-            : {
-                backgroundColor: surfaceColor,
-                borderColor,
-                color: primaryTextColor,
-              }
-        }
+        style={{
+          backgroundColor: isRecording ? primaryTextBackground : surfaceColor,
+          borderColor: isRecording ? askButtonTextColor : borderColor,
+          color: isRecording ? askButtonTextColor : primaryTextColor,
+        }}
         onClick={(e) => {
           e.preventDefault();
           if (busy) return;
@@ -58,7 +54,7 @@ export function MicButton({
         {busy ? (
           <Loader2 className="size-4 animate-spin" />
         ) : isRecording ? (
-          <CircleStop className="size-4" />
+          <CircleStop className="size-4" style={{ fill: "currentColor" }} />
         ) : (
           <Mic className="size-4" />
         )}

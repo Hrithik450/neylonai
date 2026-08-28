@@ -4,6 +4,7 @@ import { MouseEvent } from "react";
 import { ArrowUp, Square } from "lucide-react";
 
 import { Button, PromptInputAction } from "../../ui";
+import { useWidgetHost } from "../context/widget-host";
 import { useWidgetStore } from "../store/widget-store";
 
 interface SendButtonProps {
@@ -18,6 +19,8 @@ export function SendButton({
   stopStreaming,
 }: SendButtonProps) {
   const { assistantTyping } = useWidgetStore();
+  const { config } = useWidgetHost();
+  const { primaryTextBackground, askButtonTextColor } = config.branding;
 
   return (
     <PromptInputAction
@@ -27,7 +30,12 @@ export function SendButton({
       <Button
         variant="default"
         size="icon"
-        className="h-8 w-8 rounded-full cursor-pointer"
+        className="h-8 w-8 rounded-full cursor-pointer border"
+        style={{
+          backgroundColor: primaryTextBackground,
+          color: askButtonTextColor,
+          borderColor: askButtonTextColor,
+        }}
         onClick={(e) => {
           if (assistantTyping) {
             e.preventDefault();
@@ -39,7 +47,7 @@ export function SendButton({
         disabled={assistantTyping ? false : isDisabled}
       >
         {assistantTyping ? (
-          <Square className="size-4 cursor-pointer" />
+          <Square className="size-4 cursor-pointer" style={{ fill: "currentColor" }} />
         ) : (
           <ArrowUp className="size-4 cursor-pointer" />
         )}

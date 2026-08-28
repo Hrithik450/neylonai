@@ -304,11 +304,11 @@ function SupportWidgetInner({
             data-testid="ask-ai-launcher"
             aria-label={isOpen ? "Close AI chat" : "Ask AI"}
             onClick={() => setIsOpen(!isOpen)}
-            className="border cursor-pointer rounded-full flex items-center justify-center p-0 transition-transform duration-200 hover:scale-105 active:scale-95 hover:opacity-90 shrink-0"
+            className="border shadow-xl cursor-pointer rounded-full flex items-center justify-center p-0 transition-transform duration-200 hover:scale-105 active:scale-95 hover:opacity-90 shrink-0"
             style={{
               backgroundColor: config.branding.primaryTextBackground,
               color: config.branding.askButtonTextColor,
-              borderColor: config.branding.borderColor,
+              borderColor: config.branding.askButtonTextColor,
               width: sizePx,
               height: sizePx,
             }}

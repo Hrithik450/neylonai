@@ -140,11 +140,14 @@ export function WidgetHome() {
           style={{
             backgroundColor: branding.primaryTextBackground,
             color: branding.askButtonTextColor,
-            borderColor: branding.borderColor,
+            borderColor: branding.askButtonTextColor,
           }}
         >
           <span className="flex min-w-0 flex-1 items-center gap-3.5">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-black/10">
+            <span 
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
+              style={{ backgroundColor: `color-mix(in srgb, ${branding.askButtonTextColor} 10%, transparent)` }}
+            >
               <MessageCircle className="w-5 h-5" />
             </span>
             <span className="flex min-w-0 flex-col items-start text-left">
