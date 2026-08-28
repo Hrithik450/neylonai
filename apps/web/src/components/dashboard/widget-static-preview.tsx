@@ -150,10 +150,10 @@ export function WidgetStaticPreview({
     () =>
       ({
         "--dashboard-widget-control-color": contrastForeground(
-          resolved.branding.gradientFrom,
+          resolved.branding?.gradientFrom ?? "#ffffff",
         ),
       }) as CSSProperties,
-    [resolved.branding.gradientFrom],
+    [resolved.branding?.gradientFrom],
   );
 
   useEffect(() => {
