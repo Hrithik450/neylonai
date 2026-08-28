@@ -15,13 +15,20 @@ function envOrigin(): string | null {
   return raw.replace(/\/$/, "");
 }
 
-function isLocalHostname(hostname: string): boolean {
-  return (
-    hostname === "localhost" ||
-    hostname === "127.0.0.1" ||
-    hostname === "[::1]" ||
-    hostname.endsWith(".localhost")
-  );
+function getScriptOrigin(): string | null {
+  if (typeof document === "undefined") return null;
+  // If embedded via <script data-key="...">, infer API origin from the script's src URL
+  const script = document.querySelector("script[data-key]") as HTMLScriptElement;
+  if (script && script.src) {
+    try {
+      const url = new URL(script.src);
+      // Optional: ignore if script somehow loaded from another host, but typically it's correct
+      return url.origin;
+    } catch {
+      return null;
+    }
+  }
+  return null;
 }
 
 /** Resolved backend origin for SDK fetches. */
@@ -29,9 +36,8 @@ export function getApiOrigin(): string {
   const fromEnv = envOrigin();
   if (fromEnv) return fromEnv;
 
-  if (typeof window !== "undefined" && isLocalHostname(window.location.hostname)) {
-    return window.location.origin;
-  }
+  const scriptOrigin = getScriptOrigin();
+  if (scriptOrigin) return scriptOrigin;
 
   return NEYLONAI_API_ORIGIN;
 }
