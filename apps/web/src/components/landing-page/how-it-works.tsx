@@ -11,7 +11,7 @@ const STEPS = [
     number: 1,
     title: "Add Neylon to your site",
     description:
-      "Drop in one snippet, or let your coding agent install the SDK for you.",
+      "Drop a single script tag into your website's HTML and your AI assistant is instantly live.",
     illustration: "/images/how-it-works-illustration-1.png",
     accent: "#FF806D",
     iconBackground: "#FFF1EC",
@@ -22,7 +22,7 @@ const STEPS = [
     number: 2,
     title: "Teach it your business",
     description:
-      "Share your website, documents, or FAQs so Neylon answers accurately and qualifies every lead. Configure it all from your dashboard.",
+      "Share your website, documents, or FAQs so Neylon answers accurately and qualifies every lead.",
     illustration: "/images/how-it-works-illustration-2.png",
     accent: "#AEEAD6",
     iconBackground: "#EAF9F3",
