@@ -79,7 +79,7 @@ const widgetPanelClassName = (isOpen: boolean, isCollapse: boolean, fontClassNam
           "md:rounded-2xl md:border md:shadow-2xl",
           isCollapse ? "md:min-w-md md:max-w-md md:w-full" : "md:min-w-2xl md:max-w-2xl md:w-full",
         ),
-    "md:pt-2 flex flex-col min-w-0",
+    "md:pt-0 flex flex-col min-w-0",
     "transition-[opacity,transform,min-width,max-width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
     isOpen ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 translate-y-2 pointer-events-none",
   );

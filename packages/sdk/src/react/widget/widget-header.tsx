@@ -17,37 +17,31 @@ interface WidgetHeaderProps {
 /** Shared collapse + close controls used by every widget screen header. */
 export function WidgetChromeActions() {
   const { isOpen, setIsOpen, isCollapse, setCollapse } = useWidgetToggleStore();
-  const { config } = useWidgetHost();
-  const iconColor = config.branding.primaryTextColor;
 
   return (
     <div className="flex justify-end items-center gap-2">
-      <Button
+      <button
         type="button"
-        variant="ghost"
-        size="icon-sm"
-        className="hidden md:inline-flex cursor-pointer"
+        className="hidden md:inline-flex cursor-pointer bg-transparent border-none outline-none p-1 hover:opacity-70 transition-opacity"
         onClick={() => setCollapse(!isCollapse)}
         aria-label={isCollapse ? "Expand widget" : "Collapse widget"}
       >
         {isCollapse ? (
-          <Maximize2 className="w-5 h-5" style={{ color: iconColor }} />
+          <Maximize2 className="w-5 h-5 text-black" />
         ) : (
-          <Minimize2 className="w-5 h-5" style={{ color: iconColor }} />
+          <Minimize2 className="w-5 h-5 text-black" />
         )}
-      </Button>
+      </button>
 
-      <Button
+      <button
         type="button"
-        variant="ghost"
-        size="icon-sm"
-        className="cursor-pointer"
+        className="cursor-pointer bg-transparent border-none outline-none p-1 hover:opacity-70 transition-opacity"
         onClick={() => setIsOpen(!isOpen)}
         aria-label="Close widget"
         data-testid="widget-close"
       >
-        <X className="w-5 h-5" style={{ color: iconColor }} />
-      </Button>
+        <X className="w-5 h-5 text-black" />
+      </button>
     </div>
   );
 }
@@ -61,29 +55,24 @@ export const WidgetHeader: React.FC<WidgetHeaderProps> = ({
   const { config } = useWidgetHost();
   return (
     <nav
-      className={cn("pb-2 flex items-center border-b-2", className)}
-      style={{
-        background: config.branding.gradientFrom,
-        borderColor: config.branding.borderColor,
-      }}
+      className={cn(
+        "py-0 flex items-center border-b-2 border-black/10",
+        className,
+      )}
+      style={{ background: config.branding.gradientFrom }}
     >
       <div className="w-full grid grid-cols-6 md:grid-cols-4 items-center px-4">
         <div className="flex items-center">
           {leading}
           {!leading && action && (
-            <Button
+            <button
               type="button"
-              variant="ghost"
-              size="icon-sm"
-              className="cursor-pointer"
+              className="cursor-pointer bg-transparent border-none outline-none p-1 hover:opacity-70 transition-opacity"
               onClick={action}
               aria-label="Go back"
             >
-              <ArrowLeftIcon
-                className="w-5 h-5"
-                style={{ color: config.branding.primaryTextColor }}
-              />
-            </Button>
+              <ArrowLeftIcon className="w-5 h-5 text-black" />
+            </button>
           )}
         </div>
 
