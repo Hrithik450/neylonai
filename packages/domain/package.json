@@ -27,8 +27,9 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
-    "@langchain/core": "^1.2.5",
+    "@langchain/core": "^1.2.9",
     "@langchain/google-genai": "^2.2.0",
+    "@langchain/openai": "^1.5.10",
     "@neylonai/database": "workspace:*",
     "@neylonai/integrations": "workspace:*",
     "bullmq": "^5.61.0",

@@ -1,8 +1,7 @@
 import { cacheGet, cacheSet, type KnowledgeSuggestionSeed } from "@neylonai/database";
-import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { createHash } from "crypto";
-import { withGoogleApiRetry } from "@neylonai/integrations/gemini";
+import { getProviderModel } from "../../../providers";
 import { prompts } from "../../../lib/prompts";
 import { getUtilityModel } from "../../../lib/models";
 import { meterModelResponse } from "../../../infrastructure/metering";
@@ -170,20 +169,16 @@ export async function generateProactiveCandidates(
 
   try {
     const utilityModel = getUtilityModel();
-    const response = await withGoogleApiRetry(async (apiKey) => {
-      const llm = new ChatGoogleGenerativeAI({
-        model: utilityModel,
-        temperature: 0.9,
-        maxRetries: 0,
-        maxOutputTokens: 700,
-        json: true,
-        apiKey,
-      });
-      return llm.invoke([
-        new SystemMessage(prompts.proactiveBubbleSeeds),
-        new HumanMessage(brief.slice(0, 6_000)),
-      ]);
+    const llm = getProviderModel("simple", {
+      temperature: 0.9,
+      maxTokens: 700,
+      jsonMode: true,
     });
+    
+    const response = await llm.invoke([
+      new SystemMessage(prompts.proactiveBubbleSeeds),
+      new HumanMessage(brief.slice(0, 6_000)),
+    ]);
     meterModelResponse(utilityModel, response, {
       metadata: { purpose: "proactive_candidates", pagePath: input.pagePath },
     });

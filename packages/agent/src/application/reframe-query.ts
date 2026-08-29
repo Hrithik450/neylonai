@@ -1,6 +1,5 @@
-import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
-import { withGoogleApiRetry } from "@neylonai/integrations/gemini";
+import { getProviderModel } from "../providers";
 import type { ConversationMessage } from "../domain/types";
 import { prompts } from "../lib/prompts";
 import { getUtilityModel } from "../lib/models";
@@ -51,18 +50,11 @@ ${userInput}`;
     );
 
     const utilityModel = getUtilityModel();
-    const response = await withGoogleApiRetry(async (apiKey) => {
-      const llm = new ChatGoogleGenerativeAI({
-        model: utilityModel,
-        temperature: 0.2,
-        maxRetries: 0,
-        apiKey,
-      });
-      return llm.invoke([
-        new SystemMessage(systemContent),
-        new HumanMessage(userPrompt),
-      ]);
-    });
+    const llm = getProviderModel("simple", { temperature: 0.2 });
+    const response = await llm.invoke([
+      new SystemMessage(systemContent),
+      new HumanMessage(userPrompt),
+    ]);
     meterModelResponse(utilityModel, response);
 
     const content =

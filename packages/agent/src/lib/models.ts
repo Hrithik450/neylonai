@@ -4,12 +4,12 @@
  */
 
 export const MODEL_DEFAULTS = {
-  low: "gemini-3.1-flash-lite",
-  medium: "gemini-3.5-flash-lite",
-  high: "gemini-3.6-flash",
-  classifier: "gemini-3.1-flash-lite",
-  tips: "gemini-3.1-flash-lite",
-  utility: "gemini-3.1-flash-lite",
+  low: "gpt-oss",
+  medium: "minimax-m3",
+  high: "minimax-m3",
+  classifier: "gpt-oss",
+  tips: "gpt-oss",
+  utility: "gpt-oss",
   /** Widget mic → text (Gemini audio understanding). */
   stt: "gemini-3.1-flash-lite",
   embedding: "gemini-embedding-001",

@@ -27,7 +27,9 @@
     "dist",
     "README.md"
   ],
-  "sideEffects": ["**/*.css"],
+  "sideEffects": [
+    "**/*.css"
+  ],
   "scripts": {
     "check-types": "tsc --noEmit -p tsconfig.json",
     "build": "rm -rf dist-tmp tsconfig.build.tsbuildinfo && tsc -p tsconfig.build.json --outDir dist-tmp && tailwindcss -i src/widget.css -o dist-tmp/widget.css --minify && rm -rf dist && mv dist-tmp dist && node build-embed.mjs",
@@ -37,6 +39,7 @@
     "check-boundary": "node -e \"const fs=require('fs');const path=require('path');function walk(d,acc=[]){for(const e of fs.readdirSync(d,{withFileTypes:true})){const p=path.join(d,e.name);if(e.isDirectory())walk(p,acc);else if(/\\.(ts|tsx|js|d\\.ts)$/.test(e.name))acc.push(p);}return acc;}const roots=['src','dist'].filter((r)=>fs.existsSync(r));const bad=[];for(const root of roots){for(const f of walk(root)){const t=fs.readFileSync(f,'utf8');if(/from\\s+['\\\"]@neylonai\\/(?!sdk)/.test(t)||/require\\(\\s*['\\\"]@neylonai\\/(?!sdk)/.test(t))bad.push(f);}}if(bad.length){console.error('SDK boundary violation — private @neylonai/* import in:\\n'+bad.join('\\n'));process.exit(1);}console.log('SDK boundary OK (no private @neylonai/* imports)');\""
   },
   "dependencies": {
+    "@langchain/core": "^1.2.9",
     "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/react-tooltip": "^1.2.8",
     "class-variance-authority": "^0.7.1",
@@ -55,8 +58,12 @@
     "react-dom": "^19"
   },
   "peerDependenciesMeta": {
-    "react": { "optional": true },
-    "react-dom": { "optional": true }
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@neylonai/typescript-config": "workspace:*",

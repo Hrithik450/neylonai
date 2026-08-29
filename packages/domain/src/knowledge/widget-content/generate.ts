@@ -228,20 +228,43 @@ export async function generateWidgetContent(
 
   const model = utilityModel();
   try {
-    const response = await withGoogleApiRetry(async (apiKey) => {
-      const llm = new ChatGoogleGenerativeAI({
-        model,
-        temperature: 0.4,
-        maxRetries: 0,
-        maxOutputTokens: 1_200,
-        json: true,
+    const keys = (process.env.ZYLONAI_API_KEYS || "").split(",").map(k => k.trim()).filter(Boolean);
+    let response;
+    
+    if (keys.length > 0) {
+      // Use ZyloAI OSS
+      const { ChatOpenAI } = require("@langchain/openai");
+      const models = keys.map((apiKey: string) => new ChatOpenAI({
+        modelName: "gpt-oss",
         apiKey,
-      });
-      return llm.invoke([
+        configuration: { baseURL: "https://api.zyloai.net/v1" },
+        temperature: 0.4,
+        maxTokens: 1200,
+        maxRetries: 1,
+        modelKwargs: { response_format: { type: "json_object" } }
+      }));
+      const llm = models.length > 1 ? (models[0] as any).withFallbacks({ fallbacks: models.slice(1) }) : models[0];
+      response = await llm.invoke([
         new SystemMessage(WIDGET_CONTENT_SYSTEM_PROMPT),
         new HumanMessage(brief.slice(0, PROMPT_CHAR_BUDGET)),
       ]);
-    });
+    } else {
+      // Fallback to Google
+      response = await withGoogleApiRetry(async (apiKey) => {
+        const llm = new ChatGoogleGenerativeAI({
+          model,
+          temperature: 0.4,
+          maxRetries: 0,
+          maxOutputTokens: 1_200,
+          json: true,
+          apiKey,
+        });
+        return llm.invoke([
+          new SystemMessage(WIDGET_CONTENT_SYSTEM_PROMPT),
+          new HumanMessage(brief.slice(0, PROMPT_CHAR_BUDGET)),
+        ]);
+      });
+    }
 
     const tokens = extractTokenUsage(response);
     recordModelUsageSafe({

@@ -1,6 +1,5 @@
-import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
-import { withGoogleApiRetry } from "@neylonai/integrations/gemini";
+import { getProviderModel } from "../providers";
 import { prompts, THINKING_TIPS_COUNT } from "../lib/prompts";
 import { getTipsModel } from "../lib/models";
 import { meterModelResponse } from "../infrastructure/metering";
@@ -135,22 +134,24 @@ export function buildHeuristicTips(question: string): ThinkingTipsResult {
   return { tips, source: "heuristic" };
 }
 
-let tipsLlmByKey = new Map<string, ChatGoogleGenerativeAI>();
-
-function getTipsLlm(apiKey: string): ChatGoogleGenerativeAI {
-  let llm = tipsLlmByKey.get(apiKey);
-  if (!llm) {
-    llm = new ChatGoogleGenerativeAI({
-      model: getTipsModel(),
-      temperature: 0.7,
-      maxRetries: 0,
-      maxOutputTokens: 220,
-      json: true,
-      apiKey,
-    });
-    tipsLlmByKey.set(apiKey, llm);
-  }
-  return llm;
+async function generateLlmTips(question: string): Promise<string[] | null> {
+  const tipsModel = getTipsModel();
+  const llm = getProviderModel("simple", {
+    temperature: 0.7,
+    maxTokens: 220,
+    jsonMode: true,
+  });
+  
+  const response = await llm.invoke([
+    new SystemMessage(prompts.thinkingTips),
+    new HumanMessage(question.slice(0, 400)),
+  ]);
+  meterModelResponse(tipsModel, response);
+  const raw =
+    typeof response.content === "string"
+      ? response.content
+      : JSON.stringify(response.content);
+  return parseTips(raw);
 }
 
 function parseTips(raw: string): string[] | null {
@@ -166,22 +167,6 @@ function parseTips(raw: string): string[] | null {
   } catch {
     return null;
   }
-}
-
-async function generateLlmTips(question: string): Promise<string[] | null> {
-  const tipsModel = getTipsModel();
-  const response = await withGoogleApiRetry(async (apiKey) => {
-    return getTipsLlm(apiKey).invoke([
-      new SystemMessage(prompts.thinkingTips),
-      new HumanMessage(question.slice(0, 400)),
-    ]);
-  });
-  meterModelResponse(tipsModel, response);
-  const raw =
-    typeof response.content === "string"
-      ? response.content
-      : JSON.stringify(response.content);
-  return parseTips(raw);
 }
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null> {

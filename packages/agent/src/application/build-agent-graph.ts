@@ -1,13 +1,13 @@
 import { StateGraph, START, Annotation } from "@langchain/langgraph";
 import { ToolNode, toolsCondition } from "@langchain/langgraph/prebuilt";
-import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
+import { getProviderModel } from "../providers";
+import { getAgentModelHigh, getAgentModelMedium } from "../lib/models";
 import {
   AIMessage,
   BaseMessage,
   ToolMessage,
 } from "@langchain/core/messages";
 import type { StructuredToolInterface } from "@langchain/core/tools";
-import { withGoogleApiRetry } from "@neylonai/integrations/gemini";
 import type { CompiledAgentGraph } from "../domain/types";
 import { meterModelResponse } from "../infrastructure/metering";
 import {
@@ -82,15 +82,9 @@ export function buildAgentGraph(
 
   async function agentNode(state: typeof AgentState.State) {
     recordAgentRound();
-    const response = await withGoogleApiRetry(async (apiKey) => {
-      const llm = new ChatGoogleGenerativeAI({
-        model: options.model,
-        temperature: 0.4,
-        maxRetries: 0,
-        apiKey,
-      });
-      return llm.bindTools(tools).invoke(state.messages);
-    });
+    const tier = options.model === getAgentModelHigh() ? "complex" : options.model === getAgentModelMedium() ? "standard" : "simple";
+    const llm = getProviderModel(tier, { temperature: 0.4 }, tools);
+    const response = await llm.invoke(state.messages);
     meterModelResponse(options.model, response);
 
     const withTools = response as AIMessage & {

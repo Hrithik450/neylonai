@@ -1,6 +1,5 @@
-import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
-import { withGoogleApiRetry } from "@neylonai/integrations/gemini";
+import { getProviderModel } from "../providers";
 import {
   AI_CREDIT_COSTS,
   CREDIT_ESTIMATOR_VERSION,
@@ -421,19 +420,15 @@ export async function routeModel(
 
   try {
     const classifierModel = getClassifierModelId();
-    const response = await withGoogleApiRetry(async (apiKey) => {
-      const llm = new ChatGoogleGenerativeAI({
-        model: classifierModel,
-        temperature: 0,
-        maxRetries: 0,
-        json: true,
-        apiKey,
-      });
-      return llm.invoke([
-        new SystemMessage(prompts.complexityClassifier),
-        new HumanMessage(buildEstimatorUserMessage(input)),
-      ]);
+    const llm = getProviderModel("simple", {
+      temperature: 0,
+      jsonMode: true,
     });
+    
+    const response = await llm.invoke([
+      new SystemMessage(prompts.complexityClassifier),
+      new HumanMessage(buildEstimatorUserMessage(input)),
+    ]);
     meterModelResponse(classifierModel, response);
     const raw =
       typeof response.content === "string"

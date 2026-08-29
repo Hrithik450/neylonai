@@ -1,7 +1,4 @@
-import {
-  GoogleGenerativeAIEmbeddings,
-  ChatGoogleGenerativeAI,
-} from "@langchain/google-genai";
+import { GoogleGenerativeAIEmbeddings } from "@langchain/google-genai";
 import { TaskType } from "@google/generative-ai";
 import { PromptTemplate } from "@langchain/core/prompts";
 import {
@@ -10,6 +7,7 @@ import {
 } from "@neylonai/database";
 import { listAllowedSourceIds } from "@neylonai/domain/knowledge";
 import { withGoogleApiRetry } from "@neylonai/integrations";
+import { getProviderModel } from "../../../providers";
 import { prompts } from "../../../lib/prompts";
 import {
   getEmbeddingModel,
@@ -107,15 +105,9 @@ async function expandQueries(question: string): Promise<string[]> {
   const prompt = PromptTemplate.fromTemplate(prompts.queryExpansion);
   const utilityModel = getUtilityModel();
 
-  return withGoogleApiRetry(async (apiKey) => {
-    const llm = new ChatGoogleGenerativeAI({
-      model: utilityModel,
-      temperature: 0.4,
-      maxRetries: 0,
-      apiKey,
-    });
-    const formatted = await prompt.format({ question });
-    const response = await llm.invoke(formatted);
+  const llm = getProviderModel("simple", { temperature: 0.4 });
+  const formatted = await prompt.format({ question });
+  const response = await llm.invoke(formatted);
     meterModelResponse(utilityModel, response, {
       metadata: { purpose: "query_expansion" },
     });
@@ -124,7 +116,6 @@ async function expandQueries(question: string): Promise<string[]> {
       .map((q) => q.trim())
       .filter(Boolean)
       .slice(0, MAX_SEARCH_QUERIES - 1);
-  });
 }
 
 async function searchSingleQuery(
