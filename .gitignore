@@ -45,6 +45,7 @@ yarn-error.log*
 # local scratch / temp exports
 .tmp/
 data/
+scratch/
 
 # vercel
 .vercel

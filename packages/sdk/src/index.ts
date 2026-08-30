@@ -53,6 +53,8 @@ export {
   shouldShowWidgetOnPath,
   shouldAutoOpenOnPath,
   pathMatchesPrefixes,
+  normalizePathRule,
+  validatePathRule,
   DEFAULT_WIDGET_CONFIG,
   DEFAULT_WIDGET_MESSAGES,
   DEFAULT_WIDGET_LAYOUT,

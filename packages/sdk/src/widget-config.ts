@@ -378,18 +378,78 @@ export function mergeWidgetConfig(
   };
 }
 
+export function normalizePathRule(raw: string): string {
+  let p = raw.trim();
+  if (!p) return "";
+
+  // If a full URL was pasted (e.g. https://domain.com/dashboard/app)
+  if (/^https?:\/\//i.test(p)) {
+    try {
+      const parsed = new URL(p);
+      p = parsed.pathname;
+    } catch {
+      p = p.replace(/^https?:\/\/[^/]+/i, "");
+    }
+  }
+
+  // Strip query parameters and hash fragments
+  p = p.split("?")[0].split("#")[0].trim();
+
+  // Normalize backslashes to forward slashes
+  p = p.replace(/\\/g, "/");
+
+  // Collapse duplicate slashes
+  p = p.replace(/\/+/g, "/");
+
+  // Strip trailing /* or * so clean path is stored as /dashboard
+  if (p.endsWith("/*")) {
+    p = p.slice(0, -2);
+  } else if (p.endsWith("*")) {
+    p = p.slice(0, -1);
+  }
+
+  // Ensure leading slash
+  if (!p.startsWith("/")) {
+    p = "/" + p;
+  }
+
+  // Strip trailing slash unless root /
+  if (p.length > 1 && p.endsWith("/")) {
+    p = p.slice(0, -1);
+  }
+
+  return p;
+}
+
+export function validatePathRule(raw: string): string | null {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  const normalized = normalizePathRule(trimmed);
+  if (!normalized || normalized === "/") return null;
+
+  // Relative path, no spaces
+  const pathRegex = /^\/[a-zA-Z0-9_\-\.~/%]*$/;
+  if (!pathRegex.test(normalized)) {
+    return `Invalid path: "${raw}". Paths should be relative (e.g. /dashboard or /admin) and contain no spaces.`;
+  }
+  return null;
+}
+
 export function pathMatchesPrefixes(
   path: string | null | undefined,
   prefixes: string[] | undefined,
 ): boolean {
   if (!prefixes?.length) return false;
-  const p = path || "/";
+  const rawPath = path || (typeof window !== "undefined" ? window.location.pathname : "/");
+  const current = normalizePathRule(rawPath).toLowerCase();
+
   return prefixes.some((raw) => {
-    const cleaned = raw.trim();
+    const cleaned = normalizePathRule(raw).toLowerCase();
     if (!cleaned) return false;
-    if (p === cleaned) return true;
-    const prefix = cleaned.endsWith("/") ? cleaned : `${cleaned}/`;
-    return p.startsWith(prefix) || p.startsWith(cleaned);
+    if (cleaned === "/") return current === "/";
+    if (current === cleaned) return true;
+    const prefix = `${cleaned}/`;
+    return current.startsWith(prefix);
   });
 }
 

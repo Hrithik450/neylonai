@@ -1,5 +1,5 @@
 import { BaseChatModel } from "@langchain/core/language_models/chat_models";
-import { createZyloAI, createGroq, createGemini, buildFallbackChain, ModelConfig } from "./factory";
+import { createGroq, createGemini, buildFallbackChain, ModelConfig } from "./factory";
 import { getAgentModelHigh, getAgentModelMedium, getUtilityModel } from "../lib/models";
 import { StructuredToolInterface } from "@langchain/core/tools";
 
@@ -10,29 +10,25 @@ export function getProviderModel(tier: ModelTier, config?: ModelConfig, tools?: 
 
   switch (tier) {
     case "complex":
-      // ZyloAI Minimax -> Groq OSS -> Gemini High
+      // Groq (GPT OSS 120B) -> Gemini High
       models = [
-        ...createZyloAI("minimax-m3", config, tools),
-        ...createGroq("llama-3.3-70b-versatile", config, tools),
+        ...createGroq("openai/gpt-oss-120b", config, tools),
         ...createGemini(getAgentModelHigh(), config, tools),
       ];
       break;
       
     case "standard":
-      // ZyloAI Minimax -> ZyloAI OSS -> Groq OSS -> Gemini Medium
+      // Groq (GPT OSS 120B) -> Gemini Medium
       models = [
-        ...createZyloAI("minimax-m3", config, tools),
-        ...createZyloAI("gpt-oss", config, tools),
-        ...createGroq("llama-3.3-70b-versatile", config, tools),
+        ...createGroq("openai/gpt-oss-120b", config, tools),
         ...createGemini(getAgentModelMedium(), config, tools),
       ];
       break;
 
     case "simple":
-      // ZyloAI OSS -> Groq OSS -> Gemini Utility
+      // Groq (GPT OSS 120B) -> Gemini Utility
       models = [
-        ...createZyloAI("gpt-oss", config, tools),
-        ...createGroq("llama-3.3-70b-versatile", config, tools),
+        ...createGroq("openai/gpt-oss-120b", config, tools),
         ...createGemini(getUtilityModel(), config, tools),
       ];
       break;

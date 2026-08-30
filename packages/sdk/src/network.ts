@@ -20,7 +20,7 @@ function getScriptOrigin(): string | null {
   // If embedded via <script data-key="...">, infer API origin from the script's src URL
   const script = document.querySelector("script[data-key]") as HTMLScriptElement;
   if (script && script.src) {
-    try {
+  try {
       const url = new URL(script.src);
       // Optional: ignore if script somehow loaded from another host, but typically it's correct
       return url.origin;
@@ -28,15 +28,15 @@ function getScriptOrigin(): string | null {
       return null;
     }
   }
-  return null;
+ return null;
 }
 
 /** Resolved backend origin for SDK fetches. */
 export function getApiOrigin(): string {
-  const fromEnv = envOrigin();
+ const fromEnv = envOrigin();
   if (fromEnv) return fromEnv;
 
-  const scriptOrigin = getScriptOrigin();
+ const scriptOrigin = getScriptOrigin();
   if (scriptOrigin) return scriptOrigin;
 
   return NEYLONAI_API_ORIGIN;

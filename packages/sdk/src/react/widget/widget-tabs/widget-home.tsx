@@ -76,7 +76,7 @@ export function WidgetHome() {
       style={{ fontFamily }}
     >
       <div
-        className="py-2 pb-1 px-2 max-md:rounded-none rounded-b-2xl"
+        className="pt-4 sm:pt-5 pb-2 px-2 max-md:rounded-none rounded-b-2xl"
         style={{ color: branding.primaryTextColor }}
       >
         <div className="flex justify-between items-center">
@@ -116,53 +116,55 @@ export function WidgetHome() {
         </div>
 
         <WidgetIntroText />
-
-        <p
-          className="mt-4.5 px-1 text-[13px] flex items-center gap-1.5"
-          style={{ color: branding.secondaryTextColor }}
-        >
-          <BookOpen className="w-4 h-4 shrink-0" aria-hidden />
-          <span>
-            {branding.name?.trim()
-              ? `Answers from ${branding.name.trim()}'s knowledge`
-              : "Answers from your knowledge"}
-            {pageLabel ? `. Help for ${pageLabel}` : ""}
-          </span>
-        </p>
       </div>
 
-      <div className="pb-5 px-2 space-y-4">
-        <Button
-          type="button"
-          variant="ghost"
-          onClick={openChat}
-          className="group h-auto w-full cursor-pointer rounded-xl px-4 pr-5 py-4 flex justify-between items-center gap-3 shadow-sm border hover:opacity-95 hover:bg-transparent"
-          style={{
-            backgroundColor: branding.primaryTextBackground,
-            color: branding.askButtonTextColor,
-            borderColor: branding.askButtonTextColor,
-          }}
-        >
-          <span className="flex min-w-0 flex-1 items-center gap-3.5">
-            <span 
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
-              style={{ backgroundColor: `color-mix(in srgb, ${branding.askButtonTextColor} 10%, transparent)` }}
+      <div className="pb-5 px-2 space-y-6">
+        <div className="space-y-2.5">
+          <div className="flex items-center gap-1.5 px-0.5">
+            <BookOpen className="w-3.5 h-3.5" style={{ color: branding.primaryTextColor }} aria-hidden />
+            <h4
+              className="text-xs font-semibold uppercase tracking-wide"
+              style={{ color: branding.secondaryTextColor }}
             >
-              <MessageCircle className="w-5 h-5" />
-            </span>
-            <span className="flex min-w-0 flex-col items-start text-left">
-              <span className="font-semibold text-sm md:text-base">
-                {config.messages.askTitle}
-              </span>
-              <span
-                className="text-sm font-normal whitespace-normal break-words opacity-80"
+              {branding.name?.trim()
+                ? `Answers from ${branding.name.trim()}'s knowledge`
+                : "Answers from your knowledge"}
+              {pageLabel ? `. Help for ${pageLabel}` : ""}
+            </h4>
+          </div>
+
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={openChat}
+            className="group h-auto w-full cursor-pointer rounded-xl px-4 pr-5 py-4 flex justify-between items-center gap-3 shadow-sm border hover:opacity-95 hover:bg-transparent"
+            style={{
+              backgroundColor: branding.primaryTextBackground,
+              color: branding.askButtonTextColor,
+              borderColor: branding.askButtonTextColor,
+            }}
+          >
+            <span className="flex min-w-0 flex-1 items-center gap-3.5">
+              <span 
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
+                style={{ backgroundColor: `color-mix(in srgb, ${branding.askButtonTextColor} 10%, transparent)` }}
               >
-                {config.messages.askSubtitle.replace(/\s*[—–]\s*|\s+-\s+/g, ", ")}
+                <MessageCircle className="w-5 h-5" />
+              </span>
+              <span className="flex min-w-0 flex-col items-start text-left">
+                <span className="font-semibold text-sm md:text-base">
+                  {config.messages.askTitle}
+                </span>
+                <span
+                  className="text-sm font-normal whitespace-normal break-words opacity-80"
+                >
+                  {config.messages.askSubtitle.replace(/\s*[—–]\s*|\s+-\s+/g, ", ")}
+                </span>
               </span>
             </span>
-          </span>
-          <ArrowRight className="w-5 h-5 shrink-0 opacity-80 group-hover:-rotate-45 transition-transform duration-150 ease-in-out" />
-        </Button>
+            <ArrowRight className="w-5 h-5 shrink-0 opacity-80 group-hover:-rotate-45 transition-transform duration-150 ease-in-out" />
+          </Button>
+        </div>
 
         <WidgetFaqs />
 

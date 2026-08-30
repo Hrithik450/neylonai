@@ -51,20 +51,20 @@ export function LauncherSuggestionBubble({
           data-testid="suggestion-bubble"
           onClick={() => onSelect?.(suggestion.text)}
           className={cn(
-            "relative block w-full text-left rounded-2xl border",
-            "backdrop-blur-sm shadow-lg px-3.5 pt-0.5 pb-2.5",
+            "relative block w-full text-left rounded-3xl border",
+            "backdrop-blur-sm shadow-lg px-4 py-3.5",
             "cursor-pointer hover:shadow-xl transition-shadow",
           )}
           style={{ backgroundColor: surfaceColor, borderColor }}
         >
           <p
-            className="text-sm leading-snug whitespace-normal break-words line-clamp-2"
+            className="text-sm leading-snug whitespace-normal break-words line-clamp-2 pb-1"
             style={{ color: primaryTextColor }}
           >
             {suggestion.text}
           </p>
           <span
-            className="mt-0.5 block text-[11px] font-medium"
+            className="block text-[11px] font-medium pt-1.5"
             style={{ color: secondaryTextColor }}
           >
             Tap to ask
@@ -83,8 +83,8 @@ export function LauncherSuggestionBubble({
           data-proactive-suggestion
           data-testid="suggestion-bubble"
           className={cn(
-            "relative rounded-2xl border",
-            "backdrop-blur-sm shadow-lg px-3.5 pt-0.5 pb-1.5",
+            "relative rounded-3xl border",
+            "backdrop-blur-sm shadow-lg px-4 py-3.5",
           )}
           style={{ backgroundColor: surfaceColor, borderColor }}
         >

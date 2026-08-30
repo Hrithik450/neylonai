@@ -171,7 +171,7 @@ export async function generateProactiveCandidates(
     const utilityModel = getUtilityModel();
     const llm = getProviderModel("simple", {
       temperature: 0.9,
-      maxTokens: 700,
+      maxTokens: 1500,
       jsonMode: true,
     });
     

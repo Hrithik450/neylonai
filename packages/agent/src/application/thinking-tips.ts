@@ -138,7 +138,7 @@ async function generateLlmTips(question: string): Promise<string[] | null> {
   const tipsModel = getTipsModel();
   const llm = getProviderModel("simple", {
     temperature: 0.7,
-    maxTokens: 220,
+    maxTokens: 1000,
     jsonMode: true,
   });
   

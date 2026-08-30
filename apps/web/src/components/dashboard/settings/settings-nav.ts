@@ -27,8 +27,8 @@ export const SETTINGS_SECTIONS: Array<{
   },
   {
     id: "developer",
-    label: "Developer",
-    description: "SDK installation guide",
+    label: "Installation Guide",
+    description: "Script installation guide and page rules",
   },
   {
     id: "billing",

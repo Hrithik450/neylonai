@@ -374,6 +374,19 @@ export async function startWebsiteCrawl(input: {
     throw error;
   }
 
+  // Automatic non-blocking fallback: if the background crawler worker isn't running
+  // (common in local development or single-service environments), process in-process.
+  if (process.env.NODE_ENV === "development") {
+    const jobId = job!.id;
+    setTimeout(() => {
+      import("./process")
+        .then(({ processWebsiteCrawlJob }) => processWebsiteCrawlJob(jobId))
+        .catch((err) =>
+          console.warn("[crawl.service] in-process fallback crawl:", err),
+        );
+    }, 1500);
+  }
+
   return mapJob(job!);
 }
 

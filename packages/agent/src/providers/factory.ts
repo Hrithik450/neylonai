@@ -17,28 +17,8 @@ function bindToolsIfAny(model: BaseChatModel, tools?: StructuredToolInterface[])
   return model;
 }
 
-// 1. ZyloAI (Minimax & OSS)
-export function createZyloAI(modelName: "minimax-m3" | "gpt-oss", config?: ModelConfig, tools?: StructuredToolInterface[]): BaseChatModel[] {
-  const keys = getApiKeys("ZYLONAI_API_KEYS");
-  console.log(`[factory] createZyloAI keys for ${modelName}:`, keys);
-  return keys.map((key) => {
-    const m = new ChatOpenAI({
-      modelName,
-      apiKey: key,
-      configuration: {
-        baseURL: "https://api.zyloai.net/v1",
-      },
-      temperature: config?.temperature ?? 0.7,
-      maxTokens: config?.maxTokens,
-      maxRetries: 1, // Fallbacks handle retries
-      modelKwargs: config?.jsonMode ? { response_format: { type: "json_object" } } : {},
-    });
-    return bindToolsIfAny(m, tools);
-  });
-}
-
-// 2. Groq (OSS)
-export function createGroq(modelName: string = "llama-3.3-70b-versatile", config?: ModelConfig, tools?: StructuredToolInterface[]): BaseChatModel[] {
+// 1. Groq (OSS)
+export function createGroq(modelName: string = "openai/gpt-oss-120b", config?: ModelConfig, tools?: StructuredToolInterface[]): BaseChatModel[] {
   const keys = getApiKeys("GROQ_API_KEYS");
   return keys.map((key) => {
     const m = new ChatOpenAI({

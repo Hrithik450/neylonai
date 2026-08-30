@@ -22,4 +22,6 @@ export {
   pathMatchesPrefixes,
   shouldShowWidgetOnPath,
   shouldAutoOpenOnPath,
+  normalizePathRule,
+  validatePathRule,
 } from "@neylonai/sdk";

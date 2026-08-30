@@ -416,7 +416,7 @@ async function aiFollowUps(
     const utilityModel = getUtilityModel();
     const llm = getProviderModel("simple", {
       temperature: 0.6,
-      maxTokens: 180,
+      maxTokens: 1000,
       jsonMode: true,
     });
     const response = await llm.invoke([

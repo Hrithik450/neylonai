@@ -85,11 +85,18 @@ function mergeRuntimeAndAppearance(
     ...base,
     apiKey: host?.apiKey,
     user: host?.user,
-    pagePath: host?.pagePath ?? null,
+    pagePath:
+      host?.pagePath ??
+      (typeof window !== "undefined" ? window.location.pathname : null),
     presentation: opts.presentation ?? "fixed",
     className: opts.className,
     defaultOpen:
-      Boolean(host?.defaultOpen) || shouldAutoOpenOnPath(host?.pagePath, base),
+      Boolean(host?.defaultOpen) ||
+      shouldAutoOpenOnPath(
+        host?.pagePath ??
+          (typeof window !== "undefined" ? window.location.pathname : null),
+        base,
+      ),
   };
 }
 
@@ -111,8 +118,8 @@ function SupportWidgetInner({
     threadId: string;
     threadTitle: string;
   } | null>(null);
-  const displayedSuggestion = humanReply ?? active;
-  const suggestionVisible = Boolean(humanReply) || visible;
+  const displayedSuggestion = !isOpen ? (humanReply ?? active) : null;
+  const suggestionVisible = !isOpen && (Boolean(humanReply) || visible);
   useWidgetAudio(displayedSuggestion?.id ?? null, suggestionVisible);
   const onOpenChangeRef = React.useRef(onOpenChange);
   onOpenChangeRef.current = onOpenChange;
@@ -275,7 +282,7 @@ function SupportWidgetInner({
           )}
           data-proactive-suggestion
         >
-          {displayedSuggestion && (
+          {!isOpen && displayedSuggestion && (
             <LauncherSuggestionBubble
               suggestion={displayedSuggestion}
               visible={suggestionVisible}
@@ -432,13 +439,52 @@ export function SupportWidget({
     appearance?.proactive?.soundEnabled,
   ].join("|");
 
+  const [currentPath, setCurrentPath] = useState(() =>
+    typeof window !== "undefined" ? window.location.pathname : "/",
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const updatePath = () => {
+      setCurrentPath(window.location.pathname);
+    };
+    window.addEventListener("popstate", updatePath);
+    window.addEventListener("hashchange", updatePath);
+
+    const originalPushState = history.pushState;
+    const originalReplaceState = history.replaceState;
+    history.pushState = function (...args) {
+      const res = originalPushState.apply(this, args);
+      updatePath();
+      return res;
+    };
+    history.replaceState = function (...args) {
+      const res = originalReplaceState.apply(this, args);
+      updatePath();
+      return res;
+    };
+
+    return () => {
+      window.removeEventListener("popstate", updatePath);
+      window.removeEventListener("hashchange", updatePath);
+      history.pushState = originalPushState;
+      history.replaceState = originalReplaceState;
+    };
+  }, []);
+
+  const effectivePath = config?.pagePath ?? currentPath;
+
   const merged = useMemo(
     () =>
-      mergeRuntimeAndAppearance(config, appearance, {
-        presentation,
-        className,
-      }),
-    [config, appearance, appearanceEpoch, presentation, className],
+      mergeRuntimeAndAppearance(
+        { ...config, pagePath: effectivePath },
+        appearance,
+        {
+          presentation,
+          className,
+        },
+      ),
+    [config, effectivePath, appearance, appearanceEpoch, presentation, className],
   );
 
   useEffect(() => {
@@ -456,7 +502,7 @@ export function SupportWidget({
     return null;
   }
 
-  if (!shouldShowWidgetOnPath(merged.pagePath, merged.website)) {
+  if (!shouldShowWidgetOnPath(effectivePath, merged.website)) {
     return null;
   }
 

@@ -175,7 +175,7 @@ export function useProactiveSuggestions() {
     async (
       mode: "idle" | "post_chat" | "fallback",
     ): Promise<ProactiveSuggestionDto[]> => {
-      if (fetchingRef.current) return [];
+      if (fetchingRef.current || (mode === "idle" && isOpenRef.current)) return [];
       fetchingRef.current = true;
       try {
         const result = await fetchSuggestions({

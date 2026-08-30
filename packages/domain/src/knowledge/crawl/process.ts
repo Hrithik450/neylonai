@@ -353,22 +353,25 @@ export async function processWebsiteCrawlJob(jobId: string): Promise<void> {
         );
       }
 
-      await db.insert(websiteCrawlPages).values(
-        discoveredPages.map(({ page, previous, status }) => ({
-          job_id: jobId,
-          organization_id: job.organization_id,
-          url: page.url,
-          canonical_path: page.path,
-          lastmod: page.lastmod,
-          category: page.category,
-          status,
-          content_hash:
-            typeof previous?.rawContent === "string" &&
-            previous.rawContent.length > 0
-              ? hashPageContent(previous.rawContent)
-              : null,
-        })),
-      );
+      await db
+        .insert(websiteCrawlPages)
+        .values(
+          discoveredPages.map(({ page, previous, status }) => ({
+            job_id: jobId,
+            organization_id: job.organization_id,
+            url: page.url,
+            canonical_path: page.path,
+            lastmod: page.lastmod,
+            category: page.category,
+            status,
+            content_hash:
+              typeof previous?.rawContent === "string" &&
+              previous.rawContent.length > 0
+                ? hashPageContent(previous.rawContent)
+                : null,
+          })),
+        )
+        .onConflictDoNothing();
 
       await setJobUnlessCancelled(jobId, {
         status: "crawling",

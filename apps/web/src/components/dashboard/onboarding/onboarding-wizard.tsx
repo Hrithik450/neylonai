@@ -125,7 +125,12 @@ export function OnboardingWizard({
   const [draftLogoUrl, setDraftLogoUrl] = useState<string | undefined>();
   const [savingBranding, setSavingBranding] = useState(false);
 
-  // Step 5 — finish / install
+  // Step 5 — Personalization (AI Seed)
+  const [seedingContent, setSeedingContent] = useState(false);
+  const [seedCompleted, setSeedCompleted] = useState(false);
+  const [seedError, setSeedError] = useState<string | null>(null);
+
+  // Step 6 — finish / install
   const [publicKey, setPublicKey] = useState<string | null>(null);
   const [minting, setMinting] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -329,29 +334,40 @@ export function OnboardingWizard({
     }
   }, [widgetConfig, draftName, draftLogoUrl, saveStep]);
 
-  // Reached step 5 → AI-seed the widget content once, then advance to step 6.
+  const seedWidgetContent = useCallback(async () => {
+    setSeedingContent(true);
+    setSeedError(null);
+    setSeedCompleted(false);
+    try {
+      const res = await fetch("/api/v1/widget-content/seed", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      });
+      const json = (await res.json()) as { success: boolean; error?: string };
+      if (!json.success) {
+        throw new Error(json.error ?? "Could not generate widget content.");
+      }
+      setSeedCompleted(true);
+    } catch (e) {
+      setSeedError(
+        e instanceof Error ? e.message : "Could not generate widget content.",
+      );
+    } finally {
+      setSeedingContent(false);
+    }
+  }, []);
+
+  // Reached step 5 → AI-seed the widget content and wait for manual completion.
   useEffect(() => {
     if (!open || step !== 5 || seedFiredRef.current) return;
     seedFiredRef.current = true;
-    void (async () => {
-      try {
-        await fetch("/api/v1/widget-content/seed", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-        });
-      } catch {
-        // Best-effort
-      } finally {
-        saveStep(6);
-        setStep(6);
-      }
-    })();
-  }, [open, step, saveStep]);
+    void seedWidgetContent();
+  }, [open, step, seedWidgetContent]);
 
-  // Coded sites: fetch the active key so the snippet shows the real value.
+  // Fetch the active key on step 6 so the snippet shows the real value.
   useEffect(() => {
-    if (!open || step !== 6 || !isCoded) return;
+    if (!open || step !== 6) return;
     let cancelled = false;
     void (async () => {
       try {
@@ -372,7 +388,7 @@ export function OnboardingWizard({
     return () => {
       cancelled = true;
     };
-  }, [open, step, isCoded]);
+  }, [open, step]);
 
   const snippetKey = publicKey ?? "nk_live_YOUR_API_KEY";
 
@@ -434,7 +450,11 @@ export function OnboardingWizard({
           : step === 4
             ? "Customize your assistant"
           : step === 5
-            ? "Getting your support widget ready"
+            ? seedCompleted
+              ? "Content generated"
+              : seedError
+                ? "Generation paused"
+                : "Getting your support widget ready"
           : isCoded
             ? "You’re ready to go live"
             : "Almost there";
@@ -451,10 +471,12 @@ export function OnboardingWizard({
           : step === 4
             ? "Give your assistant a name and upload your logo."
           : step === 5
-            ? "We’re writing your widget’s welcome, suggested questions, and FAQs from your imported pages. Hang tight — this usually takes a minute."
-          : isCoded
-            ? "Your site is imported. Drop this script into your pages and the assistant goes live."
-            : `Your site is imported. One-click ${PLATFORM_LABEL[platform ?? ""] ?? "install"} setup is coming soon.`;
+            ? seedCompleted
+              ? "Your greetings, suggested questions, and FAQs are ready."
+              : seedError
+                ? "We encountered an issue preparing the content. You can retry or proceed with default content."
+                : "We’re generating your widget’s welcome, intro lines, and FAQs from your imported pages."
+          : `Your site is imported. Drop this snippet into your ${PLATFORM_LABEL[platform ?? ""] ?? "site"} pages and the assistant goes live.`;
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -662,107 +684,130 @@ export function OnboardingWizard({
           {/* ---- Step 5: Personalization (AI Seed) ---- */}
           {step === 5 ? (
             <div className="space-y-4">
-              <div
-                className="space-y-1 rounded-xl border border-[var(--ink)]/15 bg-[var(--cream)] px-4 py-3"
-                role="status"
-              >
-                <div className="flex items-center gap-2 text-sm font-medium">
-                  <span
-                    className="inline-block h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-[var(--ink)]/25 border-t-[var(--ink)]"
-                    aria-hidden
-                  />
-                  Personalizing your assistant from your site…
+              {seedingContent ? (
+                <div
+                  className="space-y-2 rounded-xl border border-[var(--ink)]/15 bg-[var(--cream)] px-5 py-4"
+                  role="status"
+                >
+                  <div className="flex items-center gap-2.5 text-sm font-medium">
+                    <span
+                      className="inline-block h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-[var(--ink)]/25 border-t-[var(--ink)]"
+                      aria-hidden
+                    />
+                    Generating your support widget content…
+                  </div>
+                  <p className="caption text-xs text-[var(--ink)]/70 pl-6.5">
+                    Writing your widget’s welcome message, intro lines, suggested questions, and FAQs from your imported pages.
+                  </p>
                 </div>
-                <p className="caption text-[0.65rem]">
-                  Writing your widget’s welcome, suggested questions, and FAQs
-                  from your imported pages.
-                </p>
-              </div>
+              ) : null}
+
+              {seedCompleted ? (
+                <div
+                  className="space-y-2 rounded-xl border border-emerald-500/30 bg-emerald-50/50 px-5 py-4"
+                  role="status"
+                >
+                  <div className="flex items-center gap-2.5 text-sm font-medium text-emerald-900">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white">
+                      <Check className="h-3 w-3" aria-hidden />
+                    </span>
+                    Your content has been generated successfully
+                  </div>
+                  <p className="caption text-xs text-emerald-800/80 pl-7.5">
+                    Your greetings, intro text, and FAQs are saved and ready. You can inspect and customize them anytime in the dashboard widget settings.
+                  </p>
+                </div>
+              ) : null}
+
+              {seedError ? (
+                <div className="space-y-3 rounded-xl border border-red-300 bg-red-50 px-5 py-4">
+                  <p className="text-sm text-red-900 font-medium">{seedError}</p>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => void seedWidgetContent()}
+                      className="btn-ink bg-white px-3 py-1.5 text-xs text-[var(--ink)]"
+                    >
+                      Try again
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        saveStep(6);
+                        setStep(6);
+                      }}
+                      className="text-xs text-[var(--ink)]/60 hover:text-[var(--ink)] underline px-2 py-1"
+                    >
+                      Skip with default content
+                    </button>
+                  </div>
+                </div>
+              ) : null}
             </div>
           ) : null}
 
           {/* ---- Step 6: finish / install ---- */}
           {step === 6 ? (
             <div className="space-y-4">
-              {/* Coded: show the install snippet */}
-              {isCoded ? (
-                <div className="grid gap-6 sm:grid-cols-2 items-start">
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-base font-medium">
-                        Your install script
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => void copySnippet()}
-                        disabled={minting}
-                        className="btn-ink inline-flex items-center gap-1.5 bg-[var(--ink)] px-3 py-1.5 text-xs text-white"
-                      >
-                        {copied ? (
-                          <>
-                            <Check className="h-3.5 w-3.5" aria-hidden />
-                            Copied
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="h-3.5 w-3.5" aria-hidden />
-                            {minting ? "Preparing…" : "Copy"}
-                          </>
-                        )}
-                      </button>
-                    </div>
-                    <pre className="mono max-sm:overflow-x-auto whitespace-pre-wrap break-all rounded-xl border border-[var(--ink)]/15 bg-[var(--cream)] px-5 py-4 text-xs leading-relaxed">
-                      <code>{buildWidgetSnippet(snippetKey)}</code>
-                    </pre>
-                    <p className="caption text-xs">
-                      Paste this in your source code.
-                      You can always find it again in{" "}
-                      <a className="underline" href={DEVELOPER_HREF}>
-                        Settings → Developer
-                      </a>
-                      .
-                    </p>
+              <div className="grid gap-6 sm:grid-cols-2 items-start">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-base font-medium">
+                      Your install script
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => void copySnippet()}
+                      disabled={minting}
+                      className="btn-ink inline-flex items-center gap-1.5 bg-[var(--ink)] px-3 py-1.5 text-xs text-white"
+                    >
+                      {copied ? (
+                        <>
+                          <Check className="h-3.5 w-3.5" aria-hidden />
+                          Copied
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="h-3.5 w-3.5" aria-hidden />
+                          {minting ? "Preparing…" : "Copy"}
+                        </>
+                      )}
+                    </button>
                   </div>
-
-                  {/* Walkthrough video (placeholder until a clip is set) */}
-                  <div className="overflow-hidden rounded-xl border border-[var(--ink)]/15 flex flex-col">
-                    {INSTALL_VIDEO_SRC ? (
-                      <video
-                        className="aspect-video w-full bg-black mt-auto mb-auto"
-                        src={INSTALL_VIDEO_SRC}
-                        controls
-                        playsInline
-                      />
-                    ) : (
-                      <div className="flex aspect-video w-full flex-col items-center justify-center gap-3 bg-[var(--cream)] text-center h-full">
-                        <span className="flex h-12 w-12 items-center justify-center rounded-full border border-[var(--ink)]/20 text-[var(--ink)]/60">
-                          <Play className="h-5 w-5" aria-hidden />
-                        </span>
-                        <span className="caption text-xs">
-                          Setup walkthrough — coming soon
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-2 rounded-xl border border-[var(--ink)]/15 bg-[var(--cream)] px-4 py-3.5">
-                  <p className="text-sm font-medium">
-                    One-click {PLATFORM_LABEL[platform ?? ""] ?? "install"} setup
-                    is coming soon
-                  </p>
-                  <p className="caption text-[0.7rem]">
-                    Your site is already imported and your assistant is learning
-                    from it. We’re building a guided installer for{" "}
-                    {PLATFORM_LABEL[platform ?? ""] ?? "your platform"} — until
-                    then, your install snippet is always available in{" "}
+                  <pre className="mono max-sm:overflow-x-auto whitespace-pre-wrap break-all rounded-xl border border-[var(--ink)]/15 bg-[var(--cream)] px-5 py-4 text-xs leading-relaxed">
+                    <code>{buildWidgetSnippet(snippetKey)}</code>
+                  </pre>
+                  <p className="caption text-xs">
+                    Paste this snippet into your site&apos;s <code>&lt;head&gt;</code> or footer.
+                    You can always find it again in{" "}
                     <a className="underline" href={DEVELOPER_HREF}>
-                      Settings → Developer
+                      Settings → Installation Guide
                     </a>
                     .
                   </p>
                 </div>
-              )}
+
+                {/* Walkthrough video (placeholder until a clip is set) */}
+                <div className="overflow-hidden rounded-xl border border-[var(--ink)]/15 flex flex-col">
+                  {INSTALL_VIDEO_SRC ? (
+                    <video
+                      className="aspect-video w-full bg-black mt-auto mb-auto"
+                      src={INSTALL_VIDEO_SRC}
+                      controls
+                      playsInline
+                    />
+                  ) : (
+                    <div className="flex aspect-video w-full flex-col items-center justify-center gap-3 bg-[var(--cream)] text-center h-full">
+                      <span className="flex h-12 w-12 items-center justify-center rounded-full border border-[var(--ink)]/20 text-[var(--ink)]/60">
+                        <Play className="h-5 w-5" aria-hidden />
+                      </span>
+                      <span className="caption text-xs">
+                        Setup walkthrough — coming soon
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           ) : null}
 
@@ -830,8 +875,25 @@ export function OnboardingWizard({
                 disabled={savingBranding}
                 className="btn-ink inline-flex items-center gap-1.5 bg-[var(--ink)] px-4 py-2 text-sm text-white disabled:opacity-40"
               >
-                {savingBranding ? "Generating…" : "Continue"}
+                {savingBranding ? "Saving…" : "Continue"}
                 {!savingBranding ? (
+                  <ArrowRight className="h-4 w-4" aria-hidden />
+                ) : null}
+              </button>
+            ) : null}
+
+            {step === 5 ? (
+              <button
+                type="button"
+                onClick={() => {
+                  saveStep(6);
+                  setStep(6);
+                }}
+                disabled={seedingContent || (!seedCompleted && !seedError)}
+                className="btn-ink inline-flex items-center gap-1.5 bg-[var(--ink)] px-4 py-2 text-sm text-white disabled:opacity-40"
+              >
+                {seedingContent ? "Generating…" : "Continue"}
+                {!seedingContent ? (
                   <ArrowRight className="h-4 w-4" aria-hidden />
                 ) : null}
               </button>

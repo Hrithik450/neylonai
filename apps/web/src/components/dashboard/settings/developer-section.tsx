@@ -2,9 +2,33 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { SettingsSectionFrame, SettingsButton } from "./settings-ui";
+import {
+  SettingsSectionFrame,
+  SettingsButton,
+  FieldLabel,
+  FieldHint,
+} from "./settings-ui";
 import { CodeBlock } from "./code-block";
 import { buildWidgetSnippet } from "@/lib/widget-script";
+import {
+  mergeWidgetConfig,
+  normalizePathRule,
+  validatePathRule,
+  type StoredWidgetConfig,
+} from "@/lib/widget-config-types";
+
+function linesFromList(items: string[] | undefined): string {
+  return (items ?? []).join("\n");
+}
+
+function listFromLines(value: string): string[] {
+  return value
+    .split("\n")
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((s) => normalizePathRule(s))
+    .filter(Boolean);
+}
 
 export function DeveloperSettingsSection() {
   // The publishable key is stored retrievably (it ships inside client HTML, à
@@ -20,6 +44,14 @@ export function DeveloperSettingsSection() {
   const [hasActiveKey, setHasActiveKey] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [keyError, setKeyError] = useState<string | null>(null);
+
+  // Widget config & page targeting
+  const [widgetConfig, setWidgetConfig] = useState<StoredWidgetConfig | null>(null);
+  const [hiddenPathsInput, setHiddenPathsInput] = useState("");
+  const [autoOpenPathsInput, setAutoOpenPathsInput] = useState("");
+  const [savingRules, setSavingRules] = useState(false);
+  const [rulesMessage, setRulesMessage] = useState<string | null>(null);
+  const [rulesError, setRulesError] = useState<string | null>(null);
 
   const loadKey = useCallback(async () => {
     try {
@@ -47,9 +79,30 @@ export function DeveloperSettingsSection() {
     }
   }, []);
 
+  const loadWidgetConfig = useCallback(async () => {
+    try {
+      const res = await fetch("/api/v1/widget-config");
+      const json = (await res.json()) as {
+        success: boolean;
+        data?: {
+          config: StoredWidgetConfig;
+        };
+      };
+      if (json.success && json.data?.config) {
+        const cfg = json.data.config;
+        setWidgetConfig(cfg);
+        setHiddenPathsInput(linesFromList(cfg.website?.hiddenPathPrefixes));
+        setAutoOpenPathsInput(linesFromList(cfg.website?.autoOpenPathPrefixes));
+      }
+    } catch {
+      // Non-fatal
+    }
+  }, []);
+
   useEffect(() => {
     void loadKey();
-  }, [loadKey]);
+    void loadWidgetConfig();
+  }, [loadKey, loadWidgetConfig]);
 
   // Idempotent, non-rotating mint (the same path as Copy on the Overview): mints
   // a key only when the org has none, otherwise returns the existing one. A
@@ -113,15 +166,75 @@ export function DeveloperSettingsSection() {
     }
   };
 
+  const savePageRules = async () => {
+    setSavingRules(true);
+    setRulesMessage(null);
+    setRulesError(null);
+
+    // Validate hidden paths
+    const rawHidden = hiddenPathsInput.split("\n").map((s) => s.trim()).filter(Boolean);
+    for (const line of rawHidden) {
+      const err = validatePathRule(line);
+      if (err) {
+        setRulesError(err);
+        setSavingRules(false);
+        return;
+      }
+    }
+
+    // Validate auto-open paths
+    const rawAutoOpen = autoOpenPathsInput.split("\n").map((s) => s.trim()).filter(Boolean);
+    for (const line of rawAutoOpen) {
+      const err = validatePathRule(line);
+      if (err) {
+        setRulesError(err);
+        setSavingRules(false);
+        return;
+      }
+    }
+
+    try {
+      const nextConfig = mergeWidgetConfig({
+        ...(widgetConfig ?? {}),
+        website: {
+          hiddenPathPrefixes: listFromLines(hiddenPathsInput),
+          visiblePathPrefixes: [],
+          autoOpenPathPrefixes: listFromLines(autoOpenPathsInput),
+        },
+      });
+      const res = await fetch("/api/v1/widget-config", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(nextConfig),
+      });
+      const json = (await res.json()) as {
+        success: boolean;
+        data?: { config: StoredWidgetConfig };
+        error?: string;
+      };
+      if (!json.success || !json.data?.config) {
+        throw new Error(json.error ?? "Could not save page rules.");
+      }
+      setWidgetConfig(json.data.config);
+      setRulesMessage("Page targeting rules saved successfully.");
+      window.setTimeout(() => setRulesMessage(null), 4000);
+    } catch (e) {
+      setRulesError(e instanceof Error ? e.message : "Could not save page rules.");
+    } finally {
+      setSavingRules(false);
+    }
+  };
+
   const snippetKey = apiKey ?? publicKey ?? "nk_live_YOUR_API_KEY";
   const hasCopyableKey = Boolean(apiKey ?? publicKey);
 
   return (
     <SettingsSectionFrame
       id="developer-section"
-      title="Install Widget"
-      description="Add the widget to your site. Your key is limited to your connected website's domain, set under Integrations → Website."
+      title="Installation Guide"
+      description="Add the widget to your website and configure page targeting rules."
     >
+      {/* 1. Script Tag Installation */}
       <section className="ink-card p-6 space-y-4">
         <div>
           <h3 className="text-lg font-medium mb-1">
@@ -201,6 +314,68 @@ ${buildWidgetSnippet(snippetKey)}`}
           </Link>
           .
         </p>
+      </section>
+
+      {/* 2. Page Targeting & Rules */}
+      <section className="ink-card p-6 space-y-6">
+        <div className="space-y-1">
+          <h3 className="text-lg font-medium">Page Targeting & Rules</h3>
+          <p className="caption text-sm text-[var(--muted)]">
+            Control which URLs display or hide the support widget on your website. No code changes required.
+          </p>
+        </div>
+
+        <div className="space-y-4">
+          {/* Excluded Pages */}
+          <div className="space-y-1.5">
+            <FieldLabel>Exclude Paths (Hide Widget)</FieldLabel>
+            <textarea
+              className="ink-input min-h-24 mono text-xs"
+              placeholder={"/dashboard\n/admin\n/checkout\n/account"}
+              value={hiddenPathsInput}
+              onChange={(e) => setHiddenPathsInput(e.target.value)}
+            />
+            <FieldHint>
+              Page paths where the widget will never appear (one per line, e.g. <code>/dashboard</code> or <code>/admin</code>). All subpages are automatically included.
+            </FieldHint>
+          </div>
+
+          {/* Auto-Open Pages */}
+          <div className="space-y-1.5">
+            <FieldLabel>Auto-Open Widget Paths (Optional)</FieldLabel>
+            <textarea
+              className="ink-input min-h-20 mono text-xs"
+              placeholder={"/contact\n/support"}
+              value={autoOpenPathsInput}
+              onChange={(e) => setAutoOpenPathsInput(e.target.value)}
+            />
+            <FieldHint>
+              Paths where the widget chat panel should automatically expand when a visitor loads the page.
+            </FieldHint>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3 pt-2">
+          <SettingsButton
+            className="bg-[var(--ink)] text-white"
+            disabled={savingRules}
+            onClick={() => void savePageRules()}
+          >
+            {savingRules ? "Saving rules…" : "Save Page Rules"}
+          </SettingsButton>
+
+          {rulesMessage ? (
+            <span className="caption text-xs text-emerald-700 font-medium">
+              ✓ {rulesMessage}
+            </span>
+          ) : null}
+
+          {rulesError ? (
+            <span className="caption text-xs text-red-700 font-medium">
+              {rulesError}
+            </span>
+          ) : null}
+        </div>
       </section>
     </SettingsSectionFrame>
   );

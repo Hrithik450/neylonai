@@ -45,17 +45,17 @@ export function WidgetIntroText() {
 
   return (
     <div
-      className={cn("mt-8 px-1", config.branding.headingClassName)}
+      className={cn("mt-12 sm:mt-14 px-1", config.branding.headingClassName)}
       style={{ color: config.branding.primaryTextColor, fontFamily }}
     >
       <h2
-        className="text-2xl font-bold mb-0 leading-none min-h-[1em] break-words"
+        className="text-2xl sm:text-[1.65rem] font-bold mb-0 leading-tight min-h-[1.2em] break-words"
         style={{ fontFamily }}
       >
         <span>{introText}</span>
       </h2>
       <p
-        className="mt-4 text-lg font-normal leading-tight min-h-[1em] break-words line-clamp-2"
+        className="pt-1 sm:pt-1.5 pb-4 sm:pb-5 text-base sm:text-lg font-normal leading-relaxed min-h-[2.5em] break-words line-clamp-2"
         style={{
           color: config.branding.secondaryTextColor,
           fontFamily,

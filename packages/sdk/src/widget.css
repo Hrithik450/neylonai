@@ -7,6 +7,19 @@
   box-sizing: border-box;
 }
 
+.neylon-widget-root p,
+.neylon-widget-root h1,
+.neylon-widget-root h2,
+.neylon-widget-root h3,
+.neylon-widget-root h4,
+.neylon-widget-root h5,
+.neylon-widget-root h6,
+.neylon-widget-root ul,
+.neylon-widget-root ol,
+.neylon-widget-root figure {
+  margin: 0;
+}
+
 .neylon-widget-root button,
 .neylon-widget-root input,
 .neylon-widget-root textarea,

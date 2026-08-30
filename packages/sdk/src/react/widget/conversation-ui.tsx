@@ -7,6 +7,7 @@ import React, {
   useLayoutEffect,
   useRef,
   useState,
+  useMemo,
 } from "react";
 import { cn } from "../../ui";
 import remarkGfm from "remark-gfm";
@@ -68,6 +69,7 @@ const MessageBubble = memo(
     conversation,
     isStreaming,
     groupedWithPrevious,
+    groupedWithNext,
     showActions,
     aiMessageBackground,
     humanMessageBackground,
@@ -75,6 +77,7 @@ const MessageBubble = memo(
     conversation: ThreadMessage;
     isStreaming: boolean;
     groupedWithPrevious: boolean;
+    groupedWithNext?: boolean;
     showActions: boolean;
     aiMessageBackground: string;
     humanMessageBackground: string;
@@ -114,18 +117,18 @@ const MessageBubble = memo(
       conversation.role === "assistant" || conversation.role === "human";
     if (!isTeamMessage) {
       return (
-        <div
-          className={cn(
-            "flex min-w-0 max-w-[75%] flex-col ml-auto",
-            groupedWithPrevious ? "mt-0.5" : "mt-0",
-          )}
-        >
+        <div className="flex min-w-0 max-w-[75%] flex-col ml-auto">
           <p
-            className="py-2.5 px-3 border text-sm md:text-base leading-snug rounded-2xl rounded-br-sm break-words [overflow-wrap:anywhere]"
+            className="m-0 px-4 py-2.5 border text-sm md:text-base leading-snug break-words [overflow-wrap:anywhere] shadow-lg"
             style={{
+              margin: 0,
               backgroundColor: humanMessageBackground,
               color: humanText,
               borderColor,
+              borderTopLeftRadius: "1.35rem",
+              borderBottomLeftRadius: "1.35rem",
+              borderTopRightRadius: groupedWithPrevious ? "4px" : "1.35rem",
+              borderBottomRightRadius: groupedWithNext ? "4px" : "1.35rem",
             }}
           >
             {conversation.content}
@@ -140,19 +143,17 @@ const MessageBubble = memo(
     return (
       <div
         className={cn(
-          "max-w-full min-w-0 [content-visibility:auto]",
-          groupedWithPrevious
-            ? "mt-0 pt-0 px-3 md:px-2"
-            : "mt-0 px-3 py-0 md:px-2",
+          "max-w-full min-w-0 [content-visibility:auto] px-3 md:px-2"
         )}
       >
         <div
           className={cn(
-            "flex min-w-0 flex-col rounded-lg px-3.5 py-2.5",
-            aiTransparent && "px-0 py-0 rounded-none",
+            "flex min-w-0 flex-col rounded-2xl border px-4 py-3 shadow-lg",
+            aiTransparent && "px-0 py-0 rounded-none border-none shadow-none",
           )}
           style={{
             backgroundColor: aiTransparent ? "transparent" : aiBg,
+            borderColor: aiTransparent ? "transparent" : borderColor,
             color: aiText,
           }}
         >
@@ -402,47 +403,73 @@ export function ConversationUI({
 
   useEffect(() => () => stopSmoothScroll(), [stopSmoothScroll]);
 
+  const visibleConversations = useMemo(() => {
+    const visible = (conversations ?? []).filter((c, i) => {
+      if (c.content && c.content.trim().length > 0) return true;
+      if (i === (conversations ?? []).length - 1 && c.role === "assistant" && isStreaming) return true;
+      return false;
+    });
+    console.log("[ConversationUI] visibleConversations length:", visible.length, visible);
+    return visible;
+  }, [conversations, isStreaming]);
+
   return (
     <div
       ref={scrollRef}
       onScroll={handleScroll}
       className="relative flex-1 min-h-0 min-w-0 w-full mx-auto overflow-y-auto overflow-x-hidden overscroll-contain [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden px-3 md:px-4 pt-2 md:pt-4 pb-2"
     >
-      {conversations &&
-        conversations.length > 0 &&
-        conversations.map((conversation, index) => {
-          const isLast = index === conversations.length - 1;
-          const prev = conversations[index - 1];
-          const next = conversations[index + 1];
-          const groupedWithPrevious = Boolean(
-            prev && prev.role === conversation.role,
-          );
-          const groupedWithNext = Boolean(
-            next && next.role === conversation.role,
-          );
-          const showCursor =
-            isLast && conversation.role === "assistant" && isStreaming;
+      {visibleConversations.length > 0 &&
+        (() => {
+          const clusters: { role: string; messages: typeof visibleConversations }[] = [];
+          for (const c of visibleConversations) {
+            const lastCluster = clusters[clusters.length - 1];
+            if (!lastCluster || lastCluster.role !== c.role) {
+              clusters.push({ role: c.role, messages: [c] });
+            } else {
+              lastCluster.messages.push(c);
+            }
+          }
 
-          return (
-            <div key={conversation.id} className={cn("text-sm md:text-base")}>
-              <MessageBubble
-                conversation={conversation}
-                isStreaming={showCursor}
-                groupedWithPrevious={groupedWithPrevious}
-                aiMessageBackground={aiMessageBackground}
-                humanMessageBackground={humanMessageBackground}
-                showActions={
-                  conversation.role === "assistant" && !groupedWithNext
-                }
-              />
+          return clusters.map((cluster, clusterIndex) => (
+            <div
+              key={`cluster-${clusterIndex}`}
+              className={cn("flex flex-col mb-5", cluster.role === "user" ? "gap-0.5" : "gap-3")}
+            >
+              {cluster.messages.map((conversation, indexInCluster) => {
+                const isLastInCluster = indexInCluster === cluster.messages.length - 1;
+                const isFirstInCluster = indexInCluster === 0;
+                
+                // For overall streaming cursor logic
+                const isAbsoluteLast =
+                  clusterIndex === clusters.length - 1 && isLastInCluster;
+                const showCursor =
+                  isAbsoluteLast && conversation.role === "assistant" && isStreaming;
+
+                return (
+                  <div key={conversation.id} className="text-sm md:text-base">
+                    <MessageBubble
+                      conversation={conversation}
+                      isStreaming={showCursor}
+                      groupedWithPrevious={!isFirstInCluster}
+                      groupedWithNext={!isLastInCluster}
+                      aiMessageBackground={aiMessageBackground}
+                      humanMessageBackground={humanMessageBackground}
+                      showActions={
+                        conversation.role === "assistant" && isLastInCluster
+                      }
+                    />
+                  </div>
+                );
+              })}
             </div>
-          );
-        })}
+          ));
+        })()}
 
       {assistantTyping && <DynamicAssistantTyping />}
 
       {showScrollButton && (
-        <div className="sticky bottom-3 z-199 w-full flex justify-center items-center px-2 pr-3">
+        <div className="sticky bottom-3 z-199 w-full flex justify-center items-center pointer-events-none">
           <Button
             type="button"
             variant="outline"
@@ -451,15 +478,16 @@ export function ConversationUI({
               userScrolledUpRef.current = false;
               jumpToBottom();
             }}
-            className="p-1 w-fit h-auto cursor-pointer rounded-full border shadow-md transition"
+            className="pointer-events-auto flex items-center justify-center w-8 h-8 cursor-pointer rounded-full border shadow-[0_4px_16px_rgba(0,0,0,0.18),0_1px_3px_rgba(0,0,0,0.1)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.24)] hover:scale-105 transition-all duration-200"
             style={{
               backgroundColor: config.branding.surfaceColor,
               borderColor: config.branding.borderColor,
               color: config.branding.primaryTextColor,
+              borderRadius: "9999px",
             }}
             aria-label="Scroll to bottom"
           >
-            <ChevronsDown size={22} />
+            <ChevronsDown size={18} className="shrink-0" />
           </Button>
         </div>
       )}

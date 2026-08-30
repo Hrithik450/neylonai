@@ -68,7 +68,7 @@ export function WidgetFaqs() {
   if (faqs.length === 0) return null;
 
   return (
-    <div className="space-y-1">
+    <div className="space-y-2.5">
       <div className="flex items-center gap-1.5 px-0.5">
         <HelpCircle className="w-3.5 h-3.5" style={{ color: accent }} aria-hidden />
         <h4
@@ -110,16 +110,17 @@ export function WidgetFaqs() {
                 </span>
                 <span
                   className={cn(
-                    "shrink-0 rounded-full border p-1.5 transition-transform duration-300 ease-in-out",
+                    "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition-transform duration-300 ease-in-out",
                     open && "-rotate-90",
                   )}
                   style={{
                     backgroundColor: surface,
                     borderColor: config.branding.borderColor,
+                    borderRadius: "9999px",
                   }}
                 >
                   <ArrowDownRight
-                    className="w-3.5 h-3.5"
+                    className="w-3.5 h-3.5 shrink-0"
                     style={{ color: secondary }}
                   />
                 </span>
